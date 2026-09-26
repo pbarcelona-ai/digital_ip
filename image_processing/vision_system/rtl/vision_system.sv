@@ -1,5 +1,5 @@
 // ***************
-// Filename: lens_distortion_correction.sv
+// Filename: vision_system.sv
 // Author: Paul Barcelona
 // Description: Top-level lens-distortion-correction core. Integrates
 // axis_in_ctrl, frame_buffer, axis_out_ctrl, and axi_lite_regs,
@@ -9,9 +9,9 @@
 // Date: September 26, 2026
 // ***************
 // =============================================================================
-// lens_distortion_correction.sv
+// vision_system.sv
 //
-// Top-level barrel-distortion-correction core.
+// Top-level vision system core.
 //
 //   - s_axis_*: AXI4-Stream video input. Each line = IMG_WIDTH back-to-back
 //     beats (tlast on the final pixel), followed by >=5 idle cycles before
@@ -27,12 +27,12 @@
 // docs/README for the ping-pong-buffer extension needed for fully
 // overlapped (back-to-back, no dead time) frame-rate operation.
 // =============================================================================
-import barrel_pkg::*;
+import vision_system_pkg::*;
 import distortion_model_pkg::*;
 
-module lens_distortion_correction #(
-  parameter int COORD_W = barrel_pkg::COORD_W,
-  parameter int ADDR_W  = barrel_pkg::ADDR_W
+module vision_system #(
+  parameter int COORD_W = vision_system_pkg::COORD_W,
+  parameter int ADDR_W  = vision_system_pkg::ADDR_W
 ) (
   input  logic clk,
   input  logic rst_n,

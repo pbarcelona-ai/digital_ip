@@ -18,7 +18,7 @@
 // 2-stage pipeline (weight products, then weighted accumulate) -- ample
 // timing margin at 100 MHz.
 // =============================================================================
-import barrel_pkg::*;
+import vision_system_pkg::*;
 
 module bilinear (
   input  logic               clk,

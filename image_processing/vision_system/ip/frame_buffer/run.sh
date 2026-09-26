@@ -10,5 +10,5 @@ set -e
 cd "$(dirname "$0")"
 
 iverilog -g2012 -o tb_frame_buffer.vvp \
-  ../../rtl/barrel_pkg.sv frame_buffer.sv tb_frame_buffer.sv
+  ../../rtl/vision_system_pkg.sv frame_buffer.sv tb_frame_buffer.sv
 vvp tb_frame_buffer.vvp

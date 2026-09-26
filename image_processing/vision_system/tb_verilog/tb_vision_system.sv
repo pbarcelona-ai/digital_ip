@@ -1,5 +1,5 @@
 // ***************
-// Filename: tb_lens_distortion_correction.sv
+// Filename: tb_vision_system.sv
 // Author: Paul Barcelona
 // Description: Pure-SystemVerilog top-level self-checking testbench.
 // Runs the 12-scenario barrel/pincushion matrix plus real
@@ -9,10 +9,10 @@
 // Date: September 26, 2026
 // ***************
 // =============================================================================
-// tb_lens_distortion_correction.sv
+// tb_vision_system.sv
 //
 // Pure-Verilog (no cocotb/Python) self-checking testbench for
-// lens_distortion_correction. See tb/test_lens_distortion_correction.py for the original
+// vision_system. See tb/test_vision_system.py for the original
 // cocotb version and README.md for why this version is PPM-only (JPEG
 // codecs are impractical to implement in Verilog).
 //
@@ -31,13 +31,13 @@
 // =============================================================================
 `timescale 1ns/1ps
 
-module tb_lens_distortion_correction;
-  import barrel_pkg::*;
+module tb_vision_system;
+  import vision_system_pkg::*;
   import ppm_io_pkg::*;
   import golden_model_pkg::*;
 
   localparam int CLK_PERIOD_NS = 10;   // 100 MHz
-  localparam int LINE_GAP      = barrel_pkg::LINE_GAP_CYCLES;
+  localparam int LINE_GAP      = LINE_GAP_CYCLES;
 
   localparam int REG_STATUS     = 8'h04;
   localparam int REG_IMG_WIDTH  = 8'h08;
@@ -82,8 +82,16 @@ module tb_lens_distortion_correction;
   logic [1:0]   s_axil_bresp;   logic s_axil_bvalid, s_axil_bready;
   logic [7:0]   s_axil_araddr;  logic s_axil_arvalid, s_axil_arready;
   logic [31:0]  s_axil_rdata;   logic [1:0] s_axil_rresp; logic s_axil_rvalid, s_axil_rready;
+  int ok;
+  string work_dir = "work";
+  int sq_w, sq_h, pt_w, pt_h, ls_w, ls_h;
+  logic [7:0] sq_r[], sq_g[], sq_b[];
+  logic [7:0] pt_r[], pt_g[], pt_b[];
+  logic [7:0] ls_r[], ls_g[], ls_b[];
 
-  lens_distortion_correction dut (
+
+
+  vision_system dut (
     .clk, .rst_n,
     .s_axis_tvalid, .s_axis_tready, .s_axis_tdata, .s_axis_tlast, .s_axis_tuser,
     .m_axis_tvalid, .m_axis_tready, .m_axis_tdata, .m_axis_tlast, .m_axis_tuser,
@@ -573,17 +581,9 @@ module tb_lens_distortion_correction;
   endtask
 
   // ---- main sequence ------------------------------------------------------
-  int ok;
-  string work_dir = "work";
-
   // Three test-image shapes, sizes read from the actual generated/loaded
   // images (not hardcoded into the scenario logic) -- IMG_WIDTH/IMG_HEIGHT
   // are programmed per-frame from these.
-  int sq_w, sq_h, pt_w, pt_h, ls_w, ls_h;
-  logic [7:0] sq_r[], sq_g[], sq_b[];
-  logic [7:0] pt_r[], pt_g[], pt_b[];
-  logic [7:0] ls_r[], ls_g[], ls_b[];
-
   initial begin
     m_axis_tready  <= 1'b1;
     s_axis_tvalid  <= 1'b0; s_axis_tlast <= 1'b0; s_axis_tuser <= 1'b0; s_axis_tdata <= '0;
@@ -667,6 +667,19 @@ module tb_lens_distortion_correction;
     #50_000_000; // 50ms sim time
     $display("ERROR: global timeout -- simulation did not finish");
     $fatal;
+  end
+  // ---------------------------------------------------------------- waveform dump
+  // Writes a VCD of the whole testbench hierarchy.
+  //   +VCD=<file>  output file (default tb_vision_system.vcd in the working directory)
+  //   +NO_VCD      disable dumping (faster, no large file)
+  // With the Verilator simulator, compile with --trace (tools/run_sim.sh does).
+  initial begin : vcd_dump
+    string vcd_file;
+    if (!$test$plusargs("NO_VCD")) begin
+      if (!$value$plusargs("VCD=%s", vcd_file)) vcd_file = "tb_vision_system.vcd";
+      $dumpfile(vcd_file);
+      $dumpvars(0, tb_vision_system);
+    end
   end
 
 endmodule

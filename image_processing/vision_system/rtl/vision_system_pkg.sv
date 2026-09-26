@@ -1,5 +1,5 @@
 // ***************
-// Filename: barrel_pkg.sv
+// Filename: vision_system_pkg.sv
 // Author: Paul Barcelona
 // Description: Shared SystemVerilog package for the lens-distortion-
 // correction core. Defines the Q16.16 fixed-point format used by
@@ -10,9 +10,9 @@
 // Date: September 26, 2026
 // ***************
 // =============================================================================
-// barrel_pkg.sv
+// vision_system_pkg.sv
 //
-// Shared parameters / fixed-point format for the barrel-distortion-correction
+// Shared parameters / fixed-point format for the vision system
 // pipeline.
 //
 // Fixed-point convention used EVERYWHERE in this design (coefficients,
@@ -29,7 +29,7 @@
 // risk of per-signal format bookkeeping errors, which is the right
 // trade-off for a reference design.
 // =============================================================================
-package barrel_pkg;
+package vision_system_pkg;
 
   localparam int FRAC_BITS = 16;
   localparam int DATA_W    = 32;                 // Q16.16 word width

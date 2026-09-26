@@ -26,7 +26,7 @@
 //     spurious output from a bubble)
 // =============================================================================
 `timescale 1ns/1ps
-import barrel_pkg::*;
+import vision_system_pkg::*;
 
 module tb_bilinear;
   logic clk = 0, rst_n = 0;
@@ -153,5 +153,18 @@ module tb_bilinear;
     if (fails == 0) $display(">>> PASS <<<");
     else             $display(">>> FAIL (%0d mismatches) <<<", fails);
     $finish;
+  end
+  // ---------------------------------------------------------------- waveform dump
+  // Writes a VCD of the whole testbench hierarchy.
+  //   +VCD=<file>  output file (default tb_bilinear.vcd in the working directory)
+  //   +NO_VCD      disable dumping (faster, no large file)
+  // With the Verilator simulator, compile with --trace (tools/run_sim.sh does).
+  initial begin : vcd_dump
+    string vcd_file;
+    if (!$test$plusargs("NO_VCD")) begin
+      if (!$value$plusargs("VCD=%s", vcd_file)) vcd_file = "tb_bilinear.vcd";
+      $dumpfile(vcd_file);
+      $dumpvars(0, tb_bilinear);
+    end
   end
 endmodule

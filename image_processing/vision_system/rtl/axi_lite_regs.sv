@@ -86,11 +86,11 @@
 // meanwhile. The core must not be started (a new frame captured) while
 // recip_busy is high -- the top-level FSM enforces this.
 // =============================================================================
-import barrel_pkg::*;
+import vision_system_pkg::*;
 import distortion_model_pkg::*;
 
 module axi_lite_regs #(
-  parameter int COORD_W = barrel_pkg::COORD_W
+  parameter int COORD_W = COORD_W
 ) (
   input  logic         clk,
   input  logic         rst_n,
@@ -289,10 +289,10 @@ module axi_lite_regs #(
 
   logic signed [31:0] cx_pix_c, cy_pix_c, fx_pix_c, fy_pix_c;
   logic signed [31:0] cx_pix_legacy, cy_pix_legacy, fx_pix_legacy, fy_pix_legacy;
-  assign cx_pix_legacy = barrel_pkg::qmul($signed(reg_center_x), imgw_q16);
-  assign cy_pix_legacy = barrel_pkg::qmul($signed(reg_center_y), imgh_q16);
-  assign fx_pix_legacy = barrel_pkg::qmul(barrel_pkg::qmul(imgw_q16, 32'h0000_8000), $signed(reg_scale));
-  assign fy_pix_legacy = barrel_pkg::qmul(barrel_pkg::qmul(imgh_q16, 32'h0000_8000), $signed(reg_scale));
+  assign cx_pix_legacy = qmul($signed(reg_center_x), imgw_q16);
+  assign cy_pix_legacy = qmul($signed(reg_center_y), imgh_q16);
+  assign fx_pix_legacy = qmul(qmul(imgw_q16, 32'h0000_8000), $signed(reg_scale));
+  assign fy_pix_legacy = qmul(qmul(imgh_q16, 32'h0000_8000), $signed(reg_scale));
 
   assign cx_pix_c = calib_mode ? $signed(reg_cx) : cx_pix_legacy;
   assign cy_pix_c = calib_mode ? $signed(reg_cy) : cy_pix_legacy;

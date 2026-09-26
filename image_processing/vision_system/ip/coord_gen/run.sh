@@ -11,7 +11,7 @@ set -e
 cd "$(dirname "$0")"
 
 iverilog -g2012 -o tb_coord_gen.vvp \
-  ../../rtl/barrel_pkg.sv ../../rtl/distortion_model_pkg.sv \
+  ../../rtl/vision_system_pkg.sv ../../rtl/distortion_model_pkg.sv \
   ../fixed_recip/fixed_recip.sv \
   coord_gen.sv tb_coord_gen.sv
 vvp tb_coord_gen.vvp

@@ -9,5 +9,5 @@ set -e
 cd "$(dirname "$0")"
 
 iverilog -g2012 -o tb_bicubic.vvp \
-  ../../rtl/barrel_pkg.sv bicubic.sv tb_bicubic.sv
+  ../../rtl/vision_system_pkg.sv bicubic.sv tb_bicubic.sv
 vvp tb_bicubic.vvp

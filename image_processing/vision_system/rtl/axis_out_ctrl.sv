@@ -51,12 +51,12 @@
 // pipeline; there is no mid-pipeline stall capability (documented
 // trade-off, see README).
 // =============================================================================
-import barrel_pkg::*;
+import vision_system_pkg::*;
 import distortion_model_pkg::*;
 
 module axis_out_ctrl #(
-  parameter int COORD_W = barrel_pkg::COORD_W,
-  parameter int ADDR_W  = barrel_pkg::ADDR_W
+  parameter int COORD_W = COORD_W,
+  parameter int ADDR_W  = ADDR_W
 ) (
   input  logic                 clk,
   input  logic                 rst_n,
@@ -124,6 +124,8 @@ module axis_out_ctrl #(
   logic bc_valid;             // forward-declared; driven by the gather FSM below
   logic cg_busy;              // forward-declared; driven by coord_gen below
   logic model_is_slow_div;
+  logic               cg_valid;
+  logic signed [31:0] cg_sx, cg_sy;
   assign model_is_slow_div = (cfg.model_sel == MODEL_FISHEYE) ||
                               (cfg.model_sel == MODEL_PANORAMIC) ||
                               (cfg.model_sel == MODEL_PERSPECTIVE);
@@ -194,8 +196,6 @@ module axis_out_ctrl #(
   // latency (measured, not assumed -- see README) via coord_gen's own
   // internal per-pixel-divide "slow path", signaled by cg_busy.
   // ---------------------------------------------------------------------
-  logic               cg_valid;
-  logic signed [31:0] cg_sx, cg_sy;
 
   coord_gen #(.COORD_W(COORD_W)) u_coord_gen (
     .clk, .rst_n,
@@ -525,5 +525,6 @@ module axis_out_ctrl #(
       end
     end
   end
+  
 
 endmodule

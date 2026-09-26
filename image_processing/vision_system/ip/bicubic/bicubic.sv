@@ -39,7 +39,7 @@
 // (matches how the caller -- the bicubic gather FSM in axis_out_ctrl --
 // only ever presents one set of taps at a time).
 // =============================================================================
-import barrel_pkg::*;
+import vision_system_pkg::*;
 
 module bicubic (
   input  logic               clk,
@@ -65,22 +65,22 @@ module bicubic (
   function automatic logic signed [31:0] cubic_w0
     (input logic signed [31:0] t, input logic signed [31:0] t2, input logic signed [31:0] t3);
     // -0.5t^3 + t^2 - 0.5t
-    return barrel_pkg::qmul(C_NEG_HALF, t3) + t2 - barrel_pkg::qmul(C_HALF, t);
+    return qmul(C_NEG_HALF, t3) + t2 - qmul(C_HALF, t);
   endfunction
   function automatic logic signed [31:0] cubic_w1
     (input logic signed [31:0] t, input logic signed [31:0] t2, input logic signed [31:0] t3);
     // 1.5t^3 - 2.5t^2 + 1
-    return barrel_pkg::qmul(C_ONE_HALF, t3) - barrel_pkg::qmul(32'sd163840 /*2.5*/, t2) + C_ONE;
+    return qmul(C_ONE_HALF, t3) - qmul(32'sd163840 /*2.5*/, t2) + C_ONE;
   endfunction
   function automatic logic signed [31:0] cubic_w2
     (input logic signed [31:0] t, input logic signed [31:0] t2, input logic signed [31:0] t3);
     // -1.5t^3 + 2t^2 + 0.5t
-    return barrel_pkg::qmul(C_NEG_ONE_HALF, t3) + barrel_pkg::qmul(C_TWO, t2) + barrel_pkg::qmul(C_HALF, t);
+    return qmul(C_NEG_ONE_HALF, t3) + qmul(C_TWO, t2) + qmul(C_HALF, t);
   endfunction
   function automatic logic signed [31:0] cubic_w3
     (input logic signed [31:0] t, input logic signed [31:0] t2, input logic signed [31:0] t3);
     // 0.5t^3 - 0.5t^2
-    return barrel_pkg::qmul(C_HALF, t3) - barrel_pkg::qmul(C_HALF, t2);
+    return qmul(C_HALF, t3) - qmul(C_HALF, t2);
   endfunction
 
   // ---- Stage 1: t^2, t^3 for both axes ----------------------------------
@@ -97,10 +97,10 @@ module bicubic (
       v1   <= valid_in;
       tx1  <= $signed(tx_q16);
       ty1  <= $signed(ty_q16);
-      t2x1 <= barrel_pkg::qmul($signed(tx_q16), $signed(tx_q16));
-      t3x1 <= barrel_pkg::qmul(barrel_pkg::qmul($signed(tx_q16), $signed(tx_q16)), $signed(tx_q16));
-      t2y1 <= barrel_pkg::qmul($signed(ty_q16), $signed(ty_q16));
-      t3y1 <= barrel_pkg::qmul(barrel_pkg::qmul($signed(ty_q16), $signed(ty_q16)), $signed(ty_q16));
+      t2x1 <= qmul($signed(tx_q16), $signed(tx_q16));
+      t3x1 <= qmul(qmul($signed(tx_q16), $signed(tx_q16)), $signed(tx_q16));
+      t2y1 <= qmul($signed(ty_q16), $signed(ty_q16));
+      t3y1 <= qmul(qmul($signed(ty_q16), $signed(ty_q16)), $signed(ty_q16));
       p00_1<=p00; p01_1<=p01; p02_1<=p02; p03_1<=p03;
       p10_1<=p10; p11_1<=p11; p12_1<=p12; p13_1<=p13;
       p20_1<=p20; p21_1<=p21; p22_1<=p22; p23_1<=p23;
@@ -190,8 +190,8 @@ module bicubic (
     begin
       // row results fit comfortably in 32 bits for realistic pixel/weight
       // ranges; qmul takes 32-bit Q16.16 operands.
-      acc = barrel_pkg::qmul(r0[31:0], w0) + barrel_pkg::qmul(r1[31:0], w1)
-          + barrel_pkg::qmul(r2[31:0], w2) + barrel_pkg::qmul(r3[31:0], w3);
+      acc = qmul(r0[31:0], w0) + qmul(r1[31:0], w1)
+          + qmul(r2[31:0], w2) + qmul(r3[31:0], w3);
       return acc;
     end
   endfunction

@@ -29,7 +29,7 @@ SOURCES = [
     os.path.join(RTL_DIR, "axis_in_ctrl.sv"),
     os.path.join(RTL_DIR, "axis_out_ctrl.sv"),
     os.path.join(RTL_DIR, "axi_lite_regs.sv"),
-    os.path.join(RTL_DIR, "lens_distortion_correction.sv"),
+    os.path.join(RTL_DIR, "vision_system.sv"),
 ]
 
 
@@ -38,14 +38,14 @@ def main():
     runner = get_runner(sim)
     runner.build(
         sources=SOURCES,
-        hdl_toplevel="lens_distortion_correction",
+        hdl_toplevel="vision_system",
         always=True,
         build_args=["-g2012"],
         timescale=("1ns", "1ps"),
     )
     runner.test(
-        hdl_toplevel="lens_distortion_correction",
-        test_module="test_lens_distortion_correction",
+        hdl_toplevel="vision_system",
+        test_module="test_vision_system",
     )
 
 

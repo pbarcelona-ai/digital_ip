@@ -53,11 +53,11 @@
 // methodology described in README.md). This easily meets 100 MHz on any
 // modern FPGA (single 32x32 multiply per stage).
 // =============================================================================
-import barrel_pkg::*;
+import vision_system_pkg::*;
 import distortion_model_pkg::*;
 
 module coord_gen #(
-  parameter int COORD_W = barrel_pkg::COORD_W
+  parameter int COORD_W = vision_system_pkg::COORD_W
 ) (
   input  logic clk,
   input  logic rst_n,
@@ -121,8 +121,8 @@ module coord_gen #(
       v1 <= 1'b0; nx1 <= '0; ny1 <= '0;
     end else begin
       v1  <= v0;
-      nx1 <= barrel_pkg::qmul(dx0, $signed({1'b0, cfg.recip_fx}));
-      ny1 <= barrel_pkg::qmul(dy0, $signed({1'b0, cfg.recip_fy}));
+      nx1 <= qmul(dx0, $signed({1'b0, cfg.recip_fx}));
+      ny1 <= qmul(dy0, $signed({1'b0, cfg.recip_fy}));
     end
   end
 
@@ -138,10 +138,10 @@ module coord_gen #(
       v2     <= v1;
       nx2    <= nx1;
       ny2    <= ny1;
-      nxsq_2 <= barrel_pkg::qmul(nx1, nx1);
-      nysq_2 <= barrel_pkg::qmul(ny1, ny1);
-      nxny_2 <= barrel_pkg::qmul(nx1, ny1);
-      r2_2   <= barrel_pkg::qmul(nx1, nx1) + barrel_pkg::qmul(ny1, ny1);
+      nxsq_2 <= qmul(nx1, nx1);
+      nysq_2 <= qmul(ny1, ny1);
+      nxny_2 <= qmul(nx1, ny1);
+      r2_2   <= qmul(nx1, nx1) + qmul(ny1, ny1);
     end
   end
 
@@ -156,7 +156,7 @@ module coord_gen #(
       v3     <= v2;
       nx3    <= nx2; ny3 <= ny2; r2_3 <= r2_2;
       nxsq_3 <= nxsq_2; nysq_3 <= nysq_2; nxny_3 <= nxny_2;
-      r4_3   <= barrel_pkg::qmul(r2_2, r2_2);
+      r4_3   <= qmul(r2_2, r2_2);
     end
   end
 
@@ -171,7 +171,7 @@ module coord_gen #(
       v4     <= v3;
       nx4    <= nx3; ny4 <= ny3; r2_4 <= r2_3; r4_4 <= r4_3;
       nxsq_4 <= nxsq_3; nysq_4 <= nysq_3; nxny_4 <= nxny_3;
-      r6_4   <= barrel_pkg::qmul(r4_3, r2_3);
+      r6_4   <= qmul(r4_3, r2_3);
     end
   end
 
@@ -184,10 +184,10 @@ module coord_gen #(
   logic signed [31:0] nx5, ny5, t1_5, t2_5, t3_5, tangx_5, tangy_5;
   logic signed [31:0] tang_a, tang_b, tang_c, tang_d;
   always_comb begin
-    tang_a = barrel_pkg::qmul(cfg.p1, nxny_4) <<< 1;                    // 2*p1*nx*ny
-    tang_b = barrel_pkg::qmul(cfg.p2, r2_4 + (nxsq_4 <<< 1));           // p2*(r2+2nx^2)
-    tang_c = barrel_pkg::qmul(cfg.p1, r2_4 + (nysq_4 <<< 1));           // p1*(r2+2ny^2)
-    tang_d = barrel_pkg::qmul(cfg.p2, nxny_4) <<< 1;                    // 2*p2*nx*ny
+    tang_a = qmul(cfg.p1, nxny_4) <<< 1;                    // 2*p1*nx*ny
+    tang_b = qmul(cfg.p2, r2_4 + (nxsq_4 <<< 1));           // p2*(r2+2nx^2)
+    tang_c = qmul(cfg.p1, r2_4 + (nysq_4 <<< 1));           // p1*(r2+2ny^2)
+    tang_d = qmul(cfg.p2, nxny_4) <<< 1;                    // 2*p2*nx*ny
   end
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -197,9 +197,9 @@ module coord_gen #(
       v5   <= v4;
       nx5  <= nx4; ny5 <= ny4;
       if (is_radial) begin
-        t1_5    <= barrel_pkg::qmul(cfg.k1, r2_4);
-        t2_5    <= barrel_pkg::qmul(cfg.k2, r4_4);
-        t3_5    <= barrel_pkg::qmul(cfg.k3, r6_4);
+        t1_5    <= qmul(cfg.k1, r2_4);
+        t2_5    <= qmul(cfg.k2, r4_4);
+        t3_5    <= qmul(cfg.k3, r6_4);
         tangx_5 <= tang_a + tang_b;
         tangy_5 <= tang_c + tang_d;
       end else begin
@@ -231,8 +231,8 @@ module coord_gen #(
       v7 <= 1'b0; sxn7 <= '0; syn7 <= '0;
     end else begin
       v7   <= v6;
-      sxn7 <= barrel_pkg::qmul(nx6, factor6) + tangx6;
-      syn7 <= barrel_pkg::qmul(ny6, factor6) + tangy6;
+      sxn7 <= qmul(nx6, factor6) + tangx6;
+      syn7 <= qmul(ny6, factor6) + tangy6;
     end
   end
 
@@ -244,8 +244,8 @@ module coord_gen #(
       v8 <= 1'b0; sx8 <= '0; sy8 <= '0;
     end else begin
       v8  <= v7;
-      sx8 <= cfg.cx_pix + barrel_pkg::qmul(sxn7, cfg.fx_pix);
-      sy8 <= cfg.cy_pix + barrel_pkg::qmul(syn7, cfg.fy_pix);
+      sx8 <= cfg.cx_pix + qmul(sxn7, cfg.fx_pix);
+      sy8 <= cfg.cy_pix + qmul(syn7, cfg.fy_pix);
     end
   end
 
@@ -280,7 +280,7 @@ module coord_gen #(
     logic signed [31:0] dxv;
     begin
       dxv = ({{(32-COORD_W){1'b0}}, x} <<< FRAC_BITS) - c.cx_pix;
-      slow_nx = barrel_pkg::qmul(dxv, $signed({1'b0, c.recip_fx}));
+      slow_nx = qmul(dxv, $signed({1'b0, c.recip_fx}));
     end
   endfunction
 
@@ -288,7 +288,7 @@ module coord_gen #(
     logic signed [31:0] dyv;
     begin
       dyv = ({{(32-COORD_W){1'b0}}, y} <<< FRAC_BITS) - c.cy_pix;
-      slow_ny = barrel_pkg::qmul(dyv, $signed({1'b0, c.recip_fy}));
+      slow_ny = qmul(dyv, $signed({1'b0, c.recip_fy}));
     end
   endfunction
 
@@ -306,14 +306,14 @@ module coord_gen #(
     begin
       nxv = slow_nx(c, x);
       nyv = slow_ny(c, y);
-      r2v = barrel_pkg::qmul(nxv, nxv) + barrel_pkg::qmul(nyv, nyv);
-      r4v = barrel_pkg::qmul(r2v, r2v);
+      r2v = qmul(nxv, nxv) + qmul(nyv, nyv);
+      r4v = qmul(r2v, r2v);
       if (c.model_sel == MODEL_FISHEYE)
-        rawv = Q16_ONE + barrel_pkg::qmul(c.k1, r2v) + barrel_pkg::qmul(c.k2, r4v);
+        rawv = Q16_ONE + qmul(c.k1, r2v) + qmul(c.k2, r4v);
       else if (c.model_sel == MODEL_PANORAMIC)
-        rawv = Q16_ONE + barrel_pkg::qmul(c.k1, barrel_pkg::qmul(nxv, nxv));
+        rawv = Q16_ONE + qmul(c.k1, qmul(nxv, nxv));
       else if (c.model_sel == MODEL_PERSPECTIVE)
-        rawv = Q16_ONE + barrel_pkg::qmul(c.h31, slow_xq(x)) + barrel_pkg::qmul(c.h32, slow_yq(y));
+        rawv = Q16_ONE + qmul(c.h31, slow_xq(x)) + qmul(c.h32, slow_yq(y));
       else
         rawv = Q16_ONE;
       // Safety clamp: a denominator that hits <=0 (extreme coefficients,
@@ -362,19 +362,19 @@ module coord_gen #(
           if (sd_recip_done) begin
             unique case (cfg.model_sel)
               MODEL_FISHEYE: begin
-                sd_out_sx <= cfg.cx_pix + barrel_pkg::qmul(barrel_pkg::qmul(slow_nx(cfg, sd_x), $signed({1'b0, sd_recip_result})), cfg.fx_pix);
-                sd_out_sy <= cfg.cy_pix + barrel_pkg::qmul(barrel_pkg::qmul(slow_ny(cfg, sd_y), $signed({1'b0, sd_recip_result})), cfg.fy_pix);
+                sd_out_sx <= cfg.cx_pix + qmul(qmul(slow_nx(cfg, sd_x), $signed({1'b0, sd_recip_result})), cfg.fx_pix);
+                sd_out_sy <= cfg.cy_pix + qmul(qmul(slow_ny(cfg, sd_y), $signed({1'b0, sd_recip_result})), cfg.fy_pix);
               end
               MODEL_PANORAMIC: begin
-                sd_out_sx <= cfg.cx_pix + barrel_pkg::qmul(barrel_pkg::qmul(slow_nx(cfg, sd_x), $signed({1'b0, sd_recip_result})), cfg.fx_pix);
-                sd_out_sy <= cfg.cy_pix + barrel_pkg::qmul(slow_ny(cfg, sd_y), cfg.fy_pix);
+                sd_out_sx <= cfg.cx_pix + qmul(qmul(slow_nx(cfg, sd_x), $signed({1'b0, sd_recip_result})), cfg.fx_pix);
+                sd_out_sy <= cfg.cy_pix + qmul(slow_ny(cfg, sd_y), cfg.fy_pix);
               end
               default /* MODEL_PERSPECTIVE */: begin
-                sd_out_sx <= barrel_pkg::qmul(
-                  barrel_pkg::qmul(cfg.h11, slow_xq(sd_x)) + barrel_pkg::qmul(cfg.h12, slow_yq(sd_y)) + cfg.h13,
+                sd_out_sx <= qmul(
+                  qmul(cfg.h11, slow_xq(sd_x)) + qmul(cfg.h12, slow_yq(sd_y)) + cfg.h13,
                   $signed({1'b0, sd_recip_result}));
-                sd_out_sy <= barrel_pkg::qmul(
-                  barrel_pkg::qmul(cfg.h21, slow_xq(sd_x)) + barrel_pkg::qmul(cfg.h22, slow_yq(sd_y)) + cfg.h23,
+                sd_out_sy <= qmul(
+                  qmul(cfg.h21, slow_xq(sd_x)) + qmul(cfg.h22, slow_yq(sd_y)) + cfg.h23,
                   $signed({1'b0, sd_recip_result}));
               end
             endcase

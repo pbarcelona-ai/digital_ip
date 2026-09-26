@@ -20,11 +20,11 @@
 // frame is stored in raster order, the write address is simply a
 // free-running counter (no multiply needed on the write side).
 // =============================================================================
-import barrel_pkg::*;
+import vision_system_pkg::*;
 
 module axis_in_ctrl #(
-  parameter int COORD_W = barrel_pkg::COORD_W,
-  parameter int ADDR_W  = barrel_pkg::ADDR_W
+  parameter int COORD_W = COORD_W,
+  parameter int ADDR_W  = ADDR_W
 ) (
   input  logic                    clk,
   input  logic                    rst_n,

@@ -33,12 +33,12 @@
 // AXI-Stream/AXI-Lite boundary and coord_gen math are unaffected by that
 // change -- only this module would be replaced.
 // =============================================================================
-import barrel_pkg::*;
+import vision_system_pkg::*;
 
 module frame_buffer #(
-  parameter int PIX_W  = barrel_pkg::PIX_W,
-  parameter int DEPTH  = barrel_pkg::MAX_W * barrel_pkg::MAX_H,
-  parameter int ADDR_W = barrel_pkg::ADDR_W
+  parameter int PIX_W  = PIX_W,
+  parameter int DEPTH  = MAX_W * MAX_H,
+  parameter int ADDR_W = ADDR_W
 ) (
   input  logic                  clk,
 
