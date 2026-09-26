@@ -10,6 +10,18 @@ Generic separable polyphase scaler, even TAPS 2–16, programmable H/V coefficie
 
 **Depends on:** `axil_regbus`, `scaler_ctrl`, `scaler_dda`, `banked_framebuf`
 
+## Buffering modes
+
+Two compile-time parameters select how the IP stores the input (same registers, same output):
+
+| Parameters | Frame store | Behaviour |
+|---|---|---|
+| `PINGPONG=0, LINE_BUF=0` (default) | one frame | capture a frame, then output it; input stalls during output |
+| `PINGPONG=1` | two frames | the next frame is captured while the current one is output |
+| `LINE_BUF=1` | ring of 4–16 lines | output starts after a few input lines; about `8 × MAX_W` pixels for 1080p-class widths |
+
+In line-buffer mode `STEP_Y` must be ≥ 0. See *Buffering modes* in the top-level README.
+
 ## Simulate
 
 ### run.sh (Icarus Verilog 12, no Python)
@@ -19,6 +31,8 @@ Generic separable polyphase scaler, even TAPS 2–16, programmable H/V coefficie
 ./run.sh +IMG=../images/test_96x72.ppm         # scale an image (3 default sizes)
 ./run.sh +IMG=photo.ppm +OUT_W=960 +OUT_H=720   # one chosen output size
 ./run.sh +NO_VCD +NO_PPM                        # fastest: no waveform, no images
+./run.sh -DTB_PINGPONG=1                        # DUT built with PINGPONG=1
+./run.sh -DTB_LINE_BUF=1                        # DUT built with LINE_BUF=1
 ./run.sh --help
 ```
 
@@ -33,6 +47,7 @@ Generic separable polyphase scaler, even TAPS 2–16, programmable H/V coefficie
 | `+VCD=<file>` | Waveform file name (default `<OUTDIR>/tb_scaler_polyphase.vcd`) |
 | `+NO_VCD` | Do not dump waveforms (faster; VCDs are roughly 1–30 MB per run) |
 | `+TIMEOUT_MS=<n>` | Watchdog in simulated ms (default 200) |
+| `-DTB_PINGPONG=1` / `-DTB_LINE_BUF=1` | Compile-time: build the DUT in ping-pong / line-buffer mode |
 
 ### Waveforms
 

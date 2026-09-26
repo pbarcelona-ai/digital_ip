@@ -6,6 +6,7 @@
 #   +OUTDIR=<dir>    : made absolute and created; default $ROOT/ppm_out/<IP>
 #   anything else    : passed through unchanged (+OUT_W=, +OUT_H=, +NO_PPM, ...)
 PLUSARGS=()
+VDEFS=()        # -D<NAME>[=<v>] compile defines, as +define+ for Verilator
 TB_MAX_W=${TB_MAX_W:-48}
 TB_MAX_H=${TB_MAX_H:-40}
 OUTDIR_SET=0
@@ -25,6 +26,7 @@ for a in "$@"; do
     +OUTDIR=*)
       d="$(abspath "${a#+OUTDIR=}")"; mkdir -p "$d"; OUTDIR_SET=1
       PLUSARGS+=("+OUTDIR=$d") ;;
+    -D*) VDEFS+=("+define+${a#-D}") ;;
     *) PLUSARGS+=("$a") ;;
   esac
 done

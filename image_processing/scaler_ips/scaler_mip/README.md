@@ -10,6 +10,10 @@ Mip-map scaler engine: hardware 2×2 box pyramid, trilinear sampling, optional a
 
 **Depends on:** `axil_regbus`, `scaler_ctrl`, `scaler_dda`, `banked_framebuf`
 
+## Buffering modes
+
+`PINGPONG=1` doubles the frame store (including the mip pyramid) so the next frame is captured while the current one is output. There is no line-buffer mode: the mip pyramid needs the complete frame. See *Buffering modes* in the top-level README.
+
 ## Simulate
 
 ### run.sh (Icarus Verilog 12, no Python)
@@ -19,6 +23,7 @@ Mip-map scaler engine: hardware 2×2 box pyramid, trilinear sampling, optional a
 ./run.sh +IMG=../images/test_96x72.ppm         # scale an image (3 default sizes)
 ./run.sh +IMG=photo.ppm +OUT_W=960 +OUT_H=720   # one chosen output size
 ./run.sh +NO_VCD +NO_PPM                        # fastest: no waveform, no images
+./run.sh -DTB_PINGPONG=1                        # DUT built with PINGPONG=1
 ./run.sh --help
 ```
 
@@ -33,6 +38,7 @@ Mip-map scaler engine: hardware 2×2 box pyramid, trilinear sampling, optional a
 | `+VCD=<file>` | Waveform file name (default `<OUTDIR>/tb_scaler_mip.vcd`) |
 | `+NO_VCD` | Do not dump waveforms (faster; VCDs are roughly 1–30 MB per run) |
 | `+TIMEOUT_MS=<n>` | Watchdog in simulated ms (default 200) |
+| `-DTB_PINGPONG=1` | Compile-time: build the DUT in ping-pong mode |
 
 ### Waveforms
 

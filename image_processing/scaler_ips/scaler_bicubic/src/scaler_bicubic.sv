@@ -22,6 +22,8 @@ module scaler_bicubic #(
   parameter int PHASE_BITS = 6,        // log2(number of filter phases)
   parameter int COEF_W     = 16,       // coefficient width (signed)
   parameter int COEF_FRAC  = 14,       // coefficient fraction bits
+  parameter int PINGPONG   = 0,        // 1: double frame buffer
+  parameter int LINE_BUF   = 0,        // 1: line-buffer mode (few lines of latency)
   localparam int PIX_W     = CHANNELS * COMP_W // bits per pixel
 )(
   input  logic              clk,            // clock
@@ -61,6 +63,7 @@ module scaler_bicubic #(
   // All logic is in scaler_polyphase; this wrapper fixes TAPS = 4 and
   // the IP_ID. Every port is connected by name (.*).
   scaler_polyphase #(
+    .PINGPONG(PINGPONG), .LINE_BUF(LINE_BUF),
     .CHANNELS(CHANNELS), .COMP_W(COMP_W), .MAX_W(MAX_W), .MAX_H(MAX_H),
     .ADDR_W(ADDR_W), .TAPS(4), .PHASE_BITS(PHASE_BITS), .COEF_W(COEF_W),
     .COEF_FRAC(COEF_FRAC), .IP_ID(32'h4243_5542)          // "BCUB"

@@ -12,6 +12,12 @@
 // Date: 2026-09-26
 
 `timescale 1ns/1ps
+
+// -DTB_NBUF=2 builds the DUT as a double (ping-pong) buffer and runs the
+// ping-pong sequencing test instead of the single-buffer capture tests.
+`ifndef TB_NBUF
+`define TB_NBUF 1
+`endif
 module tb_scaler_ctrl;
   localparam int ADDR_W = 14;
   localparam int PIX_W  = 16;
@@ -28,12 +34,13 @@ module tb_scaler_ctrl;
   logic gen_done = 0;
   logic [15:0] in_w, in_h, out_w, out_h;
   logic [31:0] step_x, step_y; logic signed [31:0] offs_x, offs_y;
+  logic fb_wbuf, gen_buf;
   logic ext_wr, ext_rd; logic [ADDR_W-1:0] ext_waddr, ext_raddr;
   logic [31:0] ext_wdata, ext_rdata;
 
   // Device under test (distinct IP_ID/CAPS values to check the RO regs)
   scaler_ctrl #(.PIX_W(PIX_W), .ADDR_W(ADDR_W), .MAX_W(MAX_W), .MAX_H(MAX_H),
-                .IP_ID(32'hCAFE_0001), .CAPS(32'h1234_5678)) dut (
+                .IP_ID(32'hCAFE_0001), .CAPS(32'h1234_5678), .NBUF(`TB_NBUF)) dut (
     .clk, .rst_n,
     .s_axil_awaddr(awaddr), .s_axil_awvalid(awvalid), .s_axil_awready(awready),
     .s_axil_wdata(wdata), .s_axil_wstrb(wstrb), .s_axil_wvalid(wvalid), .s_axil_wready(wready),
@@ -42,7 +49,9 @@ module tb_scaler_ctrl;
     .s_axil_rdata(rdata), .s_axil_rresp(rresp), .s_axil_rvalid(rvalid), .s_axil_rready(rready),
     .s_axis_tdata(s_tdata), .s_axis_tvalid(s_tvalid), .s_axis_tready(s_tready),
     .s_axis_tuser(s_tuser), .s_axis_tlast(s_tlast),
-    .fb_we, .fb_wx, .fb_wy, .fb_wdata, .gen_start, .gen_done,
+    .fb_we, .fb_wx, .fb_wy, .fb_wdata, .fb_wbuf, .gen_buf, .gen_start, .gen_done,
+    .lb_nxt_y(32'sd0), .lb_nxt_v(1'b0), .lb_o_y(32'sd0), .lb_o_v(1'b0),
+    .lb_a_y(32'sd0), .lb_a_v(1'b0), .lb_hold(),
     .cfg_in_w(in_w), .cfg_in_h(in_h), .cfg_out_w(out_w), .cfg_out_h(out_h),
     .cfg_step_x(step_x), .cfg_step_y(step_y), .cfg_offs_x(offs_x), .cfg_offs_y(offs_y),
     .ext_wr, .ext_waddr, .ext_wdata, .ext_rd, .ext_raddr, .ext_rdata);
@@ -58,16 +67,18 @@ module tb_scaler_ctrl;
   // Frame buffer model: stores writes, counts them, and checks that no
   // write follows gen_start and that tready is low while generating
   logic [PIX_W-1:0] fb [MAX_H][MAX_W];
+  logic [PIX_W-1:0] fbp [2][MAX_H][MAX_W];     // per-buffer model (ping-pong)
   int               fb_cnt [MAX_H][MAX_W];
   int               n_writes = 0, n_starts = 0;
   bit               write_after_start = 0;
   always @(posedge clk) begin
     if (fb_we) begin
       fb[fb_wy][fb_wx] <= fb_wdata; fb_cnt[fb_wy][fb_wx]++; n_writes++;
+      fbp[fb_wbuf][fb_wy][fb_wx] <= fb_wdata;
       if (n_starts > 0) write_after_start = 1;
     end
     if (gen_start) n_starts++;
-    if (dut.state == 2 && s_tready) begin errors++; $display("ERROR: tready during GENERATE"); end
+    if (`TB_NBUF == 1 && dut.state == 2 && s_tready) begin errors++; $display("ERROR: tready during GENERATE"); end
   end
 
   // Drive one input beat with random idle cycles
@@ -138,6 +149,66 @@ module tb_scaler_ctrl;
   int e_pre;
 
   // Main sequence: register checks, ext bus forwarding, then captures
+
+  // ---------------- ping-pong sequencing test (NBUF = 2)
+  // A is captured into buffer 0 and handed to the generator; B is captured
+  // into buffer 1 while A is still being generated (no stall); C must stall
+  // until A's generation finishes, then lands in buffer 0 while B is
+  // generated. Buffer contents, gen_buf and FRAME_CNT are checked.
+  logic [PIX_W-1:0] img_b [MAX_H][MAX_W];
+  bit send_bg = 0;
+  initial forever begin               // background sender for frame C
+    wait (send_bg);
+    frame(5, 4, 0, 0, 0);
+    send_bg = 0;
+  end
+  task automatic expect_gen(input int buf_exp, input string what);
+    int n0, t;
+    n0 = n_starts; t = 0;
+    while (n_starts == n0 && t < 50) begin @(posedge clk); t++; end
+    checks++;
+    if (n_starts == n0) begin errors++; $display("ERROR: no gen_start for %s", what); end
+    else if (gen_buf !== buf_exp) begin
+      errors++; $display("ERROR: %s generated from buffer %0d, expected %0d", what, gen_buf, buf_exp);
+    end
+  endtask
+  task automatic pingpong_test();
+    int stall;
+    n_starts = 0;
+    axil_write(12'h008, {16'd4, 16'd5});
+    axil_write(12'h004, 32'hE);
+    axil_write(12'h000, 1);
+    frame(5, 4, 0, 0, 0);                            // A -> buffer 0
+    expect_gen(0, "frame A");
+    frame(5, 4, 0, 0, 0);                            // B -> buffer 1, no stall
+    for (int y = 0; y < 4; y++) for (int x = 0; x < 5; x++) img_b[y][x] = exp_img[y][x];
+    checks++;
+    if (n_starts != 1) begin errors++; $display("ERROR: B started generation early"); end
+    send_bg = 1;                                     // C: must stall
+    stall = 0;
+    repeat (40) begin @(posedge clk); if (s_tvalid && !s_tready) stall++; end
+    checks++;
+    if (stall < 30) begin errors++; $display("ERROR: C not stalled while both buffers busy"); end
+    @(negedge clk) gen_done = 1; @(negedge clk) gen_done = 0;   // A done
+    expect_gen(1, "frame B");
+    wait (!send_bg);                                 // C captured -> buffer 0
+    repeat (3) @(posedge clk);
+    for (int y = 0; y < 4; y++) for (int x = 0; x < 5; x++) begin
+      checks += 2;
+      if (fbp[1][y][x] !== img_b[y][x]) begin errors++; $display("ERROR: buffer 1 != frame B at (%0d,%0d)", x, y); end
+      if (fbp[0][y][x] !== exp_img[y][x]) begin errors++; $display("ERROR: buffer 0 != frame C at (%0d,%0d)", x, y); end
+    end
+    @(negedge clk) gen_done = 1; @(negedge clk) gen_done = 0;   // B done
+    expect_gen(0, "frame C");
+    @(negedge clk) gen_done = 1; @(negedge clk) gen_done = 0;   // C done
+    axil_check(12'h020, 3);                          // FRAME_CNT
+    axil_write(12'h000, 0);
+    repeat (5) @(posedge clk);
+    axil_check(12'h004, 32'h2, 32'h33);              // idle, FRAME_DONE set
+    tests++;
+    $display("ping-pong sequencing : %s", errors == 0 ? "pass" : "FAIL");
+  endtask
+
   initial begin
     reset_dut();
     // reset values / identification
@@ -167,12 +238,15 @@ module tb_scaler_ctrl;
     axil_check(12'h040, 32'hA500_0040);
     axil_check(16'h1ffc, 32'hA500_1ffc);
     // captures
-    capture_test(5, 4, 0, 0, 0);
-    capture_test(MAX_W, MAX_H, 0, 0, 0);
-    capture_test(1, 1, 0, 0, 0);
-    capture_test(9, 3, 4, 0, 0);        // junk before SOF
-    capture_test(6, 5, 0, 1, 0);        // wrong tlast
-    capture_test(7, 6, 0, 0, 5);        // SOF mid-frame -> restart
+    if (`TB_NBUF == 2) pingpong_test();
+    else begin
+      capture_test(5, 4, 0, 0, 0);
+      capture_test(MAX_W, MAX_H, 0, 0, 0);
+      capture_test(1, 1, 0, 0, 0);
+      capture_test(9, 3, 4, 0, 0);        // junk before SOF
+      capture_test(6, 5, 0, 1, 0);        // wrong tlast
+      capture_test(7, 6, 0, 0, 5);        // SOF mid-frame -> restart
+    end
     finish_report();
   end
 

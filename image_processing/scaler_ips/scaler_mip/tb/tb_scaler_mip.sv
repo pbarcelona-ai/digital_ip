@@ -19,6 +19,14 @@
 
 // Maximum image size (frame buffer of the DUT and testbench arrays).
 // Override at compile time for larger +IMG files, e.g. -DTB_MAX_W=640.
+// Frame-store mode of the DUT (compile-time): -DTB_PINGPONG=1 double buffer,
+// -DTB_LINE_BUF=1 line buffer (not for the mip-based IPs).
+`ifndef TB_PINGPONG
+`define TB_PINGPONG 0
+`endif
+`ifndef TB_LINE_BUF
+`define TB_LINE_BUF 0
+`endif
 `ifndef TB_MAX_W
 `define TB_MAX_W 48
 `endif
@@ -42,7 +50,7 @@ module tb_scaler_mip;
   `include "scaler_tb_lib.svh"
 
   // Device under test (engine instantiated directly)
-  scaler_mip #(.ANISO_MAX_LOG2(ANISO_MAX), .CHANNELS(CHANNELS), .COMP_W(COMP_W), .MAX_W(MAX_W), .MAX_H(MAX_H),
+  scaler_mip #(.PINGPONG(`TB_PINGPONG), .ANISO_MAX_LOG2(ANISO_MAX), .CHANNELS(CHANNELS), .COMP_W(COMP_W), .MAX_W(MAX_W), .MAX_H(MAX_H),
                      .ADDR_W(ADDR_W), .LEVELS(LEVELS), .PHASE_BITS(PHASE_BITS)) dut (
     .clk, .rst_n,
     .s_axil_awaddr(awaddr), .s_axil_awvalid(awvalid), .s_axil_awready(awready),

@@ -25,6 +25,8 @@ module spatial_upscaler #(
   parameter int MAX_H     = 720,
   parameter int OUT_MAX_W = 2560,      // largest output line
   parameter int ADDR_W    = 15,
+  parameter int PINGPONG = 0,          // scaler stage: 1 = double frame buffer
+  parameter int LINE_BUF = 0,          // scaler stage: 1 = line buffer (whole chain streams)
   localparam int PIX_W    = CHANNELS * COMP_W
 )(
   input  logic              clk,
@@ -86,7 +88,7 @@ module spatial_upscaler #(
   logic [PIX_W-1:0] mid_tdata;
   logic             mid_tvalid, mid_tready, mid_tuser, mid_tlast;
 
-  scaler_lanczos #(.CHANNELS(CHANNELS), .COMP_W(COMP_W), .MAX_W(MAX_W), .MAX_H(MAX_H),
+  scaler_lanczos #(.PINGPONG(PINGPONG), .LINE_BUF(LINE_BUF), .CHANNELS(CHANNELS), .COMP_W(COMP_W), .MAX_W(MAX_W), .MAX_H(MAX_H),
                    .ADDR_W(14)) u_scaler (
     .clk, .rst_n,
     .s_axil_awaddr(m_awaddr[13:0]), .s_axil_awvalid(m_awvalid[0]), .s_axil_awready(m_awready[0]),

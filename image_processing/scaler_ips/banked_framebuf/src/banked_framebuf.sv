@@ -16,13 +16,22 @@
 //   rd_win therefore belongs to the rd_x0/rd_y0 given two rd_adv cycles
 //   earlier. Tap (row j, column i) is rd_win[((j*TAPS)+i)*PIX_W +: PIX_W].
 //   Write port: one pixel per clock at (wr_x, wr_y).
+//   NBUF = 2 keeps two independent frames (wr_buf / rd_buf select them) for
+//   ping-pong operation. RING > 0 turns the store into a line buffer of RING
+//   rows: image row y is kept in slot y % RING (RING a power of two >= B, so
+//   the bank of a row does not change), coordinates stay logical and are
+//   still clamped against img_h; the caller guarantees that a row is not
+//   read after it has been overwritten.
 // Date: 2026-09-26
 
 module banked_framebuf #(
   parameter int PIX_W = 24,     // bits per pixel
   parameter int TAPS  = 4,      // window size (TAPS x TAPS)
   parameter int MAX_W = 1920,   // largest image width stored
-  parameter int MAX_H = 1080    // largest image height stored
+  parameter int MAX_H = 1080,   // largest image height stored
+  parameter int NBUF  = 1,      // 1 or 2 independent frame buffers
+  parameter int RING  = 0       // > 0: store only RING rows (power of 2,
+                                //   >= bank count); row y lives in slot y % RING
 )(
   input  logic                         clk,
   // write port (one pixel per clock)
@@ -30,8 +39,10 @@ module banked_framebuf #(
   input  logic [15:0]                  wr_x,    // pixel column
   input  logic [15:0]                  wr_y,    // pixel row
   input  logic [PIX_W-1:0]             wr_data, // pixel value
+  input  logic                         wr_buf,  // buffer written (NBUF = 2)
   // window read port
   input  logic                         rd_adv,  // advance read pipeline
+  input  logic                         rd_buf,  // buffer read (NBUF = 2)
   input  logic signed [17:0]           rd_x0,   // left column of window
   input  logic signed [17:0]           rd_y0,   // top row of window
   input  logic [15:0]                  img_w,   // valid image size (>= 1)
@@ -50,9 +61,25 @@ module banked_framebuf #(
   localparam int LB    = $clog2(B);
   localparam int SELW  = (LB == 0) ? 1 : LB;      // bank index width
   localparam int BW    = (MAX_W + B - 1) / B;     // bank words per row
-  localparam int BH    = (MAX_H + B - 1) / B;     // bank rows
-  localparam int DEPTH = BW * BH;                 // words per bank
-  localparam int AW    = (DEPTH <= 2) ? 1 : $clog2(DEPTH);  // addr width
+  localparam int SROWS = (RING > 0) ? RING : MAX_H; // rows stored per buffer
+  localparam int BH    = (SROWS + B - 1) / B;     // bank rows
+  localparam int DEPTH = BW * BH;                 // words per bank per buffer
+  localparam int DALL  = DEPTH * NBUF;            // words per bank
+  localparam int AW    = (DALL <= 2) ? 1 : $clog2(DALL);   // addr width
+
+  initial begin
+    if (NBUF < 1 || NBUF > 2) $fatal(1, "banked_framebuf: NBUF must be 1 or 2");
+    if (RING > 0 && (RING < B || (RING & (RING - 1)) != 0))
+      $fatal(1, "banked_framebuf: RING must be a power of two >= %0d", B);
+  end
+
+  // physical row of image row y (ring mode: modulo RING, a bit mask)
+  function automatic int prow(input int y);
+    return (RING > 0) ? (y % ((RING > 0) ? RING : 1)) : y;
+  endfunction
+  function automatic int boff(input logic b);
+    return (NBUF == 2 && b) ? DEPTH : 0;
+  endfunction
 
   // ---------------------------------------------------------------------------
   // helpers
@@ -72,7 +99,7 @@ module banked_framebuf #(
   // B is a power of two, so % and / reduce to bit selects and shifts.
   wire [SELW-1:0] wbx   = SELW'(wr_x % B);                      // bank col
   wire [SELW-1:0] wby   = SELW'(wr_y % B);                      // bank row
-  wire [AW-1:0]   waddr = AW'((wr_y / B) * BW + (wr_x / B));    // word
+  wire [AW-1:0]   waddr = AW'(boff(wr_buf) + (prow(int'(wr_y)) / B) * BW + (wr_x / B));    // word
 
   // ---------------------------------------------------------------------------
   // stage A : per-bank coordinates and per-tap selects
@@ -118,7 +145,7 @@ module banked_framebuf #(
     if (rd_adv) begin
       for (int b = 0; b < B; b++) begin
         colpart_q[b] <= AW'(bcx[b] / B);
-        rowpart_q[b] <= AW'((bcy[b] / B) * BW);
+        rowpart_q[b] <= AW'(boff(rd_buf) + (prow(int'(bcy[b])) / B) * BW);
       end
       for (int t = 0; t < TAPS; t++) begin
         tsx_q[t]  <= tsx[t];
@@ -137,7 +164,7 @@ module banked_framebuf #(
   // B x B independent single-write / single-read RAMs
   for (genvar gy = 0; gy < B; gy++) begin : g_by
     for (genvar gx = 0; gx < B; gx++) begin : g_bx
-      logic [PIX_W-1:0] mem [DEPTH];           // one bank
+      logic [PIX_W-1:0] mem [DALL];           // one bank
       always_ff @(posedge clk) begin
         // write when the pixel maps to this bank
         if (wr_en && wbx == SELW'(gx) && wby == SELW'(gy))

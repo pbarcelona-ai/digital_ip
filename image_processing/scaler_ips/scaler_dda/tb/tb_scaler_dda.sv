@@ -5,7 +5,9 @@
 //   Runs 42 configurations: random output sizes, steps and (negative)
 //   offsets with random pipeline stalls. Each emitted coordinate and flag
 //   is checked against x = OFFS_X + ox*STEP_X, y = OFFS_Y + oy*STEP_Y;
-//   pixel count and busy de-assertion at frame end are verified.
+//   pixel count and busy de-assertion at frame end are verified. The
+//   'hold' input is driven randomly (bubbles without advancing the scan)
+//   and nxt_y is checked to always announce the y of the next pixel.
 //   Plusargs: +VCD=<file> waveform file, +NO_VCD disables dumping.
 // Date: 2026-09-26
 
@@ -13,12 +15,12 @@
 module tb_scaler_dda;
   logic clk = 0; always #5 clk = ~clk;    // 100 MHz clock
   // DUT ports (connected by name)
-  logic rst_n = 0, start = 0, adv = 0;
+  logic rst_n = 0, start = 0, adv = 0, hold = 0;
   logic [15:0] out_w, out_h;
   logic [31:0] step_x, step_y;
   logic signed [31:0] offs_x, offs_y;
   logic busy, o_valid, o_sof, o_eol, o_eof;
-  logic signed [31:0] o_x, o_y;
+  logic signed [31:0] o_x, o_y, nxt_y;
   int errors = 0, checks = 0;
 
   // Device under test
@@ -33,7 +35,14 @@ module tb_scaler_dda;
     start = 1;
     @(negedge clk) start = 0;
     while (n < w * h) begin
-      adv = ($urandom_range(99, 0) >= stall_pct);
+      adv  = ($urandom_range(99, 0) >= stall_pct);
+      hold = ($urandom_range(99, 0) < stall_pct / 2);
+      if (busy) begin
+        checks++;
+        if (nxt_y !== 32'(longint'(oy0) + longint'(oy) * sy)) begin
+          errors++; if (errors < 8) $display("ERROR: nxt_y %0h at row %0d", nxt_y, oy);
+        end
+      end
       @(posedge clk); #1;
       if (adv && o_valid) begin
         longint ex = longint'(ox0) + longint'(ox) * sx;
@@ -50,7 +59,7 @@ module tb_scaler_dda;
       end
       @(negedge clk);
     end
-    adv = 1; @(posedge clk); #1;
+    adv = 1; hold = 0; @(posedge clk); #1;
     checks++;
     if (busy || o_valid) begin errors++; $display("ERROR: DDA still busy/valid after frame"); end
     @(negedge clk) adv = 0;

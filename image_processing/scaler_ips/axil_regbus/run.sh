@@ -36,6 +36,7 @@ abspath() { case "$1" in /*) printf '%s\n' "$1" ;; *) printf '%s\n' "$PWD/$1" ;;
 OUTDIR=""
 VCD=""
 ARGS=()
+DEFS=()
 for a in "$@"; do
   case "$a" in
     +IMG=*)
@@ -50,6 +51,7 @@ for a in "$@"; do
       ARGS+=("+IMG=$f") ;;
     +OUTDIR=*) OUTDIR="$(abspath "${a#+OUTDIR=}")" ;;
     +VCD=*)    VCD="$(abspath "${a#+VCD=}")" ;;
+    -D*)       DEFS+=("$a") ;;
     -h|--help) sed -n '3,/^# ---/p' "$0" | sed '$d'; exit 0 ;;
     --clean)   rm -rf "$SIM_DIR"; echo "run.sh: removed $SIM_DIR"; exit 0 ;;
     *)         ARGS+=("$a") ;;
@@ -66,7 +68,7 @@ echo "run.sh: compiling tb_${IP} (TB_MAX ${MAX_W}x${MAX_H})"
 cd "$TB_DIR"
 if ! iverilog -g2012 -Wall -Wno-timescale -Wno-implicit-dimensions -Wno-portbind \
        -Wno-sensitivity-entire-array -Wno-sensitivity-entire-vector \
-       -DTB_MAX_W="$MAX_W" -DTB_MAX_H="$MAX_H" \
+       -DTB_MAX_W="$MAX_W" -DTB_MAX_H="$MAX_H" ${DEFS[@]+"${DEFS[@]}"} \
        -I "$ROOT/scaler_tb_lib/src" -s "tb_${IP}" -o "$SIM_DIR/sim.vvp" -f build.f \
        > "$SIM_DIR/build.log" 2>&1; then
   cat "$SIM_DIR/build.log"

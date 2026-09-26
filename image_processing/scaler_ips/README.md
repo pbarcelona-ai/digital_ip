@@ -48,14 +48,42 @@ Each directory also has a `run.sh` that builds and runs its testbench with Icaru
  s_axil ──► registers        scaler_dda (16.16 source coordinates, stall-able)
 ```
 
-* **Frame-buffer architecture.** A frame is captured, then the output frame is generated at 1 pixel per clock (anisotropic: 1 per N probes). Latency is one input frame. The input is back-pressured (`tready = 0`) while an output frame is generated. Because of this, down- and upscaling by any ratio need no rate-matching FIFOs.
+* **Three frame-store modes** (see [Buffering modes](#buffering-modes)): a single frame buffer (default), a double "ping-pong" frame buffer, and a line buffer. Output is generated at 1 pixel per clock in every mode (anisotropic: 1 per N probes). Rate matching for any up/down ratio comes from AXI-Stream back-pressure, so no rate-matching FIFOs are needed.
 * **Conflict-free window reads.** The frame is spread over `B × B` banks, where `B` is the next power of two ≥ taps. Any `T × T` window, including clamped windows at the image edges, needs at most one read per bank, so one full window is available every clock.
 * **Whole-pipeline stall.** Every pipeline stage advances on `adv = !m_tvalid || m_tready`, so the IPs are fully AXI-Stream compliant under arbitrary back-pressure.
 * **Edge handling.** Clamp-to-edge (replicate) on all four sides.
 
+### Buffering modes
+
+Every window-based IP (`scaler_nearest`, `scaler_bilinear`, `scaler_edge_directed`, `scaler_polyphase`, `scaler_bicubic`, `scaler_lanczos`, and the scaler stage of `spatial_upscaler`) has two compile-time parameters, `PINGPONG` and `LINE_BUF`. The mip-based IPs (`scaler_mip`, `scaler_trilinear`, `scaler_anisotropic`) have `PINGPONG` only. All modes use the same register map, coefficient tables and output, so software does not change.
+
+| Mode | Parameters | Frame store | Input stalls… | Latency (input to first output pixel) | Throughput |
+|---|---|---|---|---|---|
+| Frame buffer (default) | `PINGPONG=0, LINE_BUF=0` | 1 frame | while every output frame is generated | one input frame | one frame at a time: capture time + output time |
+| Ping-pong | `PINGPONG=1` | 2 frames | only when both buffers are busy | one input frame | capture of frame N+1 overlaps output of frame N |
+| Line buffer | `LINE_BUF=1` | ring of `LB_ROWS` lines | when the ring is full or the output is slower | a few input lines | capture and output overlap within the frame |
+
+**Ping-pong.** Frame A is captured into buffer 0 and handed to the generator. Frame B is then captured into buffer 1 while A is still being output. A third frame waits (input back-pressured) until A's output finishes, and then lands in buffer 0. For the mip IPs the whole pyramid is double-buffered: level 0 is written by the capture and the higher levels are built inside the buffer being generated.
+
+**Line buffer.** The frame store becomes a ring of `LB_ROWS` lines (`LB_ROWS` = next power of two ≥ `taps + 2`, minimum 4: 4 lines for nearest, bilinear and edge-directed, 8 for bicubic and Lanczos (4–6 taps), 16 for 8-tap polyphase). Output generation starts with the first input pixel of the frame, and `scaler_ctrl` applies row-level flow control in both directions:
+
+* the output scan (DDA) is held until every source row of the next output pixel's window has been fully received;
+* input row *r* is accepted only while *r* < (lowest row still needed by any pixel in flight) + `LB_ROWS`, so a row is never overwritten before its last read.
+
+Vertical upscaling therefore back-pressures the input (each input row feeds several output rows), and vertical downscaling back-pressures the output scan. The testbench measures the result directly: with 48×40 frames, the first output pixel appears after at most 4 input rows (nearest), about 11 for the Lanczos + sharpener chain, versus 40 for a frame buffer. Restrictions: `STEP_Y ≥ 0` (no vertical mirroring), and `MAX_H` no longer limits the image height.
+
 ### Memory sizing
 
-On-chip storage is `MAX_W × MAX_H × CHANNELS × COMP_W` bits. The mip IPs add about one third more for the pyramid. For example, 640×480 RGB888 is 7.4 Mbit, which fits mid-range FPGA BRAM. 1920×1080 RGB888 is 50 Mbit, which needs UltraRAM or a replacement of `banked_framebuf` with an external-memory (DDR) frame store behind the same window interface.
+On-chip storage by mode, for RGB888 (24-bit pixels):
+
+| Mode | Storage | 640×480 | 1280×720 | 1920×1080 |
+|---|---|---|---|---|
+| Frame buffer | `MAX_W × MAX_H` pixels | 7.4 Mbit | 22.1 Mbit | 49.8 Mbit |
+| Ping-pong | `2 × MAX_W × MAX_H` pixels | 14.7 Mbit | 44.2 Mbit | 99.5 Mbit |
+| Line buffer, 4 lines (nearest, bilinear, edge-directed) | `4 × MAX_W` pixels | 61 kbit | 123 kbit | 184 kbit |
+| Line buffer, 8 lines (bicubic, Lanczos-3) | `8 × MAX_W` pixels | 123 kbit | 246 kbit | 369 kbit |
+
+The mip IPs add about one third more for the pyramid (twice that with ping-pong). A 640×480 frame buffer fits mid-range FPGA block RAM. A 1080p frame buffer needs UltraRAM-class memory or an external (DDR) frame store behind the same window interface. The **line-buffer mode brings 1080p down to about 0.4 Mbit**, which fits on essentially any FPGA. For Lanczos-3 it is split into 64 banks of 240 × 24 bits (8 × 8 banks, one 8-line ring), sizes that map well onto distributed/LUT RAM or small block RAMs. That configuration has been simulated end to end with a real 1920×1080 frame (see [Verification](#verification)).
 
 ## Common register map (all IPs)
 
@@ -121,7 +149,9 @@ Program the sharpener `SIZE` to the scaler `OUT_SIZE` and enable it before enabl
 | Parameter | Default | IPs | Meaning |
 |---|---|---|---|
 | CHANNELS, COMP_W | 3, 8 | all | Pixel = CHANNELS × COMP_W bits in `tdata` (component 0 in the LSBs) |
-| MAX_W, MAX_H | 1920, 1080 | all | Frame buffer capacity |
+| MAX_W, MAX_H | 1920, 1080 | all | Frame buffer capacity (line-buffer mode: MAX_W only) |
+| PINGPONG | 0 | all scalers | 1 = double frame buffer (capture during output) |
+| LINE_BUF | 0 | all except mip IPs | 1 = line buffer (latency of a few lines) |
 | ADDR_W | 14 | all | AXI-Lite address width (≥ 14 for the coefficient tables) |
 | PHASE_BITS | 8 (bilinear family), 6 (polyphase) | | Sub-pixel resolution |
 | TAPS | 4 / 6 | polyphase | Kernel size, even, up to 16 |
@@ -245,6 +275,7 @@ COVERAGE features   in_1px=1 out_1px=1 in_max=2 junk_sof=1 multi_frame=1 full_ra
 
 * **Stream coverage:** beats, frames, SOF/EOL beats, back-to-back transfers, handshakes after a stall and ready-before-valid, idle cycles, stall cycles and the longest stall, and a stall-length histogram.
 * **AXI-Lite coverage:** reads and writes, AW-first / W-first / simultaneous ordering, waits on AW/AR, stalled B/R responses, and back-to-back accesses.
+* **Buffering:** a `COVERAGE buffering` line reports the frame-store mode, the number of input beats accepted while an output frame was in progress, and the first-output latency in input rows. The testbench also enforces the mode's promise: no overlap and a latency of exactly one frame for a single frame buffer, overlap for ping-pong and line buffer in the back-to-back test, and output starting before half of a tall frame has arrived in line-buffer mode.
 * **Feature coverage:** the scaling scenarios exercised (up, down and same per axis, mixed, exact 2×, non-integer, ≥ 4× down, 1-pixel input and output, maximum size, junk before SOF, multi-frame, full rate versus back-pressure, image file, and each test pattern).
 
 The testbench AXI-Lite master randomises AW/W order and BREADY/RREADY delays to reach the ordering and stall bins. Bins that only the DUT can produce stay at 0 where the design never creates the condition, and this is expected. For example, `aw_wait`/`ar_wait` stay at 0 because the register slaves are always ready. On the scalers' input streams, `stall_len[1]` stays at 0 because a frame-buffer scaler only drops `tready` for a whole generation phase, which shows up in the ≥ 16 bucket. `sharpen_cas` exercises all input-stall buckets because its line buffers apply real back-pressure.
@@ -260,7 +291,10 @@ scaler_lanczos/run.sh                          # one testbench, Icarus (any dire
 tools/run_sim.sh scaler_lanczos                # one testbench, Verilator
 tools/run_all.sh                               # full regression, Icarus (about 1 minute)
 SIM=verilator tools/run_all.sh                 # full regression, Verilator
+MODE=pingpong tools/run_all.sh                 # every IP built with PINGPONG=1
+MODE=linebuf  tools/run_all.sh                 # every IP built with LINE_BUF=1
 VCD=1 tools/run_all.sh                         # regression with waveform dumps
+scaler_lanczos/run.sh -DTB_LINE_BUF=1          # one IP in one mode
 ```
 
 To compile manually without any scripts:
@@ -280,37 +314,45 @@ Each IP testbench runs a standard suite plus IP-specific tests:
 
 The IP-specific tests cover several cubic kernels, CAS sharpness extremes, BYPASS and SHARPNESS clamping, single-row and single-column frames, heavy output back-pressure on the line-buffer design, the two-stage upscaler model at up to 2× in each axis, Lanczos overshoot clamping, 8-tap anti-aliased downscales, edge-direction coverage (all three modes hit), equivalence with bilinear when `EDGE_EN = 0`, LOD beyond the top level, fractional LOD, 1:8 and 16:1 anisotropy, and probe-count clamping.
 
-Regression results. Every testbench passes on both Icarus Verilog 12.0 and Verilator 5.020; check counts are from Icarus, and a few differ slightly between simulators because the random sequences differ.
+Regression results. Every testbench passes on both Icarus Verilog 12.0 and Verilator 5.020, in every frame-store mode it supports. Check counts are from Icarus; a few differ slightly between simulators because the random sequences differ.
 
-| Testbench | Result |
-|---|---|
-| axi_checkers | PASS, legal traffic clean and every rule violation detected (procedural; plus SVA on Verilator) |
-| axil_regbus | PASS, 2,067 checks (random AW/W order, stalled responses) |
-| axil_split | PASS, 600 random accesses to two slaves, 305 checks |
-| scaler_ctrl | PASS, 6 capture scenarios, 963 checks |
-| banked_framebuf | PASS, TAPS = 1, 2, 3, 4, 6, 8; 466,669 tap checks |
-| scaler_dda | PASS, 42 random configs, 13,402 checks |
-| scaler_nearest | PASS, 10 tests |
-| scaler_bilinear | PASS, 10 tests |
-| scaler_edge_directed | PASS, 13 tests |
-| scaler_polyphase (8 taps) | PASS, 12 tests |
-| scaler_bicubic | PASS, 14 tests |
-| scaler_lanczos | PASS, 12 tests |
-| scaler_mip (3 levels, 4 probes) | PASS, 18 tests |
-| scaler_trilinear | PASS, 14 tests |
-| scaler_anisotropic | PASS, 18 tests |
-| sharpen_cas | PASS, 16 tests, 7,800 checks |
-| spatial_upscaler | PASS, 13 tests, 16,571 checks |
+| Testbench | frame | pingpong | linebuf | Checks (Icarus) |
+|---|---|---|---|---|
+| axi_checkers | PASS | | | legal traffic clean, every rule violation detected (procedural, plus SVA on Verilator) |
+| axil_regbus | PASS | | | 2,067 (random AW/W order, stalled responses) |
+| axil_split | PASS | | | 600 random accesses to two slaves, 305 checks |
+| scaler_ctrl | PASS | PASS | (via IPs) | 6 capture scenarios, 963 checks; directed ping-pong test, 62 checks |
+| banked_framebuf | PASS | | | TAPS 1–8 frame stores, 2 ping-pong and 2 ring instances, 497,352 tap checks |
+| scaler_dda | PASS | | | 45,528 (random configurations, stalls and hold) |
+| scaler_nearest | PASS | PASS | PASS | 10 tests, 6,462 checks |
+| scaler_bilinear | PASS | PASS | PASS | 10 tests, 6,462 checks |
+| scaler_edge_directed | PASS | PASS | PASS | 13 tests, 11,497 checks |
+| scaler_polyphase (8 taps) | PASS | PASS | PASS | 12 tests, 7,267 checks |
+| scaler_bicubic | PASS | PASS | PASS | 14 tests, 8,926 checks |
+| scaler_lanczos | PASS | PASS | PASS | 12 tests, 7,916 checks |
+| scaler_mip (3 levels, 4 probes) | PASS | PASS | n/a | 18 tests, 7,611 checks |
+| scaler_trilinear | PASS | PASS | n/a | 14 tests, 6,884 checks |
+| scaler_anisotropic | PASS | PASS | n/a | 18 tests, 7,629 checks |
+| sharpen_cas | PASS | n/a | (always) | 16 tests, 7,800 checks |
+| spatial_upscaler | PASS | PASS | PASS | 13 tests, 16,571 checks |
+
+**Full-HD line-buffer run.** `scaler_lanczos` with `LINE_BUF=1` and `MAX_W=1920` was run on Verilator with a real 1920×1080 image scaled to 1280×720: all 921,600 output pixels matched the reference model bit-exactly, with zero protocol-assertion errors. The first output pixel appeared after 5 of the 1,080 input rows, and 2.07 million input beats were accepted while output was in progress. The whole run (build plus simulation) took about 3 minutes. To reproduce it with any 1080p image:
+
+```bash
+convert photo.jpg photo_1080p.ppm        # any 1920x1080 image, as binary PPM
+tools/run_sim.sh scaler_lanczos -DTB_LINE_BUF=1 +IMG=photo_1080p.ppm +OUT_W=1280 +OUT_H=720 +NO_VCD +TIMEOUT_MS=100000
+```
 
 All runs finish with zero protocol-assertion errors (and zero SVA errors on Verilator).
 
-The testbenches were also checked for sensitivity with deliberately injected RTL bugs: a rounding change, a mip averaging change, a CAS headroom change, and a line-buffer hazard (letting `sharpen_cas` overwrite a line one row too early). All were caught with hundreds to thousands of mismatches.
+The testbenches were also checked for sensitivity with deliberately injected RTL bugs: a rounding change, a mip averaging change, a CAS headroom change, a `sharpen_cas` line-buffer hazard (overwriting a line one row too early), and three buffering-mode bugs (the line buffer letting input overwrite a row one line early, the line buffer reading a row one line before it arrives, and ping-pong capturing into the buffer being output). All were caught, with hundreds to thousands of mismatches each.
 
 ## Scope notes and limitations
 
 * **Temporal and AI upscalers** (TAAU, FSR 2/3, DLSS, XeSS) are not included. They need motion vectors, depth, frame history and, for AI upscalers, trained network weights supplied by a renderer, so they cannot be self-contained video scalers. `spatial_upscaler` provides the spatial FSR 1-style equivalent (Lanczos plus contrast-adaptive sharpening). It uses Lanczos-3 rather than FSR's edge-adaptive EASU kernel.
 * **Classic pixel-art filters** (hqx, xBR) only work at fixed integer factors. `scaler_edge_directed` provides edge-aware interpolation at arbitrary factors instead.
-* **Frame latency.** The frame-buffer scalers add one frame of latency (`sharpen_cas` adds only about two lines). A line-buffer or ping-pong variant would reduce latency but needs rate matching for downscaling.
+* **Frame latency.** In the default mode a frame-buffer scaler adds one frame of latency and stalls its input while it outputs. Use `PINGPONG=1` to overlap capture and output, or `LINE_BUF=1` for a latency of a few lines. The mip-based IPs cannot use a line buffer, because the pyramid needs the whole frame; `sharpen_cas` is always line-buffered.
+* **Line-buffer restrictions.** `STEP_Y` must be ≥ 0 (no vertical mirroring). A start-of-frame in the middle of a frame is flagged (`SOF_ERR`) but otherwise ignored, because the output side is already consuming the frame; the frame-buffer modes restart the capture instead.
 * **Timing closure.** Kernel datapaths are written for clarity, with one combinational MAC tree per stage. For high clock rates, add pipeline registers inside the vertical and horizontal sums; the stall logic is unaffected.
 * **Coefficient tables** have a bilinear default through `initial` blocks, which suits FPGA flows. ASIC flows must program the tables before enabling the IP.
 * **CAS normalisation.** `sharpen_cas` replaces CAS's per-pixel divide with an equivalent-strength unsharp mask. It is exact at the minimum and maximum adaptive amount and monotonic in between (derivation §8).

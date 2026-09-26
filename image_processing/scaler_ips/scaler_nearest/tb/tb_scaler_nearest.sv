@@ -16,6 +16,14 @@
 
 // Maximum image size (frame buffer of the DUT and testbench arrays).
 // Override at compile time for larger +IMG files, e.g. -DTB_MAX_W=640.
+// Frame-store mode of the DUT (compile-time): -DTB_PINGPONG=1 double buffer,
+// -DTB_LINE_BUF=1 line buffer (not for the mip-based IPs).
+`ifndef TB_PINGPONG
+`define TB_PINGPONG 0
+`endif
+`ifndef TB_LINE_BUF
+`define TB_LINE_BUF 0
+`endif
 `ifndef TB_MAX_W
 `define TB_MAX_W 48
 `endif
@@ -36,7 +44,7 @@ module tb_scaler_nearest;
   `include "scaler_tb_lib.svh"
 
   // Device under test
-  scaler_nearest #(.CHANNELS(CHANNELS), .COMP_W(COMP_W), .MAX_W(MAX_W),
+  scaler_nearest #(.PINGPONG(`TB_PINGPONG), .LINE_BUF(`TB_LINE_BUF), .CHANNELS(CHANNELS), .COMP_W(COMP_W), .MAX_W(MAX_W),
                    .MAX_H(MAX_H), .ADDR_W(ADDR_W)) dut (
     .clk, .rst_n,
     .s_axil_awaddr(awaddr), .s_axil_awvalid(awvalid), .s_axil_awready(awready),

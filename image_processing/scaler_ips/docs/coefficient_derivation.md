@@ -34,6 +34,8 @@ The same formulas apply for Y.
 
 **Error bound.** Quantising STEP introduces at most 2^-17 source pixels of error per output pixel. The error accumulates linearly, so after `out` pixels the drift is at most `out / 2^17`. That is 0.015 px at 1920 wide and 0.06 px at 7680 wide, well inside one phase step (1/64 px) at typical widths. Applications that need exact end-point alignment can nudge `OFFS` by half the accumulated error.
 
+**Line-buffer builds.** IPs built with `LINE_BUF=1` read source rows in increasing order, so they require `STEP_Y ≥ 0`. `OFFS_Y` may be negative; rows above the image clamp to row 0, as in the other modes.
+
 **Other alignments.** The registers are free-form, so other conventions are just different values. Corner alignment (`src = o * (in-1)/(out-1)`) uses `STEP = (in-1)/(out-1)` and `OFFS = 0`. Crop and pan use `OFFS += crop_origin`. Mirroring uses a negative step, written as a two's-complement value.
 
 **Example (1280 → 1920).** `STEP = 43691` (0.666672) and `OFFS = −10923` (−0.166672).

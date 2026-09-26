@@ -7,7 +7,8 @@
 //   Interfaces: AXI4-Lite control (common map in scaler_ctrl),
 //   AXI4-Stream video in/out (tuser = SOF, tlast = EOL; pixel =
 //   CHANNELS x COMP_W bits, component 0 in the LSBs).
-//   Throughput: 1 output pixel/clock. Latency: one input frame.
+//   Throughput: 1 output pixel/clock. Latency: one input frame (default
+//   and PINGPONG = 1) or a few input lines (LINE_BUF = 1).
 //   Uses: axil_regbus, scaler_ctrl, scaler_dda, banked_framebuf.
 // Date: 2026-09-26
 
@@ -17,6 +18,9 @@ module scaler_nearest #(
   parameter int MAX_W    = 1920,       // frame buffer width
   parameter int MAX_H    = 1080,       // frame buffer height
   parameter int ADDR_W   = 14,         // AXI-Lite address width
+  parameter int PINGPONG = 0,          // 1: double frame buffer (capture while generating)
+  parameter int LINE_BUF = 0,          // 1: line-buffer mode (latency of a few lines;
+                                       //    MAX_H is then not a limit, STEP_Y >= 0)
   localparam int PIX_W   = CHANNELS * COMP_W   // bits per pixel
 )(
   input  logic              clk,            // clock
@@ -58,6 +62,22 @@ module scaler_nearest #(
   localparam logic [31:0] IP_ID = 32'h4E45_4152;             // "NEAR"
   localparam logic [31:0] CAPS  = {8'd1, 8'(COMP_W), 8'(CHANNELS), 8'd1};
 
+  // ---------------------------------------------------------------- buffering
+  // Frame store organisation (see scaler_ctrl / banked_framebuf):
+  //   default   : one frame buffer (input stalls while a frame is generated)
+  //   PINGPONG  : two frame buffers, capture of frame N+1 overlaps output of N
+  //   LINE_BUF  : ring of LB_ROWS lines, output starts after a few input lines
+  function automatic int pow2ceil_i(input int v);
+    int r = 1;
+    while (r < v) r = r * 2;
+    return r;
+  endfunction
+  localparam int WIN_T   = 1;                            // window size
+  localparam int NBUF    = PINGPONG ? 2 : 1;
+  localparam int LB_ROWS = LINE_BUF ? pow2ceil_i(WIN_T + 2 < 4 ? 4 : WIN_T + 2) : 0;
+  initial if (PINGPONG && LINE_BUF)
+    $fatal(1, "scaler_nearest: PINGPONG and LINE_BUF are mutually exclusive");
+
   // ---------------------------------------------------------------- control
   // scaler_ctrl implements the AXI-Lite common registers, captures the
   // input frame into the frame buffer and sequences capture/generate.
@@ -65,6 +85,9 @@ module scaler_nearest #(
   logic [15:0]        fb_wx, fb_wy;
   logic [PIX_W-1:0]   fb_wdata;
   logic               gen_start, gen_done;  // frame captured / frame sent
+  logic               fb_wbuf, gen_buf;     // ping-pong buffer selects
+  logic               lb_hold;              // line buffer: source rows missing
+  logic signed [31:0] d_nxt_y, a_y;         // y of next / stage-A pixel
   logic [15:0]        in_w, in_h, out_w, out_h;   // IN_SIZE / OUT_SIZE
   logic [31:0]        step_x, step_y;  // STEP_X/Y   (u16.16)
   logic signed [31:0] offs_x, offs_y;  // OFFS_X/Y   (s16.16)
@@ -73,7 +96,8 @@ module scaler_nearest #(
   logic [31:0]        ext_wdata;
 
   scaler_ctrl #(.PIX_W(PIX_W), .ADDR_W(ADDR_W), .MAX_W(MAX_W), .MAX_H(MAX_H),
-                .IP_ID(IP_ID), .CAPS(CAPS)) u_ctrl (
+                .IP_ID(IP_ID), .CAPS(CAPS), .NBUF(NBUF), .LB_ROWS(LB_ROWS),
+                .LB_TAPS(WIN_T), .LB_CTR(0), .LB_RND(32'h8000)) u_ctrl (
     .clk, .rst_n,
     .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready,
     .s_axil_wdata,  .s_axil_wstrb,   .s_axil_wvalid, .s_axil_wready,
@@ -82,7 +106,9 @@ module scaler_nearest #(
     .s_axil_rdata,  .s_axil_rresp,   .s_axil_rvalid, .s_axil_rready,
     .s_axis_tdata, .s_axis_tvalid, .s_axis_tready, .s_axis_tuser, .s_axis_tlast,
     .fb_we, .fb_wx, .fb_wy, .fb_wdata,
-    .gen_start, .gen_done,
+    .fb_wbuf, .gen_buf, .gen_start, .gen_done,
+    .lb_nxt_y(d_nxt_y), .lb_nxt_v(d_busy), .lb_o_y(d_y), .lb_o_v(d_valid),
+    .lb_a_y(a_y), .lb_a_v(v_q[0]), .lb_hold,
     .cfg_in_w(in_w), .cfg_in_h(in_h), .cfg_out_w(out_w), .cfg_out_h(out_h),
     .cfg_step_x(step_x), .cfg_step_y(step_y), .cfg_offs_x(offs_x), .cfg_offs_y(offs_y),
     .ext_wr, .ext_waddr, .ext_wdata, .ext_rd, .ext_raddr, .ext_rdata(32'd0)
@@ -99,7 +125,7 @@ module scaler_nearest #(
 
   // DDA: raster scan of the output, source coordinate per pixel
   scaler_dda u_dda (
-    .clk, .rst_n, .start(gen_start), .adv,
+    .clk, .rst_n, .start(gen_start), .adv, .hold(lb_hold), .nxt_y(d_nxt_y),
     .out_w, .out_h, .step_x, .step_y, .offs_x, .offs_y,
     .busy(d_busy), .o_valid(d_valid), .o_x(d_x), .o_y(d_y),
     .o_sof(d_sof), .o_eol(d_eol), .o_eof(d_eof)
@@ -114,10 +140,11 @@ module scaler_nearest #(
 
   // stages 1-2 : frame buffer window read (1x1), 2-cycle latency
   logic [PIX_W-1:0] win;
-  banked_framebuf #(.PIX_W(PIX_W), .TAPS(1), .MAX_W(MAX_W), .MAX_H(MAX_H)) u_fb (
+  banked_framebuf #(.PIX_W(PIX_W), .TAPS(1), .MAX_W(MAX_W), .MAX_H(MAX_H),
+                  .NBUF(NBUF), .RING(LB_ROWS)) u_fb (
     .clk,
-    .wr_en(fb_we), .wr_x(fb_wx), .wr_y(fb_wy), .wr_data(fb_wdata),
-    .rd_adv(adv), .rd_x0(ix), .rd_y0(iy), .img_w(in_w), .img_h(in_h),
+    .wr_en(fb_we), .wr_x(fb_wx), .wr_y(fb_wy), .wr_data(fb_wdata), .wr_buf(fb_wbuf),
+    .rd_adv(adv), .rd_buf(gen_buf), .rd_x0(ix), .rd_y0(iy), .img_w(in_w), .img_h(in_h),
     .rd_win(win)
   );
 
@@ -151,6 +178,9 @@ module scaler_nearest #(
   end
 
   // Frame finished when the last output pixel is accepted by the sink
+  // y of the pixel in read stage A (line-buffer flow control)
+  always_ff @(posedge clk) if (adv) a_y <= d_y;
+
   assign gen_done = m_axis_tvalid && m_axis_tready && m_eof;
 
 endmodule

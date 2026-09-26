@@ -2,7 +2,9 @@
 
 **Type:** module
 
-Frame store split over B×B RAM banks (B = next power of 2 ≥ TAPS) that returns any clamped TAPS×TAPS window every clock, with 2-cycle stall-able latency.
+Frame store split over B×B RAM banks (B = next power of 2 ≥ TAPS) that returns any clamped TAPS×TAPS window every clock, with 2-cycle stall-able latency. `NBUF=2` holds two independent frames (`wr_buf`/`rd_buf`) for ping-pong operation. `RING>0` turns it into a line buffer of `RING` rows (row *y* in slot *y* mod `RING`; `RING` a power of two ≥ B, so a row's bank never changes); coordinates stay logical and are still clamped to the image.
+
+The testbench checks TAPS = 1, 2, 3, 4, 6, 8 as frame stores, two ping-pong instances (random reads from either buffer), and two ring instances (rows written one at a time, with random windows read from the rows still held after each write).
 
 - `src/` — synthesizable RTL (the header comment of each file documents behaviour, arithmetic and registers)
 - `run.sh` — one-command Icarus Verilog build and run (see below)

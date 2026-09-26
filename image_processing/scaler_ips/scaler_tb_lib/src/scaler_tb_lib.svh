@@ -54,6 +54,75 @@ axis_checker #(.DATA_W(PIX_W), .NAME("m_axis"), .CHECK_FRAMING(1'b1)) u_axis_out
   .clk, .rst_n, .tvalid(m_tvalid), .tready(m_tready), .tdata(m_tdata), .tuser(m_tuser),
   .tlast(m_tlast), .frame_w(out_w), .frame_h(out_h));
 
+// ------------------------------------------------------------------ buffering monitor
+// Measures what the frame-store mode promises:
+//   overlap  : input beats accepted while an output frame is in progress
+//              (0 for a single frame buffer, > 0 for ping-pong / line buffer)
+//   latency  : input rows received when the first output pixel of a frame
+//              appears (= in_h for frame buffers, a few lines for line buffers)
+int  mon_overlap = 0;
+bit  mon_out_active = 1'b0;
+int  mon_in_beats = 0, mon_out_beats = 0;
+int  mon_lat_rows = -1;                  // latency of the last checked frame
+int  mon_lat_min = 1 << 30, mon_lat_max = -1;
+bit  mon_lat_en = 1'b0;                  // set by run_test for single-frame tests
+bit  mon_strict_overlap = 1'b1;          // 0 for chained DUTs whose output lags the
+                                         // frame generator (e.g. scaler + sharpener)
+always @(posedge clk) begin
+  if (s_tvalid && s_tready) begin
+    if (s_tuser) mon_in_beats = 0;
+    mon_in_beats++;
+    if (mon_out_active) mon_overlap++;
+  end
+  if (m_tvalid && m_tready) begin
+    if (m_tuser) begin
+      mon_out_active = 1'b1;
+      mon_out_beats  = 0;
+      if (mon_lat_en) begin
+        mon_lat_rows = (mon_in_beats + in_w - 1) / ((in_w > 0) ? in_w : 1);
+        if (mon_lat_rows < mon_lat_min) mon_lat_min = mon_lat_rows;
+        if (mon_lat_rows > mon_lat_max) mon_lat_max = mon_lat_rows;
+      end
+    end
+    mon_out_beats++;
+    if (mon_out_beats == out_w * out_h) mon_out_active = 1'b0;
+  end
+end
+
+// Mode-specific checks after each single-frame test (run_test)
+task automatic check_buffering(input int ih);
+`ifdef TB_LINE_BUF
+  if (`TB_LINE_BUF && ih >= 30 && mon_lat_rows >= ih / 2) begin
+    errors++;
+    $display("ERROR: line buffer: first output after %0d of %0d input rows", mon_lat_rows, ih);
+  end
+  if (!`TB_LINE_BUF && mon_lat_rows != ih && mon_lat_rows >= 0) begin
+    errors++;
+    $display("ERROR: frame buffer: output started after %0d of %0d rows", mon_lat_rows, ih);
+  end
+`endif
+endtask
+
+task automatic buffering_report();
+  string mode;
+  mode = "n/a";
+`ifdef TB_LINE_BUF
+  if (`TB_LINE_BUF)     mode = "line-buffer";
+  else if (`TB_PINGPONG) mode = "ping-pong";
+  else                  mode = "frame";
+`endif
+  $display("COVERAGE buffering  mode=%s  in/out overlap beats=%0d  first-output latency (input rows) min=%0d max=%0d",
+           mode, mon_overlap, (mon_lat_max < 0) ? 0 : mon_lat_min, mon_lat_max);
+`ifdef TB_LINE_BUF
+  if (!`TB_LINE_BUF && !`TB_PINGPONG && mon_strict_overlap && mon_overlap != 0) begin
+    errors++; $display("ERROR: single frame buffer accepted input while generating");
+  end
+  if ((`TB_LINE_BUF || `TB_PINGPONG) && fcov_multi > 0 && mon_overlap == 0) begin
+    errors++; $display("ERROR: no capture/generation overlap in %s mode", mode);
+  end
+`endif
+endtask
+
 // ------------------------------------------------------------------ feature coverage
 // Scaling-scenario bins filled by run_test(); reported by finish_report().
 int fcov_x_up = 0, fcov_x_down = 0, fcov_x_same = 0;
@@ -94,6 +163,7 @@ endfunction
 
 // called from finish_report(): print stream/feature coverage, add checker errors
 task automatic lib_report(inout int chk);
+  buffering_report();
   u_axis_in_chk.report();
   u_axis_out_chk.report();
   $display("COVERAGE features   x_up=%0d x_down=%0d x_same=%0d y_up=%0d y_down=%0d y_same=%0d mixed=%0d int2x=%0d non_integer=%0d down>=4x=%0d",
@@ -429,6 +499,8 @@ task automatic run_test(input int iw, input int ih, input int ow, input int oh,
   // The receiver runs in its own process (see "receiver process") not a
   // fork/join here: this sidesteps a Verilator 5.020 coroutine code-generation
   // bug seen with fork/join inside large automatic tasks.
+  mon_lat_en   = (nframes == 1) && (junk == 0);
+  mon_lat_rows = -1;
   rx_done   = 1'b0;
   rx_frames = nframes;
   frames_total += nframes;
@@ -438,6 +510,8 @@ task automatic run_test(input int iw, input int ih, input int ow, input int oh,
     send_frame(0);                       // DUT is still producing output
   wait (rx_done);
   rx_go   = 1'b0;
+  if (mon_lat_en) check_buffering(ih);
+  mon_lat_en = 1'b0;
 
   // STATUS must show FRAME_DONE, SOF_ERR only if junk was sent, no
   // EOL_ERR; FRAME_CNT must have advanced by one

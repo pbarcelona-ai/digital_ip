@@ -24,6 +24,8 @@
 //   CHANNELS x COMP_W bits, component 0 in the LSBs).
 //   Throughput: 1 probe/clock = 1/NP output pixels/clock.
 //   Latency: one input frame plus mip build (about W*H/3 cycles).
+//   PINGPONG = 1 double-buffers level 0 and the pyramid, so the next frame
+//   is captured while the current one is built and sampled.
 //   Uses: axil_regbus, scaler_ctrl, scaler_dda, banked_framebuf.
 // Date: 2026-09-26
 
@@ -37,6 +39,7 @@ module scaler_mip #(
   parameter int ANISO_MAX_LOG2 = 0,    // log2 of max probes (0..4)
   parameter int PHASE_BITS    = 8,     // bilinear phase resolution
   parameter logic [31:0] IP_ID = 32'h4D49_504D,               // "MIPM"
+  parameter int PINGPONG      = 0,     // 1: double buffer (capture while generating)
   localparam int PIX_W   = CHANNELS * COMP_W   // bits per pixel
 )(
   input  logic              clk,            // clock
@@ -93,6 +96,9 @@ module scaler_mip #(
   logic               fb_we;           // frame buffer write port
   logic [15:0]        fb_wx, fb_wy;
   logic [PIX_W-1:0]   fb_wdata;
+  logic               fb_wbuf, gen_buf;     // ping-pong: capture / generate buffer
+  logic               unused_lb_hold;       // line-buffer outputs, not used here
+  logic signed [31:0] unused_nxt_y;
   logic               gen_start, gen_done;  // frame captured / frame sent
   logic [15:0]        in_w, in_h, out_w, out_h;   // IN_SIZE / OUT_SIZE
   logic [31:0]        step_x, step_y;  // STEP_X/Y   (u16.16)
@@ -102,7 +108,7 @@ module scaler_mip #(
   logic [31:0]        ext_wdata;
 
   scaler_ctrl #(.PIX_W(PIX_W), .ADDR_W(ADDR_W), .MAX_W(MAX_W), .MAX_H(MAX_H),
-                .IP_ID(IP_ID), .CAPS(CAPS)) u_ctrl (
+                .IP_ID(IP_ID), .CAPS(CAPS), .NBUF(PINGPONG ? 2 : 1)) u_ctrl (
     .clk, .rst_n,
     .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready,
     .s_axil_wdata,  .s_axil_wstrb,   .s_axil_wvalid, .s_axil_wready,
@@ -111,7 +117,10 @@ module scaler_mip #(
     .s_axil_rdata,  .s_axil_rresp,   .s_axil_rvalid, .s_axil_rready,
     .s_axis_tdata, .s_axis_tvalid, .s_axis_tready, .s_axis_tuser, .s_axis_tlast,
     .fb_we, .fb_wx, .fb_wy, .fb_wdata,
-    .gen_start, .gen_done,
+    .fb_wbuf, .gen_buf, .gen_start, .gen_done,
+    // no line-buffer mode: the mip pyramid needs the whole frame
+    .lb_nxt_y(32'sd0), .lb_nxt_v(1'b0), .lb_o_y(32'sd0), .lb_o_v(1'b0),
+    .lb_a_y(32'sd0), .lb_a_v(1'b0), .lb_hold(unused_lb_hold),
     .cfg_in_w(in_w), .cfg_in_h(in_h), .cfg_out_w(out_w), .cfg_out_h(out_h),
     .cfg_step_x(step_x), .cfg_step_y(step_y), .cfg_offs_x(offs_x), .cfg_offs_y(offs_y),
     .ext_wr, .ext_waddr, .ext_wdata, .ext_rd, .ext_raddr, .ext_rdata(ext_rdata)
@@ -238,13 +247,16 @@ module scaler_mip #(
     logic               we;
     logic [15:0]        wx, wy;
     logic [PIX_W-1:0]   wd;
+    logic               wb;                 // buffer written (ping-pong)
     logic signed [17:0] rx, ry;
     logic               radv;
     always_comb begin
+      // level 0 is written by the capture (fb_wbuf); the mip levels are
+      // built inside the buffer being generated (gen_buf)
       if (k == 0) begin
-        we = fb_we; wx = fb_wx; wy = fb_wy; wd = fb_wdata;
+        we = fb_we; wx = fb_wx; wy = fb_wy; wd = fb_wdata; wb = fb_wbuf;
       end else begin
-        we = mw_en && (mw_lvl == LW'(k)); wx = mw_x; wy = mw_y; wd = mw_data;
+        we = mw_en && (mw_lvl == LW'(k)); wx = mw_x; wy = mw_y; wd = mw_data; wb = gen_buf;
       end
       if (gstate != G_SAMPLE) begin
         rx   = 18'(mx) <<< 1;
@@ -258,10 +270,11 @@ module scaler_mip #(
     end
     banked_framebuf #(.PIX_W(PIX_W), .TAPS(2),
                       .MAX_W((MAX_W >> k) > 0 ? (MAX_W >> k) : 1),
-                      .MAX_H((MAX_H >> k) > 0 ? (MAX_H >> k) : 1)) u_fb (
+                      .MAX_H((MAX_H >> k) > 0 ? (MAX_H >> k) : 1),
+                      .NBUF(PINGPONG ? 2 : 1)) u_fb (
       .clk,
-      .wr_en(we), .wr_x(wx), .wr_y(wy), .wr_data(wd),
-      .rd_adv(radv), .rd_x0(rx), .rd_y0(ry), .img_w(lw[k]), .img_h(lh[k]),
+      .wr_en(we), .wr_x(wx), .wr_y(wy), .wr_data(wd), .wr_buf(wb),
+      .rd_adv(radv), .rd_buf(gen_buf), .rd_x0(rx), .rd_y0(ry), .img_w(lw[k]), .img_h(lh[k]),
       .rd_win(win[k])
     );
   end
@@ -356,7 +369,7 @@ module scaler_mip #(
   wire                dda_adv = adv && (gstate == G_SAMPLE) && (!d_valid || probe_last);
 
   scaler_dda u_dda (
-    .clk, .rst_n, .start(dda_start), .adv(dda_adv),
+    .clk, .rst_n, .start(dda_start), .adv(dda_adv), .hold(1'b0), .nxt_y(unused_nxt_y),
     .out_w, .out_h, .step_x, .step_y, .offs_x, .offs_y,
     .busy(d_busy), .o_valid(d_valid), .o_x(d_x), .o_y(d_y),
     .o_sof(d_sof), .o_eol(d_eol), .o_eof(d_eof)

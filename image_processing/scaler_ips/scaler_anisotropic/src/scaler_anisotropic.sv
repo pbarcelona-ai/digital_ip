@@ -22,6 +22,7 @@ module scaler_anisotropic #(
   parameter int ADDR_W     = 14,       // AXI-Lite address width
   parameter int LEVELS     = 5,        // mip levels incl. level 0
   parameter int PHASE_BITS = 8,        // sub-pixel phase resolution
+  parameter int PINGPONG   = 0,        // 1: double frame buffer
   localparam int PIX_W     = CHANNELS * COMP_W // bits per pixel
 )(
   input  logic              clk,            // clock
@@ -61,6 +62,7 @@ module scaler_anisotropic #(
   // All logic is in scaler_mip; this wrapper allows up to 2^4 = 16
   // probes per pixel and sets the IP_ID. Ports connect by name (.*).
   scaler_mip #(
+    .PINGPONG(PINGPONG),
     .CHANNELS(CHANNELS), .COMP_W(COMP_W), .MAX_W(MAX_W), .MAX_H(MAX_H),
     .ADDR_W(ADDR_W), .LEVELS(LEVELS), .ANISO_MAX_LOG2(4),
     .PHASE_BITS(PHASE_BITS), .IP_ID(32'h414E_4953)              // "ANIS"

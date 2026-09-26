@@ -16,6 +16,13 @@
 
 `timescale 1ns/1ps
 
+// Frame-store mode of the scaler stage: -DTB_PINGPONG=1 or -DTB_LINE_BUF=1
+`ifndef TB_PINGPONG
+`define TB_PINGPONG 0
+`endif
+`ifndef TB_LINE_BUF
+`define TB_LINE_BUF 0
+`endif
 `ifndef TB_MAX_W
 `define TB_MAX_W 48
 `endif
@@ -42,7 +49,7 @@ module tb_spatial_upscaler;
   `include "scaler_tb_lib.svh"
   `include "scaler_coef_gen.svh"
 
-  spatial_upscaler #(.CHANNELS(CHANNELS), .COMP_W(COMP_W), .MAX_W(MAX_W), .MAX_H(MAX_H),
+  spatial_upscaler #(.PINGPONG(`TB_PINGPONG), .LINE_BUF(`TB_LINE_BUF), .CHANNELS(CHANNELS), .COMP_W(COMP_W), .MAX_W(MAX_W), .MAX_H(MAX_H),
                      .OUT_MAX_W(OUT_MAX_W), .ADDR_W(ADDR_W)) dut (
     .clk, .rst_n,
     .s_axil_awaddr(awaddr), .s_axil_awvalid(awvalid), .s_axil_awready(awready),
@@ -164,6 +171,9 @@ module tb_spatial_upscaler;
   initial begin
     logic [31:0] fc;
     tb_init("spatial_upscaler");
+    // the sharpener drains ~2 lines after the scaler finishes a frame, so the
+    // next frame's input may overlap the tail of the output in frame mode
+    mon_strict_overlap = 1'b0;
     if ($value$plusargs("SHARP=%d", sharp)) ;
     reset_dut();
     axil_check(16'h0024, 32'h4C41_4E43);    // scaler IP_ID "LANC"

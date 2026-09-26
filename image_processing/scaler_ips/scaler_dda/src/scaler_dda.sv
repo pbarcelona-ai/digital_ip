@@ -10,7 +10,9 @@
 //   differential analyser), so hardware and reference models agree bit
 //   for bit. Also outputs SOF / EOL / EOF flags. Outputs are registered
 //   and only advance when adv = 1, so the block can head a stall-able
-//   pipeline. 'start' re-initialises the scan for a new frame.
+//   pipeline. 'start' re-initialises the scan for a new frame. 'hold'
+//   inserts bubbles without advancing the scan; nxt_y exposes the source
+//   y of the next pixel (used for line-buffer flow control).
 // Date: 2026-09-26
 
 module scaler_dda (
@@ -18,6 +20,7 @@ module scaler_dda (
   input  logic               rst_n,      // async reset, active low
   input  logic               start,      // 1-cycle pulse: begin a new frame
   input  logic               adv,        // pipeline advance
+  input  logic               hold,       // 1: emit a bubble instead of a pixel
   input  logic [15:0]        out_w,      // output width  (pixels)
   input  logic [15:0]        out_h,      // output height (lines)
   input  logic [31:0]        step_x,     // unsigned 16.16
@@ -25,6 +28,7 @@ module scaler_dda (
   input  logic signed [31:0] offs_x,     // signed 16.16
   input  logic signed [31:0] offs_y,     // signed 16.16
   output logic               busy,       // pixels left to issue
+  output logic signed [31:0] nxt_y,      // source y of the next pixel to emit
   output logic               o_valid,    // o_* hold a valid pixel
   output logic signed [31:0] o_x,        // source x, signed 16.16
   output logic signed [31:0] o_y,        // source y, signed 16.16
@@ -62,9 +66,10 @@ module scaler_dda (
       ay      <= offs_y;
       o_valid <= 1'b0;
     end else if (adv) begin
-      // present the next pixel (or a bubble once the frame is done)
-      o_valid <= busy;
-      if (busy) begin
+      // present the next pixel (or a bubble once the frame is done or
+      // while the caller holds the scan, e.g. source rows not yet available)
+      o_valid <= busy && !hold;
+      if (busy && !hold) begin
         o_x   <= ax;
         o_y   <= ay;
         o_sof <= (ox == 16'd0) && (oy == 16'd0);
@@ -85,5 +90,7 @@ module scaler_dda (
       end
     end
   end
+
+  assign nxt_y = ay;
 
 endmodule

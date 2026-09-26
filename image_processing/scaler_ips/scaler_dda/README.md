@@ -10,6 +10,8 @@ Raster scan of the output image producing 16.16 source coordinates `OFFS + o·ST
 
 **Depends on:** none
 
+A `hold` input inserts bubbles without advancing the scan, and `nxt_y` exposes the source y of the next pixel. Line-buffer mode uses both to wait for source rows.
+
 ## Simulate
 
 ### run.sh (Icarus Verilog 12, no Python)

@@ -21,6 +21,7 @@ module scaler_trilinear #(
   parameter int ADDR_W     = 14,       // AXI-Lite address width
   parameter int LEVELS     = 4,        // mip levels incl. level 0
   parameter int PHASE_BITS = 8,        // sub-pixel phase resolution
+  parameter int PINGPONG   = 0,        // 1: double frame buffer
   localparam int PIX_W     = CHANNELS * COMP_W // bits per pixel
 )(
   input  logic              clk,            // clock
@@ -61,6 +62,7 @@ module scaler_trilinear #(
   // probing (ANISO_MAX_LOG2 = 0) and sets the IP_ID. Ports connect by
   // name (.*).
   scaler_mip #(
+    .PINGPONG(PINGPONG),
     .CHANNELS(CHANNELS), .COMP_W(COMP_W), .MAX_W(MAX_W), .MAX_H(MAX_H),
     .ADDR_W(ADDR_W), .LEVELS(LEVELS), .ANISO_MAX_LOG2(0),
     .PHASE_BITS(PHASE_BITS), .IP_ID(32'h5452_494C)              // "TRIL"
