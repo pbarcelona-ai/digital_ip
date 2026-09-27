@@ -231,44 +231,83 @@ module scaler_polyphase #(
   localparam int VW  = COMP_W + LT + 3;                   // vertical result
   localparam int AW2 = VW + COEF_W + LT + 1;              // horizontal accumulator
 
-  // Pipeline registers: [0] stage A, [1] stage B (window), [2] stage 3
-  logic [2:0]               v_q;                     // valid per stage
-  logic [2:0]               f_q [3];                 // {eof, eol, sof}
-  logic [PHASE_BITS-1:0]    px_q, py_q;              // phases (stage A)
-  logic signed [COEF_W-1:0] ch_q [TAPS], cv_q [TAPS], ch_qq [TAPS];
-  logic signed [VW-1:0]     vs_q [CHANNELS][TAPS];   // vertical results
+  localparam int PV  = COMP_W + 1 + COEF_W;             // vertical product (exact)
+  localparam int PH  = VW + COEF_W;                       // horizontal product (exact)
+  localparam int NP  = 1 << LT;                           // TAPS padded to 2^LT
+  localparam int LV  = LT;                                // adder-tree levels
+
+  // Pipeline (every register advances with adv; valid/flags follow the data)
+  //   A      window origin / phases            (banked_framebuf stage A)
+  //   B      RAM data, coefficient lookup      (banked_framebuf stage B)
+  //   W      window after the tap multiplexer
+  //   M1     vertical products  pixel x CV     (one DSP48 each)
+  //   T1..   vertical adder tree, one registered level per pairwise add
+  //   S1     vertical result: (sum + 2^(F-1)) >>> F
+  //   M2     horizontal products  vs x CH      (one DSP48 each)
+  //   H1..   horizontal adder tree
+  //   out    (sum + 2^(F-1)) >>> F, clamp -> m_axis
+  // Every stage holds at most one multiply or one add, so the register-to-
+  // register paths stay short for any TAPS. Products are exact and the sums
+  // use the AW1 / AW2 accumulator widths, so results are bit-identical to
+  // the single-cycle arithmetic (integer addition is associative).
+  // Signed unpacked-array elements are wrapped in $signed() before casts:
+  // sv2v otherwise emits an unsigned cast for them, which is numerically
+  // identical but hides the operand width from the DSP mapper.
+  localparam int NST = 4 + LV + 1 + 1 + LV;              // stages before m_axis
+  logic [NST-1:0]           v_q;                         // valid per stage
+  logic [2:0]               f_q [NST];                   // {eof, eol, sof}
+  logic [PHASE_BITS-1:0]    px_q, py_q;                  // phases (stage A)
+  // horizontal coefficients travel with the data until stage M2
+  localparam int CHD = 1 + 1 + LV + 1;                   // W, M1, T1..TLV, S1
+  logic signed [COEF_W-1:0] ch_q [TAPS], cv_q [TAPS];    // B
+  logic signed [COEF_W-1:0] cv_w [TAPS];                 // W
+  logic signed [COEF_W-1:0] ch_d [CHD][TAPS];            // W .. S1
+  logic [TAPS*TAPS*PIX_W-1:0] win_q;                     // W
+  logic signed [AW1-1:0]    tv_q [LV+1][CHANNELS][TAPS][NP];  // [0] = M1 products
+  logic signed [VW-1:0]     vs_q [CHANNELS][TAPS];            // S1
+  logic signed [AW2-1:0]    th_q [LV+1][CHANNELS][NP];        // [0] = M2 products
   logic                     m_eof;
 
-  // ---- stage 3 (comb): vertical pass. For every component c and window
-  // column k, filter the TAPS pixels of that column with the vertical
-  // phase coefficients and round away COEF_FRAC bits (result is signed
-  // and may exceed the pixel range; it is kept unclamped).
+  // ---- M1 (comb): vertical products of every window pixel and component
+  // (entries TAPS..NP-1 of the tree input are zero padding)
+  logic signed [AW1-1:0] pv_c [CHANNELS][TAPS][NP];
+  always_comb begin
+    for (int c = 0; c < CHANNELS; c++)
+      for (int k = 0; k < TAPS; k++)
+        for (int j = 0; j < NP; j++)
+          if (j < TAPS)
+            pv_c[c][k][j] = AW1'(PV'($signed({1'b0, win_q[((j*TAPS)+k)*PIX_W + c*COMP_W +: COMP_W]}))
+                                 * PV'($signed(cv_w[j])));
+          else
+            pv_c[c][k][j] = '0;
+  end
+
+  // ---- S1 (comb): round the tree result, keep it signed and unclamped
   logic signed [VW-1:0] vs_c [CHANNELS][TAPS];
   always_comb begin
     for (int c = 0; c < CHANNELS; c++)
-      for (int k = 0; k < TAPS; k++) begin
-        logic signed [AW1-1:0] acc;
-        acc = '0;
-        for (int j = 0; j < TAPS; j++)
-          acc = acc + AW1'($signed({1'b0, win[((j*TAPS)+k)*PIX_W + c*COMP_W +: COMP_W]}))
-                    * AW1'(cv_q[j]);
-        acc = acc + (AW1'(1) <<< (COEF_FRAC - 1));
-        vs_c[c][k] = VW'(acc >>> COEF_FRAC);
-      end
+      for (int k = 0; k < TAPS; k++)
+        vs_c[c][k] = VW'(($signed(tv_q[LV][c][k][0]) + (AW1'(1) <<< (COEF_FRAC - 1))) >>> COEF_FRAC);
   end
 
-  // ---- stage 4 (comb): horizontal pass over the TAPS vertical results,
-  // rounding, then clamp to [0, 2^COMP_W-1] (absorbs kernel overshoot)
+  // ---- M2 (comb): horizontal products
+  logic signed [AW2-1:0] ph_c [CHANNELS][NP];
+  always_comb begin
+    for (int c = 0; c < CHANNELS; c++)
+      for (int k = 0; k < NP; k++)
+        if (k < TAPS)
+          ph_c[c][k] = AW2'(PH'($signed(vs_q[c][k])) * PH'($signed(ch_d[CHD-1][k])));
+        else
+          ph_c[c][k] = '0;
+  end
+
+  // ---- output (comb): round, clamp to [0, 2^COMP_W-1] (absorbs overshoot)
   localparam logic signed [AW2-1:0] MAXV = AW2'((1 << COMP_W) - 1);
   logic [PIX_W-1:0] out_c;
   always_comb begin
     for (int c = 0; c < CHANNELS; c++) begin
       logic signed [AW2-1:0] acc;
-      acc = '0;
-      for (int k = 0; k < TAPS; k++)
-        acc = acc + AW2'(vs_q[c][k]) * AW2'(ch_qq[k]);
-      acc = acc + (AW2'(1) <<< (COEF_FRAC - 1));
-      acc = acc >>> COEF_FRAC;
+      acc = ($signed(th_q[LV][c][0]) + (AW2'(1) <<< (COEF_FRAC - 1))) >>> COEF_FRAC;
       if (acc < 0)         out_c[c*COMP_W +: COMP_W] = '0;
       else if (acc > MAXV) out_c[c*COMP_W +: COMP_W] = '1;
       else                 out_c[c*COMP_W +: COMP_W] = COMP_W'(acc);
@@ -278,7 +317,7 @@ module scaler_polyphase #(
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       v_q           <= '0;
-      for (int k = 0; k < 3; k++) f_q[k] <= '0;
+      for (int k = 0; k < NST; k++) f_q[k] <= '0;
       m_axis_tvalid <= 1'b0;
       m_axis_tdata  <= '0;
       m_axis_tuser  <= 1'b0;
@@ -287,33 +326,53 @@ module scaler_polyphase #(
     end else if (gen_start) begin
       v_q           <= '0;           // flush at the start of a frame
     end else if (adv) begin
-      // valid/flags follow the data through stages A, B and 3; the
-      // result of stage 4 is registered straight into the output
       v_q[0] <= d_valid;
       f_q[0] <= {d_eof, d_eol, d_sof};
-      for (int k = 1; k < 3; k++) begin
+      for (int k = 1; k < NST; k++) begin
         v_q[k] <= v_q[k-1];
         f_q[k] <= f_q[k-1];
       end
-      m_axis_tvalid <= v_q[2];
+      m_axis_tvalid <= v_q[NST-1];
       m_axis_tdata  <= out_c;
-      {m_eof, m_axis_tlast, m_axis_tuser} <= f_q[2];
+      {m_eof, m_axis_tlast, m_axis_tuser} <= f_q[NST-1];
     end
   end
 
   // Data path registers (no reset needed)
   always_ff @(posedge clk) begin
     if (adv) begin
-      px_q  <= px;                              // stage A
+      px_q  <= px;                              // A
       py_q  <= py;
       for (int t = 0; t < TAPS; t++) begin
-        ch_q[t]  <= coef_h[px_q][t];            // stage B (with RAM data)
-        cv_q[t]  <= coef_v[py_q][t];
-        ch_qq[t] <= ch_q[t];                    // stage 3
+        ch_q[t]    <= coef_h[px_q][t];          // B (with RAM data)
+        cv_q[t]    <= coef_v[py_q][t];
+        cv_w[t]    <= cv_q[t];                  // W
+        ch_d[0][t] <= ch_q[t];
+        for (int d = 1; d < CHD; d++) ch_d[d][t] <= ch_d[d-1][t];
       end
-      for (int c = 0; c < CHANNELS; c++)
-        for (int k = 0; k < TAPS; k++)
-          vs_q[c][k] <= vs_c[c][k];
+      win_q <= win;                             // W
+      for (int c = 0; c < CHANNELS; c++) begin
+        for (int k = 0; k < TAPS; k++) begin
+          for (int j = 0; j < NP; j++) tv_q[0][c][k][j] <= pv_c[c][k][j];      // M1
+          vs_q[c][k] <= vs_c[c][k];                                             // S1
+        end
+        for (int k = 0; k < NP; k++) th_q[0][c][k] <= ph_c[c][k];               // M2
+      end
+    end
+  end
+
+  // Adder trees: level l+1 node j = node 2j + node 2j+1 of level l.
+  // Built with generate loops so every procedural loop has constant bounds.
+  for (genvar l = 0; l < LV; l++) begin : g_tree
+    for (genvar j = 0; j < (NP >> (l + 1)); j++) begin : g_node
+      always_ff @(posedge clk) begin
+        if (adv)
+          for (int c = 0; c < CHANNELS; c++) begin
+            for (int k = 0; k < TAPS; k++)                                      // T1..
+              tv_q[l+1][c][k][j] <= $signed(tv_q[l][c][k][2*j]) + $signed(tv_q[l][c][k][2*j+1]);
+            th_q[l+1][c][j] <= $signed(th_q[l][c][2*j]) + $signed(th_q[l][c][2*j+1]);   // H1..
+          end
+      end
     end
   end
 

@@ -6,6 +6,7 @@ FSR 1-style spatial upscaler: `scaler_lanczos` resampling followed by `sharpen_c
 
 - `src/` — synthesizable RTL (the header comment of each file documents behaviour, arithmetic and registers)
 - `run.sh` — one-command Icarus Verilog build and run (see below)
+- `synth.sh` — Yosys synthesis for Xilinx; `src/build.f` lists its sources (see below)
 - `tb/` — self-checking testbench `tb_spatial_upscaler.sv` and `build.f`, the compile file list (every source needed, relative to `tb/`)
 
 **Depends on:** `axil_split`, `axil_regbus`, `scaler_lanczos`, `scaler_polyphase`, `scaler_ctrl`, `scaler_dda`, `banked_framebuf`, `sharpen_cas`
@@ -44,9 +45,11 @@ In line-buffer mode `STEP_Y` must be ≥ 0. See *Buffering modes* in the top-lev
 | `+OUT_W=<n> +OUT_H=<n>` | Output size for `+IMG` (default: 1.5× up, 0.4× down, ¼-height squeeze; at most 2× the input per axis) |
 | `+OUTDIR=<dir>` | Directory for PPM images and the VCD (`run.sh` default: `sim_out/`) |
 | `+NO_PPM` | Do not write PPM images |
+| `+QUICK` | Short representative suite (3 tests) instead of the full suite, e.g. for gate-level runs |
 | `+SHARP=<0..256>` | SHARPNESS for `+IMG` runs (default 128) |
 | `+VCD=<file>` | Waveform file name (default `<OUTDIR>/tb_spatial_upscaler.vcd`) |
 | `+NO_VCD` | Do not dump waveforms (faster; VCDs are roughly 1–30 MB per run) |
+| `-view` / `-noview` | Always / never open the VCD in [Surfer](https://surfer-project.org) after the run (default: open it if Surfer and a display are available; `NO_VIEW=1` also disables it) |
 | `+TIMEOUT_MS=<n>` | Watchdog in simulated ms (default 200) |
 | `-DTB_PINGPONG=1` / `-DTB_LINE_BUF=1` | Compile-time: build the DUT in ping-pong / line-buffer mode |
 
@@ -67,5 +70,19 @@ The `TB_MAX_W`/`TB_MAX_H` defines (default 48 × 40) must be at least the `+IMG`
 With Verilator 5, use `tools/run_sim.sh spatial_upscaler [options]` from the repository root; it adds `--trace`, and `--assert +define+SVA_ON` so the SVA properties of the protocol checkers are active as well.
 
 Icarus prints `sorry: constant selects in always_* processes ...` for some `always_comb` blocks. This is an informational note about sensitivity lists, not an error, and it does not affect results.
+
+## Synthesize
+
+```bash
+./synth.sh                                      # Yosys, Xilinx 7-series, MAX_W=640 MAX_H=480
+./synth.sh -p MAX_W=1920 -p MAX_H=1080        # other parameters
+./synth.sh -p LINE_BUF=1 -p MAX_W=1920         # 1080p line-buffer build
+./synth.sh -family xcup                         # UltraScale+
+./synth.sh --help
+```
+
+`synth.sh` converts the sources listed in `src/build.f` with sv2v, runs the shared Yosys script `tools/yosys/synth_xilinx.tcl` (compile, DSP48 packing, optimisation, memory to block RAM / LUT RAM, LUT/carry/FF mapping) and writes everything to `yosys/`. The hierarchical utilization table is in `yosys/utilization_hier.rpt`, the raw per-module statistics in `yosys/utilization.rpt`, the log in `yosys/synth.log`, and the mapped netlist in `yosys/spatial_upscaler_netlist.v` / `.edf`. Requires Yosys ≥ 0.33 and sv2v; see *Synthesis* in the top-level README for results and details.
+
+**Gate-level check.** `tools/gatesim.sh spatial_upscaler` (from the repository root) synthesizes this IP at the testbench size with the same flow and runs the unchanged self-checking testbench on the mapped Xilinx netlist, including its block RAMs and DSP48s (using Xilinx's functional UNISIM models, downloaded on first use). Add `-p NAME=VALUE` / `-D<define>` for other builds, e.g. `-p LINE_BUF=1 -DTB_LINE_BUF=1`; `-vcd` dumps a gate-level VCD and opens it in Surfer.
 
 See the top-level `README.md` for the register maps and protocol-checker details.

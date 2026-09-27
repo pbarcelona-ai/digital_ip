@@ -97,9 +97,21 @@ module banked_framebuf #(
   // ---------------------------------------------------------------------------
   // Bank selected by the low coordinate bits, word address by the rest.
   // B is a power of two, so % and / reduce to bit selects and shifts.
-  wire [SELW-1:0] wbx   = SELW'(wr_x % B);                      // bank col
-  wire [SELW-1:0] wby   = SELW'(wr_y % B);                      // bank row
-  wire [AW-1:0]   waddr = AW'(boff(wr_buf) + (prow(int'(wr_y)) / B) * BW + (wr_x / B));    // word
+  // The write port is registered once (bank select, word address, data) so
+  // that the address arithmetic (a multiply by BW) does not sit in front of
+  // the RAM address pins. Writes therefore land one cycle after wr_en; every
+  // user reads a pixel at least two cycles after writing it.
+  logic [SELW-1:0]  wbx, wby;                                   // bank col / row
+  logic [AW-1:0]    waddr;                                      // word
+  logic             wen;
+  logic [PIX_W-1:0] wdat;
+  always_ff @(posedge clk) begin
+    wen   <= wr_en;
+    wbx   <= SELW'(wr_x % B);
+    wby   <= SELW'(wr_y % B);
+    waddr <= AW'(boff(wr_buf) + (prow(int'(wr_y)) / B) * BW + (wr_x / B));
+    wdat  <= wr_data;
+  end
 
   // ---------------------------------------------------------------------------
   // stage A : per-bank coordinates and per-tap selects
@@ -167,8 +179,8 @@ module banked_framebuf #(
       logic [PIX_W-1:0] mem [DALL];           // one bank
       always_ff @(posedge clk) begin
         // write when the pixel maps to this bank
-        if (wr_en && wbx == SELW'(gx) && wby == SELW'(gy))
-          mem[waddr] <= wr_data;
+        if (wen && wbx == SELW'(gx) && wby == SELW'(gy))
+          mem[waddr] <= wdat;
         // registered read, held while the pipeline is stalled
         if (rd_adv)
           bank_q[gy][gx] <= mem[rowpart_q[gy] + colpart_q[gx]];

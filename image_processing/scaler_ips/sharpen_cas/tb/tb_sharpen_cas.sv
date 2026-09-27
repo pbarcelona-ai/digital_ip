@@ -119,6 +119,8 @@ module tb_sharpen_cas;
     axil_check(12'h040, 128);                     // reset SHARPNESS
     if (use_file) begin
       run_file_suite();
+    end else if (quick) begin
+      run_quick_filter_suite();                // +QUICK
     end else begin
       run_filter_suite();
       sharp = 0;   run_test(24, 18, 24, 18, 0);

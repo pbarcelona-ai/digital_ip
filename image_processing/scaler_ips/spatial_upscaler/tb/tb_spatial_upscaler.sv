@@ -180,6 +180,8 @@ module tb_spatial_upscaler;
     axil_check(16'h4024, 32'h5348_5250);    // sharpener IP_ID "SHRP"
     if (use_file) begin
       run_file_suite();
+    end else if (quick) begin
+      run_quick_suite();                // +QUICK
     end else begin
       run_standard_suite();
       sharp = 0;   run_test(20, 15, 40, 30, 1);

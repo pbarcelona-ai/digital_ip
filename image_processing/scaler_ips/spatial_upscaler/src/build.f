@@ -1,0 +1,9 @@
+../../axil_split/src/axil_split.sv
+../../axil_regbus/src/axil_regbus.sv
+../../scaler_ctrl/src/scaler_ctrl.sv
+../../scaler_dda/src/scaler_dda.sv
+../../banked_framebuf/src/banked_framebuf.sv
+../../scaler_polyphase/src/scaler_polyphase.sv
+../../scaler_lanczos/src/scaler_lanczos.sv
+../../sharpen_cas/src/sharpen_cas.sv
+./spatial_upscaler.sv

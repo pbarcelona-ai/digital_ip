@@ -12,6 +12,9 @@
 #   +NO_PPM                do not write PPM images
 #   +VCD=<file>            waveform file (default <OUTDIR>/tb_scaler_trilinear.vcd)
 #   +NO_VCD                do not dump waveforms
+#   -view / -noview        always try / never try to open the VCD in Surfer
+#                          (default: open it when surfer and a display exist;
+#                          NO_VIEW=1 in the environment is the same as -noview)
 #   +TIMEOUT_MS=<n>        simulation watchdog (simulated milliseconds)
 #   -D<NAME>[=<value>]     compile-time define, e.g. -DTB_PINGPONG=1 (double
 #                          frame buffer) or -DTB_LINE_BUF=1 (line buffer)
@@ -41,6 +44,9 @@ abspath() { case "$1" in /*) printf '%s\n' "$1" ;; *) printf '%s\n' "$PWD/$1" ;;
 
 OUTDIR=""
 VCD=""
+NO_VCD=0
+VIEW=auto
+[ "${NO_VIEW:-0}" = 1 ] && VIEW=0
 ARGS=()
 DEFS=()
 for a in "$@"; do
@@ -57,6 +63,9 @@ for a in "$@"; do
       ARGS+=("+IMG=$f") ;;
     +OUTDIR=*) OUTDIR="$(abspath "${a#+OUTDIR=}")" ;;
     +VCD=*)    VCD="$(abspath "${a#+VCD=}")" ;;
+    +NO_VCD)   NO_VCD=1; ARGS+=("$a") ;;
+    -view)     VIEW=1 ;;
+    -noview)   VIEW=0 ;;
     -D*)       DEFS+=("$a") ;;
     -h|--help) sed -n '3,/^# ---/p' "$0" | sed '$d'; exit 0 ;;
     --clean)   rm -rf "$SIM_DIR"; echo "run.sh: removed $SIM_DIR"; exit 0 ;;
@@ -69,6 +78,29 @@ done
 mkdir -p "$SIM_DIR" "$OUTDIR" "$(dirname "$VCD")"
 rm -f "$SIM_DIR"/*.ppm "$SIM_DIR"/*.vcd    # stale results from earlier runs
 ARGS+=("+OUTDIR=$OUTDIR" "+VCD=$VCD")
+
+# ---- waveform viewer: open the VCD in Surfer (https://surfer-project.org)
+# Launched in the background (the script still returns the test result) when
+# a VCD was written, Surfer is installed (or SURFER=<path> is set) and a
+# display is available. Disabled by -noview or NO_VIEW=1 (run_all.sh sets it).
+open_waveform() {
+  local vcd="$1"
+  [ "$NO_VCD" = 1 ] && return 0
+  [ -s "$vcd" ] || return 0
+  echo "run.sh: waveform: $vcd"
+  [ "$VIEW" = 0 ] && return 0
+  local surfer="${SURFER:-$(command -v surfer || true)}"
+  if [ -z "$surfer" ] || [ ! -x "$surfer" ]; then
+    [ "$VIEW" = 1 ] && echo "run.sh: surfer not found (install it or set SURFER=/path/to/surfer)" >&2
+    return 0
+  fi
+  if [ -z "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ] && [ "$(uname -s)" != Darwin ]; then
+    [ "$VIEW" = 1 ] && echo "run.sh: no display available, not starting surfer" >&2
+    return 0
+  fi
+  echo "run.sh: opening in surfer"
+  nohup "$surfer" "$vcd" > "$SIM_DIR/surfer.log" 2>&1 &
+}
 
 echo "run.sh: compiling tb_${IP} (TB_MAX ${MAX_W}x${MAX_H})"
 cd "$TB_DIR"
@@ -84,6 +116,7 @@ fi
 
 echo "run.sh: simulating"
 vvp -n "$SIM_DIR/sim.vvp" "${ARGS[@]}" | tee "$SIM_DIR/sim.log"
+open_waveform "$VCD"
 if grep -q "TB_RESULT: PASS" "$SIM_DIR/sim.log"; then
   echo "run.sh: PASS   (log: $SIM_DIR/sim.log, outputs: $OUTDIR)"
   exit 0

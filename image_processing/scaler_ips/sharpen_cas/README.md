@@ -6,6 +6,7 @@ Contrast-adaptive sharpening (CAS) filter after AMD FidelityFX CAS: a 3×3 same-
 
 - `src/` — synthesizable RTL (the header comment of each file documents behaviour, arithmetic and registers)
 - `run.sh` — one-command Icarus Verilog build and run (see below)
+- `synth.sh` — Yosys synthesis for Xilinx; `src/build.f` lists its sources (see below)
 - `tb/` — self-checking testbench `tb_sharpen_cas.sv` and `build.f`, the compile file list (every source needed, relative to `tb/`)
 
 **Depends on:** `axil_regbus`
@@ -29,9 +30,11 @@ Contrast-adaptive sharpening (CAS) filter after AMD FidelityFX CAS: a 3×3 same-
 | `+IMG=<file.ppm>` | Process a binary PPM (P6) image instead of the generated patterns. `run.sh` sizes the build from the PPM header |
 | `+OUTDIR=<dir>` | Directory for PPM images and the VCD (`run.sh` default: `sim_out/`) |
 | `+NO_PPM` | Do not write PPM images |
+| `+QUICK` | Short representative suite (3 tests) instead of the full suite, e.g. for gate-level runs |
 | `+SHARP=<0..256>` | SHARPNESS for `+IMG` runs (default 128) |
 | `+VCD=<file>` | Waveform file name (default `<OUTDIR>/tb_sharpen_cas.vcd`) |
 | `+NO_VCD` | Do not dump waveforms (faster; VCDs are roughly 1–30 MB per run) |
+| `-view` / `-noview` | Always / never open the VCD in [Surfer](https://surfer-project.org) after the run (default: open it if Surfer and a display are available; `NO_VIEW=1` also disables it) |
 | `+TIMEOUT_MS=<n>` | Watchdog in simulated ms (default 200) |
 
 ### Waveforms
@@ -51,5 +54,17 @@ The `TB_MAX_W`/`TB_MAX_H` defines (default 48 × 40) must be at least the `+IMG`
 With Verilator 5, use `tools/run_sim.sh sharpen_cas [options]` from the repository root; it adds `--trace`, and `--assert +define+SVA_ON` so the SVA properties of the protocol checkers are active as well.
 
 Icarus prints `sorry: constant selects in always_* processes ...` for some `always_comb` blocks. This is an informational note about sensitivity lists, not an error, and it does not affect results.
+
+## Synthesize
+
+```bash
+./synth.sh                                      # Yosys, Xilinx 7-series, the RTL defaults
+./synth.sh -family xcup                         # UltraScale+
+./synth.sh --help
+```
+
+`synth.sh` converts the sources listed in `src/build.f` with sv2v, runs the shared Yosys script `tools/yosys/synth_xilinx.tcl` (compile, DSP48 packing, optimisation, memory to block RAM / LUT RAM, LUT/carry/FF mapping) and writes everything to `yosys/`. The hierarchical utilization table is in `yosys/utilization_hier.rpt`, the raw per-module statistics in `yosys/utilization.rpt`, the log in `yosys/synth.log`, and the mapped netlist in `yosys/sharpen_cas_netlist.v` / `.edf`. Requires Yosys ≥ 0.33 and sv2v; see *Synthesis* in the top-level README for results and details.
+
+**Gate-level check.** `tools/gatesim.sh sharpen_cas` (from the repository root) synthesizes this IP at the testbench size with the same flow and runs the unchanged self-checking testbench on the mapped Xilinx netlist, including its block RAMs and DSP48s (using Xilinx's functional UNISIM models, downloaded on first use). Add `-p NAME=VALUE` / `-D<define>` for other builds, e.g. `-p LINE_BUF=1 -DTB_LINE_BUF=1`; `-vcd` dumps a gate-level VCD and opens it in Surfer.
 
 See the top-level `README.md` for the register maps and protocol-checker details.

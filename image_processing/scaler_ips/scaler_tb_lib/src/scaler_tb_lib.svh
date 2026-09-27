@@ -238,6 +238,7 @@ string tb_name   = "tb";      // prefix of written file names
 string outdir    = ".";       // +OUTDIR
 string img_file  = "";        // +IMG
 bit    use_file  = 1'b0;      // 1 when +IMG was given
+bit    quick     = 1'b0;      // 1 when +QUICK was given (short suite)
 bit    ppm_en    = 1'b1;      // 0 with +NO_PPM
 int    file_w    = 0, file_h = 0;          // size of the +IMG image
 int    file_out_w = 0, file_out_h = 0;     // +OUT_W / +OUT_H
@@ -342,6 +343,7 @@ task automatic tb_init(input string name);
   tb_name = name;
   if ($value$plusargs("OUTDIR=%s", outdir)) ;
   if ($test$plusargs("NO_PPM")) ppm_en = 1'b0;
+  if ($test$plusargs("QUICK"))  quick  = 1'b1;
   if (CHANNELS != 3 && ppm_en) begin
     $display("NOTE: PPM output disabled (CHANNELS=%0d, PPM needs 3)", CHANNELS);
     ppm_en = 1'b0;
@@ -560,6 +562,21 @@ task automatic run_filter_suite();
 endtask
 
 // Standard sweep of size combinations used by every IP testbench
+// +QUICK: a short representative suite for slow runs (e.g. gate-level
+// simulation of large netlists): non-integer upscale with random stalls,
+// strong downscale, and three back-to-back frames under back-pressure.
+task automatic run_quick_suite();
+  run_test(16, 12, 37, 29, 0);            // non-integer upscale
+  run_test(MAX_W, MAX_H, 13, 9, 1);       // strong downscale, edges
+  run_test(20, 14, 9, 23, 0, 0, 3);       // back-to-back frames, mixed
+endtask
+
+task automatic run_quick_filter_suite();
+  run_test(16, 12, 16, 12, 0);
+  run_test(MAX_W, MAX_H, MAX_W, MAX_H, 1);
+  run_test(19, 7, 19, 7, 2, 0, 3);        // back-to-back frames
+endtask
+
 task automatic run_standard_suite();
   run_test(16, 12, 16, 12, 0);            // identity
   run_test(16, 12, 37, 29, 0);            // non-integer upscale

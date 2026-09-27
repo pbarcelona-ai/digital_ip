@@ -147,6 +147,8 @@ module tb_scaler_polyphase;
     kind = KERNEL_LANCZOS; kpa = 4.0;                   // Lanczos-4 (8 taps)
     if (use_file) begin
       run_file_suite();              // +IMG=<file.ppm>
+    end else if (quick) begin
+      run_quick_suite();                // +QUICK
     end else begin
       // generated images: standard sweep plus IP-specific tests
       run_standard_suite();

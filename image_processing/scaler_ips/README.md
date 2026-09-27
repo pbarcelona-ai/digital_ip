@@ -33,11 +33,11 @@ Every reusable module has its own directory with `src/` and `tb/` subdirectories
 | `banked_framebuf/` | module | Frame store returning any T×T clamped window every clock |
 | `axi_checkers/` | verification | `axis_checker` / `axil_checker`: protocol assertions (procedural + SVA) and functional coverage |
 | `scaler_tb_lib/` | verification | Shared testbench kit, reference helpers, SV coefficient generator |
-| `tools/` | scripts | `run_all.sh` (regression), `run_iverilog.sh` (calls `<dir>/run.sh`), `run_sim.sh` + `tb_args.sh` (Verilator); `scaler_coefs.py` (optional register/coefficient generator for driver software) |
+| `tools/` | scripts | `run_all.sh` (regression), `run_iverilog.sh` (calls `<dir>/run.sh`), `run_sim.sh` + `tb_args.sh` (Verilator), `synth_all.sh` and `gatesim.sh` (synthesis), `yosys/` (shared Yosys script, utilization report formatter); `scaler_coefs.py` (optional register/coefficient generator for driver software) |
 | `docs/` | docs | Coefficient derivation |
 | `images/` | data | Sample PPM (P6) input image |
 
-Each directory also has a `run.sh` that builds and runs its testbench with Icarus Verilog in one command (results in `<dir>/sim_out/`). Each `tb/` directory contains `tb_<name>.sv` and `build.f`, the compile file list with every RTL dependency relative to `tb/`. The last block of every testbench dumps a VCD waveform (see [Waveforms](#waveforms)).
+Each directory also has a `run.sh` that builds and runs its testbench with Icarus Verilog in one command (results in `<dir>/sim_out/`). Each synthesizable directory also has a `synth.sh` and a `src/build.f` for Yosys synthesis (results in `<dir>/yosys/`, see [Synthesis](#synthesis-yosys-xilinx)). Each `tb/` directory contains `tb_<name>.sv` and `build.f`, the compile file list with every RTL dependency relative to `tb/`. The last block of every testbench dumps a VCD waveform (see [Waveforms](#waveforms)).
 
 ## Architecture
 
@@ -50,6 +50,7 @@ Each directory also has a `run.sh` that builds and runs its testbench with Icaru
 
 * **Three frame-store modes** (see [Buffering modes](#buffering-modes)): a single frame buffer (default), a double "ping-pong" frame buffer, and a line buffer. Output is generated at 1 pixel per clock in every mode (anisotropic: 1 per N probes). Rate matching for any up/down ratio comes from AXI-Stream back-pressure, so no rate-matching FIFOs are needed.
 * **Conflict-free window reads.** The frame is spread over `B × B` banks, where `B` is the next power of two ≥ taps. Any `T × T` window, including clamped windows at the image edges, needs at most one read per bank, so one full window is available every clock.
+* **DSP-friendly pipelines.** The bilinear, edge-directed, polyphase, mip and sharpening datapaths are pipelined with one multiply or one adder level per stage and exact bit widths, and the frame buffer's write port is registered. Results are bit-identical to the unpipelined arithmetic (the reference models did not change). Only the latency from input to output grows by a few cycles.
 * **Whole-pipeline stall.** Every pipeline stage advances on `adv = !m_tvalid || m_tready`, so the IPs are fully AXI-Stream compliant under arbitrary back-pressure.
 * **Edge handling.** Clamp-to-edge (replicate) on all four sides.
 
@@ -170,6 +171,119 @@ tools/scaler_coefs.py polyphase --kernel lanczos --a 3 --taps 6 \
 
 This emits the full register sequence. Write each `{offset, value}` pair to the IP in order, then stream frames. See §7 of the derivation document. For the sharpener and the upscaler use `scaler_coefs.py sharpen --in W H --sharpness S` and `scaler_coefs.py upscaler --in W H --out W H --sharpness S` (§8–§9).
 
+## Synthesis (Yosys, Xilinx)
+
+Every synthesizable directory has a `synth.sh` that runs an open-source Xilinx synthesis flow and writes all results to `<dir>/yosys/`. The verification-only directories (`axi_checkers`, `scaler_tb_lib`) have none.
+
+**Requirements:** Yosys ≥ 0.33 (`apt install yosys`) and [sv2v](https://github.com/zachjs/sv2v) (a single static binary from its releases page). Yosys's built-in SystemVerilog reader supports only a subset of SystemVerilog, and it rejects constructs used in this RTL such as size casts (`32'(x)`) and initialised variables inside functions. sv2v converts the sources to Verilog-2005 first; the converted file is kept as `yosys/<top>.sv2v.v`.
+
+**Flow**
+
+```
+src/build.f ──► sv2v ──► yosys -c tools/yosys/synth_xilinx.tcl ──► util_hier.awk
+(RTL list)      (SV→V)    read · elaborate · compile · DSP · optimize ·    (hierarchical
+                          memory→BRAM/LUTRAM · LUT/carry/FF map · check      utilization)
+```
+
+* `src/build.f`: the synthesis file list, dependencies first, with paths relative to `src/`. It is separate from `tb/build.f`, which adds the testbench and checkers.
+* `tools/yosys/synth_xilinx.tcl`: the **one shared Yosys script**. It reads the Xilinx cell library and the design, elaborates with the requested parameters, then runs the labelled `synth_xilinx` stages one at a time, so each appears as its own section in the log: compile (generic optimisation, FSM extraction, width reduction), **DSP48 packing** (multipliers with pre-adders and accumulators), coarse optimisation, **memory mapping to block RAM, then LUT RAM, then flip-flops**, LUT/carry-chain/flip-flop mapping, and final checks. The hierarchy is kept (no flattening) so utilization can be reported per module, and I/O buffers are not inserted (out-of-context IP synthesis).
+* `tools/yosys/util_hier.awk`: turns Yosys's per-module statistics into a **hierarchical utilization table**. Each instance of the design tree gets its totals (including everything below it) plus a `(self)` row for its own logic.
+
+**Usage**
+
+```bash
+scaler_lanczos/synth.sh                                   # defaults (640x480 frame buffer)
+scaler_lanczos/synth.sh -p LINE_BUF=1 -p MAX_W=1920       # 1080p line-buffer build
+scaler_lanczos/synth.sh -family xcup -flags "-abc9"       # UltraScale+, ABC9 mapping
+scaler_lanczos/synth.sh --help
+tools/synth_all.sh                                        # every module, summary table
+tools/synth_all.sh scaler_bicubic scaler_lanczos -- -p PINGPONG=1
+```
+
+| Option | Effect |
+|---|---|
+| `-p NAME=VALUE` | Override a top-level parameter (repeatable). Frame-buffer IPs default to `MAX_W=640 MAX_H=480` |
+| `-family F` | `synth_xilinx` family: `xc7` (default), `xcu`, `xcup`, … |
+| `-flags "…"` | Extra `synth_xilinx` options, e.g. `-nodsp`, `-nobram`, `-abc9` |
+| `-iopad` | Insert I/O and clock buffers (default: out-of-context) |
+| `-json` | Also write the netlist as JSON (large) |
+| `SYN_DSP_PACK=1` (environment) | Let Yosys pack registers/adders into the DSP48s (`xilinx_dsp`); see *Flow settings* below before using it |
+| `SYN_SRL=1` (environment) | Allow SRL16E/SRLC32E shift-register inference; see *Flow settings* below |
+
+**Outputs in `<dir>/yosys/`:** `utilization_hier.rpt` (hierarchical table, also printed), `utilization.rpt` (raw `stat -tech xilinx` per module), `timing.rpt` (rough path-delay indicator, see below), `synth.log` (complete log), `<top>.sv2v.v` (converted source), `<top>_netlist.v` and `<top>.edf` (mapped netlist, e.g. for Vivado import).
+
+**Flow settings chosen for correctness.** Three settings in `synth_xilinx.tcl` differ from a plain `synth_xilinx` run. Each one exists because gate-level simulation (below) showed Yosys 0.33 producing a netlist that does not match the RTL:
+
+| Setting | Default | What it avoids | Re-enable with |
+|---|---|---|---|
+| no shift-register inference (`-nosrl`) | on | `xilinx_srl` turned an *enabled* delay line in `sharpen_cas` into SRL16Es with the clock enable tied high, corrupting data whenever the output stalls | `SYN_SRL=1` |
+| DSP48 mapping without `xilinx_dsp` packing | on | `xilinx_dsp` register/adder/cascade packing produced a netlist that is not equivalent to the pipelined bicubic filter; this was confirmed with both Xilinx's and Yosys's DSP48E1 models. Every multiplier is still one DSP48; only the surrounding pipeline registers and adders stay in the fabric | `SYN_DSP_PACK=1` |
+| explicit `pmux2shiftx` | on | `-nosrl` also skips this pass in Yosys 0.33, which doubled the LUTs of the frame buffers' tap multiplexers | (automatic) |
+
+Re-enable the first two only with a Yosys version whose netlists pass `tools/gatesim.sh`. Two further issues were fixed at the source: sv2v 0.0.12 dropped the signedness of a size cast applied to an element of a 2-D signed array (an explicit `$signed()` in `sharpen_cas`), and `hierarchy -chparam` hits an internal assertion for some tops (the script uses the equivalent `chparam -set`).
+
+Example (`scaler_lanczos/yosys/utilization_hier.rpt`, 640×480):
+
+```
+Instance                                            LUT   LUTRAM       FF    CARRY     MUXF   BRAM36      DSP
+-------------------------------------------------------------------------------------------------------------
+scaler_lanczos                                    28235      252    15830     1352     4709    256.0      135
+  (self)                                              0        0        0        0        0      0.0        0
+  scaler_polyphase                                28235      252    15830     1352     4709    256.0      135
+    (self)                                        13263      252    14666      892       72      0.0      126
+    banked_framebuf                               14464        0      484      401     4608    256.0        9
+    scaler_ctrl                                     314        0      515       27       17      0.0        0
+      (self)                                        303        0      361       27       17      0.0        0
+      axil_regbus                                    11        0      154        0        0      0.0        0
+    scaler_dda                                      194        0      165       32       12      0.0        0
+```
+
+**Results** (Yosys 0.33, sv2v 0.0.12, xc7, `tools/synth_all.sh` defaults: `-nosrl`, DSP mapping without packing; see the tool-issues table above):
+
+| Module | Parameters | LUT | LUT RAM | FF | CARRY4 | BRAM36 | DSP48E1 | Time (s) |
+|---|---|---|---|---|---|---|---|---|
+| axil_regbus | (defaults) | 11 | 0 | 160 | 0 | 0 | 0 | 7 |
+| axil_split | (defaults) | 76 | 0 | 117 | 0 | 0 | 0 | 7 |
+| scaler_dda | (defaults) | 195 | 0 | 165 | 32 | 0 | 0 | 6 |
+| scaler_ctrl | (defaults) | 313 | 0 | 515 | 27 | 0 | 0 | 9 |
+| banked_framebuf | 640×480, 4 taps | 2,944 | 0 | 220 | 171 | 240 | 5 | 33 |
+| scaler_nearest | 640×480 | 1,364 | 0 | 827 | 99 | 225 | 2 | 24 |
+| scaler_bilinear | 640×480 | 2,080 | 0 | 1,528 | 206 | 228 | 21 | 28 |
+| scaler_edge_directed | 640×480 | 2,481 | 0 | 1,919 | 284 | 228 | 19 | 31 |
+| scaler_polyphase (4 taps) | 640×480 | 7,964 | 120 | 8,754 | 649 | 240 | 65 | 132 |
+| scaler_bicubic | 640×480 | 7,966 | 120 | 8,754 | 649 | 240 | 65 | 132 |
+| scaler_lanczos | 640×480 | 28,235 | 252 | 15,830 | 1,352 | 256 | 135 | 203 |
+| scaler_mip | 640×480 | 5,952 | 0 | 3,128 | 634 | 310 | 51 | 29 |
+| scaler_trilinear | 640×480 | 5,975 | 0 | 3,128 | 634 | 310 | 51 | 29 |
+| scaler_anisotropic | 640×480 | 7,094 | 0 | 3,206 | 717 | 312 | 51 | 33 |
+| sharpen_cas | 1920 wide (defaults) | 2,192 | 0 | 1,590 | 226 | 6 | 9 | 21 |
+| spatial_upscaler | 640×480 | 31,116 | 252 | 17,541 | 1,578 | 264 | 144 | 227 |
+
+How to read these numbers:
+
+* They are Yosys estimates before place and route. With the correctness settings above, the pipeline registers and adders around each multiplier stay in the fabric (the FF and CARRY4 columns). Vivado would absorb many of them into the DSP48s (AREG/BREG/MREG/PREG, post-adders, cascades) and typically ends noticeably lower.
+* The DSP count equals the multiplier count exactly: bicubic 3 colours × (4×4 vertical + 4 horizontal) = 60, plus 5 in its frame buffer's address arithmetic; Lanczos 3 × (6×6 + 6) = 126, plus 9. The polyphase coefficient tables land in LUT RAM (RAM64M), the frame and line buffers in RAMB36/RAMB18.
+* A 640×480×24-bit frame is 7.4 Mbit, which is 225 RAMB36 for nearest (one bank, near-ideal packing). The multi-bank window buffers of the 4- and 6-tap IPs round each bank up, reaching 240–256.
+* Lanczos is the largest IP. About half of its LUTs are the frame buffer's 6×6 tap multiplexer (each of 36 taps selects one of 64 banks); the rest is mostly the filter's fabric adders.
+
+**Pipelined datapaths.** The filter datapaths of `scaler_bilinear`, `scaler_edge_directed`, `scaler_polyphase` (and so bicubic and Lanczos), `scaler_mip` and `sharpen_cas` are pipelined with at most one multiply or one add per stage and exact operand widths, and the frame buffer's write port is registered. These changes are transparent to the interfaces (AXI-Stream back-pressure stalls the whole pipeline, as before). They are verified bit-exact by the full regression in all buffering modes on Icarus, by the frame-mode regression on Verilator, and at gate level.
+
+**Timing indicator.** `timing.rpt` is Yosys's `sta` on the flattened netlist, with cell delays only. Routing is ignored, carry chains and MUXF7/F8 have no timing arcs in the Yosys 0.33 library, and there are no clock constraints, so the longest reported path can begin at the asynchronous reset. Treat it as a rough indicator for spotting deep logic, not as an Fmax; use Vivado with the `.edf` netlist for real timing.
+
+**Gate-level check of the flow.** `tools/gatesim.sh <module>` synthesizes the module at the testbench's configuration with the same shared script, then runs the module's **unchanged self-checking testbench on the mapped Xilinx netlist** with Icarus Verilog. Yosys's `cells_sim.v` models LUTs, flip-flops, carry chains, MUXF and LUT RAM functionally, but its `RAMB18E1`/`RAMB36E1` are timing-only stubs whose outputs are X. The script therefore uses Xilinx's functional UNISIM models for the block RAMs and the DSP48E1 (Apache-2.0, [github.com/Xilinx/XilinxUnisimLibrary](https://github.com/Xilinx/XilinxUnisimLibrary), downloaded on first use into `tools/yosys/unisim/`), so the netlist is simulated exactly as mapped, block RAMs included. `+QUICK` selects a short representative suite for large netlists; `-vcd` dumps a gate-level VCD and opens it in Surfer.
+
+| Module | Gate-level result (final flow) |
+|---|---|
+| scaler_nearest | PASS, full suite (10 tests, 6,462 checks), block RAM netlist |
+| scaler_bilinear | PASS, full suite (10 tests, 6,462 checks) |
+| scaler_edge_directed | PASS, full suite (13 tests, 11,497 checks) |
+| sharpen_cas | PASS, full suite (16 tests, 7,800 checks) |
+| scaler_bicubic | PASS, `+QUICK` (3 tests, 1,862 checks), 60 DSP48E1 |
+| scaler_mip, scaler_trilinear, scaler_anisotropic | PASS, `+QUICK` |
+| scaler_polyphase (8 taps), scaler_lanczos, spatial_upscaler | not run: compiling their gate-level netlists exceeds the 4 GB of the machine used here (Icarus is killed). The polyphase engine they use is covered through `scaler_bicubic` |
+
+Along the way this check found the three Yosys/sv2v issues listed above, none of which RTL simulation can detect.
+
 ## Testbench command-line options (IP testbenches)
 
 Every IP testbench (`scaler_nearest`, `scaler_bilinear`, `scaler_edge_directed`, `scaler_polyphase`, `scaler_bicubic`, `scaler_lanczos`, `scaler_mip`, `scaler_trilinear`, `scaler_anisotropic`, `sharpen_cas`, `spatial_upscaler`) accepts these run-time options. They are simulator plusargs, so they go after `vvp sim.vvp` or after the Verilator executable. The same options can be given to each directory's `run.sh` and to the helper scripts.
@@ -180,7 +294,9 @@ Every IP testbench (`scaler_nearest`, `scaler_bilinear`, `scaler_edge_directed`,
 | `+OUT_W=<n>`, `+OUT_H=<n>` | see below | Output size for an `+IMG` run. If only one is given, the other axis keeps the input size. |
 | `+OUTDIR=<dir>` | `.` (`run.sh`: `<ip>/sim_out/`; `tools/run_sim.sh`: `ppm_out/<ip>/`) | Directory for the PPM files and, with `run.sh`, the VCD. The simulator cannot create directories, but the scripts do. |
 | `+NO_PPM` | off | Do not write any PPM files. |
+| `+QUICK` | off | Run a short representative suite instead of the full one: non-integer upscale, strong downscale and three back-to-back frames under back-pressure (filters: identity, maximum size, back-to-back). Used for slow runs such as gate-level simulation of large netlists. |
 | `+TIMEOUT_MS=<n>` | 200 | Watchdog, in milliseconds of simulated time. Raise it for very large images. |
+| `+QUICK` | off | Run a short representative suite instead of the full one: a non-integer upscale, a strong downscale and three back-to-back frames under back-pressure (filters: identity, maximum size, back-to-back). Used for gate-level simulation of large netlists. |
 | `+VCD=<file>` | `tb_<ip>.vcd` (`run.sh`: `<OUTDIR>/tb_<ip>.vcd`) | Waveform dump file. Also accepted by the module testbenches. |
 | `+NO_VCD` | off | Do not dump waveforms. Also accepted by the module testbenches. |
 | `+SHARP=<0..256>` | 128 | `sharpen_cas` and `spatial_upscaler` only: SHARPNESS for `+IMG` runs. |
@@ -248,7 +364,25 @@ end
 | manual `vvp` | `tb_<dir>.vcd` in the working directory, unless `+VCD=` is given |
 | `tools/run_all.sh` | disabled (`+NO_VCD`) for speed; set `VCD=1` to keep them |
 
-With the generated test suites, files are about 1–30 MB (the polyphase testbench is the largest). `+IMG` runs with large images produce correspondingly larger files; use `+NO_VCD` when you only need the images. View with any VCD viewer, e.g. `gtkwave scaler_bicubic/sim_out/tb_scaler_bicubic.vcd`. Useful signals: `dut.m_axis_*` and `s_axis_*` for the streams, `dut.u_ctrl.state` for frame sequencing, and `dut.u_dda.o_x`/`o_y` for the source coordinates (in `scaler_bicubic`, `scaler_lanczos`, `scaler_trilinear` and `scaler_anisotropic` the core sits one level deeper, under `dut.u_core`; in `spatial_upscaler` the stages are `dut.u_scaler` and `dut.u_sharpen`, and the stream between them is `dut.mid_t*`).
+With the generated test suites, files are about 1–30 MB (the polyphase testbench is the largest). `+IMG` runs with large images produce correspondingly larger files; use `+NO_VCD` when you only need the images. View with any VCD viewer, e.g. Surfer or GTKWave (see below). Useful signals: `dut.m_axis_*` and `s_axis_*` for the streams, `dut.u_ctrl.state` for frame sequencing, and `dut.u_dda.o_x`/`o_y` for the source coordinates (in `scaler_bicubic`, `scaler_lanczos`, `scaler_trilinear` and `scaler_anisotropic` the core sits one level deeper, under `dut.u_core`; in `spatial_upscaler` the stages are `dut.u_scaler` and `dut.u_sharpen`, and the stream between them is `dut.mid_t*`).
+
+### Opening waveforms in Surfer automatically
+
+After a simulation that wrote a VCD, `<dir>/run.sh` and `tools/run_sim.sh` open it in [Surfer](https://surfer-project.org) when:
+
+* Surfer is installed (`surfer` on `PATH`, or `SURFER=/path/to/surfer`), and
+* a display is available (`DISPLAY` or `WAYLAND_DISPLAY` set, or macOS).
+
+Surfer is started in the background, so the script still returns the test result as its exit status. It also opens after a failing run, which is usually when the waveform is most useful. The script prints the VCD path in every case.
+
+| Control | Effect |
+|---|---|
+| (default) | open if Surfer and a display are available, otherwise do nothing |
+| `-view` | always try; prints why if Surfer or a display is missing |
+| `-noview` or `NO_VIEW=1` | never open |
+| `+NO_VCD` | no VCD is written, so nothing is opened |
+
+`tools/run_all.sh` sets `NO_VIEW=1`, so regressions never start a viewer, even with `VCD=1`. Surfer's log goes to `<dir>/sim_out/surfer.log` (or `build/<dir>/surfer.log` for Verilator). Example: `scaler_lanczos/run.sh -view +IMG=images/test_96x72.ppm`.
 
 ## Protocol checkers and functional coverage
 
@@ -314,7 +448,7 @@ Each IP testbench runs a standard suite plus IP-specific tests:
 
 The IP-specific tests cover several cubic kernels, CAS sharpness extremes, BYPASS and SHARPNESS clamping, single-row and single-column frames, heavy output back-pressure on the line-buffer design, the two-stage upscaler model at up to 2× in each axis, Lanczos overshoot clamping, 8-tap anti-aliased downscales, edge-direction coverage (all three modes hit), equivalence with bilinear when `EDGE_EN = 0`, LOD beyond the top level, fractional LOD, 1:8 and 16:1 anisotropy, and probe-count clamping.
 
-Regression results. Every testbench passes on both Icarus Verilog 12.0 and Verilator 5.020, in every frame-store mode it supports. Check counts are from Icarus; a few differ slightly between simulators because the random sequences differ.
+Regression results. Every testbench passes on Icarus Verilog 12.0 in every frame-store mode it supports (35 runs), on the current RTL including the pipelined datapaths. On Verilator 5.020 all testbenches pass in frame mode on the current RTL; the Verilator ping-pong and line-buffer runs (all passing) were made before the datapaths were pipelined. Check counts are from Icarus; a few differ slightly between simulators because the random sequences differ.
 
 | Testbench | frame | pingpong | linebuf | Checks (Icarus) |
 |---|---|---|---|---|

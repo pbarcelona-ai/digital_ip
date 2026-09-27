@@ -81,6 +81,8 @@ module tb_scaler_nearest;
     axil_check(12'h02C, {16'(MAX_H), 16'(MAX_W)}); // MAX_SIZE
     if (use_file) begin
       run_file_suite();              // +IMG=<file.ppm>
+    end else if (quick) begin
+      run_quick_suite();                // +QUICK
     end else begin
       // generated images: standard sweep plus IP-specific tests
       run_standard_suite();

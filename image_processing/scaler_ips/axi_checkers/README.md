@@ -26,6 +26,7 @@ Passive protocol checkers with functional coverage. `axis_checker` covers AXI4-S
 |---|---|
 | `+VCD=<file>` | Waveform file name (default `<OUTDIR>/tb_axi_checkers.vcd`) |
 | `+NO_VCD` | Do not dump waveforms (faster; VCDs are roughly 1–30 MB per run) |
+| `-view` / `-noview` | Always / never open the VCD in [Surfer](https://surfer-project.org) after the run (default: open it if Surfer and a display are available; `NO_VIEW=1` also disables it) |
 | `+TIMEOUT_MS=<n>` | Watchdog in simulated ms (default 200) |
 
 ### Waveforms

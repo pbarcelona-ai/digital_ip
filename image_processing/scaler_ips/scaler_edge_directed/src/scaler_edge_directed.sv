@@ -194,82 +194,103 @@ module scaler_edge_directed #(
     .rd_win(win)
   );
 
-  // Pipeline registers: [0] stage A, [1] stage B (window), [2] stage 3
-  logic [2:0]            v_q;
-  logic [2:0]            f_q [3];
-  logic [PHASE_BITS-1:0] fx_q [2], fy_q [2];
+  // Pipeline (every register advances with adv; valid/flags follow the data)
+  //   A    window origin / phases           (banked_framebuf stage A)
+  //   B    RAM data                         (banked_framebuf stage B)
+  //   W    window after the tap multiplexer, sample position x, y
+  //   D    diagonal activity d1, d2 (summed over the components)
+  //   C    edge decision -> one of five weight cases
+  //   G    the four integer weights (sum ONE^2)
+  //   M    four products pixel x weight per component   (DSP48)
+  //   S    pairwise sums
+  //   out  (sum + ONE^2/2) >> 2*PHASE_BITS -> m_axis
+  // All arithmetic uses exact widths; results are bit-identical to the
+  // single-cycle form. Weights are convex, so no clamping is needed.
+  localparam int NST = 8;
+  localparam int PB  = PHASE_BITS;
+  localparam int SW  = COMP_W + WW + 2;          // weighted-sum width
+  localparam int MW  = COMP_W + WW;              // one product
+  localparam logic [2:0] K_BIL = 3'd0,           // bilinear
+                         K_D1U = 3'd1,           // "\" edge, upper-right triangle
+                         K_D1L = 3'd2,           // "\" edge, lower-left triangle
+                         K_D2U = 3'd3,           // "/" edge, upper-left triangle
+                         K_D2L = 3'd4;           // "/" edge, lower-right triangle
+  logic [NST-1:0]        v_q;
+  logic [2:0]            f_q [NST];
+  logic [PB-1:0]         fx_q [2], fy_q [2];     // A, B
+  logic [PB-1:0]         x_d [3], y_d [3];       // W, D, C
+  logic [4*PIX_W-1:0]    win_d [5];              // W, D, C, G (window follows)
+  logic [DW-1:0]         d1_q, d2_q;             // D
+  logic [2:0]            k_q;                    // C
+  logic [WW-1:0]         w_q [4];                // G: w00 w01 w10 w11
+  logic [MW-1:0]         p_q [CHANNELS][4];      // M
+  logic [SW-1:0]         s_q [CHANNELS][2];      // S
   logic                  m_eof;
 
-  // ---- stage 3 (comb): edge decision and weights
-  // d1/d2 measure the activity along the two diagonals, summed over all
-  // components so that every component uses the same triangulation.
-  // The chosen case yields four integer weights that sum to ONE^2.
-  logic [DW-1:0] d1, d2;
-  logic [WW-1:0] w00_c, w01_c, w10_c, w11_c;
+  // ---- D (comb): diagonal activity, summed over the components
+  logic [DW-1:0] d1_c, d2_c;
   always_comb begin
-    int a, b, x, y, one;
-    // diagonal activity, summed over the components
-    d1 = '0; d2 = '0;
+    d1_c = '0; d2_c = '0;
     for (int c = 0; c < CHANNELS; c++) begin
-      int p00, p01, p10, p11;
-      p00 = int'(win[(0*PIX_W) + c*COMP_W +: COMP_W]);
-      p01 = int'(win[(1*PIX_W) + c*COMP_W +: COMP_W]);
-      p10 = int'(win[(2*PIX_W) + c*COMP_W +: COMP_W]);
-      p11 = int'(win[(3*PIX_W) + c*COMP_W +: COMP_W]);
-      d1 = d1 + DW'((p00 > p11) ? p00 - p11 : p11 - p00);
-      d2 = d2 + DW'((p01 > p10) ? p01 - p10 : p10 - p01);
-    end
-    // sample position inside the cell, 0 .. ONE-1 on each axis
-    x = int'(fx_q[1]); y = int'(fy_q[1]); one = ONE;
-    if (edge_en && (int'(d1) + int'(thresh) < int'(d2))) begin
-      // edge along p00-p11 : triangles (p00,p01,p11) / (p00,p10,p11)
-      if (x >= y) begin                // upper-right triangle
-        w00_c = WW'((one - x) * one); w01_c = WW'((x - y) * one);
-        w10_c = '0;                   w11_c = WW'(y * one);
-      end else begin                   // lower-left triangle
-        w00_c = WW'((one - y) * one); w01_c = '0;
-        w10_c = WW'((y - x) * one);   w11_c = WW'(x * one);
-      end
-    end else if (edge_en && (int'(d2) + int'(thresh) < int'(d1))) begin
-      // edge along p01-p10 : triangles (p00,p01,p10) / (p01,p10,p11)
-      if (x + y <= one) begin          // upper-left triangle
-        w00_c = WW'((one - x - y) * one); w01_c = WW'(x * one);
-        w10_c = WW'(y * one);             w11_c = '0;
-      end else begin                   // lower-right triangle
-        w00_c = '0;                       w01_c = WW'((one - y) * one);
-        w10_c = WW'((one - x) * one);     w11_c = WW'((x + y - one) * one);
-      end
-    end else begin
-      // no dominant diagonal: bilinear weights
-      w00_c = WW'((one - x) * (one - y)); w01_c = WW'(x * (one - y));
-      w10_c = WW'((one - x) * y);         w11_c = WW'(x * y);
+      logic [COMP_W-1:0] p00, p01, p10, p11;
+      p00 = win_d[0][(0*PIX_W) + c*COMP_W +: COMP_W];
+      p01 = win_d[0][(1*PIX_W) + c*COMP_W +: COMP_W];
+      p10 = win_d[0][(2*PIX_W) + c*COMP_W +: COMP_W];
+      p11 = win_d[0][(3*PIX_W) + c*COMP_W +: COMP_W];
+      d1_c = d1_c + DW'((p00 > p11) ? p00 - p11 : p11 - p00);
+      d2_c = d2_c + DW'((p01 > p10) ? p01 - p10 : p10 - p01);
     end
   end
 
-  // stage-3 registers: weights and the window they apply to
-  logic [WW-1:0]      w00_q, w01_q, w10_q, w11_q;
-  logic [4*PIX_W-1:0] win_q;
+  // ---- C (comb): which diagonal (if any) dominates, and which triangle
+  // of the cell contains the sample point
+  logic [2:0] k_c;
+  always_comb begin
+    logic [PB:0] xy;
+    xy = (PB+1)'(x_d[1]) + (PB+1)'(y_d[1]);
+    if (edge_en && ((DW+1)'(d1_q) + (DW+1)'(thresh) < (DW+1)'(d2_q)))
+      k_c = (x_d[1] >= y_d[1]) ? K_D1U : K_D1L;
+    else if (edge_en && ((DW+1)'(d2_q) + (DW+1)'(thresh) < (DW+1)'(d1_q)))
+      k_c = (xy <= (PB+1)'(ONE)) ? K_D2U : K_D2L;
+    else
+      k_c = K_BIL;
+  end
 
-  // ---- stage 4 (comb): weighted sum with rounding (convex weights, so
-  // no clamping is needed)
-  localparam int SW = COMP_W + WW + 2;
+  // ---- G (comb): the four weights in units of ONE^2 for the chosen case
+  logic [WW-1:0] w_c [4];
+  always_comb begin
+    logic [PB:0] x, y, nx, ny;                   // 0 .. ONE
+    x  = (PB+1)'(x_d[2]);           y  = (PB+1)'(y_d[2]);
+    nx = (PB+1)'(ONE) - x;          ny = (PB+1)'(ONE) - y;
+    case (k_q)
+      K_D1U: begin w_c[0] = WW'(nx) << PB;    w_c[1] = WW'(x - y) << PB;
+                   w_c[2] = '0;               w_c[3] = WW'(y) << PB;       end
+      K_D1L: begin w_c[0] = WW'(ny) << PB;    w_c[1] = '0;
+                   w_c[2] = WW'(y - x) << PB; w_c[3] = WW'(x) << PB;       end
+      K_D2U: begin w_c[0] = WW'(nx - y) << PB; w_c[1] = WW'(x) << PB;
+                   w_c[2] = WW'(y) << PB;     w_c[3] = '0;                 end
+      K_D2L: begin w_c[0] = '0;               w_c[1] = WW'(ny) << PB;
+                   w_c[2] = WW'(nx) << PB;    w_c[3] = WW'(x + y - (PB+1)'(ONE)) << PB; end
+      default: begin
+                   w_c[0] = WW'(nx) * WW'(ny); w_c[1] = WW'(x) * WW'(ny);
+                   w_c[2] = WW'(nx) * WW'(y);  w_c[3] = WW'(x) * WW'(y);   end
+    endcase
+  end
+
+  // ---- out (comb): final sum with rounding
   logic [PIX_W-1:0] out_c;
   always_comb begin
     for (int c = 0; c < CHANNELS; c++) begin
-      logic [SW-1:0] s;
-      s = SW'(win_q[(0*PIX_W) + c*COMP_W +: COMP_W]) * SW'(w00_q)
-        + SW'(win_q[(1*PIX_W) + c*COMP_W +: COMP_W]) * SW'(w01_q)
-        + SW'(win_q[(2*PIX_W) + c*COMP_W +: COMP_W]) * SW'(w10_q)
-        + SW'(win_q[(3*PIX_W) + c*COMP_W +: COMP_W]) * SW'(w11_q)
-        + SW'(ONE * ONE / 2);
-      out_c[c*COMP_W +: COMP_W] = COMP_W'(s >> (2 * PHASE_BITS));
+      logic [SW-1:0] t;
+      t = s_q[c][0] + s_q[c][1] + SW'(ONE * ONE / 2);
+      out_c[c*COMP_W +: COMP_W] = COMP_W'(t >> (2 * PB));
     end
   end
 
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       v_q           <= '0;
-      for (int k = 0; k < 3; k++) f_q[k] <= '0;
+      for (int k = 0; k < NST; k++) f_q[k] <= '0;
       m_axis_tvalid <= 1'b0;
       m_axis_tdata  <= '0;
       m_axis_tuser  <= 1'b0;
@@ -278,27 +299,35 @@ module scaler_edge_directed #(
     end else if (gen_start) begin
       v_q           <= '0;           // flush at the start of a frame
     end else if (adv) begin
-      // valid/flags follow the data through stages A, B and 3; the
-      // result of stage 4 is registered straight into the output
       v_q[0] <= d_valid;
       f_q[0] <= {d_eof, d_eol, d_sof};
-      for (int k = 1; k < 3; k++) begin
+      for (int k = 1; k < NST; k++) begin
         v_q[k] <= v_q[k-1];
         f_q[k] <= f_q[k-1];
       end
-      m_axis_tvalid <= v_q[2];
+      m_axis_tvalid <= v_q[NST-1];
       m_axis_tdata  <= out_c;
-      {m_eof, m_axis_tlast, m_axis_tuser} <= f_q[2];
+      {m_eof, m_axis_tlast, m_axis_tuser} <= f_q[NST-1];
     end
   end
 
   // Data path registers (no reset needed)
   always_ff @(posedge clk) begin
     if (adv) begin
-      fx_q[0] <= fx;  fx_q[1] <= fx_q[0];
+      fx_q[0] <= fx;  fx_q[1] <= fx_q[0];                          // A, B
       fy_q[0] <= fy;  fy_q[1] <= fy_q[0];
-      w00_q <= w00_c; w01_q <= w01_c; w10_q <= w10_c; w11_q <= w11_c;
-      win_q <= win;
+      x_d[0] <= fx_q[1];  y_d[0] <= fy_q[1];  win_d[0] <= win;     // W
+      for (int d = 1; d < 3; d++) begin x_d[d] <= x_d[d-1]; y_d[d] <= y_d[d-1]; end
+      for (int d = 1; d < 5; d++) win_d[d] <= win_d[d-1];
+      d1_q <= d1_c;  d2_q <= d2_c;                                 // D
+      k_q  <= k_c;                                                 // C
+      for (int t = 0; t < 4; t++) w_q[t] <= w_c[t];                // G
+      for (int c = 0; c < CHANNELS; c++) begin
+        for (int t = 0; t < 4; t++)                                // M
+          p_q[c][t] <= MW'(win_d[3][(t*PIX_W) + c*COMP_W +: COMP_W]) * MW'(w_q[t]);
+        s_q[c][0] <= SW'(p_q[c][0]) + SW'(p_q[c][1]);              // S
+        s_q[c][1] <= SW'(p_q[c][2]) + SW'(p_q[c][3]);
+      end
     end
   end
 

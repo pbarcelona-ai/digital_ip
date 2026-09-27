@@ -6,6 +6,7 @@
 #   +OUTDIR=<dir>    : made absolute and created; default $ROOT/ppm_out/<IP>
 #   anything else    : passed through unchanged (+OUT_W=, +OUT_H=, +NO_PPM, ...)
 PLUSARGS=()
+VIEW=auto; [ "${NO_VIEW:-0}" = 1 ] && VIEW=0   # -view / -noview: Surfer launch
 VDEFS=()        # -D<NAME>[=<v>] compile defines, as +define+ for Verilator
 TB_MAX_W=${TB_MAX_W:-48}
 TB_MAX_H=${TB_MAX_H:-40}
@@ -26,6 +27,8 @@ for a in "$@"; do
     +OUTDIR=*)
       d="$(abspath "${a#+OUTDIR=}")"; mkdir -p "$d"; OUTDIR_SET=1
       PLUSARGS+=("+OUTDIR=$d") ;;
+    -view)   VIEW=1 ;;
+    -noview) VIEW=0 ;;
     -D*) VDEFS+=("+define+${a#-D}") ;;
     *) PLUSARGS+=("$a") ;;
   esac

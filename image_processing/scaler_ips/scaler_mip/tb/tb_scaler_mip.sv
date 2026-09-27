@@ -188,6 +188,8 @@ module tb_scaler_mip;
     axil_check(12'h058, {8'd0, 8'(PHASE_BITS), 8'(ANISO_MAX), 8'(LEVELS)});
     if (use_file) begin
       run_file_suite();              // +IMG=<file.ppm>
+    end else if (quick) begin
+      run_quick_suite();                // +QUICK
     end else begin
       // generated images: standard sweep plus IP-specific tests
       run_standard_suite();

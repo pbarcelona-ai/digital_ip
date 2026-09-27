@@ -146,6 +146,8 @@ module tb_scaler_lanczos;
     kind = KERNEL_LANCZOS; kpa = 3.0;                   // Lanczos-3
     if (use_file) begin
       run_file_suite();              // +IMG=<file.ppm>
+    end else if (quick) begin
+      run_quick_suite();                // +QUICK
     end else begin
       // generated images: standard sweep plus IP-specific tests
       run_standard_suite();

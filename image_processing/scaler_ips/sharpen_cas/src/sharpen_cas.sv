@@ -180,9 +180,10 @@ module sharpen_cas #(
   end
 
   // ===========================================================================
-  // Line buffers: 4 x MAX_W pixels, row r stored in buffer r mod 4
+  // Line buffers: 4 x MAX_W pixels, row r stored in buffer r mod 4.
+  // Implemented below (after stage 1) as four independent single-write /
+  // single-read memories without reset, so synthesis maps them to block RAM.
   // ===========================================================================
-  logic [PIX_W-1:0] lb [4][MAX_W];
 
   // ===========================================================================
   // Input side
@@ -203,6 +204,11 @@ module sharpen_cas #(
 
   logic out_eof_hs;
   logic rows_read_inc;
+
+  // line-buffer write port: every accepted beat except data dropped before SOF
+  wire        lb_we   = beat && (active || s_axis_tuser);
+  wire [1:0]  lb_wrow = active ? iy[1:0] : 2'd0;
+  wire [15:0] lb_wcol = active ? ix : 16'd0;
 
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -231,7 +237,6 @@ module sharpen_cas #(
           end else if (s_axis_tuser) begin
             set_sof_err <= 1'b1;                        // SOF inside a frame
           end
-          lb[y[1:0]][x] <= s_axis_tdata;
           if (s_axis_tlast != (x == w - 16'd1)) set_eol_err <= 1'b1;
           if (x == w - 16'd1) begin
             ix <= '0;
@@ -318,10 +323,17 @@ module sharpen_cas #(
 
   always_ff @(posedge clk) begin
     if (adv) begin
-      for (int b = 0; b < 4; b++) bq[b] <= lb[b][s0_col];
       s1_bt <= s0_bt; s1_bm <= s0_bm; s1_bb <= s0_bb;
       s1_first <= s0_first; s1_emit <= s0_emit;
       s1_sof <= s0_sof; s1_eol <= s0_eol; s1_eof <= s0_eof;
+    end
+  end
+
+  for (genvar r = 0; r < 4; r++) begin : g_line
+    logic [PIX_W-1:0] mem [MAX_W];
+    always_ff @(posedge clk) begin
+      if (lb_we && lb_wrow == 2'(r)) mem[lb_wcol] <= s_axis_tdata;
+      if (adv) bq[r] <= mem[s0_col];
     end
   end
   always_ff @(posedge clk or negedge rst_n) begin
@@ -356,82 +368,129 @@ module sharpen_cas #(
     end
   end
 
-  // ---- stage 3 (comb -> reg): soft min/max, amplitude, laplacian
-  localparam int DW = COMP_W + 4;
-  // amplitude for one component from its 3x3 neighbourhood
-  //   a b c / d e f / g h i
-  function automatic logic [8:0] cas_amp(input int a, input int b, input int c,
-                                         input int d, input int e, input int f,
-                                         input int g, input int h, input int i);
-    int mn5, mx5, mn9, mx9, mn, mx, head, amp;
-    mn5 = e; mx5 = e;
-    if (b < mn5) mn5 = b;  if (b > mx5) mx5 = b;
-    if (d < mn5) mn5 = d;  if (d > mx5) mx5 = d;
-    if (f < mn5) mn5 = f;  if (f > mx5) mx5 = f;
-    if (h < mn5) mn5 = h;  if (h > mx5) mx5 = h;
-    mn9 = mn5; mx9 = mx5;
-    if (a < mn9) mn9 = a;  if (a > mx9) mx9 = a;
-    if (c < mn9) mn9 = c;  if (c > mx9) mx9 = c;
-    if (g < mn9) mn9 = g;  if (g > mx9) mx9 = g;
-    if (i < mn9) mn9 = i;  if (i > mx9) mx9 = i;
-    mn   = mn5 + mn9;
-    mx   = mx5 + mx9;
-    head = (mn < 2 * M - mx) ? mn : 2 * M - mx;
-    if (mx == 0) amp = 0;
-    else begin
-      amp = int'((longint'(head) * longint'(recip_rom[mx]) + 64'd32768) >> 16);
-      if (amp > 256) amp = 256;
-    end
-    return 9'(amp);
+  // ---- back end: amplitude and sharpening, one operation per stage
+  //   X1  5-tap (cross) and 4-corner min / max, laplacian d, centre e
+  //   X2  soft min mn = min5 + min9, soft max mx = max5 + max9,
+  //       headroom head = min(mn, 2M - mx)
+  //   R1  reciprocal lookup recip_rom[mx]                       (LUT ROM)
+  //   X3  head * recip                                          (DSP48)
+  //   X4  amp = min(256, (product + 2^15) >> 16); 0 when mx = 0
+  //   R2  square-root lookup sqrt_rom[amp]                      (LUT ROM)
+  //   Y1  k = (sqrt * gain + 128) >> 8                           (DSP48)
+  //   Y2  kd = (k * d + 128) >>> 8                               (DSP48)
+  //   out v = e + kd (e when bypassed), clamped to [0, M] -> m_axis
+  // All arithmetic has exact widths; results are bit-identical to the
+  // single-cycle formulation in the header.
+  localparam int DW  = COMP_W + 4;                   // laplacian (signed)
+  localparam int SW  = COMP_W + 1;                   // soft min / max: 0 .. 2M
+  localparam int RW  = SW + 25;                      // head * recip width
+  localparam int KW  = 10;                           // k: 0 .. 256
+  localparam int PW  = KW + DW + 1;                  // k * d (signed)
+  localparam int NBE = 8;                            // X1 .. Y2
+
+  logic [NBE-1:0]       be_v;
+  logic [2:0]           be_f [NBE];                  // {eof, eol, sof}
+  logic [PIX_W-1:0]     e_d  [NBE];                  // centre pixel, delayed
+  logic signed [DW-1:0] d_d  [CHANNELS][7];          // laplacian: X1 .. Y1
+  logic [COMP_W-1:0]    mn5_q [CHANNELS], mx5_q [CHANNELS];    // X1
+  logic [COMP_W-1:0]    mnc_q [CHANNELS], mxc_q [CHANNELS];
+  logic [SW-1:0]        head_q [CHANNELS], mx_q [CHANNELS];    // X2
+  logic [SW-1:0]        head_r [CHANNELS];                     // R1
+  logic [23:0]          rcp_q  [CHANNELS];                     // recip, mx >= 2
+  logic                 zero_r [CHANNELS], one_r [CHANNELS];
+  logic                 one_q  [CHANNELS];
+  logic [SW-1:0]        head_x [CHANNELS];
+  logic [RW-1:0]        prod_q [CHANNELS];                     // X3
+  logic                 zero_q [CHANNELS];
+  logic [8:0]           amp_q  [CHANNELS];                     // X4
+  logic [8:0]           sq_q   [CHANNELS];                     // R2
+  logic [KW-1:0]        k_q    [CHANNELS];                     // Y1
+  logic signed [PW-1:0] kd_q   [CHANNELS];                     // Y2
+
+  function automatic logic [COMP_W-1:0] comp(input logic [PIX_W-1:0] p, input int c);
+    return p[c*COMP_W +: COMP_W];
   endfunction
 
-  function automatic int cmp(input logic [PIX_W-1:0] p, input int c);
-    return int'(p[c*COMP_W +: COMP_W]);
-  endfunction
-
-  logic [8:0]           amp_c [CHANNELS];
-  logic signed [DW-1:0] d_c   [CHANNELS];
-  always_comb begin
-    for (int c = 0; c < CHANNELS; c++) begin
-      amp_c[c] = cas_amp(cmp(wn[0][0], c), cmp(wn[0][1], c), cmp(wn[0][2], c),
-                         cmp(wn[1][0], c), cmp(wn[1][1], c), cmp(wn[1][2], c),
-                         cmp(wn[2][0], c), cmp(wn[2][1], c), cmp(wn[2][2], c));
-      d_c[c]   = DW'(4 * cmp(wn[1][1], c) - cmp(wn[0][1], c) - cmp(wn[1][0], c)
-                     - cmp(wn[1][2], c) - cmp(wn[2][1], c));
+  always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      be_v <= '0;
+      for (int k = 0; k < NBE; k++) be_f[k] <= '0;
+    end else if (beat && !active) begin
+      be_v <= '0;                                    // flush at frame start
+    end else if (adv) begin
+      be_v[0] <= s2_v;
+      be_f[0] <= {s2_eof, s2_eol, s2_sof};
+      for (int k = 1; k < NBE; k++) begin
+        be_v[k] <= be_v[k-1];
+        be_f[k] <= be_f[k-1];
+      end
     end
   end
-
-  logic [8:0]           s3_amp [CHANNELS];
-  logic signed [DW-1:0] s3_d   [CHANNELS];
-  logic [PIX_W-1:0]     s3_ctr;
-  logic                 s3_v, s3_sof, s3_eol, s3_eof;
 
   always_ff @(posedge clk) begin
     if (adv) begin
+      e_d[0] <= wn[1][1];
+      for (int k = 1; k < NBE; k++) e_d[k] <= e_d[k-1];
       for (int c = 0; c < CHANNELS; c++) begin
-        s3_amp[c] <= amp_c[c];
-        s3_d[c]   <= d_c[c];
+        logic [COMP_W-1:0] a, b, cc, d, e, f, g, h, i, t0, t1;
+        logic [SW-1:0]     mn, mx, rest;
+        logic [RW-1:0]     rnd;
+        logic [17:0]       kp;
+        a = comp(wn[0][0], c); b = comp(wn[0][1], c); cc = comp(wn[0][2], c);
+        d = comp(wn[1][0], c); e = comp(wn[1][1], c); f  = comp(wn[1][2], c);
+        g = comp(wn[2][0], c); h = comp(wn[2][1], c); i  = comp(wn[2][2], c);
+        // X1: min/max as small balanced trees
+        t0 = (b < d) ? b : d;   t1 = (f < h) ? f : h;
+        t0 = (t0 < t1) ? t0 : t1;
+        mn5_q[c] <= (t0 < e) ? t0 : e;
+        t0 = (b > d) ? b : d;   t1 = (f > h) ? f : h;
+        t0 = (t0 > t1) ? t0 : t1;
+        mx5_q[c] <= (t0 > e) ? t0 : e;
+        t0 = (a < cc) ? a : cc; t1 = (g < i) ? g : i;
+        mnc_q[c] <= (t0 < t1) ? t0 : t1;
+        t0 = (a > cc) ? a : cc; t1 = (g > i) ? g : i;
+        mxc_q[c] <= (t0 > t1) ? t0 : t1;
+        d_d[c][0] <= DW'({e, 2'b00}) - DW'(b) - DW'(d) - DW'(f) - DW'(h);
+        for (int k = 1; k < 7; k++) d_d[c][k] <= d_d[c][k-1];
+        // X2: soft min / max and headroom
+        mn   = SW'(mn5_q[c]) + SW'((mnc_q[c] < mn5_q[c]) ? mnc_q[c] : mn5_q[c]);
+        mx   = SW'(mx5_q[c]) + SW'((mxc_q[c] > mx5_q[c]) ? mxc_q[c] : mx5_q[c]);
+        rest = SW'(2 * M) - mx;
+        head_q[c] <= (mn < rest) ? mn : rest;
+        mx_q[c]   <= mx;
+        // R1: reciprocal lookup. recip[1] = 2^24 is the only entry that needs
+        // 25 bits; it is handled as a shift so the multiplier operand stays
+        // 24 bits (fits one DSP48E1 A port)
+        rcp_q[c]  <= 24'(recip_rom[mx_q[c]]);
+        head_r[c] <= head_q[c];
+        zero_r[c] <= (mx_q[c] == '0);
+        one_r[c]  <= (mx_q[c] == SW'(1));
+        // X3: headroom / mx as a multiply by the reciprocal
+        prod_q[c] <= one_r[c] ? (RW'(head_r[c]) << 24) : RW'(head_r[c]) * RW'(rcp_q[c]);
+        zero_q[c] <= zero_r[c];
+        // X4: amplitude 0 .. 256
+        rnd = (prod_q[c] + RW'(32768)) >> 16;
+        amp_q[c] <= zero_q[c] ? 9'd0 : (rnd > RW'(256)) ? 9'd256 : 9'(rnd);
+        // Y1: strength k from sqrt(amp) and the frame's gain
+        sq_q[c] <= sqrt_rom[amp_q[c]];                             // R2
+        kp = 18'(sq_q[c]) * 18'(f_gain) + 18'd128;
+        k_q[c] <= KW'(kp >> 8);
+        // Y2: k * d, rounded
+        // $signed() is explicit on purpose: sv2v v0.0.12 drops the signedness
+        // of a size cast applied to an element of a 2-D signed array
+        kd_q[c] <= ($signed({1'b0, k_q[c]}) * $signed(PW'(d_d[c][6])) + PW'(128)) >>> 8;
       end
-      s3_ctr <= wn[1][1];
-      s3_sof <= s2_sof; s3_eol <= s2_eol; s3_eof <= s2_eof;
     end
   end
-  always_ff @(posedge clk or negedge rst_n) begin
-    if (!rst_n)               s3_v <= 1'b0;
-    else if (beat && !active) s3_v <= 1'b0;
-    else if (adv)             s3_v <= s2_v;
-  end
 
-  // ---- stage 4 (comb -> output reg): sqrt, strength, apply
+  // ---- out (comb): apply, clamp
   logic [PIX_W-1:0] out_c;
   always_comb begin
     for (int c = 0; c < CHANNELS; c++) begin
-      int k, e, v;
-      k = (int'(sqrt_rom[s3_amp[c]]) * int'(f_gain) + 128) >>> 8;
-      e = int'(s3_ctr[c*COMP_W +: COMP_W]);
-      v = e + ((k * int'(s3_d[c]) + 128) >>> 8);
-      if (f_bypass) v = e;
-      out_c[c*COMP_W +: COMP_W] = COMP_W'((v < 0) ? 0 : (v > M) ? M : v);
+      logic signed [PW-1:0] v;
+      v = PW'(comp(e_d[NBE-1], c)) + kd_q[c];
+      if (f_bypass) v = PW'(comp(e_d[NBE-1], c));
+      out_c[c*COMP_W +: COMP_W] = (v < 0) ? '0 : (v > PW'(M)) ? COMP_W'(M) : COMP_W'(v);
     end
   end
 
@@ -441,11 +500,9 @@ module sharpen_cas #(
       m_axis_tvalid <= 1'b0; m_axis_tdata <= '0; m_axis_tuser <= 1'b0;
       m_axis_tlast <= 1'b0; m_eof <= 1'b0;
     end else if (adv) begin
-      m_axis_tvalid <= s3_v;
+      m_axis_tvalid <= be_v[NBE-1];
       m_axis_tdata  <= out_c;
-      m_axis_tuser  <= s3_sof;
-      m_axis_tlast  <= s3_eol;
-      m_eof         <= s3_eof;
+      {m_eof, m_axis_tlast, m_axis_tuser} <= be_f[NBE-1];
     end
   end
 

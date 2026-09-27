@@ -161,35 +161,33 @@ module scaler_bilinear #(
   localparam int HW = COMP_W + PHASE_BITS + 1;   // horizontal sum width
   localparam int VW = HW + PHASE_BITS + 1;       // vertical sum width
 
-  // Pipeline registers: [0] stage A, [1] stage B (window), [2] stage 3
-  logic [2:0]            v_q;                    // valid per stage
-  logic [2:0]            f_q [3];                // {eof, eol, sof}
-  logic [PHASE_BITS-1:0] fx_q [2], fy_q [3];     // phases, delayed
-  logic [HW-1:0]         top_q [CHANNELS], bot_q [CHANNELS];  // stage 3
+  // Pipeline (every register advances with adv; valid/flags follow the data)
+  //   A    window origin / phases        (banked_framebuf stage A)
+  //   B    RAM data                      (banked_framebuf stage B)
+  //   W    window after the tap multiplexer
+  //   M1   horizontal products  p * (ONE - fx), p * fx      (DSP48)
+  //   S1   top = p00*(ONE-fx) + p01*fx, bot likewise
+  //   M2   vertical products    top * (ONE - fy), bot * fy  (DSP48)
+  //   out  (sum + ONE^2/2) >> 2*PHASE_BITS -> m_axis
+  // One multiply or one add per stage; bit-identical to the single-cycle
+  // form (exact products, same accumulator widths). The result is always
+  // within [0, 2^COMP_W-1] because the weights are convex.
+  localparam int NST = 6;
+  logic [NST-1:0]        v_q;                    // valid per stage
+  logic [2:0]            f_q [NST];              // {eof, eol, sof}
+  logic [PHASE_BITS:0]   wx0, wx1, wy0_d [3], wy1_d [3];   // weights ONE-f, f
+  logic [PHASE_BITS-1:0] fx_q [2], fy_q [2];     // phases A, B
+  logic [4*PIX_W-1:0]    win_q;                  // W
+  logic [HW-1:0]         ph_q [CHANNELS][4];     // M1: p00a p01b p10a p11b
+  logic [HW-1:0]         top_q [CHANNELS], bot_q [CHANNELS];  // S1
+  logic [VW-1:0]         pv_q [CHANNELS][2];     // M2
   logic                  m_eof;
 
-  // stage 3 (comb): horizontal interpolation of the top and bottom rows
-  logic [HW-1:0] top_c [CHANNELS], bot_c [CHANNELS];
-  always_comb begin
-    for (int c = 0; c < CHANNELS; c++) begin
-      logic [COMP_W-1:0] p00, p01, p10, p11;
-      p00 = win[(0*PIX_W) + c*COMP_W +: COMP_W];
-      p01 = win[(1*PIX_W) + c*COMP_W +: COMP_W];
-      p10 = win[(2*PIX_W) + c*COMP_W +: COMP_W];
-      p11 = win[(3*PIX_W) + c*COMP_W +: COMP_W];
-      top_c[c] = HW'(p00) * HW'(ONE - fx_q[1]) + HW'(p01) * HW'(fx_q[1]);
-      bot_c[c] = HW'(p10) * HW'(ONE - fx_q[1]) + HW'(p11) * HW'(fx_q[1]);
-    end
-  end
-
-  // stage 4 (comb): vertical interpolation with rounding; the result is
-  // always within [0, 2^COMP_W-1] because the weights are convex
   logic [PIX_W-1:0] out_c;
   always_comb begin
     for (int c = 0; c < CHANNELS; c++) begin
       logic [VW-1:0] s;
-      s = VW'(top_q[c]) * VW'(ONE - fy_q[2]) + VW'(bot_q[c]) * VW'(fy_q[2])
-        + VW'(1) * VW'(ONE * ONE / 2);
+      s = pv_q[c][0] + pv_q[c][1] + VW'(ONE * ONE / 2);
       out_c[c*COMP_W +: COMP_W] = COMP_W'(s >> (2 * PHASE_BITS));
     end
   end
@@ -197,7 +195,7 @@ module scaler_bilinear #(
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       v_q           <= '0;
-      for (int k = 0; k < 3; k++) f_q[k] <= '0;
+      for (int k = 0; k < NST; k++) f_q[k] <= '0;
       m_axis_tvalid <= 1'b0;
       m_axis_tdata  <= '0;
       m_axis_tuser  <= 1'b0;
@@ -206,29 +204,38 @@ module scaler_bilinear #(
     end else if (gen_start) begin
       v_q           <= '0;           // flush at the start of a frame
     end else if (adv) begin
-      // valid/flags follow the data through stages A, B and 3; the
-      // result of stage 4 is registered straight into the output
       v_q[0] <= d_valid;
       f_q[0] <= {d_eof, d_eol, d_sof};
-      for (int k = 1; k < 3; k++) begin
+      for (int k = 1; k < NST; k++) begin
         v_q[k] <= v_q[k-1];
         f_q[k] <= f_q[k-1];
       end
-      m_axis_tvalid <= v_q[2];
+      m_axis_tvalid <= v_q[NST-1];
       m_axis_tdata  <= out_c;
-      {m_eof, m_axis_tlast, m_axis_tuser} <= f_q[2];
+      {m_eof, m_axis_tlast, m_axis_tuser} <= f_q[NST-1];
     end
   end
 
-  // Data path registers (no reset needed); phases delayed to meet the
-  // window, then the stage-3 partial sums
+  // Data path registers (no reset needed)
   always_ff @(posedge clk) begin
     if (adv) begin
-      fx_q[0] <= fx;  fx_q[1] <= fx_q[0];
-      fy_q[0] <= fy;  fy_q[1] <= fy_q[0];  fy_q[2] <= fy_q[1];
+      fx_q[0] <= fx;  fx_q[1] <= fx_q[0];                         // A, B
+      fy_q[0] <= fy;  fy_q[1] <= fy_q[0];
+      win_q <= win;                                               // W
+      wx0   <= (PHASE_BITS+1)'(ONE) - (PHASE_BITS+1)'(fx_q[1]);
+      wx1   <= (PHASE_BITS+1)'(fx_q[1]);
+      wy0_d[0] <= (PHASE_BITS+1)'(ONE) - (PHASE_BITS+1)'(fy_q[1]);
+      wy1_d[0] <= (PHASE_BITS+1)'(fy_q[1]);
+      for (int d = 1; d < 3; d++) begin wy0_d[d] <= wy0_d[d-1]; wy1_d[d] <= wy1_d[d-1]; end
       for (int c = 0; c < CHANNELS; c++) begin
-        top_q[c] <= top_c[c];
-        bot_q[c] <= bot_c[c];
+        ph_q[c][0] <= HW'(win_q[(0*PIX_W) + c*COMP_W +: COMP_W]) * HW'(wx0);   // M1
+        ph_q[c][1] <= HW'(win_q[(1*PIX_W) + c*COMP_W +: COMP_W]) * HW'(wx1);
+        ph_q[c][2] <= HW'(win_q[(2*PIX_W) + c*COMP_W +: COMP_W]) * HW'(wx0);
+        ph_q[c][3] <= HW'(win_q[(3*PIX_W) + c*COMP_W +: COMP_W]) * HW'(wx1);
+        top_q[c]   <= ph_q[c][0] + ph_q[c][1];                                 // S1
+        bot_q[c]   <= ph_q[c][2] + ph_q[c][3];
+        pv_q[c][0] <= VW'(top_q[c]) * VW'(wy0_d[2]);                           // M2
+        pv_q[c][1] <= VW'(bot_q[c]) * VW'(wy1_d[2]);
       end
     end
   end

@@ -425,59 +425,55 @@ module scaler_mip #(
   end
 
   // ---------------------------------------------------------------- sampling pipeline
-  // Pipeline registers: [0] stage A, [1] stage B (windows), [2] stage 3
-  logic [2:0]            v_q;
-  logic [4:0]            f_q [3];         // {first, last, eof, eol, sof}
-  logic [PHASE_BITS-1:0] fr_q [2][4];     // {ax, ay, bx, by}
-  localparam int HW = COMP_W + PHASE_BITS + 1;
-  localparam int VW = HW + PHASE_BITS + 1;
+  // Pipeline (every register advances with adv; valid/flags follow the data)
+  //   A    window origins / phases of both levels  (banked_framebuf stage A)
+  //   B    RAM data                                (banked_framebuf stage B)
+  //   W    level windows after the tap and level multiplexers
+  //   M1   p * (ONE - fx), p * fx          both levels     (DSP48)
+  //   S1   top / bot row sums
+  //   M2   top * (ONE - fy), bot * fy      both levels     (DSP48)
+  //   S2   bilinear samples sa, sb = (sum + ONE^2/2) >> 2*PHASE_BITS
+  //   M3   blend products sa * (256 - f), sb * f
+  //   out  t = (sum + 128) >> 8, accumulated over the probes of a pixel;
+  //        on the last probe the rounded mean is sent to m_axis
+  // One multiply or one add per stage (plus the probe accumulator);
+  // bit-identical to the single-cycle form.
+  localparam int NST = 8;
+  localparam int HW  = COMP_W + PHASE_BITS + 1;
+  localparam int VW  = HW + PHASE_BITS + 1;
+  localparam int BW3 = COMP_W + 9;                  // blend product width
+  logic [NST-1:0]        v_q;
+  logic [4:0]            f_q [NST];         // {first, last, eof, eol, sof}
+  logic [PHASE_BITS-1:0] fr_q [2][4];       // {ax, ay, bx, by}: A, B
+  logic [PHASE_BITS:0]   wx_q [2][2];       // W: level a/b: {ONE-fx, fx}
+  logic [PHASE_BITS:0]   wy_d [3][2][2];    // W, M1, S1: level a/b: {ONE-fy, fy}
+  logic [4*PIX_W-1:0]    wa_q, wb_q;        // W
+  logic [HW-1:0]         p1_q [2][CHANNELS][4];   // M1 [level][c][tap]
+  logic [HW-1:0]         r1_q [2][CHANNELS][2];   // S1 top, bot
+  logic [VW-1:0]         p2_q [2][CHANNELS][2];   // M2
+  logic [COMP_W-1:0]     sab_q [2][CHANNELS];     // S2: sa, sb
+  logic [BW3-1:0]        p3_q [2][CHANNELS];      // M3
+  logic                  m_eof;
 
-  // Bilinear interpolation of one component of a 2x2 window
-  function automatic logic [COMP_W-1:0] bilerp(input logic [4*PIX_W-1:0] w, input int c,
-                                               input logic [PHASE_BITS-1:0] fx,
-                                               input logic [PHASE_BITS-1:0] fy);
-    logic [HW-1:0] top, bot;
-    logic [VW-1:0] s;
-    top = HW'(w[(0*PIX_W) + c*COMP_W +: COMP_W]) * HW'(ONE - fx)
-        + HW'(w[(1*PIX_W) + c*COMP_W +: COMP_W]) * HW'(fx);
-    bot = HW'(w[(2*PIX_W) + c*COMP_W +: COMP_W]) * HW'(ONE - fx)
-        + HW'(w[(3*PIX_W) + c*COMP_W +: COMP_W]) * HW'(fx);
-    s   = VW'(top) * VW'(ONE - fy) + VW'(bot) * VW'(fy) + VW'(ONE * ONE / 2);
-    return COMP_W'(s >> (2 * PHASE_BITS));
-  endfunction
-
-  // stage 3: bilinear samples of levels lvl_a (sa) and lvl_b (sb)
-  logic [PIX_W-1:0] sa_c, sb_c, sa_q, sb_q;
-  always_comb begin
-    for (int c = 0; c < CHANNELS; c++) begin
-      sa_c[c*COMP_W +: COMP_W] = bilerp(win[lvl_a], c, fr_q[1][0], fr_q[1][1]);
-      sb_c[c*COMP_W +: COMP_W] = bilerp(win[lvl_b], c, fr_q[1][2], fr_q[1][3]);
-    end
-  end
-
-  // stage 4 (comb): trilinear blend t = (sa*(256-f) + sb*f + 128) >> 8,
-  // accumulated over the probes of a pixel (restart on the first probe);
-  // on the last probe the rounded mean (acc + NP/2) >> log2(NP) is output
+  // ---- out (comb): trilinear blend, probe accumulation and mean
   localparam int ACW = COMP_W + 5;
   logic [ACW-1:0]   acc_q [CHANNELS];
   logic [ACW-1:0]   acc_c [CHANNELS];
   logic [PIX_W-1:0] avg_c;
   always_comb begin
     for (int c = 0; c < CHANNELS; c++) begin
-      logic [COMP_W+8:0] t;
-      t = (COMP_W+9)'(sa_q[c*COMP_W +: COMP_W]) * (COMP_W+9)'(9'd256 - lod_f)
-        + (COMP_W+9)'(sb_q[c*COMP_W +: COMP_W]) * (COMP_W+9)'(lod_f) + 128;
-      acc_c[c] = (f_q[2][4] ? '0 : acc_q[c]) + ACW'(t >> 8);
+      logic [BW3-1:0] t;
+      t = p3_q[0][c] + p3_q[1][c] + BW3'(128);
+      acc_c[c] = (f_q[NST-1][4] ? '0 : acc_q[c]) + ACW'(t >> 8);
       avg_c[c*COMP_W +: COMP_W] =
         COMP_W'((acc_c[c] + ACW'((1 << aniso_log2_r) >> 1)) >> aniso_log2_r);
     end
   end
 
-  logic m_eof;
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       v_q <= '0;
-      for (int k = 0; k < 3; k++) f_q[k] <= '0;
+      for (int k = 0; k < NST; k++) f_q[k] <= '0;
       for (int c = 0; c < CHANNELS; c++) acc_q[c] <= '0;
       m_axis_tvalid <= 1'b0;
       m_axis_tdata  <= '0;
@@ -489,27 +485,54 @@ module scaler_mip #(
     end else if (adv) begin
       v_q[0] <= p_valid;
       f_q[0] <= {p_first, p_last, p_flags};
-      v_q[1] <= v_q[0]; f_q[1] <= f_q[0];
-      v_q[2] <= v_q[1]; f_q[2] <= f_q[1];
-      if (v_q[2])
+      for (int k = 1; k < NST; k++) begin
+        v_q[k] <= v_q[k-1];
+        f_q[k] <= f_q[k-1];
+      end
+      if (v_q[NST-1])
         for (int c = 0; c < CHANNELS; c++) acc_q[c] <= acc_c[c];
       // only the last probe of a pixel produces an output beat
-      m_axis_tvalid <= v_q[2] && f_q[2][3];
+      m_axis_tvalid <= v_q[NST-1] && f_q[NST-1][3];
       m_axis_tdata  <= avg_c;
-      {m_eof, m_axis_tlast, m_axis_tuser} <= f_q[2][2:0];
+      {m_eof, m_axis_tlast, m_axis_tuser} <= f_q[NST-1][2:0];
     end
   end
 
   // Data path registers (no reset needed)
   always_ff @(posedge clk) begin
+    logic [4*PIX_W-1:0] ws;                                        // level window
     if (adv) begin
-      fr_q[0][0] <= fa_x;
+      fr_q[0][0] <= fa_x;                                          // A
       fr_q[0][1] <= fa_y;
       fr_q[0][2] <= fb_x;
       fr_q[0][3] <= fb_y;
-      for (int i = 0; i < 4; i++) fr_q[1][i] <= fr_q[0][i];
-      sa_q    <= sa_c;
-      sb_q    <= sb_c;
+      for (int i = 0; i < 4; i++) fr_q[1][i] <= fr_q[0][i];       // B
+      wa_q <= win[lvl_a];                                          // W
+      wb_q <= win[lvl_b];
+      for (int l = 0; l < 2; l++) begin
+        wx_q[l][0]    <= (PHASE_BITS+1)'(ONE) - (PHASE_BITS+1)'(fr_q[1][2*l]);
+        wx_q[l][1]    <= (PHASE_BITS+1)'(fr_q[1][2*l]);
+        wy_d[0][l][0] <= (PHASE_BITS+1)'(ONE) - (PHASE_BITS+1)'(fr_q[1][2*l+1]);
+        wy_d[0][l][1] <= (PHASE_BITS+1)'(fr_q[1][2*l+1]);
+        for (int d = 1; d < 3; d++) begin
+          wy_d[d][l][0] <= wy_d[d-1][l][0];
+          wy_d[d][l][1] <= wy_d[d-1][l][1];
+        end
+      end
+      for (int c = 0; c < CHANNELS; c++)
+        for (int l = 0; l < 2; l++) begin
+          ws = (l == 0) ? wa_q : wb_q;                             // M1
+          for (int t = 0; t < 4; t++)
+            p1_q[l][c][t] <= HW'(ws[(t*PIX_W) + c*COMP_W +: COMP_W]) * HW'(wx_q[l][t % 2]);
+          r1_q[l][c][0] <= p1_q[l][c][0] + p1_q[l][c][1];          // S1
+          r1_q[l][c][1] <= p1_q[l][c][2] + p1_q[l][c][3];
+          p2_q[l][c][0] <= VW'(r1_q[l][c][0]) * VW'(wy_d[2][l][0]);  // M2
+          p2_q[l][c][1] <= VW'(r1_q[l][c][1]) * VW'(wy_d[2][l][1]);
+          sab_q[l][c]   <= COMP_W'((p2_q[l][c][0] + p2_q[l][c][1]  // S2
+                                    + VW'(ONE * ONE / 2)) >> (2 * PHASE_BITS));
+          p3_q[l][c]    <= BW3'(sab_q[l][c])                       // M3
+                         * ((l == 0) ? BW3'(9'd256 - lod_f) : BW3'(lod_f));
+        end
     end
   end
 

@@ -10,10 +10,12 @@
 #            linebuf  - line buffer: every IP with LINE_BUF
 #          In pingpong / linebuf mode only the testbenches that support the
 #          mode are run (unless directories are named explicitly).
-#   VCD  : 1 keeps waveform dumps (default off for speed, +NO_VCD)
+#   VCD  : 1 keeps waveform dumps (default off for speed, +NO_VCD); Surfer
+#          is never launched by the regression (NO_VIEW=1)
 #   Arguments starting with '+' are passed to every IP testbench, e.g.
 #     tools/run_all.sh +IMG=photo.ppm        (all IPs scale photo.ppm)
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+export NO_VIEW=1          # never open waveform viewers during a regression
 SIM="${SIM:-iverilog}"
 MODE="${MODE:-frame}"
 case "$SIM" in
