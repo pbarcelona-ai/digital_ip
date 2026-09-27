@@ -1,0 +1,17 @@
+Module     : banked_framebuf
+Family     : xc7
+Parameters : MAX_W=640 MAX_H=480
+Tools      : Yosys 0.33, sv2v v0.0.12
+Run time   : 33 s
+
+Hierarchical utilization (Yosys synth_xilinx, totals include sub-instances)
+
+Instance                                            LUT   LUTRAM       FF    CARRY     MUXF   BRAM36      DSP
+-------------------------------------------------------------------------------------------------------------
+banked_framebuf                                    2944        0      220      171     1152    240.0        5
+
+LUT = LUT1..LUT6 used as logic; LUTRAM = distributed RAM + SRL; BRAM36 counts
+RAMB36 as 1 and RAMB18 as 0.5. Yosys does not place or route, so these are
+pre-implementation estimates (Vivado will typically optimise further).
+
+Critical path (cell delays only, no routing): 2950 ps  (see timing.rpt)

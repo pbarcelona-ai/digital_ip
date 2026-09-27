@@ -1,0 +1,137 @@
+
+21. Executing STA pass (static timing analysis).
+Warning: Module 'MUXF7' has no timing arcs!
+Warning: Module 'MUXF8' has no timing arcs!
+Warning: Module 'CARRY4' has no timing arcs!
+Latest arrival time in 'banked_framebuf' is 2950:
+    2950 (<unknown>)
+Warning: Critical-path does not terminate in a recognised endpoint.
+           $auto$alumacc.cc:485:replace_alu$5659.X [8]
+    2950 $abc$55973$auto$blifparse.cc:525:parse_blif$57641 (LUT2.I1->O)
+           $auto$alumacc.cc:485:replace_alu$5659.B [8]
+    2823 $mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:99$2304 (DSP48E1.A->P)
+       0   \wr_y [2] (<primary input>)
+Warning: Endpoint banked_framebuf.\hi_y [1] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\hi_y [0] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\hi_x [1] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\hi_x [0] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4634$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2638.Y [9] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4634$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2638.Y [8] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4634$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2638.Y [7] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4634$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2638.Y [6] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4634$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2638.Y [5] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4634$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2638.Y [4] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4634$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2638.Y [3] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4634$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2638.Y [2] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4634$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2638.Y [1] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4634$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2638.Y [0] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4633$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2632.Y [9] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4633$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2632.Y [8] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4633$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2632.Y [7] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4633$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2632.Y [6] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4633$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2632.Y [5] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4633$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2632.Y [4] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4633$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2632.Y [3] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4633$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2632.Y [2] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4633$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2632.Y [1] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4633$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2632.Y [0] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4632$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2626.Y [9] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4632$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2626.Y [8] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4632$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2626.Y [7] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4632$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2626.Y [6] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4632$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2626.Y [5] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4632$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2626.Y [4] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4632$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2626.Y [3] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4632$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2626.Y [2] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4632$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2626.Y [1] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4632$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2626.Y [0] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4631$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2620.Y [9] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4631$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2620.Y [8] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4631$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2620.Y [7] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4631$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2620.Y [6] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4631$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2620.Y [5] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4631$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2620.Y [4] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4631$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2620.Y [3] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4631$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2620.Y [2] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4631$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2620.Y [1] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.$techmap4631$mul$/home/claude/scaler_ips/banked_framebuf/yosys/banked_framebuf.sv2v.v:162$2620.Y [0] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[3] [15] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[3] [14] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[3] [13] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[3] [12] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[3] [11] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[3] [10] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[3] [9] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[3] [8] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[3] [7] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[3] [6] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[3] [5] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[3] [4] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[3] [3] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[3] [2] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[2] [15] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[2] [14] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[2] [13] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[2] [12] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[2] [11] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[2] [10] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[2] [9] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[2] [8] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[2] [7] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[2] [6] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[2] [5] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[2] [4] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[2] [3] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[2] [2] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[1] [15] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[1] [14] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[1] [13] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[1] [12] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[1] [11] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[1] [10] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[1] [9] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[1] [8] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[1] [7] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[1] [6] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[1] [5] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[1] [4] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[1] [3] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[1] [2] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[0] [15] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[0] [14] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[0] [13] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[0] [12] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[0] [11] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[0] [10] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[0] [9] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[0] [8] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[0] [7] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[0] [6] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[0] [5] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[0] [4] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[0] [3] has no (* sta_arrival *) value.
+Warning: Endpoint banked_framebuf.\bcx[0] [2] has no (* sta_arrival *) value.
+
+Arrival histogram:
+ legend: * represents 6 endpoint(s)
+         + represents [1,6) endpoint(s)
+(  1900,   1805] |*+
+(  1805,   1710] |***+
+(  1710,   1615] |***+
+(  1615,   1520] | 
+(  1520,   1425] |***+
+(  1425,   1330] | 
+(  1330,   1235] | 
+(  1235,   1140] |************************************************************ 
+(  1140,   1045] | 
+(  1045,    950] |***+
+(   950,    855] |******+
+(   855,    760] | 
+(   760,    665] | 
+(   665,    570] | 
+(   570,    475] | 
+(   475,    380] |+
+(   380,    285] |**+
+(   285,    190] | 
+(   190,     95] |+
+(    95,      0] |*****+

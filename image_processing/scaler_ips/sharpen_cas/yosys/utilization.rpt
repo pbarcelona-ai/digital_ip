@@ -1,0 +1,79 @@
+
+16. Printing statistics.
+
+=== $paramod$01fd129ea6389d3819b5304ca3c73423f7b7ae88\axil_regbus ===
+
+   Number of wires:                179
+   Number of wire bits:            380
+   Number of public wires:          33
+   Number of public wire bits:     234
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                285
+     FDCE                          136
+     INV                           138
+     LUT2                            3
+     LUT3                            4
+     LUT4                            4
+
+   Estimated number of LCs:          8
+
+=== sharpen_cas ===
+
+   Number of wires:               2588
+   Number of wire bits:          11519
+   Number of public wires:         213
+   Number of public wire bits:    2351
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:               4640
+     $paramod$01fd129ea6389d3819b5304ca3c73423f7b7ae88\axil_regbus      1
+     CARRY4                        226
+     DSP48E1                         9
+     FDCE                          336
+     FDPE                            6
+     FDRE                         1112
+     INV                           448
+     LUT2                          272
+     LUT3                          548
+     LUT4                          122
+     LUT5                          110
+     LUT6                         1129
+     MUXF7                         215
+     MUXF8                          94
+     RAMB18E1                       12
+
+   Estimated number of LCs:       1909
+
+=== design hierarchy ===
+
+   sharpen_cas                       1
+     $paramod$01fd129ea6389d3819b5304ca3c73423f7b7ae88\axil_regbus      1
+
+   Number of wires:               2767
+   Number of wire bits:          11899
+   Number of public wires:         246
+   Number of public wire bits:    2585
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:               4924
+     CARRY4                        226
+     DSP48E1                         9
+     FDCE                          472
+     FDPE                            6
+     FDRE                         1112
+     INV                           586
+     LUT2                          275
+     LUT3                          552
+     LUT4                          126
+     LUT5                          110
+     LUT6                         1129
+     MUXF7                         215
+     MUXF8                          94
+     RAMB18E1                       12
+
+   Estimated number of LCs:       1917
+

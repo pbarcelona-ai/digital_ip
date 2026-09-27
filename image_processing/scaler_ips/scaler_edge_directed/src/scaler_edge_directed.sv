@@ -78,6 +78,11 @@ module scaler_edge_directed #(
   localparam int          DW    = COMP_W + $clog2(CHANNELS) + 1;  // |diff| sum
 
   logic [31:0] ext_rdata;
+  logic               d_valid, d_sof, d_eol, d_eof, d_busy;
+  logic signed [31:0] d_x, d_y;
+
+  localparam int NST = 8;
+  logic [NST-1:0]        v_q;
 
   // ---------------------------------------------------------------- buffering
   // Frame store organisation (see scaler_ctrl / banked_framebuf):
@@ -164,9 +169,6 @@ module scaler_edge_directed #(
   // register holds a beat the sink has not accepted yet.
   wire adv = !m_axis_tvalid || m_axis_tready;
 
-  logic               d_valid, d_sof, d_eol, d_eof, d_busy;
-  logic signed [31:0] d_x, d_y;
-
   // DDA: raster scan of the output, source coordinate per pixel
   scaler_dda u_dda (
     .clk, .rst_n, .start(gen_start), .adv, .hold(lb_hold), .nxt_y(d_nxt_y),
@@ -206,7 +208,6 @@ module scaler_edge_directed #(
   //   out  (sum + ONE^2/2) >> 2*PHASE_BITS -> m_axis
   // All arithmetic uses exact widths; results are bit-identical to the
   // single-cycle form. Weights are convex, so no clamping is needed.
-  localparam int NST = 8;
   localparam int PB  = PHASE_BITS;
   localparam int SW  = COMP_W + WW + 2;          // weighted-sum width
   localparam int MW  = COMP_W + WW;              // one product
@@ -215,7 +216,6 @@ module scaler_edge_directed #(
                          K_D1L = 3'd2,           // "\" edge, lower-left triangle
                          K_D2U = 3'd3,           // "/" edge, upper-left triangle
                          K_D2L = 3'd4;           // "/" edge, lower-right triangle
-  logic [NST-1:0]        v_q;
   logic [2:0]            f_q [NST];
   logic [PB-1:0]         fx_q [2], fy_q [2];     // A, B
   logic [PB-1:0]         x_d [3], y_d [3];       // W, D, C

@@ -1,0 +1,57 @@
+
+20. Executing STA pass (static timing analysis).
+Warning: Module 'MUXF7' has no timing arcs!
+Warning: Module 'MUXF8' has no timing arcs!
+Warning: Module 'CARRY4' has no timing arcs!
+Latest arrival time in 'sharpen_cas' is 3708:
+    3708 (<unknown>)
+Warning: Critical-path does not terminate in a recognised endpoint.
+           $auto$alumacc.cc:485:replace_alu$12013.X [0]
+    3708 $abc$46033$auto$blifparse.cc:525:parse_blif$47926 (INV.I->O)
+           $auto$alumacc.cc:485:replace_alu$12013.B [0]
+    3581 $mul$/home/claude/scaler_ips/sharpen_cas/yosys/sharpen_cas.sv2v.v:766$4430 (DSP48E1.B->P)
+           \f_gain [0]
+     891 $auto$ff.cc:266:slice$25964 (FDCE.CLR->Q)
+           $abc$46033$auto$rtlil.cc:2600:NotGate$45025
+     127 $abc$46033$auto$blifparse.cc:525:parse_blif$47917 (INV.I->O)
+       0   \rst_n (<primary input>)
+Warning: Endpoint sharpen_cas.$abc$46033$procmux$8523_Y[15] has no (* sta_arrival *) value.
+Warning: Endpoint sharpen_cas.$abc$46033$procmux$8523_Y[14] has no (* sta_arrival *) value.
+Warning: Endpoint sharpen_cas.$abc$46033$procmux$8523_Y[13] has no (* sta_arrival *) value.
+Warning: Endpoint sharpen_cas.$abc$46033$procmux$8523_Y[12] has no (* sta_arrival *) value.
+Warning: Endpoint sharpen_cas.$abc$46033$procmux$8523_Y[11] has no (* sta_arrival *) value.
+Warning: Endpoint sharpen_cas.$abc$46033$procmux$8523_Y[10] has no (* sta_arrival *) value.
+Warning: Endpoint sharpen_cas.$abc$46033$procmux$8523_Y[9] has no (* sta_arrival *) value.
+Warning: Endpoint sharpen_cas.$abc$46033$procmux$8523_Y[8] has no (* sta_arrival *) value.
+Warning: Endpoint sharpen_cas.$abc$46033$procmux$8523_Y[7] has no (* sta_arrival *) value.
+Warning: Endpoint sharpen_cas.$abc$46033$procmux$8523_Y[6] has no (* sta_arrival *) value.
+Warning: Endpoint sharpen_cas.$abc$46033$procmux$8523_Y[5] has no (* sta_arrival *) value.
+Warning: Endpoint sharpen_cas.$abc$46033$procmux$8523_Y[4] has no (* sta_arrival *) value.
+Warning: Endpoint sharpen_cas.$abc$46033$procmux$8523_Y[3] has no (* sta_arrival *) value.
+Warning: Endpoint sharpen_cas.$abc$46033$procmux$8523_Y[2] has no (* sta_arrival *) value.
+Warning: Endpoint sharpen_cas.$abc$46033$procmux$8523_Y[1] has no (* sta_arrival *) value.
+Warning: Endpoint sharpen_cas.$abc$46033$procmux$8523_Y[0] has no (* sta_arrival *) value.
+
+Arrival histogram:
+ legend: * represents 7 endpoint(s)
+         + represents [1,7) endpoint(s)
+(  3540,   3363] |***+
+(  3363,   3186] |******************+
+(  3186,   3009] |************+
+(  3009,   2832] | 
+(  2832,   2655] | 
+(  2655,   2478] |****+
+(  2478,   2301] |+
+(  2301,   2124] |+
+(  2124,   1947] |*+
+(  1947,   1770] |***+
+(  1770,   1593] |****+
+(  1593,   1416] |******************************************+
+(  1416,   1239] |***+
+(  1239,   1062] |*+
+(  1062,    885] |******************************+
+(   885,    708] |***+
+(   708,    531] |************************************************************ 
+(   531,    354] | 
+(   354,    177] |*******************************************************+
+(   177,      0] |******+

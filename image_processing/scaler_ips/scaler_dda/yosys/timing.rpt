@@ -1,0 +1,42 @@
+
+20. Executing STA pass (static timing analysis).
+Warning: Module 'MUXF7' has no timing arcs!
+Warning: Module 'MUXF8' has no timing arcs!
+Warning: Module 'CARRY4' has no timing arcs!
+Latest arrival time in 'scaler_dda' is 2575:
+    2575 $auto$ff.cc:266:slice$2604 (FDCE.CE)
+           $abc$3607$auto$opt_dff.cc:219:make_patterns_logic$1798
+    2466 $abc$3607$auto$blifparse.cc:525:parse_blif$3611 (LUT5.I1->O)
+           $techmap4545$abc$3607$auto$blifparse.cc:525:parse_blif$3641.A [1]
+    1994 $abc$3607$auto$blifparse.cc:525:parse_blif$3622 (LUT5.I0->O)
+           $techmap4544$abc$3607$auto$blifparse.cc:525:parse_blif$3622.A [0]
+    1363 $abc$3607$auto$blifparse.cc:525:parse_blif$3623 (LUT4.I0->O)
+           \oy [6]
+     891 $auto$ff.cc:266:slice$2695 (FDCE.CLR->Q)
+           $abc$3607$auto$rtlil.cc:2600:NotGate$3524
+     127 $abc$3607$auto$blifparse.cc:525:parse_blif$3958 (INV.I->O)
+       0   \rst_n (<primary input>)
+
+Arrival histogram:
+ legend: * represents 2 endpoint(s)
+         + represents [1,2) endpoint(s)
+(  2580,   2451] |+
+(  2451,   2322] | 
+(  2322,   2193] |+
+(  2193,   2064] |+
+(  2064,   1935] | 
+(  1935,   1806] |*****+
+(  1806,   1677] | 
+(  1677,   1548] |*****+
+(  1548,   1419] |+
+(  1419,   1290] |+
+(  1290,   1161] |+
+(  1161,   1032] | 
+(  1032,    903] | 
+(   903,    774] |************************************************+
+(   774,    645] | 
+(   645,    516] |************************************************************ 
+(   516,    387] |***********+
+(   387,    258] | 
+(   258,    129] |***********+
+(   129,      0] |+

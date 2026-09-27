@@ -1,0 +1,221 @@
+
+21. Executing STA pass (static timing analysis).
+Warning: Module 'CARRY4' has no timing arcs!
+Warning: Module 'MUXF7' has no timing arcs!
+Warning: Module 'MUXF8' has no timing arcs!
+Latest arrival time in 'scaler_trilinear' is 4620:
+    4620 (<unknown>)
+Warning: Critical-path does not terminate in a recognised endpoint.
+           $flatten\u_core.$auto$maccmap.cc:240:synth$43803.X [2]
+    4620 $flatten\u_core.$abc$65512$auto$blifparse.cc:525:parse_blif$67154 (LUT2.I0->O)
+           $flatten\u_core.$auto$maccmap.cc:114:fulladd$43802.Y [2]
+    4382 $flatten\u_core.$abc$65512$auto$blifparse.cc:525:parse_blif$67125 (LUT6.I0->O)
+           $flatten\u_core.$techmap78489$abc$65512$auto$blifparse.cc:525:parse_blif$67125.A [0]
+    3740 $flatten\u_core.$abc$65512$auto$blifparse.cc:525:parse_blif$67122 (LUT6.I2->O)
+           \u_core.g_lvl[3].u_fb.rd_win [1]
+    3268 $flatten\u_core.\g_lvl[3].u_fb.$abc$68229$auto$blifparse.cc:525:parse_blif$68382 (LUT3.I0->O)
+           $flatten\u_core.\g_lvl[3].u_fb.$techmap78183$abc$68229$auto$blifparse.cc:525:parse_blif$68476.A [0]
+    2861 $flatten\u_core.\g_lvl[3].u_fb.$abc$68229$auto$blifparse.cc:525:parse_blif$68384 (LUT3.I0->O)
+           \u_core.g_lvl[3].u_fb.bank_q[3] [1]
+    2454 u_core.g_lvl[3].u_fb.g_by[1].g_bx[1].mem.0.0 (RAMB18E1.CLKBWRCLK->DOBDO)
+       0   \clk (<primary input>)
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.tsy[1] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.tsx[1] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[0].u_fb.$techmap10455$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3747.Y [10] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[0].u_fb.$techmap10455$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3747.Y [9] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[0].u_fb.$techmap10455$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3747.Y [8] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[0].u_fb.$techmap10455$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3747.Y [7] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[0].u_fb.$techmap10455$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3747.Y [6] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[0].u_fb.$techmap10455$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3747.Y [5] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[0].u_fb.$techmap10455$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3747.Y [4] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[0].u_fb.$techmap10455$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3747.Y [3] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[0].u_fb.$techmap10455$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3747.Y [2] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[0].u_fb.$techmap10455$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3747.Y [1] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[0].u_fb.$techmap10455$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3747.Y [0] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[0].u_fb.$techmap10454$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3741.Y [10] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[0].u_fb.$techmap10454$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3741.Y [9] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[0].u_fb.$techmap10454$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3741.Y [8] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[0].u_fb.$techmap10454$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3741.Y [7] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[0].u_fb.$techmap10454$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3741.Y [6] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[0].u_fb.$techmap10454$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3741.Y [5] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[0].u_fb.$techmap10454$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3741.Y [4] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[0].u_fb.$techmap10454$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3741.Y [3] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[0].u_fb.$techmap10454$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3741.Y [2] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[0].u_fb.$techmap10454$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3741.Y [1] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[0].u_fb.$techmap10454$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3741.Y [0] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[1] [15] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[1] [14] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[1] [13] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[1] [12] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[1] [11] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[1] [10] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[1] [9] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[1] [8] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[1] [7] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[1] [6] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[1] [5] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[1] [4] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[1] [3] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[1] [2] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[1] [1] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[0] [15] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[0] [14] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[0] [13] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[0] [12] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[0] [11] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[0] [10] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[0] [9] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[0] [8] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[0] [7] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[0] [6] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[0] [5] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[0] [4] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[0] [3] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[0] [2] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[0].u_fb.bcx[0] [1] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.tsy[1] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.tsx[1] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[1].u_fb.$techmap10617$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3403.Y [9] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[1].u_fb.$techmap10617$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3403.Y [8] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[1].u_fb.$techmap10617$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3403.Y [7] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[1].u_fb.$techmap10617$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3403.Y [6] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[1].u_fb.$techmap10617$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3403.Y [5] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[1].u_fb.$techmap10617$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3403.Y [4] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[1].u_fb.$techmap10617$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3403.Y [3] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[1].u_fb.$techmap10617$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3403.Y [2] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[1].u_fb.$techmap10617$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3403.Y [1] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[1].u_fb.$techmap10617$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3403.Y [0] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[1] [15] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[1] [14] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[1] [13] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[1] [12] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[1] [11] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[1] [10] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[1] [9] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[1] [8] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[1] [7] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[1] [6] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[1] [5] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[1] [4] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[1] [3] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[1] [2] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[1] [1] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[0] [15] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[0] [14] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[0] [13] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[0] [12] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[0] [11] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[0] [10] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[0] [9] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[0] [8] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[0] [7] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[0] [6] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[0] [5] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[0] [4] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[0] [3] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[0] [2] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[1].u_fb.bcx[0] [1] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[1].u_fb.$techmap10616$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3397.Y [9] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[1].u_fb.$techmap10616$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3397.Y [8] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[1].u_fb.$techmap10616$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3397.Y [7] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[1].u_fb.$techmap10616$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3397.Y [6] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[1].u_fb.$techmap10616$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3397.Y [5] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[1].u_fb.$techmap10616$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3397.Y [4] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[1].u_fb.$techmap10616$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3397.Y [3] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[1].u_fb.$techmap10616$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3397.Y [2] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[1].u_fb.$techmap10616$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3397.Y [1] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[1].u_fb.$techmap10616$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3397.Y [0] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.tsy[1] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.tsx[1] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[2].u_fb.$techmap10464$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3059.Y [8] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[2].u_fb.$techmap10464$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3059.Y [7] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[2].u_fb.$techmap10464$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3059.Y [6] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[2].u_fb.$techmap10464$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3059.Y [5] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[2].u_fb.$techmap10464$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3059.Y [4] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[2].u_fb.$techmap10464$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3059.Y [3] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[2].u_fb.$techmap10464$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3059.Y [2] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[2].u_fb.$techmap10464$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3059.Y [1] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[2].u_fb.$techmap10464$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3059.Y [0] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.bcx[1] [13] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.bcx[1] [12] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.bcx[1] [11] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.bcx[1] [10] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.bcx[1] [9] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.bcx[1] [8] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.bcx[1] [7] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.bcx[1] [6] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.bcx[1] [5] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.bcx[1] [4] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.bcx[1] [3] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.bcx[1] [2] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.bcx[1] [1] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.bcx[0] [13] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.bcx[0] [12] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.bcx[0] [11] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.bcx[0] [10] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.bcx[0] [9] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.bcx[0] [8] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.bcx[0] [7] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.bcx[0] [6] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.bcx[0] [5] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.bcx[0] [4] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.bcx[0] [3] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.bcx[0] [2] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[2].u_fb.bcx[0] [1] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[2].u_fb.$techmap10463$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3053.Y [8] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[2].u_fb.$techmap10463$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3053.Y [7] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[2].u_fb.$techmap10463$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3053.Y [6] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[2].u_fb.$techmap10463$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3053.Y [5] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[2].u_fb.$techmap10463$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3053.Y [4] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[2].u_fb.$techmap10463$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3053.Y [3] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[2].u_fb.$techmap10463$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3053.Y [2] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[2].u_fb.$techmap10463$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3053.Y [1] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.$flatten\u_core.\g_lvl[2].u_fb.$techmap10463$mul$/home/claude/scaler_ips/scaler_trilinear/yosys/scaler_trilinear.sv2v.v:811$3053.Y [0] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[3].u_fb.tsy[1] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[3].u_fb.tsx[1] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[3].u_fb.bcx[1] [11] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[3].u_fb.bcx[1] [10] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[3].u_fb.bcx[1] [9] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[3].u_fb.bcx[1] [8] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[3].u_fb.bcx[1] [7] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[3].u_fb.bcx[1] [6] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[3].u_fb.bcx[1] [5] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[3].u_fb.bcx[1] [4] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[3].u_fb.bcx[1] [3] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[3].u_fb.bcx[1] [2] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[3].u_fb.bcx[1] [1] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[3].u_fb.bcx[0] [11] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[3].u_fb.bcx[0] [10] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[3].u_fb.bcx[0] [9] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[3].u_fb.bcx[0] [8] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[3].u_fb.bcx[0] [7] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[3].u_fb.bcx[0] [6] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[3].u_fb.bcx[0] [5] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[3].u_fb.bcx[0] [4] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[3].u_fb.bcx[0] [3] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[3].u_fb.bcx[0] [2] has no (* sta_arrival *) value.
+Warning: Endpoint scaler_trilinear.\u_core.g_lvl[3].u_fb.bcx[0] [1] has no (* sta_arrival *) value.
+
+Arrival histogram:
+ legend: * represents 21 endpoint(s)
+         + represents [1,21) endpoint(s)
+(  4480,   4256] |**+
+(  4256,   4032] | 
+(  4032,   3808] |*********+
+(  3808,   3584] | 
+(  3584,   3360] | 
+(  3360,   3136] | 
+(  3136,   2912] |***********************************+
+(  2912,   2688] |+
+(  2688,   2464] |+
+(  2464,   2240] |**+
+(  2240,   2016] |*+
+(  2016,   1792] |**+
+(  1792,   1568] |******+
+(  1568,   1344] |*****+
+(  1344,   1120] |******+
+(  1120,    896] |******+
+(   896,    672] |***********************+
+(   672,    448] |************************************************************ 
+(   448,    224] |******+
+(   224,      0] |****+

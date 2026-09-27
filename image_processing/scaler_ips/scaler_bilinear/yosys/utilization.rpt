@@ -1,0 +1,153 @@
+
+17. Printing statistics.
+
+=== $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus ===
+
+   Number of wires:                197
+   Number of wire bits:            428
+   Number of public wires:          33
+   Number of public wire bits:     264
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                321
+     FDCE                          154
+     INV                           156
+     LUT2                            3
+     LUT3                            4
+     LUT4                            4
+
+   Estimated number of LCs:          8
+
+=== $paramod$5c32f075af4ee8bfeeea02386d78fab38e6aae06\scaler_ctrl ===
+
+   Number of wires:                652
+   Number of wire bits:           2332
+   Number of public wires:          92
+   Number of public wire bits:    1155
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:               1107
+     $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus      1
+     CARRY4                         27
+     FDCE                          355
+     FDPE                            6
+     INV                           398
+     LUT2                           68
+     LUT3                           63
+     LUT4                            2
+     LUT5                           35
+     LUT6                          138
+     MUXF7                          12
+     MUXF8                           2
+
+   Estimated number of LCs:        240
+
+=== $paramod$be51c8a09e1d93eee8d102442f2a8f3d6b905f2c\banked_framebuf ===
+
+   Number of wires:               2622
+   Number of wire bits:          48589
+   Number of public wires:          76
+   Number of public wire bits:    1070
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:               2079
+     CARRY4                         79
+     DSP48E1                         3
+     FDRE                          124
+     INV                            34
+     LUT1                          192
+     LUT2                           71
+     LUT3                          256
+     LUT4                           64
+     LUT5                          104
+     LUT6                          636
+     MUXF7                         192
+     MUXF8                          96
+     RAMB36E1                      228
+
+   Estimated number of LCs:       1060
+
+=== scaler_bilinear ===
+
+   Number of wires:                276
+   Number of wire bits:           4039
+   Number of public wires:         124
+   Number of public wire bits:    1698
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:               1129
+     $paramod$5c32f075af4ee8bfeeea02386d78fab38e6aae06\scaler_ctrl      1
+     $paramod$be51c8a09e1d93eee8d102442f2a8f3d6b905f2c\banked_framebuf      1
+     CARRY4                         68
+     DSP48E1                        18
+     FDCE                           52
+     FDRE                          672
+     INV                            70
+     LUT2                          169
+     LUT3                            2
+     LUT4                           69
+     LUT5                            6
+     scaler_dda                      1
+
+   Estimated number of LCs:        126
+
+=== scaler_dda ===
+
+   Number of wires:                270
+   Number of wire bits:           1080
+   Number of public wires:          24
+   Number of public wire bits:     363
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                600
+     CARRY4                         32
+     FDCE                          165
+     INV                           197
+     LUT2                           69
+     LUT3                           35
+     LUT4                           46
+     LUT6                           44
+     MUXF7                           8
+     MUXF8                           4
+
+   Estimated number of LCs:        125
+
+=== design hierarchy ===
+
+   scaler_bilinear                   1
+     $paramod$5c32f075af4ee8bfeeea02386d78fab38e6aae06\scaler_ctrl      1
+       $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus      1
+     $paramod$be51c8a09e1d93eee8d102442f2a8f3d6b905f2c\banked_framebuf      1
+     scaler_dda                      1
+
+   Number of wires:               4017
+   Number of wire bits:          56468
+   Number of public wires:         349
+   Number of public wire bits:    4550
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:               5232
+     CARRY4                        206
+     DSP48E1                        21
+     FDCE                          726
+     FDPE                            6
+     FDRE                          796
+     INV                           855
+     LUT1                          192
+     LUT2                          380
+     LUT3                          360
+     LUT4                          185
+     LUT5                          145
+     LUT6                          818
+     MUXF7                         212
+     MUXF8                         102
+     RAMB36E1                      228
+
+   Estimated number of LCs:       1508
+

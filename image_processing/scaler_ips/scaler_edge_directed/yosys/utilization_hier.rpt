@@ -1,0 +1,23 @@
+Module     : scaler_edge_directed
+Family     : xc7
+Parameters : MAX_W=640 MAX_H=480
+Tools      : Yosys 0.33, sv2v v0.0.12
+Run time   : 31 s
+
+Hierarchical utilization (Yosys synth_xilinx, totals include sub-instances)
+
+Instance                                            LUT   LUTRAM       FF    CARRY     MUXF   BRAM36      DSP
+-------------------------------------------------------------------------------------------------------------
+scaler_edge_directed                               2481        0     1919      284      316    228.0       19
+  (self)                                            668        0     1115      146        7      0.0       16
+  scaler_ctrl                                       294        0      515       27       15      0.0        0
+    (self)                                          283        0      361       27       15      0.0        0
+    axil_regbus                                      11        0      154        0        0      0.0        0
+  banked_framebuf                                  1323        0      124       79      288    228.0        3
+  scaler_dda                                        196        0      165       32        6      0.0        0
+
+LUT = LUT1..LUT6 used as logic; LUTRAM = distributed RAM + SRL; BRAM36 counts
+RAMB36 as 1 and RAMB18 as 0.5. Yosys does not place or route, so these are
+pre-implementation estimates (Vivado will typically optimise further).
+
+Critical path (cell delays only, no routing): 3841 ps  (see timing.rpt)

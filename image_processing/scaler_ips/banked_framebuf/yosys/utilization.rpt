@@ -1,0 +1,29 @@
+
+17. Printing statistics.
+
+=== banked_framebuf ===
+
+   Number of wires:               4584
+   Number of wire bits:          55316
+   Number of public wires:         114
+   Number of public wire bits:    1876
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:               4774
+     CARRY4                        171
+     DSP48E1                         5
+     FDRE                          220
+     INV                            42
+     LUT1                          768
+     LUT2                          171
+     LUT3                          885
+     LUT4                           64
+     LUT5                           16
+     LUT6                         1040
+     MUXF7                         768
+     MUXF8                         384
+     RAMB36E1                      240
+
+   Estimated number of LCs:       2005
+

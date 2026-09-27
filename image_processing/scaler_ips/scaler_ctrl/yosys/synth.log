@@ -1,0 +1,2571 @@
+
+ /----------------------------------------------------------------------------\
+ |  yosys -- Yosys Open SYnthesis Suite                                       |
+ |  Copyright (C) 2012 - 2026  Claire Xenia Wolf <claire@yosyshq.com>         |
+ |  Distributed under an ISC-like license, type "license" to see terms        |
+ \----------------------------------------------------------------------------/
+ Yosys 0.69+154 (git sha1 30d62572e-dirty, Release, Clang /usr/local/osxcross/target/bin/x86_64-apple-darwin25.5-clang++ 21.1.8)
+[TCL: yosys -import] Command name collision: found pre-existing command `cd' -> skip.
+[TCL: yosys -import] Command name collision: found pre-existing command `eval' -> skip.
+[TCL: yosys -import] Command name collision: found pre-existing command `exec' -> skip.
+[TCL: yosys -import] Command name collision: found pre-existing command `read' -> skip.
+[TCL: yosys -import] Command name collision: found pre-existing command `trace' -> skip.
+
+1. Read sources
+
+2. Executing Verilog-2005 frontend: /Applications/oss-cad-suite/libexec/../share/yosys/xilinx/cells_sim.v
+Parsing Verilog input from `/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/cells_sim.v' to AST representation.
+Generating RTLIL representation for module `\VCC'.
+Generating RTLIL representation for module `\GND'.
+Generating RTLIL representation for module `\IBUF'.
+Generating RTLIL representation for module `\IBUFG'.
+Generating RTLIL representation for module `\OBUF'.
+Generating RTLIL representation for module `\IOBUF'.
+Generating RTLIL representation for module `\OBUFT'.
+Generating RTLIL representation for module `\BUFG'.
+Generating RTLIL representation for module `\BUFGCTRL'.
+Generating RTLIL representation for module `\BUFHCE'.
+Generating RTLIL representation for module `\INV'.
+Generating RTLIL representation for module `\LUT1'.
+Generating RTLIL representation for module `\LUT2'.
+Generating RTLIL representation for module `\LUT3'.
+Generating RTLIL representation for module `\LUT4'.
+Generating RTLIL representation for module `\LUT5'.
+Generating RTLIL representation for module `\LUT6'.
+Generating RTLIL representation for module `\LUT6_2'.
+Generating RTLIL representation for module `\$__ABC9_LUT7'.
+Generating RTLIL representation for module `\$__ABC9_LUT8'.
+Generating RTLIL representation for module `\MUXCY'.
+Generating RTLIL representation for module `\MUXF5'.
+Generating RTLIL representation for module `\MUXF6'.
+Generating RTLIL representation for module `\MUXF7'.
+Generating RTLIL representation for module `\MUXF8'.
+Generating RTLIL representation for module `\MUXF9'.
+Generating RTLIL representation for module `\XORCY'.
+Generating RTLIL representation for module `\CARRY4'.
+Generating RTLIL representation for module `\CARRY8'.
+Generating RTLIL representation for module `\ORCY'.
+Generating RTLIL representation for module `\MULT_AND'.
+Generating RTLIL representation for module `\FDRE'.
+Generating RTLIL representation for module `\FDRE_1'.
+Generating RTLIL representation for module `\FDSE'.
+Generating RTLIL representation for module `\FDSE_1'.
+Generating RTLIL representation for module `\FDRSE'.
+Generating RTLIL representation for module `\FDRSE_1'.
+Generating RTLIL representation for module `\FDCE'.
+Generating RTLIL representation for module `\FDCE_1'.
+Generating RTLIL representation for module `\FDPE'.
+Generating RTLIL representation for module `\FDPE_1'.
+Generating RTLIL representation for module `\FDCPE'.
+Generating RTLIL representation for module `\FDCPE_1'.
+Generating RTLIL representation for module `\LDCE'.
+Generating RTLIL representation for module `\LDPE'.
+Generating RTLIL representation for module `\LDCPE'.
+Generating RTLIL representation for module `\AND2B1L'.
+Generating RTLIL representation for module `\OR2L'.
+Generating RTLIL representation for module `\RAM16X1S'.
+Generating RTLIL representation for module `\RAM16X1S_1'.
+Generating RTLIL representation for module `\RAM32X1S'.
+Generating RTLIL representation for module `\RAM32X1S_1'.
+Generating RTLIL representation for module `\RAM64X1S'.
+Generating RTLIL representation for module `\RAM64X1S_1'.
+Generating RTLIL representation for module `\RAM128X1S'.
+Generating RTLIL representation for module `\RAM128X1S_1'.
+Generating RTLIL representation for module `\RAM256X1S'.
+Generating RTLIL representation for module `\RAM512X1S'.
+Generating RTLIL representation for module `\RAM16X2S'.
+Generating RTLIL representation for module `\RAM32X2S'.
+Generating RTLIL representation for module `\RAM64X2S'.
+Generating RTLIL representation for module `\RAM16X4S'.
+Generating RTLIL representation for module `\RAM32X4S'.
+Generating RTLIL representation for module `\RAM16X8S'.
+Generating RTLIL representation for module `\RAM32X8S'.
+Generating RTLIL representation for module `\RAM16X1D'.
+Generating RTLIL representation for module `\RAM16X1D_1'.
+Generating RTLIL representation for module `\RAM32X1D'.
+Generating RTLIL representation for module `\RAM32X1D_1'.
+Generating RTLIL representation for module `\RAM64X1D'.
+Generating RTLIL representation for module `\RAM64X1D_1'.
+Generating RTLIL representation for module `\RAM128X1D'.
+Generating RTLIL representation for module `\RAM256X1D'.
+Generating RTLIL representation for module `\RAM32M'.
+Generating RTLIL representation for module `\RAM32M16'.
+Generating RTLIL representation for module `\RAM64M'.
+Generating RTLIL representation for module `\RAM64M8'.
+Generating RTLIL representation for module `\RAM32X16DR8'.
+Generating RTLIL representation for module `\RAM64X8SW'.
+Generating RTLIL representation for module `\ROM16X1'.
+Generating RTLIL representation for module `\ROM32X1'.
+Generating RTLIL representation for module `\ROM64X1'.
+Generating RTLIL representation for module `\ROM128X1'.
+Generating RTLIL representation for module `\ROM256X1'.
+Generating RTLIL representation for module `\SRL16'.
+Generating RTLIL representation for module `\SRL16E'.
+Generating RTLIL representation for module `\SRLC16'.
+Generating RTLIL representation for module `\SRLC16E'.
+Generating RTLIL representation for module `\SRLC32E'.
+Generating RTLIL representation for module `\CFGLUT5'.
+Generating RTLIL representation for module `\MULT18X18'.
+Generating RTLIL representation for module `\MULT18X18S'.
+Generating RTLIL representation for module `\MULT18X18SIO'.
+Generating RTLIL representation for module `\DSP48A'.
+Generating RTLIL representation for module `\DSP48A1'.
+Generating RTLIL representation for module `\DSP48'.
+Generating RTLIL representation for module `\DSP48E1'.
+Generating RTLIL representation for module `\RAMB18E1'.
+Generating RTLIL representation for module `\RAMB36E1'.
+Successfully finished Verilog frontend.
+
+3. Executing Verilog-2005 frontend: /Applications/oss-cad-suite/libexec/../share/yosys/xilinx/cells_xtra.v
+Parsing Verilog input from `/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/cells_xtra.v' to AST representation.
+Generating RTLIL representation for module `\RAMB4_S1'.
+Generating RTLIL representation for module `\RAMB4_S2'.
+Generating RTLIL representation for module `\RAMB4_S4'.
+Generating RTLIL representation for module `\RAMB4_S8'.
+Generating RTLIL representation for module `\RAMB4_S16'.
+Generating RTLIL representation for module `\RAMB4_S1_S1'.
+Generating RTLIL representation for module `\RAMB4_S1_S2'.
+Generating RTLIL representation for module `\RAMB4_S1_S4'.
+Generating RTLIL representation for module `\RAMB4_S1_S8'.
+Generating RTLIL representation for module `\RAMB4_S1_S16'.
+Generating RTLIL representation for module `\RAMB4_S2_S2'.
+Generating RTLIL representation for module `\RAMB4_S2_S4'.
+Generating RTLIL representation for module `\RAMB4_S2_S8'.
+Generating RTLIL representation for module `\RAMB4_S2_S16'.
+Generating RTLIL representation for module `\RAMB4_S4_S4'.
+Generating RTLIL representation for module `\RAMB4_S4_S8'.
+Generating RTLIL representation for module `\RAMB4_S4_S16'.
+Generating RTLIL representation for module `\RAMB4_S8_S8'.
+Generating RTLIL representation for module `\RAMB4_S8_S16'.
+Generating RTLIL representation for module `\RAMB4_S16_S16'.
+Generating RTLIL representation for module `\RAMB16_S1'.
+Generating RTLIL representation for module `\RAMB16_S2'.
+Generating RTLIL representation for module `\RAMB16_S4'.
+Generating RTLIL representation for module `\RAMB16_S9'.
+Generating RTLIL representation for module `\RAMB16_S18'.
+Generating RTLIL representation for module `\RAMB16_S36'.
+Generating RTLIL representation for module `\RAMB16_S1_S1'.
+Generating RTLIL representation for module `\RAMB16_S1_S2'.
+Generating RTLIL representation for module `\RAMB16_S1_S4'.
+Generating RTLIL representation for module `\RAMB16_S1_S9'.
+Generating RTLIL representation for module `\RAMB16_S1_S18'.
+Generating RTLIL representation for module `\RAMB16_S1_S36'.
+Generating RTLIL representation for module `\RAMB16_S2_S2'.
+Generating RTLIL representation for module `\RAMB16_S2_S4'.
+Generating RTLIL representation for module `\RAMB16_S2_S9'.
+Generating RTLIL representation for module `\RAMB16_S2_S18'.
+Generating RTLIL representation for module `\RAMB16_S2_S36'.
+Generating RTLIL representation for module `\RAMB16_S4_S4'.
+Generating RTLIL representation for module `\RAMB16_S4_S9'.
+Generating RTLIL representation for module `\RAMB16_S4_S18'.
+Generating RTLIL representation for module `\RAMB16_S4_S36'.
+Generating RTLIL representation for module `\RAMB16_S9_S9'.
+Generating RTLIL representation for module `\RAMB16_S9_S18'.
+Generating RTLIL representation for module `\RAMB16_S9_S36'.
+Generating RTLIL representation for module `\RAMB16_S18_S18'.
+Generating RTLIL representation for module `\RAMB16_S18_S36'.
+Generating RTLIL representation for module `\RAMB16_S36_S36'.
+Generating RTLIL representation for module `\RAMB16BWE_S18'.
+Generating RTLIL representation for module `\RAMB16BWE_S36'.
+Generating RTLIL representation for module `\RAMB16BWE_S18_S9'.
+Generating RTLIL representation for module `\RAMB16BWE_S18_S18'.
+Generating RTLIL representation for module `\RAMB16BWE_S36_S9'.
+Generating RTLIL representation for module `\RAMB16BWE_S36_S18'.
+Generating RTLIL representation for module `\RAMB16BWE_S36_S36'.
+Generating RTLIL representation for module `\RAMB16BWER'.
+Generating RTLIL representation for module `\RAMB8BWER'.
+Generating RTLIL representation for module `\FIFO16'.
+Generating RTLIL representation for module `\RAMB16'.
+Generating RTLIL representation for module `\RAMB32_S64_ECC'.
+Generating RTLIL representation for module `\FIFO18'.
+Generating RTLIL representation for module `\FIFO18_36'.
+Generating RTLIL representation for module `\FIFO36'.
+Generating RTLIL representation for module `\FIFO36_72'.
+Generating RTLIL representation for module `\RAMB18'.
+Generating RTLIL representation for module `\RAMB36'.
+Generating RTLIL representation for module `\RAMB18SDP'.
+Generating RTLIL representation for module `\RAMB36SDP'.
+Generating RTLIL representation for module `\FIFO18E1'.
+Generating RTLIL representation for module `\FIFO36E1'.
+Generating RTLIL representation for module `\FIFO18E2'.
+Generating RTLIL representation for module `\FIFO36E2'.
+Generating RTLIL representation for module `\RAMB18E2'.
+Generating RTLIL representation for module `\RAMB36E2'.
+Generating RTLIL representation for module `\URAM288'.
+Generating RTLIL representation for module `\URAM288_BASE'.
+Generating RTLIL representation for module `\DSP48E'.
+Generating RTLIL representation for module `\DSP48E2'.
+Generating RTLIL representation for module `\FDDRCPE'.
+Generating RTLIL representation for module `\FDDRRSE'.
+Generating RTLIL representation for module `\IFDDRCPE'.
+Generating RTLIL representation for module `\IFDDRRSE'.
+Generating RTLIL representation for module `\OFDDRCPE'.
+Generating RTLIL representation for module `\OFDDRRSE'.
+Generating RTLIL representation for module `\OFDDRTCPE'.
+Generating RTLIL representation for module `\OFDDRTRSE'.
+Generating RTLIL representation for module `\IDDR2'.
+Generating RTLIL representation for module `\ODDR2'.
+Generating RTLIL representation for module `\IDDR'.
+Generating RTLIL representation for module `\IDDR_2CLK'.
+Generating RTLIL representation for module `\ODDR'.
+Generating RTLIL representation for module `\IDELAYCTRL'.
+Generating RTLIL representation for module `\IDELAY'.
+Generating RTLIL representation for module `\ISERDES'.
+Generating RTLIL representation for module `\OSERDES'.
+Generating RTLIL representation for module `\IODELAY'.
+Generating RTLIL representation for module `\ISERDES_NODELAY'.
+Generating RTLIL representation for module `\IODELAYE1'.
+Generating RTLIL representation for module `\ISERDESE1'.
+Generating RTLIL representation for module `\OSERDESE1'.
+Generating RTLIL representation for module `\IDELAYE2'.
+Generating RTLIL representation for module `\ODELAYE2'.
+Generating RTLIL representation for module `\ISERDESE2'.
+Generating RTLIL representation for module `\OSERDESE2'.
+Generating RTLIL representation for module `\PHASER_IN'.
+Generating RTLIL representation for module `\PHASER_IN_PHY'.
+Generating RTLIL representation for module `\PHASER_OUT'.
+Generating RTLIL representation for module `\PHASER_OUT_PHY'.
+Generating RTLIL representation for module `\PHASER_REF'.
+Generating RTLIL representation for module `\PHY_CONTROL'.
+Generating RTLIL representation for module `\IDDRE1'.
+Generating RTLIL representation for module `\ODDRE1'.
+Generating RTLIL representation for module `\IDELAYE3'.
+Generating RTLIL representation for module `\ODELAYE3'.
+Generating RTLIL representation for module `\ISERDESE3'.
+Generating RTLIL representation for module `\OSERDESE3'.
+Generating RTLIL representation for module `\BITSLICE_CONTROL'.
+Generating RTLIL representation for module `\RIU_OR'.
+Generating RTLIL representation for module `\RX_BITSLICE'.
+Generating RTLIL representation for module `\RXTX_BITSLICE'.
+Generating RTLIL representation for module `\TX_BITSLICE'.
+Generating RTLIL representation for module `\TX_BITSLICE_TRI'.
+Generating RTLIL representation for module `\IODELAY2'.
+Generating RTLIL representation for module `\IODRP2'.
+Generating RTLIL representation for module `\IODRP2_MCB'.
+Generating RTLIL representation for module `\ISERDES2'.
+Generating RTLIL representation for module `\OSERDES2'.
+Generating RTLIL representation for module `\IBUF_DLY_ADJ'.
+Generating RTLIL representation for module `\IBUF_IBUFDISABLE'.
+Generating RTLIL representation for module `\IBUF_INTERMDISABLE'.
+Generating RTLIL representation for module `\IBUF_ANALOG'.
+Generating RTLIL representation for module `\IBUFE3'.
+Generating RTLIL representation for module `\IBUFDS'.
+Generating RTLIL representation for module `\IBUFDS_DLY_ADJ'.
+Generating RTLIL representation for module `\IBUFDS_IBUFDISABLE'.
+Generating RTLIL representation for module `\IBUFDS_INTERMDISABLE'.
+Generating RTLIL representation for module `\IBUFDS_DIFF_OUT'.
+Generating RTLIL representation for module `\IBUFDS_DIFF_OUT_IBUFDISABLE'.
+Generating RTLIL representation for module `\IBUFDS_DIFF_OUT_INTERMDISABLE'.
+Generating RTLIL representation for module `\IBUFDSE3'.
+Generating RTLIL representation for module `\IBUFDS_DPHY'.
+Generating RTLIL representation for module `\IBUFGDS'.
+Generating RTLIL representation for module `\IBUFGDS_DIFF_OUT'.
+Generating RTLIL representation for module `\IOBUF_DCIEN'.
+Generating RTLIL representation for module `\IOBUF_INTERMDISABLE'.
+Generating RTLIL representation for module `\IOBUFE3'.
+Generating RTLIL representation for module `\IOBUFDS'.
+Generating RTLIL representation for module `\IOBUFDS_DCIEN'.
+Generating RTLIL representation for module `\IOBUFDS_INTERMDISABLE'.
+Generating RTLIL representation for module `\IOBUFDS_DIFF_OUT'.
+Generating RTLIL representation for module `\IOBUFDS_DIFF_OUT_DCIEN'.
+Generating RTLIL representation for module `\IOBUFDS_DIFF_OUT_INTERMDISABLE'.
+Generating RTLIL representation for module `\IOBUFDSE3'.
+Generating RTLIL representation for module `\OBUFDS'.
+Generating RTLIL representation for module `\OBUFDS_DPHY'.
+Generating RTLIL representation for module `\OBUFTDS'.
+Generating RTLIL representation for module `\KEEPER'.
+Generating RTLIL representation for module `\PULLDOWN'.
+Generating RTLIL representation for module `\PULLUP'.
+Generating RTLIL representation for module `\DCIRESET'.
+Generating RTLIL representation for module `\HPIO_VREF'.
+Generating RTLIL representation for module `\BUFGCE'.
+Generating RTLIL representation for module `\BUFGCE_1'.
+Generating RTLIL representation for module `\BUFGMUX'.
+Generating RTLIL representation for module `\BUFGMUX_1'.
+Generating RTLIL representation for module `\BUFGMUX_CTRL'.
+Generating RTLIL representation for module `\BUFGMUX_VIRTEX4'.
+Generating RTLIL representation for module `\BUFG_GT'.
+Generating RTLIL representation for module `\BUFG_GT_SYNC'.
+Generating RTLIL representation for module `\BUFG_PS'.
+Generating RTLIL representation for module `\BUFGCE_DIV'.
+Generating RTLIL representation for module `\BUFH'.
+Generating RTLIL representation for module `\BUFIO2'.
+Generating RTLIL representation for module `\BUFIO2_2CLK'.
+Generating RTLIL representation for module `\BUFIO2FB'.
+Generating RTLIL representation for module `\BUFPLL'.
+Generating RTLIL representation for module `\BUFPLL_MCB'.
+Generating RTLIL representation for module `\BUFIO'.
+Generating RTLIL representation for module `\BUFIODQS'.
+Generating RTLIL representation for module `\BUFR'.
+Generating RTLIL representation for module `\BUFMR'.
+Generating RTLIL representation for module `\BUFMRCE'.
+Generating RTLIL representation for module `\DCM'.
+Generating RTLIL representation for module `\DCM_SP'.
+Generating RTLIL representation for module `\DCM_CLKGEN'.
+Generating RTLIL representation for module `\DCM_ADV'.
+Generating RTLIL representation for module `\DCM_BASE'.
+Generating RTLIL representation for module `\DCM_PS'.
+Generating RTLIL representation for module `\PMCD'.
+Generating RTLIL representation for module `\PLL_ADV'.
+Generating RTLIL representation for module `\PLL_BASE'.
+Generating RTLIL representation for module `\MMCM_ADV'.
+Generating RTLIL representation for module `\MMCM_BASE'.
+Generating RTLIL representation for module `\MMCME2_ADV'.
+Generating RTLIL representation for module `\MMCME2_BASE'.
+Generating RTLIL representation for module `\PLLE2_ADV'.
+Generating RTLIL representation for module `\PLLE2_BASE'.
+Generating RTLIL representation for module `\MMCME3_ADV'.
+Generating RTLIL representation for module `\MMCME3_BASE'.
+Generating RTLIL representation for module `\PLLE3_ADV'.
+Generating RTLIL representation for module `\PLLE3_BASE'.
+Generating RTLIL representation for module `\MMCME4_ADV'.
+Generating RTLIL representation for module `\MMCME4_BASE'.
+Generating RTLIL representation for module `\PLLE4_ADV'.
+Generating RTLIL representation for module `\PLLE4_BASE'.
+Generating RTLIL representation for module `\BUFT'.
+Generating RTLIL representation for module `\IN_FIFO'.
+Generating RTLIL representation for module `\OUT_FIFO'.
+Generating RTLIL representation for module `\HARD_SYNC'.
+Generating RTLIL representation for module `\STARTUP_SPARTAN3'.
+Generating RTLIL representation for module `\STARTUP_SPARTAN3E'.
+Generating RTLIL representation for module `\STARTUP_SPARTAN3A'.
+Generating RTLIL representation for module `\STARTUP_SPARTAN6'.
+Generating RTLIL representation for module `\STARTUP_VIRTEX4'.
+Generating RTLIL representation for module `\STARTUP_VIRTEX5'.
+Generating RTLIL representation for module `\STARTUP_VIRTEX6'.
+Generating RTLIL representation for module `\STARTUPE2'.
+Generating RTLIL representation for module `\STARTUPE3'.
+Generating RTLIL representation for module `\CAPTURE_SPARTAN3'.
+Generating RTLIL representation for module `\CAPTURE_SPARTAN3A'.
+Generating RTLIL representation for module `\CAPTURE_VIRTEX4'.
+Generating RTLIL representation for module `\CAPTURE_VIRTEX5'.
+Generating RTLIL representation for module `\CAPTURE_VIRTEX6'.
+Generating RTLIL representation for module `\CAPTUREE2'.
+Generating RTLIL representation for module `\ICAP_SPARTAN3A'.
+Generating RTLIL representation for module `\ICAP_SPARTAN6'.
+Generating RTLIL representation for module `\ICAP_VIRTEX4'.
+Generating RTLIL representation for module `\ICAP_VIRTEX5'.
+Generating RTLIL representation for module `\ICAP_VIRTEX6'.
+Generating RTLIL representation for module `\ICAPE2'.
+Generating RTLIL representation for module `\ICAPE3'.
+Generating RTLIL representation for module `\BSCAN_SPARTAN3'.
+Generating RTLIL representation for module `\BSCAN_SPARTAN3A'.
+Generating RTLIL representation for module `\BSCAN_SPARTAN6'.
+Generating RTLIL representation for module `\BSCAN_VIRTEX4'.
+Generating RTLIL representation for module `\BSCAN_VIRTEX5'.
+Generating RTLIL representation for module `\BSCAN_VIRTEX6'.
+Generating RTLIL representation for module `\BSCANE2'.
+Generating RTLIL representation for module `\DNA_PORT'.
+Generating RTLIL representation for module `\DNA_PORTE2'.
+Generating RTLIL representation for module `\FRAME_ECC_VIRTEX4'.
+Generating RTLIL representation for module `\FRAME_ECC_VIRTEX5'.
+Generating RTLIL representation for module `\FRAME_ECC_VIRTEX6'.
+Generating RTLIL representation for module `\FRAME_ECCE2'.
+Generating RTLIL representation for module `\FRAME_ECCE3'.
+Generating RTLIL representation for module `\FRAME_ECCE4'.
+Generating RTLIL representation for module `\USR_ACCESS_VIRTEX4'.
+Generating RTLIL representation for module `\USR_ACCESS_VIRTEX5'.
+Generating RTLIL representation for module `\USR_ACCESS_VIRTEX6'.
+Generating RTLIL representation for module `\USR_ACCESSE2'.
+Generating RTLIL representation for module `\POST_CRC_INTERNAL'.
+Generating RTLIL representation for module `\SUSPEND_SYNC'.
+Generating RTLIL representation for module `\KEY_CLEAR'.
+Generating RTLIL representation for module `\MASTER_JTAG'.
+Generating RTLIL representation for module `\SPI_ACCESS'.
+Generating RTLIL representation for module `\EFUSE_USR'.
+Generating RTLIL representation for module `\SYSMON'.
+Generating RTLIL representation for module `\XADC'.
+Generating RTLIL representation for module `\SYSMONE1'.
+Generating RTLIL representation for module `\SYSMONE4'.
+Generating RTLIL representation for module `\GTPA1_DUAL'.
+Generating RTLIL representation for module `\GT11_CUSTOM'.
+Generating RTLIL representation for module `\GT11_DUAL'.
+Generating RTLIL representation for module `\GT11CLK'.
+Generating RTLIL representation for module `\GT11CLK_MGT'.
+Generating RTLIL representation for module `\GTP_DUAL'.
+Generating RTLIL representation for module `\GTX_DUAL'.
+Generating RTLIL representation for module `\CRC32'.
+Generating RTLIL representation for module `\CRC64'.
+Generating RTLIL representation for module `\GTHE1_QUAD'.
+Generating RTLIL representation for module `\GTXE1'.
+Generating RTLIL representation for module `\IBUFDS_GTXE1'.
+Generating RTLIL representation for module `\IBUFDS_GTHE1'.
+Generating RTLIL representation for module `\GTHE2_CHANNEL'.
+Generating RTLIL representation for module `\GTHE2_COMMON'.
+Generating RTLIL representation for module `\GTPE2_CHANNEL'.
+Generating RTLIL representation for module `\GTPE2_COMMON'.
+Generating RTLIL representation for module `\GTXE2_CHANNEL'.
+Generating RTLIL representation for module `\GTXE2_COMMON'.
+Generating RTLIL representation for module `\IBUFDS_GTE2'.
+Generating RTLIL representation for module `\GTHE3_CHANNEL'.
+Generating RTLIL representation for module `\GTHE3_COMMON'.
+Generating RTLIL representation for module `\GTYE3_CHANNEL'.
+Generating RTLIL representation for module `\GTYE3_COMMON'.
+Generating RTLIL representation for module `\IBUFDS_GTE3'.
+Generating RTLIL representation for module `\OBUFDS_GTE3'.
+Generating RTLIL representation for module `\OBUFDS_GTE3_ADV'.
+Generating RTLIL representation for module `\GTHE4_CHANNEL'.
+Generating RTLIL representation for module `\GTHE4_COMMON'.
+Generating RTLIL representation for module `\GTYE4_CHANNEL'.
+Generating RTLIL representation for module `\GTYE4_COMMON'.
+Generating RTLIL representation for module `\IBUFDS_GTE4'.
+Generating RTLIL representation for module `\OBUFDS_GTE4'.
+Generating RTLIL representation for module `\OBUFDS_GTE4_ADV'.
+Generating RTLIL representation for module `\GTM_DUAL'.
+Generating RTLIL representation for module `\IBUFDS_GTM'.
+Generating RTLIL representation for module `\OBUFDS_GTM'.
+Generating RTLIL representation for module `\OBUFDS_GTM_ADV'.
+Generating RTLIL representation for module `\HSDAC'.
+Generating RTLIL representation for module `\HSADC'.
+Generating RTLIL representation for module `\RFDAC'.
+Generating RTLIL representation for module `\RFADC'.
+Generating RTLIL representation for module `\PCIE_A1'.
+Generating RTLIL representation for module `\PCIE_EP'.
+Generating RTLIL representation for module `\PCIE_2_0'.
+Generating RTLIL representation for module `\PCIE_2_1'.
+Generating RTLIL representation for module `\PCIE_3_0'.
+Generating RTLIL representation for module `\PCIE_3_1'.
+Generating RTLIL representation for module `\PCIE40E4'.
+Generating RTLIL representation for module `\PCIE4CE4'.
+Generating RTLIL representation for module `\EMAC'.
+Generating RTLIL representation for module `\TEMAC'.
+Generating RTLIL representation for module `\TEMAC_SINGLE'.
+Generating RTLIL representation for module `\CMAC'.
+Generating RTLIL representation for module `\CMACE4'.
+Generating RTLIL representation for module `\MCB'.
+Generating RTLIL representation for module `\HBM_REF_CLK'.
+Generating RTLIL representation for module `\HBM_SNGLBLI_INTF_APB'.
+Generating RTLIL representation for module `\HBM_SNGLBLI_INTF_AXI'.
+Generating RTLIL representation for module `\HBM_ONE_STACK_INTF'.
+Generating RTLIL representation for module `\HBM_TWO_STACK_INTF'.
+Generating RTLIL representation for module `\PPC405_ADV'.
+Generating RTLIL representation for module `\PPC440'.
+Generating RTLIL representation for module `\PS7'.
+Generating RTLIL representation for module `\PS8'.
+Generating RTLIL representation for module `\ILKN'.
+Generating RTLIL representation for module `\ILKNE4'.
+Generating RTLIL representation for module `\VCU'.
+Generating RTLIL representation for module `\FE'.
+Successfully finished Verilog frontend.
+
+4. Executing Verilog-2005 frontend: /Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v
+Parsing Verilog input from `/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v' to AST representation.
+Storing AST representation for module `$abstract\axil_regbus'.
+Storing AST representation for module `$abstract\scaler_ctrl'.
+Successfully finished Verilog frontend.
+
+5. Elaborate scaler_ctrl 
+
+6. Executing HIERARCHY pass (managing design hierarchy).
+
+7. Executing AST frontend in derive mode using pre-parsed AST for module `\scaler_ctrl'.
+Generating RTLIL representation for module `\scaler_ctrl'.
+Note: Assuming pure combinatorial block at /Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:418.2-431.5 in
+compliance with IEC 62142(E):2005 / IEEE Std. 1364.1(E):2002. Recommending
+use of @* instead of @(...) for better match of synthesis and simulation.
+
+7.1. Analyzing design hierarchy..
+Top module:  \scaler_ctrl
+Parameter \ADDR_W = 14
+Parameter \DATA_W = 32
+
+7.2. Executing AST frontend in derive mode using pre-parsed AST for module `\axil_regbus'.
+Parameter \ADDR_W = 14
+Parameter \DATA_W = 32
+Generating RTLIL representation for module `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+
+7.3. Analyzing design hierarchy..
+Top module:  \scaler_ctrl
+Used module:     $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus
+
+7.4. Analyzing design hierarchy..
+Top module:  \scaler_ctrl
+Used module:     $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus
+Removing unused module `$abstract\scaler_ctrl'.
+Removing unused module `$abstract\axil_regbus'.
+Removed 2 unused modules.
+
+8. Compile (generic RTL optimisation)
+
+8.1. Executing SYNTH_XILINX pass.
+
+8.1.1. Executing PROC pass (convert processes to netlists).
+
+8.1.1.1. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Found and cleaned up 2 empty switches in `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:442$1220'.
+Found and cleaned up 1 empty switch in `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:418$1121'.
+Cleaned up 3 empty switches.
+
+8.1.1.2. Executing PROC_RMDEAD pass (remove dead branches from decision trees).
+Marked 2 switch rules as full_case in process $proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:105$1255 in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+Marked 2 switch rules as full_case in process $proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:65$1244 in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+Removed 1 dead cases from process $proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:442$1220 in module scaler_ctrl.
+Marked 10 switch rules as full_case in process $proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:442$1220 in module scaler_ctrl.
+Marked 11 switch rules as full_case in process $proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:418$1121 in module scaler_ctrl.
+Marked 2 switch rules as full_case in process $proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:369$1114 in module scaler_ctrl.
+Marked 1 switch rules as full_case in process $proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:309$1108 in module scaler_ctrl.
+Removed a total of 1 dead cases.
+
+8.1.1.3. Executing PROC_PRUNE pass (remove redundant assignments in processes).
+Removed 8 redundant assignments.
+Promoted 20 assignments to connections.
+
+8.1.1.4. Executing PROC_INIT pass (extract init attributes).
+
+8.1.1.5. Executing PROC_ARST pass (detect async resets in processes).
+Found async reset \rst_n in `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:105$1255'.
+Found async reset \rst_n in `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:65$1244'.
+Found async reset \rst_n in `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:442$1220'.
+Found async reset \rst_n in `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:369$1114'.
+Found async reset \rst_n in `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:309$1108'.
+
+8.1.1.6. Executing PROC_ROM pass (convert switches to ROMs).
+Converted 0 switches.
+<suppressed ~47 debug messages>
+
+8.1.1.7. Executing PROC_MUX pass (convert decision trees to multiplexers).
+Creating decoders for process `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:105$1255'.
+     1/6: $0\rd_d[0:0]
+     2/6: $0\reg_rd[0:0]
+     3/6: $0\rd_pend[0:0]
+     4/6: $0\reg_raddr[13:0]
+     5/6: $0\s_axil_rvalid[0:0]
+     6/6: $0\s_axil_rdata[31:0]
+Creating decoders for process `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:65$1244'.
+     1/10: $0\reg_wr[0:0]
+     2/10: $0\wstrb_q[3:0]
+     3/10: $0\wdata_q[31:0]
+     4/10: $0\awaddr_q[13:0]
+     5/10: $0\w_held[0:0]
+     6/10: $0\aw_held[0:0]
+     7/10: $0\reg_wstrb[3:0]
+     8/10: $0\reg_wdata[31:0]
+     9/10: $0\reg_waddr[13:0]
+    10/10: $0\s_axil_bvalid[0:0]
+Creating decoders for process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:563$1241'.
+Creating decoders for process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:442$1220'.
+     1/19: $0\set_done[0:0]
+     2/19: $0\set_eol_err[0:0]
+     3/19: $0\set_sof_err[0:0]
+     4/19: $0\gen_start[0:0]
+     5/19: $0\fb_we[0:0]
+     6/19: $0\started[0:0]
+     7/19: $0\cy[15:0]
+     8/19: $0\cx[15:0]
+     9/19: $0\frame_cnt[31:0]
+    10/19: $0\lb_run[0:0]
+    11/19: $0\rows_rcvd[15:0]
+    12/19: $0\gen_busy[0:0]
+    13/19: $0\cap_buf[0:0]
+    14/19: $0\state[1:0]
+    15/19: $0\gen_buf[0:0]
+    16/19: $0\fb_wbuf[0:0]
+    17/19: $0\fb_wdata[23:0]
+    18/19: $0\fb_wy[15:0]
+    19/19: $0\fb_wx[15:0]
+Creating decoders for process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:418$1121'.
+     1/29: $5\lb_row$func$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:427$1103.$result[15:0]$1194
+     2/29: $4\lb_row$func$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:427$1103.$result[15:0]$1191
+     3/29: $3\lb_low[15:0]
+     4/29: $3\lb_row$func$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:427$1103.$result[15:0]$1183
+     5/29: $3\lb_row$func$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:427$1103.r[31:0]$1185
+     6/29: $3\lb_row$func$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:427$1103.y[31:0]$1184
+     7/29: $4\lb_row$func$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:425$1102.$result[15:0]$1181
+     8/29: $3\lb_row$func$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:425$1102.$result[15:0]$1178
+     9/29: $2\lb_low[15:0]
+    10/29: $2\lb_row$func$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:425$1102.$result[15:0]$1167
+    11/29: $2\lb_row$func$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:425$1102.r[31:0]$1169
+    12/29: $2\lb_row$func$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:425$1102.y[31:0]$1168
+    13/29: $2\lb_row$func$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:427$1103.r[31:0]$1172
+    14/29: $2\lb_row$func$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:427$1103.y[31:0]$1171
+    15/29: $2\lb_row$func$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:427$1103.$result[15:0]$1170
+    16/29: $3\lb_row$func$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:423$1101.$result[15:0]$1165
+    17/29: $2\lb_row$func$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:423$1101.$result[15:0]$1162
+    18/29: $1\lb_low[15:0]
+    19/29: $1\lb_row$func$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:423$1101.$result[15:0]$1148
+    20/29: $1\lb_row$func$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:423$1101.r[31:0]$1150
+    21/29: $1\lb_row$func$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:423$1101.y[31:0]$1149
+    22/29: $1\lb_row$func$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:427$1103.r[31:0]$1156
+    23/29: $1\lb_row$func$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:427$1103.y[31:0]$1155
+    24/29: $1\lb_row$func$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:427$1103.$result[15:0]$1154
+    25/29: $1\lb_row$func$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:425$1102.r[31:0]$1153
+    26/29: $1\lb_row$func$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:425$1102.y[31:0]$1152
+    27/29: $1\lb_row$func$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:425$1102.$result[15:0]$1151
+    28/29: $2\lb_row$func$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:421$1100.$result[15:0]$1146
+    29/29: $1\lb_row$func$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:421$1100.$result[15:0]$1143
+Creating decoders for process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:369$1114'.
+     1/2: $0\rd_ext_q[0:0]
+     2/2: $0\common_rdata[31:0]
+Creating decoders for process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:309$1108'.
+     1/12: $0\st_eol_err[0:0]
+     2/12: $0\st_sof_err[0:0]
+     3/12: $0\st_done[0:0]
+     4/12: $0\enable[0:0]
+     5/12: $0\cfg_offs_y[31:0]
+     6/12: $0\cfg_offs_x[31:0]
+     7/12: $0\cfg_step_y[31:0]
+     8/12: $0\cfg_step_x[31:0]
+     9/12: $0\cfg_out_h[15:0]
+    10/12: $0\cfg_out_w[15:0]
+    11/12: $0\cfg_in_h[15:0]
+    12/12: $0\cfg_in_w[15:0]
+
+8.1.1.8. Executing PROC_DLATCH pass (convert process syncs to latches).
+No latch inferred for signal `\scaler_ctrl.\_sv2v_0' from process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:563$1241'.
+No latch inferred for signal `\scaler_ctrl.\lb_need' from process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:418$1121'.
+No latch inferred for signal `\scaler_ctrl.\lb_low' from process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:418$1121'.
+No latch inferred for signal `\scaler_ctrl.\lb_row_ok' from process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:418$1121'.
+
+8.1.1.9. Executing PROC_DFF pass (convert process syncs to FFs).
+Creating register for signal `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.\s_axil_rdata' using process `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:105$1255'.
+  created $adff cell `$procdff$1855' with positive edge clock and positive level reset.
+Creating register for signal `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.\s_axil_rvalid' using process `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:105$1255'.
+  created $adff cell `$procdff$1860' with positive edge clock and positive level reset.
+Creating register for signal `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.\reg_rd' using process `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:105$1255'.
+  created $adff cell `$procdff$1865' with positive edge clock and positive level reset.
+Creating register for signal `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.\reg_raddr' using process `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:105$1255'.
+  created $adff cell `$procdff$1870' with positive edge clock and positive level reset.
+Creating register for signal `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.\rd_pend' using process `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:105$1255'.
+  created $adff cell `$procdff$1875' with positive edge clock and positive level reset.
+Creating register for signal `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.\rd_d' using process `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:105$1255'.
+  created $adff cell `$procdff$1880' with positive edge clock and positive level reset.
+Creating register for signal `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.\s_axil_bvalid' using process `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:65$1244'.
+  created $adff cell `$procdff$1885' with positive edge clock and positive level reset.
+Creating register for signal `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.\reg_wr' using process `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:65$1244'.
+  created $adff cell `$procdff$1890' with positive edge clock and positive level reset.
+Creating register for signal `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.\reg_waddr' using process `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:65$1244'.
+  created $adff cell `$procdff$1895' with positive edge clock and positive level reset.
+Creating register for signal `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.\reg_wdata' using process `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:65$1244'.
+  created $adff cell `$procdff$1900' with positive edge clock and positive level reset.
+Creating register for signal `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.\reg_wstrb' using process `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:65$1244'.
+  created $adff cell `$procdff$1905' with positive edge clock and positive level reset.
+Creating register for signal `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.\aw_held' using process `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:65$1244'.
+  created $adff cell `$procdff$1910' with positive edge clock and positive level reset.
+Creating register for signal `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.\w_held' using process `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:65$1244'.
+  created $adff cell `$procdff$1915' with positive edge clock and positive level reset.
+Creating register for signal `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.\awaddr_q' using process `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:65$1244'.
+  created $adff cell `$procdff$1920' with positive edge clock and positive level reset.
+Creating register for signal `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.\wdata_q' using process `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:65$1244'.
+  created $adff cell `$procdff$1925' with positive edge clock and positive level reset.
+Creating register for signal `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.\wstrb_q' using process `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:65$1244'.
+  created $adff cell `$procdff$1930' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\fb_we' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:442$1220'.
+  created $adff cell `$procdff$1935' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\fb_wx' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:442$1220'.
+  created $adff cell `$procdff$1940' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\fb_wy' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:442$1220'.
+  created $adff cell `$procdff$1945' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\fb_wdata' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:442$1220'.
+  created $adff cell `$procdff$1950' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\fb_wbuf' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:442$1220'.
+  created $adff cell `$procdff$1955' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\gen_buf' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:442$1220'.
+  created $adff cell `$procdff$1960' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\gen_start' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:442$1220'.
+  created $adff cell `$procdff$1965' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\state' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:442$1220'.
+  created $adff cell `$procdff$1970' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\cap_buf' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:442$1220'.
+  created $adff cell `$procdff$1975' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\gen_busy' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:442$1220'.
+  created $adff cell `$procdff$1980' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\rows_rcvd' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:442$1220'.
+  created $adff cell `$procdff$1985' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\lb_run' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:442$1220'.
+  created $adff cell `$procdff$1990' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\frame_cnt' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:442$1220'.
+  created $adff cell `$procdff$1995' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\set_sof_err' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:442$1220'.
+  created $adff cell `$procdff$2000' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\set_eol_err' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:442$1220'.
+  created $adff cell `$procdff$2005' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\set_done' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:442$1220'.
+  created $adff cell `$procdff$2010' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\cx' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:442$1220'.
+  created $adff cell `$procdff$2015' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\cy' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:442$1220'.
+  created $adff cell `$procdff$2020' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\started' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:442$1220'.
+  created $adff cell `$procdff$2025' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\common_rdata' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:369$1114'.
+  created $adff cell `$procdff$2030' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\rd_ext_q' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:369$1114'.
+  created $adff cell `$procdff$2035' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\cfg_in_w' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:309$1108'.
+  created $adff cell `$procdff$2040' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\cfg_in_h' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:309$1108'.
+  created $adff cell `$procdff$2045' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\cfg_out_w' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:309$1108'.
+  created $adff cell `$procdff$2050' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\cfg_out_h' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:309$1108'.
+  created $adff cell `$procdff$2055' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\cfg_step_x' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:309$1108'.
+  created $adff cell `$procdff$2060' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\cfg_step_y' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:309$1108'.
+  created $adff cell `$procdff$2065' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\cfg_offs_x' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:309$1108'.
+  created $adff cell `$procdff$2070' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\cfg_offs_y' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:309$1108'.
+  created $adff cell `$procdff$2075' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\enable' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:309$1108'.
+  created $adff cell `$procdff$2080' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\st_done' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:309$1108'.
+  created $adff cell `$procdff$2085' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\st_sof_err' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:309$1108'.
+  created $adff cell `$procdff$2090' with positive edge clock and positive level reset.
+Creating register for signal `\scaler_ctrl.\st_eol_err' using process `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:309$1108'.
+  created $adff cell `$procdff$2095' with positive edge clock and positive level reset.
+
+8.1.1.10. Executing PROC_MEMWR pass (convert process memory writes to cells).
+
+8.1.1.11. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Found and cleaned up 3 empty switches in `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:105$1255'.
+Removing empty process `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:105$1255'.
+Found and cleaned up 4 empty switches in `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:65$1244'.
+Removing empty process `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:65$1244'.
+Removing empty process `scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:563$1241'.
+Found and cleaned up 19 empty switches in `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:442$1220'.
+Removing empty process `scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:442$1220'.
+Found and cleaned up 11 empty switches in `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:418$1121'.
+Removing empty process `scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:418$1121'.
+Found and cleaned up 2 empty switches in `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:369$1114'.
+Removing empty process `scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:369$1114'.
+Found and cleaned up 8 empty switches in `\scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:309$1108'.
+Removing empty process `scaler_ctrl.$proc$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:309$1108'.
+Cleaned up 47 empty switches.
+
+8.1.1.12. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+<suppressed ~32 debug messages>
+Optimizing module scaler_ctrl.
+<suppressed ~105 debug messages>
+
+8.1.2. Executing TRIBUF pass.
+
+8.1.3. Executing DEMINOUT pass (demote inout ports to input or output).
+
+8.1.4. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+Optimizing module scaler_ctrl.
+<suppressed ~13 debug messages>
+
+8.1.5. Executing CHECK pass (checking for obvious problems).
+Checking module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus...
+Checking module scaler_ctrl...
+Found and reported 0 problems.
+
+8.1.6. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+Finding unused cells or wires in module \scaler_ctrl..
+Removed 147 unused cells and 512 unused wires.
+<suppressed ~166 debug messages>
+
+8.1.7. Executing OPT pass (performing simple optimizations).
+
+8.1.7.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+Optimizing module scaler_ctrl.
+
+8.1.7.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Computing hashes of 49 cells of `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding duplicate cells in `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding identical cells in module `\scaler_ctrl'.
+Computing hashes of 216 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Computing hashes of 191 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+<suppressed ~75 debug messages>
+Removed a total of 25 cells.
+
+8.1.7.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \scaler_ctrl..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~183 debug messages>
+
+8.1.7.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+  Optimizing cells in module \scaler_ctrl.
+Performed a total of 0 changes.
+
+8.1.7.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Computing hashes of 49 cells of `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding duplicate cells in `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding identical cells in module `\scaler_ctrl'.
+Computing hashes of 191 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Computing hashes of 187 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Computing hashes of 186 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+<suppressed ~15 debug messages>
+Removed a total of 5 cells.
+
+8.1.7.6. Executing OPT_DFF pass (perform DFF optimizations).
+
+8.1.7.7. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+Finding unused cells or wires in module \scaler_ctrl..
+Removed 0 unused cells and 30 unused wires.
+<suppressed ~1 debug messages>
+
+8.1.7.8. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+Optimizing module scaler_ctrl.
+
+8.1.7.9. Rerunning OPT passes. (Maybe there is more to do..)
+
+8.1.7.10. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \scaler_ctrl..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~193 debug messages>
+
+8.1.7.11. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+  Optimizing cells in module \scaler_ctrl.
+    New ctrl vector for $pmux cell $procmux$1461: { $auto$opt_reduce.cc:137:opt_pmux$2097 \s_axis_tready $procmux$1377_CMP }
+  Optimizing cells in module \scaler_ctrl.
+Performed a total of 1 changes.
+
+8.1.7.12. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Computing hashes of 49 cells of `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding duplicate cells in `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding identical cells in module `\scaler_ctrl'.
+Computing hashes of 187 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Removed a total of 0 cells.
+
+8.1.7.13. Executing OPT_DFF pass (perform DFF optimizations).
+
+8.1.7.14. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+Finding unused cells or wires in module \scaler_ctrl..
+
+8.1.7.15. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+Optimizing module scaler_ctrl.
+
+8.1.7.16. Rerunning OPT passes. (Maybe there is more to do..)
+
+8.1.7.17. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \scaler_ctrl..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~188 debug messages>
+
+8.1.7.18. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+  Optimizing cells in module \scaler_ctrl.
+Performed a total of 0 changes.
+
+8.1.7.19. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Computing hashes of 49 cells of `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding duplicate cells in `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding identical cells in module `\scaler_ctrl'.
+Computing hashes of 187 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Removed a total of 0 cells.
+
+8.1.7.20. Executing OPT_DFF pass (perform DFF optimizations).
+
+8.1.7.21. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+Finding unused cells or wires in module \scaler_ctrl..
+
+8.1.7.22. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+Optimizing module scaler_ctrl.
+
+8.1.7.23. Finished fast OPT passes. (There is nothing left to do.)
+
+8.1.8. Executing FSM pass (extract and optimize FSM).
+
+8.1.8.1. Executing FSM_DETECT pass (finding FSMs in design).
+Not marking scaler_ctrl.state as FSM state register:
+    Users of register don't seem to benefit from recoding.
+
+8.1.8.2. Executing FSM_EXTRACT pass (extracting FSM from design).
+
+8.1.8.3. Executing FSM_OPT pass (simple optimizations of FSMs).
+
+8.1.8.4. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+Finding unused cells or wires in module \scaler_ctrl..
+
+8.1.8.5. Executing FSM_OPT pass (simple optimizations of FSMs).
+
+8.1.8.6. Executing FSM_RECODE pass (re-assigning FSM state encoding).
+
+8.1.8.7. Executing FSM_INFO pass (dumping all available information on FSM cells).
+
+8.1.8.8. Executing FSM_MAP pass (mapping FSMs to basic logic).
+
+8.1.9. Executing OPT pass (performing simple optimizations).
+
+8.1.9.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+Optimizing module scaler_ctrl.
+
+8.1.9.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Computing hashes of 49 cells of `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding duplicate cells in `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding identical cells in module `\scaler_ctrl'.
+Computing hashes of 187 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Removed a total of 0 cells.
+
+8.1.9.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \scaler_ctrl..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~188 debug messages>
+
+8.1.9.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+  Optimizing cells in module \scaler_ctrl.
+Performed a total of 0 changes.
+
+8.1.9.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Computing hashes of 49 cells of `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding duplicate cells in `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding identical cells in module `\scaler_ctrl'.
+Computing hashes of 187 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Removed a total of 0 cells.
+
+8.1.9.6. Executing OPT_DFF pass (perform DFF optimizations).
+Adding EN signal on $procdff$1875 ($adff) from module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus (D = $0\rd_pend[0:0], Q = \rd_pend).
+Adding EN signal on $procdff$1925 ($adff) from module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus (D = \s_axil_wdata, Q = \wdata_q).
+Adding EN signal on $procdff$1905 ($adff) from module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus (D = \wstrb_q, Q = \reg_wstrb).
+Adding EN signal on $procdff$1855 ($adff) from module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus (D = \reg_rdata, Q = \s_axil_rdata).
+Adding EN signal on $procdff$1895 ($adff) from module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus (D = \awaddr_q, Q = \reg_waddr).
+Adding EN signal on $procdff$1860 ($adff) from module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus (D = $0\s_axil_rvalid[0:0], Q = \s_axil_rvalid).
+Adding EN signal on $procdff$1900 ($adff) from module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus (D = \wdata_q, Q = \reg_wdata).
+Adding EN signal on $procdff$1930 ($adff) from module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus (D = \s_axil_wstrb, Q = \wstrb_q).
+Adding EN signal on $procdff$1915 ($adff) from module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus (D = $0\w_held[0:0], Q = \w_held).
+Adding EN signal on $procdff$1910 ($adff) from module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus (D = $0\aw_held[0:0], Q = \aw_held).
+Adding EN signal on $procdff$1870 ($adff) from module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus (D = \s_axil_araddr, Q = \reg_raddr).
+Adding EN signal on $procdff$1885 ($adff) from module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus (D = $0\s_axil_bvalid[0:0], Q = \s_axil_bvalid).
+Adding EN signal on $procdff$1920 ($adff) from module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus (D = \s_axil_awaddr, Q = \awaddr_q).
+Adding EN signal on $procdff$2055 ($adff) from module scaler_ctrl (D = \reg_wdata [31:16], Q = \cfg_out_h).
+Adding EN signal on $procdff$1945 ($adff) from module scaler_ctrl (D = \py, Q = \fb_wy).
+Adding EN signal on $procdff$2040 ($adff) from module scaler_ctrl (D = \reg_wdata [15:0], Q = \cfg_in_w).
+Adding EN signal on $procdff$1995 ($adff) from module scaler_ctrl (D = $add$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:476$1222_Y, Q = \frame_cnt).
+Adding EN signal on $procdff$2090 ($adff) from module scaler_ctrl (D = $0\st_sof_err[0:0], Q = \st_sof_err).
+Adding EN signal on $procdff$2050 ($adff) from module scaler_ctrl (D = \reg_wdata [15:0], Q = \cfg_out_w).
+Adding EN signal on $procdff$2085 ($adff) from module scaler_ctrl (D = $0\st_done[0:0], Q = \st_done).
+Adding EN signal on $procdff$1960 ($adff) from module scaler_ctrl (D = $0\gen_buf[0:0], Q = \gen_buf).
+Adding EN signal on $procdff$1950 ($adff) from module scaler_ctrl (D = \s_axis_tdata, Q = \fb_wdata).
+Adding EN signal on $procdff$2065 ($adff) from module scaler_ctrl (D = \reg_wdata, Q = \cfg_step_y).
+Adding EN signal on $procdff$1940 ($adff) from module scaler_ctrl (D = \px, Q = \fb_wx).
+Adding EN signal on $procdff$2035 ($adff) from module scaler_ctrl (D = $ge$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:362$1112_Y, Q = \rd_ext_q).
+Adding EN signal on $procdff$2080 ($adff) from module scaler_ctrl (D = \reg_wdata [0], Q = \enable).
+Adding EN signal on $procdff$2045 ($adff) from module scaler_ctrl (D = \reg_wdata [31:16], Q = \cfg_in_h).
+Adding EN signal on $procdff$2075 ($adff) from module scaler_ctrl (D = \reg_wdata, Q = \cfg_offs_y).
+Adding EN signal on $procdff$1970 ($adff) from module scaler_ctrl (D = $0\state[1:0], Q = \state).
+Adding EN signal on $procdff$2030 ($adff) from module scaler_ctrl (D = $procmux$1729_Y, Q = \common_rdata).
+Adding EN signal on $procdff$2095 ($adff) from module scaler_ctrl (D = $0\st_eol_err[0:0], Q = \st_eol_err).
+Adding EN signal on $procdff$1955 ($adff) from module scaler_ctrl (D = \cap_buf, Q = \fb_wbuf).
+Adding EN signal on $procdff$2025 ($adff) from module scaler_ctrl (D = $0\started[0:0], Q = \started).
+Adding EN signal on $procdff$1975 ($adff) from module scaler_ctrl (D = $logic_not$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:554$1240_Y, Q = \cap_buf).
+Adding EN signal on $procdff$2020 ($adff) from module scaler_ctrl (D = $procmux$1385_Y, Q = \cy).
+Adding EN signal on $procdff$2070 ($adff) from module scaler_ctrl (D = \reg_wdata, Q = \cfg_offs_x).
+Adding EN signal on $procdff$2015 ($adff) from module scaler_ctrl (D = $procmux$1401_Y, Q = \cx).
+Adding EN signal on $procdff$2060 ($adff) from module scaler_ctrl (D = \reg_wdata, Q = \cfg_step_x).
+
+8.1.9.7. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+Finding unused cells or wires in module \scaler_ctrl..
+Removed 49 unused cells and 49 unused wires.
+<suppressed ~51 debug messages>
+
+8.1.9.8. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+<suppressed ~5 debug messages>
+Optimizing module scaler_ctrl.
+<suppressed ~12 debug messages>
+
+8.1.9.9. Rerunning OPT passes. (Maybe there is more to do..)
+
+8.1.9.10. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \scaler_ctrl..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~115 debug messages>
+
+8.1.9.11. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+  Optimizing cells in module \scaler_ctrl.
+Performed a total of 0 changes.
+
+8.1.9.12. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Computing hashes of 46 cells of `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding duplicate cells in `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding identical cells in module `\scaler_ctrl'.
+Computing hashes of 190 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Computing hashes of 181 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+<suppressed ~27 debug messages>
+Removed a total of 9 cells.
+
+8.1.9.13. Executing OPT_DFF pass (perform DFF optimizations).
+
+8.1.9.14. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+Finding unused cells or wires in module \scaler_ctrl..
+Removed 0 unused cells and 9 unused wires.
+<suppressed ~1 debug messages>
+
+8.1.9.15. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+Optimizing module scaler_ctrl.
+
+8.1.9.16. Rerunning OPT passes. (Maybe there is more to do..)
+
+8.1.9.17. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \scaler_ctrl..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~115 debug messages>
+
+8.1.9.18. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+  Optimizing cells in module \scaler_ctrl.
+Performed a total of 0 changes.
+
+8.1.9.19. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Computing hashes of 46 cells of `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding duplicate cells in `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding identical cells in module `\scaler_ctrl'.
+Computing hashes of 181 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Removed a total of 0 cells.
+
+8.1.9.20. Executing OPT_DFF pass (perform DFF optimizations).
+
+8.1.9.21. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+Finding unused cells or wires in module \scaler_ctrl..
+
+8.1.9.22. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+Optimizing module scaler_ctrl.
+
+8.1.9.23. Finished fast OPT passes. (There is nothing left to do.)
+
+8.1.10. Executing WREDUCE pass (reducing word size of cells).
+Removed top 1 bits (of 2) from port B of cell scaler_ctrl.$auto$simple.cc:194:make_patterns_logic$2216 ($ne).
+Removed top 1 bits (of 2) from port B of cell scaler_ctrl.$auto$simple.cc:194:make_patterns_logic$2214 ($ne).
+Removed top 1 bits (of 3) from port B of cell scaler_ctrl.$auto$simple.cc:194:make_patterns_logic$2192 ($ne).
+Removed top 1 bits (of 3) from port B of cell scaler_ctrl.$auto$simple.cc:194:make_patterns_logic$2190 ($ne).
+Removed top 2 bits (of 3) from port B of cell scaler_ctrl.$auto$simple.cc:194:make_patterns_logic$2188 ($ne).
+Removed top 1 bits (of 2) from port B of cell scaler_ctrl.$auto$simple.cc:194:make_patterns_logic$2186 ($ne).
+Removed top 1 bits (of 2) from port B of cell scaler_ctrl.$auto$simple.cc:194:make_patterns_logic$2160 ($ne).
+Removed top 7 bits (of 14) from port B of cell scaler_ctrl.$lt$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:307$1106 ($lt).
+Removed top 7 bits (of 14) from port B of cell scaler_ctrl.$ge$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:358$1110 ($ge).
+Removed top 7 bits (of 14) from port B of cell scaler_ctrl.$ge$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:375$1116 ($ge).
+Removed top 15 bits (of 16) from port B of cell scaler_ctrl.$sub$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:439$1213 ($sub).
+Removed top 15 bits (of 16) from port B of cell scaler_ctrl.$sub$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:440$1215 ($sub).
+Removed top 31 bits (of 32) from port B of cell scaler_ctrl.$add$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:476$1222 ($add).
+Removed top 15 bits (of 16) from port B of cell scaler_ctrl.$add$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:531$1235 ($add).
+Removed top 15 bits (of 16) from port B of cell scaler_ctrl.$add$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:534$1236 ($add).
+Removed top 1 bits (of 2) from mux cell scaler_ctrl.$procmux$1464 ($mux).
+Removed top 1 bits (of 2) from mux cell scaler_ctrl.$procmux$1474 ($mux).
+Removed top 1 bits (of 2) from port B of cell scaler_ctrl.$procmux$1545_CMP0 ($eq).
+Removed top 2 bits (of 6) from port B of cell scaler_ctrl.$procmux$1730_CMP0 ($eq).
+Removed top 2 bits (of 6) from port B of cell scaler_ctrl.$procmux$1731_CMP0 ($eq).
+Removed top 3 bits (of 6) from port B of cell scaler_ctrl.$procmux$1732_CMP0 ($eq).
+Removed top 3 bits (of 6) from port B of cell scaler_ctrl.$procmux$1733_CMP0 ($eq).
+Removed top 3 bits (of 6) from port B of cell scaler_ctrl.$procmux$1734_CMP0 ($eq).
+Removed top 3 bits (of 6) from port B of cell scaler_ctrl.$procmux$1735_CMP0 ($eq).
+Removed top 4 bits (of 6) from port B of cell scaler_ctrl.$procmux$1736_CMP0 ($eq).
+Removed top 4 bits (of 6) from port B of cell scaler_ctrl.$procmux$1737_CMP0 ($eq).
+Removed top 5 bits (of 6) from port B of cell scaler_ctrl.$procmux$1738_CMP0 ($eq).
+Removed top 5 bits (of 6) from port B of cell scaler_ctrl.$procmux$1751_CMP0 ($eq).
+Removed top 3 bits (of 6) from port B of cell scaler_ctrl.$procmux$1796_CMP0 ($eq).
+Removed top 3 bits (of 6) from port B of cell scaler_ctrl.$procmux$1801_CMP0 ($eq).
+Removed top 3 bits (of 6) from port B of cell scaler_ctrl.$procmux$1807_CMP0 ($eq).
+Removed top 3 bits (of 6) from port B of cell scaler_ctrl.$procmux$1814_CMP0 ($eq).
+Removed top 4 bits (of 6) from port B of cell scaler_ctrl.$procmux$1822_CMP0 ($eq).
+Removed top 4 bits (of 6) from port B of cell scaler_ctrl.$procmux$1839_CMP0 ($eq).
+Removed top 1 bits (of 2) from wire scaler_ctrl.$procmux$1474_Y.
+Removed top 1 bits (of 2) from wire scaler_ctrl.$procmux$1457_Y.
+
+8.1.11. Executing PEEPOPT pass (run peephole optimizers).
+
+8.1.12. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+Finding unused cells or wires in module \scaler_ctrl..
+Removed 0 unused cells and 2 unused wires.
+<suppressed ~1 debug messages>
+
+8.1.13. Executing SORT pass.
+
+9. pmux2shiftx (normally skipped with -nosrl)
+
+10. Executing PMUX2SHIFTX pass.
+Inspecting $pmux cell scaler_ctrl/$procmux$1729.
+  data width: 32 (next power-of-2 = 32, log2 = 5)
+  checking ctrl signal \reg_raddr [7:2]
+    best permutation: \reg_raddr [7:2]
+    best xor mask: 6'000000
+      0: 6'001011 -> 6'001011 -> 6'001011: 70780800
+      1: 6'001000 -> 6'001000 -> 6'001000: \frame_cnt
+      2: 6'000111 -> 6'000111 -> 6'000111: \cfg_offs_y
+      3: 6'000110 -> 6'000110 -> 6'000110: \cfg_offs_x
+      4: 6'000101 -> 6'000101 -> 6'000101: \cfg_step_y
+      5: 6'000100 -> 6'000100 -> 6'000100: \cfg_step_x
+      6: 6'000011 -> 6'000011 -> 6'000011: { \cfg_out_h \cfg_out_w }
+      7: 6'000010 -> 6'000010 -> 6'000010: { \cfg_in_h \cfg_in_w }
+      8: 6'000001 -> 6'000001 -> 6'000001: { 26'00000000000000000000000000 \gen_busy \s_axis_tready \st_eol_err \st_sof_err \st_done $logic_or$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:378$1118_Y }
+      9: 6'000000 -> 6'000000 -> 6'000000: { 31'0000000000000000000000000000000 \enable }
+    choices: 10
+    min choice: 0
+    max choice: 11
+    range density: 83%
+    absolute density: 83%
+    full density: 15%
+    full case: false
+    created $shiftx cell $auto$pmux2shiftx.cc:714:execute$2239.
+Removed 10 unused cells and 10 unused wires.
+
+11. Map multipliers to DSP48 blocks (no register/adder packing)
+
+11.1. Executing MEMORY_DFF pass (merging $dff cells to $memrd).
+
+11.2. Executing TECHMAP pass (map to technology primitives).
+
+11.2.1. Executing Verilog-2005 frontend: /Applications/oss-cad-suite/libexec/../share/yosys/mul2dsp.v
+Parsing Verilog input from `/Applications/oss-cad-suite/libexec/../share/yosys/mul2dsp.v' to AST representation.
+Generating RTLIL representation for module `\_80_mul'.
+Generating RTLIL representation for module `\_90_soft_mul'.
+Successfully finished Verilog frontend.
+
+11.2.2. Executing Verilog-2005 frontend: /Applications/oss-cad-suite/libexec/../share/yosys/xilinx/xc7_dsp_map.v
+Parsing Verilog input from `/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/xc7_dsp_map.v' to AST representation.
+Generating RTLIL representation for module `$__MUL25X18'.
+Successfully finished Verilog frontend.
+
+11.2.3. Continuing TECHMAP pass.
+No more expansions possible.
+<suppressed ~5 debug messages>
+
+11.3. Executing OPT_EXPR pass (perform const folding).
+
+11.4. Executing WREDUCE pass (reducing word size of cells).
+
+12. Optimize (coarse grain)
+
+12.1. Executing SYNTH_XILINX pass.
+
+12.1.1. Executing TECHMAP pass (map to technology primitives).
+
+12.1.1.1. Executing Verilog-2005 frontend: /Applications/oss-cad-suite/libexec/../share/yosys/cmp2lut.v
+Parsing Verilog input from `/Applications/oss-cad-suite/libexec/../share/yosys/cmp2lut.v' to AST representation.
+Generating RTLIL representation for module `\_90_lut_cmp_'.
+Successfully finished Verilog frontend.
+
+12.1.1.2. Executing Verilog-2005 frontend: /Applications/oss-cad-suite/libexec/../share/yosys/cmp2lcu.v
+Parsing Verilog input from `/Applications/oss-cad-suite/libexec/../share/yosys/cmp2lcu.v' to AST representation.
+Generating RTLIL representation for module `\_80_lcu_cmp_'.
+Generating RTLIL representation for module `$__CMP2LCU'.
+Successfully finished Verilog frontend.
+
+12.1.1.3. Continuing TECHMAP pass.
+Using template $paramod$1072735404e493ce9e5edf95021ca96a2ef37e40\_80_lcu_cmp_ for cells of type $lt.
+Using template $paramod$a7de6d127fe2c1e816a2dc483032d8b9f9cff030\_80_lcu_cmp_ for cells of type $ge.
+Using template $paramod$49ab4203d18644125c5f9481094125ee5246218d\_80_lcu_cmp_ for cells of type $gt.
+Using template $paramod$17ecaa92d16f5a9f8b91795fa06d3153939f1484$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$f59aae2adf889943bb690dc96772a04abc704688$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$c5fe4c05e6c9c4d8129b286e4b5e7e81603c1071$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$b13960fd4c301c7b44482583b5ae47777778ec1b$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$2ac126016f61b1d21a790e0042b2e0cd57b31ad5$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$f753226a9704a4c53918dde3aa1cae27143f22d4$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$393dc5f2fcccde44af65b8658d3f72dbb49474d0$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$04682ee5b334aeb8e51dc7accf99a26f03602580$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$b058d242c588cdb82b01cf9cf0b9280a06f61e6f$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$69b0bc3bc16a87e6bea79ade2db7a50f534d0fb5$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$1880b6dbf65c1cf38c8aa007fcb39676a226531b$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$2939dd1b6b717de268895a7d255de95dcb101d75$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$010c20cc64d933a8147bba3bbf99ee733aa09287$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$e08c4d5f214104d214996118df0c576a165ca6e8$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$bb73fa3812159e564b67f946ccdab4e890b96074$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$ba2de3d030e2b3eb77c2847a5373fa4d18fb12cb$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$5741ea96d768c76fb122a6ff100a5a9a8ab77e8f$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$2290f6e483ffd203549a3923f1e9ee0dd9aaf017$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$e41cbda2f9ad385bc21c36a780f9d20c937aeaef$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$16e9ab96ec463bfe6ea3ec9d97721a2d1e21a85c$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$d8e8753a96ecc273310d219c8c57bcb1aade63ec$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$b24faf9e951682c11a44bd2b3eb5b4fef8cc8295$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$733af405dabf11f4aefe0f53a3369590a7104735$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$00cba758f9eeb13b7b9ea712188461d18bb35f4f$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$3b1941cf67a25b33c6673d28b849d4b19557bd28$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$091cdc35a6cd745cf7e04ac4a2c43a1bd9bee287$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$4cff7be67b805b7cfef5a1b9a942b8c1b63d4fe0$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$3559b8a797adea74ec737e1cd5af1549cb13cdcd$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$81618b7cb2ca3847d6362f987092854332035ad1$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$af1f7c05b5fa4fd0334b7d8802730a36caa6c475$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$dd23af5dc1a1c0dfa2dea62f47c8bfd224547696$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$9f37a6f62b7d0b5094734701ec6849a1348e86c8$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$b336b19570edc158b4be4a560ea160a59e7eb51a$__CMP2LCU for cells of type $__CMP2LCU.
+Using template $paramod$f0a7389ae002486becb5c3590dd498e83ef8c1d8$__CMP2LCU for cells of type $__CMP2LCU.
+No more expansions possible.
+<suppressed ~901 debug messages>
+
+12.1.2. Executing ALUMACC pass (create $alu and $macc cells).
+Extracting $alu and $macc cells in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus:
+  created 0 $alu and 0 $macc cells.
+Extracting $alu and $macc cells in module scaler_ctrl:
+  creating $macc model for $add$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:476$1222 ($add).
+  creating $macc model for $add$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:531$1235 ($add).
+  creating $macc model for $add$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:534$1236 ($add).
+  creating $macc model for $sub$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:439$1213 ($sub).
+  creating $macc model for $sub$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:440$1215 ($sub).
+  creating $alu model for $macc $sub$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:440$1215.
+  creating $alu model for $macc $sub$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:439$1213.
+  creating $alu model for $macc $add$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:534$1236.
+  creating $alu model for $macc $add$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:531$1235.
+  creating $alu model for $macc $add$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:476$1222.
+  creating $alu cell for $add$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:476$1222: $auto$alumacc.cc:576:replace_alu$2463
+  creating $alu cell for $add$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:531$1235: $auto$alumacc.cc:576:replace_alu$2466
+  creating $alu cell for $add$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:534$1236: $auto$alumacc.cc:576:replace_alu$2469
+  creating $alu cell for $sub$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:439$1213: $auto$alumacc.cc:576:replace_alu$2472
+  creating $alu cell for $sub$/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/digital_ip/image_processing/scaler_ips/scaler_ctrl/yosys/scaler_ctrl.sv2v.v:440$1215: $auto$alumacc.cc:576:replace_alu$2475
+  created 5 $alu and 0 $macc cells.
+
+12.1.3. Executing SHARE pass (SAT-based resource sharing).
+
+12.1.4. Executing OPT pass (performing simple optimizations).
+
+12.1.4.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+Optimizing module scaler_ctrl.
+<suppressed ~161 debug messages>
+
+12.1.4.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Computing hashes of 46 cells of `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding duplicate cells in `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding identical cells in module `\scaler_ctrl'.
+Computing hashes of 300 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Computing hashes of 274 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Computing hashes of 271 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Computing hashes of 269 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Computing hashes of 267 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Computing hashes of 265 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Computing hashes of 263 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+<suppressed ~111 debug messages>
+Removed a total of 37 cells.
+
+12.1.4.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \scaler_ctrl..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+    dead port 1/12 on $pmux $procmux$1729.
+    dead port 2/12 on $pmux $procmux$1729.
+    dead port 3/12 on $pmux $procmux$1729.
+    dead port 4/12 on $pmux $procmux$1729.
+    dead port 5/12 on $pmux $procmux$1729.
+    dead port 6/12 on $pmux $procmux$1729.
+    dead port 7/12 on $pmux $procmux$1729.
+    dead port 8/12 on $pmux $procmux$1729.
+    dead port 9/12 on $pmux $procmux$1729.
+    dead port 10/12 on $pmux $procmux$1729.
+Removed 10 multiplexer ports.
+<suppressed ~115 debug messages>
+
+12.1.4.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+  Optimizing cells in module \scaler_ctrl.
+Performed a total of 0 changes.
+
+12.1.4.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Computing hashes of 46 cells of `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding duplicate cells in `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding identical cells in module `\scaler_ctrl'.
+Computing hashes of 263 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Removed a total of 0 cells.
+
+12.1.4.6. Executing OPT_DFF pass (perform DFF optimizations).
+
+12.1.4.7. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+Finding unused cells or wires in module \scaler_ctrl..
+Removed 0 unused cells and 639 unused wires.
+<suppressed ~1 debug messages>
+
+12.1.4.8. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+Optimizing module scaler_ctrl.
+
+12.1.4.9. Rerunning OPT passes. (Maybe there is more to do..)
+
+12.1.4.10. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Running muxtree optimizer on module \scaler_ctrl..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~115 debug messages>
+
+12.1.4.11. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+  Optimizing cells in module \scaler_ctrl.
+Performed a total of 0 changes.
+
+12.1.4.12. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Computing hashes of 46 cells of `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding duplicate cells in `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding identical cells in module `\scaler_ctrl'.
+Computing hashes of 263 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Removed a total of 0 cells.
+
+12.1.4.13. Executing OPT_DFF pass (perform DFF optimizations).
+
+12.1.4.14. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+Finding unused cells or wires in module \scaler_ctrl..
+
+12.1.4.15. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+Optimizing module scaler_ctrl.
+
+12.1.4.16. Finished fast OPT passes. (There is nothing left to do.)
+
+12.1.5. Executing MEMORY pass.
+
+12.1.5.1. Executing OPT_MEM pass (optimize memories).
+Performed a total of 0 transformations.
+
+12.1.5.2. Executing OPT_MEM_PRIORITY pass (removing unnecessary memory write priority relations).
+Performed a total of 0 transformations.
+
+12.1.5.3. Executing OPT_MEM_FEEDBACK pass (finding memory read-to-write feedback paths).
+
+12.1.5.4. Executing MEMORY_BMUX2ROM pass (converting muxes to ROMs).
+
+12.1.5.5. Executing MEMORY_DFF pass (merging $dff cells to $memrd).
+
+12.1.5.6. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+Finding unused cells or wires in module \scaler_ctrl..
+
+12.1.5.7. Executing MEMORY_SHARE pass (consolidating $memrd/$memwr cells).
+
+12.1.5.8. Executing OPT_MEM_WIDEN pass (optimize memories where all ports are wide).
+Performed a total of 0 transformations.
+
+12.1.5.9. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+Finding unused cells or wires in module \scaler_ctrl..
+
+12.1.5.10. Executing MEMORY_COLLECT pass (generating $mem cells).
+
+12.1.6. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+Finding unused cells or wires in module \scaler_ctrl..
+
+13. Map memories to block RAM / LUT RAM
+
+13.1. Executing SYNTH_XILINX pass.
+
+13.1.1. Executing MEMORY_LIBMAP pass (mapping memories to cells).
+
+13.1.2. Executing TECHMAP pass (map to technology primitives).
+
+13.1.2.1. Executing Verilog-2005 frontend: /Applications/oss-cad-suite/libexec/../share/yosys/xilinx/lutrams_xc5v_map.v
+Parsing Verilog input from `/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/lutrams_xc5v_map.v' to AST representation.
+Generating RTLIL representation for module `$__XILINX_LUTRAM_SP_'.
+Generating RTLIL representation for module `$__XILINX_LUTRAM_DP_'.
+Generating RTLIL representation for module `$__XILINX_LUTRAM_QP_'.
+Generating RTLIL representation for module `$__XILINX_LUTRAM_OP_'.
+Generating RTLIL representation for module `$__XILINX_LUTRAM_SDP_'.
+Generating RTLIL representation for module `$__XILINX_LUTRAM_64X8SW_'.
+Generating RTLIL representation for module `$__XILINX_LUTRAM_32X16DR8_'.
+Successfully finished Verilog frontend.
+
+13.1.2.2. Continuing TECHMAP pass.
+No more expansions possible.
+<suppressed ~9 debug messages>
+
+13.1.3. Executing TECHMAP pass (map to technology primitives).
+
+13.1.3.1. Executing Verilog-2005 frontend: /Applications/oss-cad-suite/libexec/../share/yosys/xilinx/brams_xc6v_map.v
+Parsing Verilog input from `/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/brams_xc6v_map.v' to AST representation.
+Generating RTLIL representation for module `$__XILINX_BLOCKRAM_TDP_'.
+Generating RTLIL representation for module `$__XILINX_BLOCKRAM_SDP_'.
+Successfully finished Verilog frontend.
+
+13.1.3.2. Continuing TECHMAP pass.
+No more expansions possible.
+<suppressed ~4 debug messages>
+
+13.1.4. Executing OPT pass (performing simple optimizations).
+
+13.1.4.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+<suppressed ~11 debug messages>
+Optimizing module scaler_ctrl.
+<suppressed ~49 debug messages>
+
+13.1.4.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Computing hashes of 37 cells of `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding duplicate cells in `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Computing hashes of 36 cells of `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding duplicate cells in `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+<suppressed ~3 debug messages>
+Finding identical cells in module `\scaler_ctrl'.
+Computing hashes of 234 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Removed a total of 1 cells.
+
+13.1.4.3. Executing OPT_DFF pass (perform DFF optimizations).
+
+13.1.4.4. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+Finding unused cells or wires in module \scaler_ctrl..
+Removed 0 unused cells and 39 unused wires.
+<suppressed ~2 debug messages>
+
+13.1.4.5. Finished fast OPT passes.
+
+13.1.5. Executing MEMORY_MAP pass (converting memories to logic and flip-flops).
+
+14. Map to LUTs, carry chains and flip-flops
+
+14.1. Executing SYNTH_XILINX pass.
+
+14.1.1. Executing OPT pass (performing simple optimizations).
+
+14.1.1.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+<suppressed ~2 debug messages>
+Optimizing module scaler_ctrl.
+
+14.1.1.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Computing hashes of 36 cells of `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding duplicate cells in `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding identical cells in module `\scaler_ctrl'.
+Computing hashes of 234 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Removed a total of 0 cells.
+
+14.1.1.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Running muxtree optimizer on module \scaler_ctrl..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~30 debug messages>
+
+14.1.1.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+  Optimizing cells in module \scaler_ctrl.
+Performed a total of 0 changes.
+
+14.1.1.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Computing hashes of 36 cells of `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding duplicate cells in `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding identical cells in module `\scaler_ctrl'.
+Computing hashes of 234 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Removed a total of 0 cells.
+
+14.1.1.6. Executing OPT_SHARE pass.
+
+14.1.1.7. Executing OPT_DFF pass (perform DFF optimizations).
+Adding EN signal on $auto$ff.cc:337:slice$2152 ($adffe) from module scaler_ctrl (D = \cap_buf, Q = \gen_buf).
+
+14.1.1.8. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+Finding unused cells or wires in module \scaler_ctrl..
+Removed 1 unused cells and 1 unused wires.
+<suppressed ~2 debug messages>
+
+14.1.1.9. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+Optimizing module scaler_ctrl.
+
+14.1.1.10. Rerunning OPT passes. (Maybe there is more to do..)
+
+14.1.1.11. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Running muxtree optimizer on module \scaler_ctrl..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~28 debug messages>
+
+14.1.1.12. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+  Optimizing cells in module \scaler_ctrl.
+    New input vector for $reduce_and cell $auto$simple.cc:211:make_patterns_logic$2893: { \gen_free $auto$simple.cc:193:make_patterns_logic$2153 $auto$simple.cc:193:make_patterns_logic$2155 $auto$simple.cc:193:make_patterns_logic$2157 $auto$simple.cc:193:make_patterns_logic$2159 }
+  Optimizing cells in module \scaler_ctrl.
+Performed a total of 1 changes.
+
+14.1.1.13. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Computing hashes of 36 cells of `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding duplicate cells in `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding identical cells in module `\scaler_ctrl'.
+Computing hashes of 234 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Removed a total of 0 cells.
+
+14.1.1.14. Executing OPT_SHARE pass.
+
+14.1.1.15. Executing OPT_DFF pass (perform DFF optimizations).
+
+14.1.1.16. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+Finding unused cells or wires in module \scaler_ctrl..
+Removed 1 unused cells and 1 unused wires.
+<suppressed ~2 debug messages>
+
+14.1.1.17. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+Optimizing module scaler_ctrl.
+
+14.1.1.18. Rerunning OPT passes. (Maybe there is more to do..)
+
+14.1.1.19. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Running muxtree optimizer on module \scaler_ctrl..
+  Creating internal representation of mux trees.
+  Evaluating internal representation of mux trees.
+  Analyzing evaluation results.
+Removed 0 multiplexer ports.
+<suppressed ~28 debug messages>
+
+14.1.1.20. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+  Optimizing cells in module \scaler_ctrl.
+Performed a total of 0 changes.
+
+14.1.1.21. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Computing hashes of 36 cells of `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding duplicate cells in `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding identical cells in module `\scaler_ctrl'.
+Computing hashes of 233 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Removed a total of 0 cells.
+
+14.1.1.22. Executing OPT_SHARE pass.
+
+14.1.1.23. Executing OPT_DFF pass (perform DFF optimizations).
+
+14.1.1.24. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+Finding unused cells or wires in module \scaler_ctrl..
+
+14.1.1.25. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+Optimizing module scaler_ctrl.
+
+14.1.1.26. Finished fast OPT passes. (There is nothing left to do.)
+
+14.1.2. Executing TECHMAP pass (map to technology primitives).
+
+14.1.2.1. Executing Verilog-2005 frontend: /Applications/oss-cad-suite/libexec/../share/yosys/techmap.v
+Parsing Verilog input from `/Applications/oss-cad-suite/libexec/../share/yosys/techmap.v' to AST representation.
+Generating RTLIL representation for module `\_90_simplemap_bool_ops'.
+Generating RTLIL representation for module `\_90_simplemap_reduce_ops'.
+Generating RTLIL representation for module `\_90_simplemap_logic_ops'.
+Generating RTLIL representation for module `\_90_simplemap_compare_ops'.
+Generating RTLIL representation for module `\_90_simplemap_various'.
+Generating RTLIL representation for module `\_90_simplemap_registers'.
+Generating RTLIL representation for module `\_90_shift_ops_shr_shl_sshl_sshr'.
+Generating RTLIL representation for module `\_90_shift_shiftx'.
+Generating RTLIL representation for module `\_90_fa'.
+Generating RTLIL representation for module `\_90_lcu_brent_kung'.
+Generating RTLIL representation for module `\_90_alu'.
+Generating RTLIL representation for module `\_90_macc'.
+Generating RTLIL representation for module `\_90_alumacc'.
+Generating RTLIL representation for module `$__div_mod_u'.
+Generating RTLIL representation for module `$__div_mod_trunc'.
+Generating RTLIL representation for module `\_90_div'.
+Generating RTLIL representation for module `\_90_mod'.
+Generating RTLIL representation for module `$__div_mod_floor'.
+Generating RTLIL representation for module `\_90_divfloor'.
+Generating RTLIL representation for module `\_90_modfloor'.
+Generating RTLIL representation for module `\_90_pow'.
+Generating RTLIL representation for module `\_90_demux'.
+Generating RTLIL representation for module `\_90_lut'.
+Generating RTLIL representation for module `$connect'.
+Generating RTLIL representation for module `$input_port'.
+Successfully finished Verilog frontend.
+
+14.1.2.2. Executing Verilog-2005 frontend: /Applications/oss-cad-suite/libexec/../share/yosys/xilinx/arith_map.v
+Parsing Verilog input from `/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/arith_map.v' to AST representation.
+Generating RTLIL representation for module `\_80_xilinx_lcu'.
+Generating RTLIL representation for module `\_80_xilinx_alu'.
+Successfully finished Verilog frontend.
+
+14.1.2.3. Continuing TECHMAP pass.
+Using extmapper simplemap for cells of type $reduce_and.
+Using extmapper simplemap for cells of type $adffe.
+Using extmapper simplemap for cells of type $not.
+Using template $paramod$12970f0c6773674ac918a266872d394220d95a9b\_80_xilinx_alu for cells of type $alu.
+Using template $paramod$817919053e360e32f1a00d067c5411f16a07f712\_80_xilinx_alu for cells of type $alu.
+Using template $paramod$d735c1bd8e4aaeb55e846141d44dc1e2c1104582\_80_xilinx_alu for cells of type $alu.
+Using template $paramod$constmap:68194d2565f083bfcb70b9f553d15e3021348824$paramod$2ca17e19987cdb98b8f5f2a3f3d34465b48eb3dd\_90_shift_shiftx for cells of type $shiftx.
+Using template $paramod$constmap:5af30d8ac167862a2f97ba993d8ecb3b593abed8$paramod$d93e6db241b7197414fe39147052af8d4a0e69ee\_90_shift_shiftx for cells of type $shift.
+Using extmapper simplemap for cells of type $ne.
+Using extmapper simplemap for cells of type $reduce_bool.
+Using extmapper simplemap for cells of type $reduce_or.
+Using template $paramod\_80_xilinx_lcu\WIDTH=s32'00000000000000000000000000000011 for cells of type $lcu.
+Using extmapper simplemap for cells of type $logic_and.
+Using extmapper simplemap for cells of type $logic_or.
+Using extmapper simplemap for cells of type $mux.
+Using extmapper simplemap for cells of type $eq.
+Using extmapper simplemap for cells of type $logic_not.
+Using extmapper simplemap for cells of type $and.
+Using extmapper simplemap for cells of type $or.
+Using extmapper simplemap for cells of type $pmux.
+Using extmapper simplemap for cells of type $adff.
+Using extmapper simplemap for cells of type $pos.
+Using extmapper simplemap for cells of type $xor.
+No more expansions possible.
+<suppressed ~1043 debug messages>
+
+14.1.3. Executing OPT pass (performing simple optimizations).
+
+14.1.3.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+Optimizing module scaler_ctrl.
+<suppressed ~399 debug messages>
+
+14.1.3.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Computing hashes of 174 cells of `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding duplicate cells in `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding identical cells in module `\scaler_ctrl'.
+Computing hashes of 2572 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Computing hashes of 2466 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Computing hashes of 2361 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Computing hashes of 2266 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Computing hashes of 2175 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+<suppressed ~1191 debug messages>
+Removed a total of 397 cells.
+
+14.1.3.3. Executing OPT_DFF pass (perform DFF optimizations).
+
+14.1.3.4. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+Finding unused cells or wires in module \scaler_ctrl..
+Removed 917 unused cells and 278 unused wires.
+<suppressed ~919 debug messages>
+
+14.1.3.5. Finished fast OPT passes.
+
+14.1.4. Executing TECHMAP pass (map to technology primitives).
+
+14.1.4.1. Executing Verilog-2005 frontend: /Applications/oss-cad-suite/libexec/../share/yosys/techmap.v
+Parsing Verilog input from `/Applications/oss-cad-suite/libexec/../share/yosys/techmap.v' to AST representation.
+Generating RTLIL representation for module `\_90_simplemap_bool_ops'.
+Generating RTLIL representation for module `\_90_simplemap_reduce_ops'.
+Generating RTLIL representation for module `\_90_simplemap_logic_ops'.
+Generating RTLIL representation for module `\_90_simplemap_compare_ops'.
+Generating RTLIL representation for module `\_90_simplemap_various'.
+Generating RTLIL representation for module `\_90_simplemap_registers'.
+Generating RTLIL representation for module `\_90_shift_ops_shr_shl_sshl_sshr'.
+Generating RTLIL representation for module `\_90_shift_shiftx'.
+Generating RTLIL representation for module `\_90_fa'.
+Generating RTLIL representation for module `\_90_lcu_brent_kung'.
+Generating RTLIL representation for module `\_90_alu'.
+Generating RTLIL representation for module `\_90_macc'.
+Generating RTLIL representation for module `\_90_alumacc'.
+Generating RTLIL representation for module `$__div_mod_u'.
+Generating RTLIL representation for module `$__div_mod_trunc'.
+Generating RTLIL representation for module `\_90_div'.
+Generating RTLIL representation for module `\_90_mod'.
+Generating RTLIL representation for module `$__div_mod_floor'.
+Generating RTLIL representation for module `\_90_divfloor'.
+Generating RTLIL representation for module `\_90_modfloor'.
+Generating RTLIL representation for module `\_90_pow'.
+Generating RTLIL representation for module `\_90_demux'.
+Generating RTLIL representation for module `\_90_lut'.
+Generating RTLIL representation for module `$connect'.
+Generating RTLIL representation for module `$input_port'.
+Successfully finished Verilog frontend.
+
+14.1.4.2. Executing Verilog-2005 frontend: /Applications/oss-cad-suite/libexec/../share/yosys/xilinx/cells_map.v
+Parsing Verilog input from `/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/cells_map.v' to AST representation.
+Generating RTLIL representation for module `$__SHREG_'.
+Generating RTLIL representation for module `$__XILINX_SHREG_'.
+Generating RTLIL representation for module `$__XILINX_MUXF78'.
+Successfully finished Verilog frontend.
+
+14.1.4.3. Continuing TECHMAP pass.
+No more expansions possible.
+<suppressed ~80 debug messages>
+
+14.1.5. Executing DFFLEGALIZE pass (convert FFs and LATCHes to types supported by the target).
+
+14.1.6. Executing TECHMAP pass (map to technology primitives).
+
+14.1.6.1. Executing Verilog-2005 frontend: /Applications/oss-cad-suite/libexec/../share/yosys/xilinx/ff_map.v
+Parsing Verilog input from `/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/ff_map.v' to AST representation.
+Generating RTLIL representation for module `$_DFFE_NP0P_'.
+Generating RTLIL representation for module `$_DFFE_PP0P_'.
+Generating RTLIL representation for module `$_DFFE_NP1P_'.
+Generating RTLIL representation for module `$_DFFE_PP1P_'.
+Generating RTLIL representation for module `$_DFFSRE_NPPP_'.
+Generating RTLIL representation for module `$_DFFSRE_PPPP_'.
+Generating RTLIL representation for module `$_SDFFE_NP0P_'.
+Generating RTLIL representation for module `$_SDFFE_PP0P_'.
+Generating RTLIL representation for module `$_SDFFE_NP1P_'.
+Generating RTLIL representation for module `$_SDFFE_PP1P_'.
+Generating RTLIL representation for module `$_DLATCH_NP0_'.
+Generating RTLIL representation for module `$_DLATCH_PP0_'.
+Generating RTLIL representation for module `$_DLATCH_NP1_'.
+Generating RTLIL representation for module `$_DLATCH_PP1_'.
+Generating RTLIL representation for module `$_DLATCH_NPP_'.
+Generating RTLIL representation for module `$_DLATCH_PPP_'.
+Successfully finished Verilog frontend.
+
+14.1.6.2. Continuing TECHMAP pass.
+Using template $paramod$_DFFE_PP0P_\_TECHMAP_WIREINIT_Q_=1'x for cells of type $_DFFE_PP0P_.
+Using template $paramod$_DFFE_PP1P_\_TECHMAP_WIREINIT_Q_=1'x for cells of type $_DFFE_PP1P_.
+No more expansions possible.
+<suppressed ~551 debug messages>
+
+14.1.7. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+Optimizing module scaler_ctrl.
+<suppressed ~69 debug messages>
+
+14.1.8. Executing Verilog-2005 frontend: /Applications/oss-cad-suite/libexec/../share/yosys/xilinx/abc9_model.v
+Parsing Verilog input from `/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/abc9_model.v' to AST representation.
+Generating RTLIL representation for module `$__XILINX_MUXF78'.
+Successfully finished Verilog frontend.
+
+14.1.9. Executing ABC9 pass.
+
+14.1.9.1. Executing ABC9_OPS pass (helper functions for ABC9).
+
+14.1.9.2. Executing ABC9_OPS pass (helper functions for ABC9).
+
+14.1.9.3. Executing PROC pass (convert processes to netlists).
+
+14.1.9.3.1. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Cleaned up 0 empty switches.
+
+14.1.9.3.2. Executing PROC_RMDEAD pass (remove dead branches from decision trees).
+Marked 1 switch rules as full_case in process $proc$/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/cells_sim.v:695$8076 in module $paramod\FDCE\INIT=1'x.
+Removed a total of 0 dead cases.
+
+14.1.9.3.3. Executing PROC_PRUNE pass (remove redundant assignments in processes).
+Removed 0 redundant assignments.
+Promoted 1 assignment to connection.
+
+14.1.9.3.4. Executing PROC_INIT pass (extract init attributes).
+Found init rule in `$paramod\FDCE\INIT=1'x.$proc$/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/cells_sim.v:692$8078'.
+  Set init value: \Q = 1'x
+
+14.1.9.3.5. Executing PROC_ARST pass (detect async resets in processes).
+Found async reset \CLR in `$paramod\FDCE\INIT=1'x.$proc$/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/cells_sim.v:695$8076'.
+
+14.1.9.3.6. Executing PROC_ROM pass (convert switches to ROMs).
+Converted 0 switches.
+<suppressed ~1 debug messages>
+
+14.1.9.3.7. Executing PROC_MUX pass (convert decision trees to multiplexers).
+Creating decoders for process `$paramod\FDCE\INIT=1'x.$proc$/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/cells_sim.v:692$8078'.
+Creating decoders for process `$paramod\FDCE\INIT=1'x.$proc$/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/cells_sim.v:695$8076'.
+     1/1: $0\Q[0:0]
+
+14.1.9.3.8. Executing PROC_DLATCH pass (convert process syncs to latches).
+
+14.1.9.3.9. Executing PROC_DFF pass (convert process syncs to FFs).
+Creating register for signal `$paramod\FDCE\INIT=1'x.\Q' using process `$paramod\FDCE\INIT=1'x.$proc$/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/cells_sim.v:695$8076'.
+  created $adff cell `$procdff$8083' with positive edge clock and positive level reset.
+
+14.1.9.3.10. Executing PROC_MEMWR pass (convert process memory writes to cells).
+
+14.1.9.3.11. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Removing empty process `$paramod\FDCE\INIT=1'x.$proc$/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/cells_sim.v:692$8078'.
+Found and cleaned up 1 empty switch in `$paramod\FDCE\INIT=1'x.$proc$/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/cells_sim.v:695$8076'.
+Removing empty process `$paramod\FDCE\INIT=1'x.$proc$/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/cells_sim.v:695$8076'.
+Cleaned up 1 empty switch.
+
+14.1.9.4. Executing PROC pass (convert processes to netlists).
+
+14.1.9.4.1. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Cleaned up 0 empty switches.
+
+14.1.9.4.2. Executing PROC_RMDEAD pass (remove dead branches from decision trees).
+Marked 1 switch rules as full_case in process $proc$/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/cells_sim.v:774$8095 in module $paramod\FDPE\INIT=1'x.
+Removed a total of 0 dead cases.
+
+14.1.9.4.3. Executing PROC_PRUNE pass (remove redundant assignments in processes).
+Removed 0 redundant assignments.
+Promoted 1 assignment to connection.
+
+14.1.9.4.4. Executing PROC_INIT pass (extract init attributes).
+Found init rule in `$paramod\FDPE\INIT=1'x.$proc$/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/cells_sim.v:772$8097'.
+  Set init value: \Q = 1'x
+
+14.1.9.4.5. Executing PROC_ARST pass (detect async resets in processes).
+Found async reset \PRE in `$paramod\FDPE\INIT=1'x.$proc$/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/cells_sim.v:774$8095'.
+
+14.1.9.4.6. Executing PROC_ROM pass (convert switches to ROMs).
+Converted 0 switches.
+<suppressed ~1 debug messages>
+
+14.1.9.4.7. Executing PROC_MUX pass (convert decision trees to multiplexers).
+Creating decoders for process `$paramod\FDPE\INIT=1'x.$proc$/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/cells_sim.v:772$8097'.
+Creating decoders for process `$paramod\FDPE\INIT=1'x.$proc$/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/cells_sim.v:774$8095'.
+     1/1: $0\Q[0:0]
+
+14.1.9.4.8. Executing PROC_DLATCH pass (convert process syncs to latches).
+
+14.1.9.4.9. Executing PROC_DFF pass (convert process syncs to FFs).
+Creating register for signal `$paramod\FDPE\INIT=1'x.\Q' using process `$paramod\FDPE\INIT=1'x.$proc$/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/cells_sim.v:774$8095'.
+  created $adff cell `$procdff$8102' with positive edge clock and positive level reset.
+
+14.1.9.4.10. Executing PROC_MEMWR pass (convert process memory writes to cells).
+
+14.1.9.4.11. Executing PROC_CLEAN pass (remove empty switches from decision trees).
+Removing empty process `$paramod\FDPE\INIT=1'x.$proc$/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/cells_sim.v:772$8097'.
+Found and cleaned up 1 empty switch in `$paramod\FDPE\INIT=1'x.$proc$/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/cells_sim.v:774$8095'.
+Removing empty process `$paramod\FDPE\INIT=1'x.$proc$/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/cells_sim.v:774$8095'.
+Cleaned up 1 empty switch.
+
+14.1.9.5. Executing SCC pass (detecting logic loops).
+Found 0 SCCs in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+Found 0 SCCs in module scaler_ctrl.
+Found 0 SCCs.
+
+14.1.9.6. Executing ABC9_OPS pass (helper functions for ABC9).
+
+14.1.9.7. Executing TECHMAP pass (map to technology primitives).
+
+14.1.9.7.1. Executing Verilog-2005 frontend: /Applications/oss-cad-suite/libexec/../share/yosys/techmap.v
+Parsing Verilog input from `/Applications/oss-cad-suite/libexec/../share/yosys/techmap.v' to AST representation.
+Generating RTLIL representation for module `\_90_simplemap_bool_ops'.
+Generating RTLIL representation for module `\_90_simplemap_reduce_ops'.
+Generating RTLIL representation for module `\_90_simplemap_logic_ops'.
+Generating RTLIL representation for module `\_90_simplemap_compare_ops'.
+Generating RTLIL representation for module `\_90_simplemap_various'.
+Generating RTLIL representation for module `\_90_simplemap_registers'.
+Generating RTLIL representation for module `\_90_shift_ops_shr_shl_sshl_sshr'.
+Generating RTLIL representation for module `\_90_shift_shiftx'.
+Generating RTLIL representation for module `\_90_fa'.
+Generating RTLIL representation for module `\_90_lcu_brent_kung'.
+Generating RTLIL representation for module `\_90_alu'.
+Generating RTLIL representation for module `\_90_macc'.
+Generating RTLIL representation for module `\_90_alumacc'.
+Generating RTLIL representation for module `$__div_mod_u'.
+Generating RTLIL representation for module `$__div_mod_trunc'.
+Generating RTLIL representation for module `\_90_div'.
+Generating RTLIL representation for module `\_90_mod'.
+Generating RTLIL representation for module `$__div_mod_floor'.
+Generating RTLIL representation for module `\_90_divfloor'.
+Generating RTLIL representation for module `\_90_modfloor'.
+Generating RTLIL representation for module `\_90_pow'.
+Generating RTLIL representation for module `\_90_demux'.
+Generating RTLIL representation for module `\_90_lut'.
+Generating RTLIL representation for module `$connect'.
+Generating RTLIL representation for module `$input_port'.
+Successfully finished Verilog frontend.
+
+14.1.9.7.2. Continuing TECHMAP pass.
+No more expansions possible.
+<suppressed ~511 debug messages>
+
+14.1.9.8. Executing OPT pass (performing simple optimizations).
+
+14.1.9.8.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod\FDCE\INIT=1'x.
+Optimizing module $paramod\FDPE\INIT=1'x.
+
+14.1.9.8.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod\FDCE\INIT=1'x'.
+Computing hashes of 2 cells of `$paramod\FDCE\INIT=1'x'.
+Finding duplicate cells in `$paramod\FDCE\INIT=1'x'.
+Finding identical cells in module `$paramod\FDPE\INIT=1'x'.
+Computing hashes of 2 cells of `$paramod\FDPE\INIT=1'x'.
+Finding duplicate cells in `$paramod\FDPE\INIT=1'x'.
+Removed a total of 0 cells.
+
+14.1.9.8.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod\FDCE\INIT=1'x..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Running muxtree optimizer on module $paramod\FDPE\INIT=1'x..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Removed 0 multiplexer ports.
+
+14.1.9.8.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod\FDCE\INIT=1'x.
+  Optimizing cells in module $paramod\FDPE\INIT=1'x.
+Performed a total of 0 changes.
+
+14.1.9.8.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod\FDCE\INIT=1'x'.
+Computing hashes of 2 cells of `$paramod\FDCE\INIT=1'x'.
+Finding duplicate cells in `$paramod\FDCE\INIT=1'x'.
+Finding identical cells in module `$paramod\FDPE\INIT=1'x'.
+Computing hashes of 2 cells of `$paramod\FDPE\INIT=1'x'.
+Finding duplicate cells in `$paramod\FDPE\INIT=1'x'.
+Removed a total of 0 cells.
+
+14.1.9.8.6. Executing OPT_DFF pass (perform DFF optimizations).
+
+14.1.9.8.7. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod\FDCE\INIT=1'x..
+Finding unused cells or wires in module $paramod\FDPE\INIT=1'x..
+
+14.1.9.8.8. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod\FDCE\INIT=1'x.
+Optimizing module $paramod\FDPE\INIT=1'x.
+
+14.1.9.8.9. Finished fast OPT passes. (There is nothing left to do.)
+
+14.1.9.9. Executing TECHMAP pass (map to technology primitives).
+
+14.1.9.9.1. Executing Verilog-2005 frontend: /Applications/oss-cad-suite/libexec/../share/yosys/abc9_map.v
+Parsing Verilog input from `/Applications/oss-cad-suite/libexec/../share/yosys/abc9_map.v' to AST representation.
+Successfully finished Verilog frontend.
+
+14.1.9.9.2. Continuing TECHMAP pass.
+Using template $paramod\FDCE\INIT=1'x for cells of type $paramod\FDCE\INIT=1'x.
+Using template $paramod\FDPE\INIT=1'x for cells of type $paramod\FDPE\INIT=1'x.
+No more expansions possible.
+<suppressed ~519 debug messages>
+
+14.1.9.10. Executing Verilog-2005 frontend: /Applications/oss-cad-suite/libexec/../share/yosys/abc9_model.v
+Parsing Verilog input from `/Applications/oss-cad-suite/libexec/../share/yosys/abc9_model.v' to AST representation.
+Generating RTLIL representation for module `$__ABC9_DELAY'.
+Generating RTLIL representation for module `$__ABC9_SCC_BREAKER'.
+Generating RTLIL representation for module `$__DFF_N__$abc9_flop'.
+Generating RTLIL representation for module `$__DFF_P__$abc9_flop'.
+Successfully finished Verilog frontend.
+
+14.1.9.11. Executing ABC9_OPS pass (helper functions for ABC9).
+<suppressed ~4 debug messages>
+
+14.1.9.12. Executing ABC9_OPS pass (helper functions for ABC9).
+
+14.1.9.13. Executing ABC9_OPS pass (helper functions for ABC9).
+<suppressed ~2 debug messages>
+
+14.1.9.14. Executing TECHMAP pass (map to technology primitives).
+
+14.1.9.14.1. Executing Verilog-2005 frontend: /Applications/oss-cad-suite/libexec/../share/yosys/techmap.v
+Parsing Verilog input from `/Applications/oss-cad-suite/libexec/../share/yosys/techmap.v' to AST representation.
+Generating RTLIL representation for module `\_90_simplemap_bool_ops'.
+Generating RTLIL representation for module `\_90_simplemap_reduce_ops'.
+Generating RTLIL representation for module `\_90_simplemap_logic_ops'.
+Generating RTLIL representation for module `\_90_simplemap_compare_ops'.
+Generating RTLIL representation for module `\_90_simplemap_various'.
+Generating RTLIL representation for module `\_90_simplemap_registers'.
+Generating RTLIL representation for module `\_90_shift_ops_shr_shl_sshl_sshr'.
+Generating RTLIL representation for module `\_90_shift_shiftx'.
+Generating RTLIL representation for module `\_90_fa'.
+Generating RTLIL representation for module `\_90_lcu_brent_kung'.
+Generating RTLIL representation for module `\_90_alu'.
+Generating RTLIL representation for module `\_90_macc'.
+Generating RTLIL representation for module `\_90_alumacc'.
+Generating RTLIL representation for module `$__div_mod_u'.
+Generating RTLIL representation for module `$__div_mod_trunc'.
+Generating RTLIL representation for module `\_90_div'.
+Generating RTLIL representation for module `\_90_mod'.
+Generating RTLIL representation for module `$__div_mod_floor'.
+Generating RTLIL representation for module `\_90_divfloor'.
+Generating RTLIL representation for module `\_90_modfloor'.
+Generating RTLIL representation for module `\_90_pow'.
+Generating RTLIL representation for module `\_90_demux'.
+Generating RTLIL representation for module `\_90_lut'.
+Generating RTLIL representation for module `$connect'.
+Generating RTLIL representation for module `$input_port'.
+Successfully finished Verilog frontend.
+
+14.1.9.14.2. Continuing TECHMAP pass.
+Using template CARRY4 for cells of type CARRY4.
+Using extmapper simplemap for cells of type $or.
+Using extmapper simplemap for cells of type $mux.
+Using extmapper simplemap for cells of type $xor.
+No more expansions possible.
+<suppressed ~523 debug messages>
+
+14.1.9.15. Executing OPT pass (performing simple optimizations).
+
+14.1.9.15.1. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+Optimizing module scaler_ctrl.
+
+14.1.9.15.2. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Computing hashes of 0 cells of `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding duplicate cells in `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding identical cells in module `\scaler_ctrl'.
+Computing hashes of 62 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Computing hashes of 61 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+<suppressed ~3 debug messages>
+Removed a total of 1 cells.
+
+14.1.9.15.3. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Running muxtree optimizer on module \scaler_ctrl..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Removed 0 multiplexer ports.
+
+14.1.9.15.4. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+  Optimizing cells in module \scaler_ctrl.
+Performed a total of 0 changes.
+
+14.1.9.15.5. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Computing hashes of 0 cells of `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding duplicate cells in `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding identical cells in module `\scaler_ctrl'.
+Computing hashes of 61 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Removed a total of 0 cells.
+
+14.1.9.15.6. Executing OPT_DFF pass (perform DFF optimizations).
+
+14.1.9.15.7. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+Finding unused cells or wires in module \scaler_ctrl..
+Removed 0 unused cells and 14 unused wires.
+<suppressed ~3 debug messages>
+
+14.1.9.15.8. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+Optimizing module scaler_ctrl.
+
+14.1.9.15.9. Rerunning OPT passes. (Maybe there is more to do..)
+
+14.1.9.15.10. Executing OPT_MUXTREE pass (detect dead branches in mux trees).
+Running muxtree optimizer on module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Running muxtree optimizer on module \scaler_ctrl..
+  Creating internal representation of mux trees.
+  No muxes found in this module.
+Removed 0 multiplexer ports.
+
+14.1.9.15.11. Executing OPT_REDUCE pass (consolidate $*mux and $reduce_* inputs).
+  Optimizing cells in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+  Optimizing cells in module \scaler_ctrl.
+Performed a total of 0 changes.
+
+14.1.9.15.12. Executing OPT_MERGE pass (detect identical cells).
+Finding identical cells in module `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Computing hashes of 0 cells of `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding duplicate cells in `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Finding identical cells in module `\scaler_ctrl'.
+Computing hashes of 61 cells of `\scaler_ctrl'.
+Finding duplicate cells in `\scaler_ctrl'.
+Removed a total of 0 cells.
+
+14.1.9.15.13. Executing OPT_DFF pass (perform DFF optimizations).
+
+14.1.9.15.14. Executing OPT_CLEAN pass (remove unused cells and wires).
+Finding unused cells or wires in module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus..
+Finding unused cells or wires in module \scaler_ctrl..
+
+14.1.9.15.15. Executing OPT_EXPR pass (perform const folding).
+Optimizing module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+Optimizing module scaler_ctrl.
+
+14.1.9.15.16. Finished fast OPT passes. (There is nothing left to do.)
+
+14.1.9.16. Executing AIGMAP pass (map logic to AIG).
+Module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus: replaced 5 cells with 20 new cells, skipped 477 cells.
+  replaced 1 cell types:
+       5 $_OR_
+  not replaced 4 cell types:
+       8 $_AND_
+     161 $_NOT_
+     154 $paramod\FDCE\INIT=1'x
+     154 $paramod\FDCE\INIT=1'x_$abc9_byp
+Module scaler_ctrl: replaced 609 cells with 3849 new cells, skipped 1302 cells.
+  replaced 3 cell types:
+     438 $_MUX_
+     138 $_OR_
+      33 $_XOR_
+  not replaced 8 cell types:
+     100 $_AND_
+     452 $_NOT_
+      27 CARRY4
+       1 $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus
+     355 $paramod\FDCE\INIT=1'x
+       6 $paramod\FDPE\INIT=1'x
+     355 $paramod\FDCE\INIT=1'x_$abc9_byp
+       6 $paramod\FDPE\INIT=1'x_$abc9_byp
+
+14.1.9.16.1. Executing ABC9_OPS pass (helper functions for ABC9).
+
+14.1.9.16.2. Executing ABC9_OPS pass (helper functions for ABC9).
+Warning: Feature 'write_xaiger2' is experimental.
+
+14.1.9.16.3. Executing XAIGER2 backend.
+<suppressed ~626 debug messages>
+Extracted 425 AND gates and 0 wires from module `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus' to a netlist network with 411 inputs and 1028 outputs.
+
+14.1.9.16.4. Executing ABC9_EXE pass (technology mapping using ABC9).
+
+14.1.9.16.5. Executing ABC9.
+Running ABC command: "<yosys-exe-dir>/yosys-abc" -s -f <abc-temp-dir>/abc.script 2>&1
+ABC: ======== ABC command line "source <abc-temp-dir>/abc.script"
+ABC: + read_lut <abc-temp-dir>/input.lut 
+ABC: + read_box <abc-temp-dir>/input.box 
+ABC: + &read <abc-temp-dir>/input.xaig 
+ABC: + &ps 
+ABC: <abc-temp-dir>/input : i/o =    257/    720  and =      13  lev =    3 (0.20)  mem = 0.02 MB  box = 154  bb = 154
+ABC: + &scorr 
+ABC: Warning: The network is combinational.
+ABC: + &sweep 
+ABC: + &dc2 
+ABC: + &dch -f -r 
+ABC: + &ps 
+ABC: <abc-temp-dir>/input : i/o =    257/    720  and =      15  lev =    3 (0.20)  mem = 0.02 MB  ch =    1  box = 154  bb = 154
+ABC: cst =       0  cls =      1  lit =       1  unused =     424  proof =     0
+ABC: + &if -W 300 -v 
+ABC: K = 8. Memory (bytes): Truth =    0. Cut =   80. Obj =  160. Set =  816. CutMin = no
+ABC: Node =      15.  Ch =     1.  Total mem =    0.24 MB. Peak cut mem =    0.00 MB.
+ABC: P:  Del = 1471.00.  Ar =      27.0.  Edge =       31.  Cut =       42.  T =     0.00 sec
+ABC: P:  Del = 1471.00.  Ar =      27.0.  Edge =       31.  Cut =       42.  T =     0.00 sec
+ABC: P:  Del = 1471.00.  Ar =      27.0.  Edge =       31.  Cut =       42.  T =     0.00 sec
+ABC: F:  Del = 1471.00.  Ar =      27.0.  Edge =       31.  Cut =       29.  T =     0.00 sec
+ABC: A:  Del = 1471.00.  Ar =      27.0.  Edge =       31.  Cut =       29.  T =     0.00 sec
+ABC: A:  Del = 1471.00.  Ar =      27.0.  Edge =       31.  Cut =       29.  T =     0.00 sec
+ABC: Total time =     0.00 sec
+ABC: + &write -n <abc-temp-dir>/output.aig 
+ABC: + &mfs 
+ABC: The network is not changed by "&mfs".
+ABC: + &ps -l 
+ABC: <abc-temp-dir>/input : i/o =    257/    720  and =      24  lev =    3 (0.20)  mem = 0.02 MB  box = 154  bb = 154
+ABC: Mapping (K=4)  :  lut =     10  edge =      31  lev =    1 (0.12)  levB =    2  mem = 0.01 MB
+ABC: LUT = 10 : 2=3 30.0 %  3=3 30.0 %  4=4 40.0 %  Ave = 3.10
+ABC: + &write -n <abc-temp-dir>/output.aig 
+ABC: + &verify 
+ABC: Networks are equivalent.  Time =     0.01 sec
+ABC: + time 
+ABC: elapse: 0.03 seconds, total: 0.03 seconds
+
+14.1.9.16.6. Executing AIGER frontend.
+<suppressed ~10 debug messages>
+Removed 25 unused cells and 911 unused wires.
+
+14.1.9.16.7. Executing ABC_OPS_REINTEGRATE pass (reintegrate ABC mapped design into module).
+ABC RESULTS:              $lut cells:       14
+ABC RESULTS:   $paramod\FDCE\INIT=1'x_$abc9_byp cells:      154
+ABC RESULTS:           input signals:      166
+ABC RESULTS:          output signals:       14
+<suppressed ~1954 debug messages>
+Removing temp directory.
+
+14.1.9.16.1. Executing ABC9_OPS pass (helper functions for ABC9).
+
+14.1.9.16.2. Executing ABC9_OPS pass (helper functions for ABC9).
+
+14.1.9.16.3. Executing XAIGER2 backend.
+<suppressed ~1944 debug messages>
+Extracted 2568 AND gates and 0 wires from module `scaler_ctrl' to a netlist network with 1275 inputs and 3316 outputs.
+
+14.1.9.16.4. Executing ABC9_EXE pass (technology mapping using ABC9).
+
+14.1.9.16.5. Executing ABC9.
+Running ABC command: "<yosys-exe-dir>/yosys-abc" -s -f <abc-temp-dir>/abc.script 2>&1
+ABC: ======== ABC command line "source <abc-temp-dir>/abc.script"
+ABC: + read_lut <abc-temp-dir>/input.lut 
+ABC: + read_box <abc-temp-dir>/input.box 
+ABC: + &read <abc-temp-dir>/input.xaig 
+ABC: + &ps 
+ABC: <abc-temp-dir>/input : i/o =    698/   2324  and =    1285  lev =   18 (0.62)  mem = 0.09 MB  box = 388  bb = 361
+ABC: + &scorr 
+ABC: Warning: The network is combinational.
+ABC: + &sweep 
+ABC: + &dc2 
+ABC: + &dch -f -r 
+ABC: + &ps 
+ABC: <abc-temp-dir>/input : i/o =    698/   2324  and =    1703  lev =   31 (0.57)  mem = 0.09 MB  ch =  245  box = 387  bb = 361
+ABC: cst =       0  cls =    198  lit =     245  unused =    2527  proof =     0
+ABC: + &if -W 300 -v 
+ABC: K = 8. Memory (bytes): Truth =    0. Cut =   80. Obj =  160. Set =  816. CutMin = no
+ABC: Node =    1703.  Ch =   198.  Total mem =    1.05 MB. Peak cut mem =    0.08 MB.
+ABC: P:  Del = 3593.00.  Ar =    1259.0.  Edge =     1494.  Cut =    18864.  T =     0.00 sec
+ABC: P:  Del = 3593.00.  Ar =    1467.0.  Edge =     1408.  Cut =    18829.  T =     0.00 sec
+ABC: P:  Del = 3593.00.  Ar =    1031.0.  Edge =     1306.  Cut =    23778.  T =     0.01 sec
+ABC: F:  Del = 3593.00.  Ar =     950.0.  Edge =     1212.  Cut =    22427.  T =     0.01 sec
+ABC: A:  Del = 3593.00.  Ar =     912.0.  Edge =     1153.  Cut =    22791.  T =     0.01 sec
+ABC: A:  Del = 3593.00.  Ar =     912.0.  Edge =     1153.  Cut =    23043.  T =     0.01 sec
+ABC: Total time =     0.04 sec
+ABC: + &write -n <abc-temp-dir>/output.aig 
+ABC: + &mfs 
+ABC: + &ps -l 
+ABC: <abc-temp-dir>/input : i/o =    698/   2324  and =    1245  lev =   16 (0.55)  mem = 0.09 MB  box = 387  bb = 361
+ABC: Mapping (K=6)  :  lut =    280  edge =    1146  lev =    5 (0.39)  levB =    9  mem = 0.03 MB
+ABC: LUT = 280 : 2=75 26.8 %  3=39 13.9 %  4=23 8.2 %  5=71 25.4 %  6=72 25.7 %  Ave = 4.09
+ABC: + &write -n <abc-temp-dir>/output.aig 
+ABC: + &verify 
+ABC: Networks are equivalent.  Time =     0.11 sec
+ABC: + time 
+ABC: elapse: 0.32 seconds, total: 0.32 seconds
+
+14.1.9.16.6. Executing AIGER frontend.
+<suppressed ~10 debug messages>
+Removed 2067 unused cells and 4760 unused wires.
+
+14.1.9.16.7. Executing ABC_OPS_REINTEGRATE pass (reintegrate ABC mapped design into module).
+ABC RESULTS:              $lut cells:      313
+ABC RESULTS:           \CARRY4 cells:       26
+ABC RESULTS:   $paramod\FDCE\INIT=1'x_$abc9_byp cells:      355
+ABC RESULTS:   $paramod\FDPE\INIT=1'x_$abc9_byp cells:        6
+ABC RESULTS:           input signals:      391
+ABC RESULTS:          output signals:       30
+<suppressed ~6045 debug messages>
+Removing temp directory.
+
+14.1.9.17. Executing TECHMAP pass (map to technology primitives).
+
+14.1.9.17.1. Executing Verilog-2005 frontend: /Applications/oss-cad-suite/libexec/../share/yosys/abc9_unmap.v
+Parsing Verilog input from `/Applications/oss-cad-suite/libexec/../share/yosys/abc9_unmap.v' to AST representation.
+Generating RTLIL representation for module `$__DFF_x__$abc9_flop'.
+Generating RTLIL representation for module `$__ABC9_SCC_BREAKER'.
+Successfully finished Verilog frontend.
+
+14.1.9.17.2. Continuing TECHMAP pass.
+Using template $paramod\FDCE\INIT=1'x for cells of type $paramod\FDCE\INIT=1'x.
+Using template $paramod\FDPE\INIT=1'x for cells of type $paramod\FDPE\INIT=1'x.
+Using template $paramod\FDCE\INIT=1'x_$abc9_byp for cells of type $paramod\FDCE\INIT=1'x_$abc9_byp.
+Using template $paramod\FDPE\INIT=1'x_$abc9_byp for cells of type $paramod\FDPE\INIT=1'x_$abc9_byp.
+No more expansions possible.
+<suppressed ~1039 debug messages>
+Removed 179 unused cells and 10560 unused wires.
+
+14.1.10. Executing TECHMAP pass (map to technology primitives).
+
+14.1.10.1. Executing Verilog-2005 frontend: /Applications/oss-cad-suite/libexec/../share/yosys/xilinx/lut_map.v
+Parsing Verilog input from `/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/lut_map.v' to AST representation.
+Generating RTLIL representation for module `$lut'.
+Successfully finished Verilog frontend.
+
+14.1.10.2. Executing Verilog-2005 frontend: /Applications/oss-cad-suite/libexec/../share/yosys/xilinx/cells_map.v
+Parsing Verilog input from `/Applications/oss-cad-suite/libexec/../share/yosys/xilinx/cells_map.v' to AST representation.
+Generating RTLIL representation for module `$__SHREG_'.
+Generating RTLIL representation for module `$__XILINX_SHREG_'.
+Generating RTLIL representation for module `$__XILINX_MUXF78'.
+Successfully finished Verilog frontend.
+
+14.1.10.3. Continuing TECHMAP pass.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000010\LUT=4'1011 for cells of type $lut.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000010\LUT=4'1110 for cells of type $lut.
+Using template $paramod$f9afe1977849ff53ec0293cf68e6dd67302c1c4e$lut for cells of type $lut.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000010\LUT=4'0010 for cells of type $lut.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'00010000 for cells of type $lut.
+Using template $paramod$e492352911fb6c6e886cc4709e1d39faa53dda7c$lut for cells of type $lut.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000010\LUT=4'0100 for cells of type $lut.
+Using template $paramod$405ce6400f397827a8a16ae5a94a72547ba70d0b$lut for cells of type $lut.
+Using template $paramod$732e1780b927811a5c042d297e1a8e86e2cb3916$lut for cells of type $lut.
+Using template $paramod$8d7a8d6e3356de09670738ba85f2c6b874f6b06d$lut for cells of type $lut.
+Using template $paramod$5bc4b34d04423f5c10a1f36d396093524460bd02$lut for cells of type $lut.
+Using template $paramod$8512f4fb47fa9596f76cdbe5b407a5b54df368e7$lut for cells of type $lut.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000010\LUT=4'0110 for cells of type $lut.
+Using template $paramod$0f6a5b2d703b48519c07dd3bf95386222f32fadd$lut for cells of type $lut.
+Using template $paramod$a6597eda4608f36e684c1dd07ed552fcbec112b2$lut for cells of type $lut.
+Using template $paramod$5bbc8d49c3fc31cf6661312d1516e2aaafe308a4$lut for cells of type $lut.
+Using template $paramod$7a2d84d7755303ea44750caec551920096be057f$lut for cells of type $lut.
+Using template $paramod$d871223ceebdd8a073750fa53d302a323b2b1933$lut for cells of type $lut.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000010\LUT=4'1000 for cells of type $lut.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'11100000 for cells of type $lut.
+Using template $paramod$e46b6ec985dc11aea9db28100b02ce8dd695948c$lut for cells of type $lut.
+Using template $paramod$ef7163e999b5002267a4b897447c66afce2ef1c3$lut for cells of type $lut.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000010\LUT=4'0001 for cells of type $lut.
+Using template $paramod$de5ff50371d44f9aefe7fc35a58bb5fb21e3db1d$lut for cells of type $lut.
+Using template $paramod$80446bb84e5dcc5c48530014ddafdeee0f159957$lut for cells of type $lut.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000001\LUT=2'01 for cells of type $lut.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'10111000 for cells of type $lut.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'10101100 for cells of type $lut.
+Using template $paramod$e3e4230bb990723642112b292aa705ee0cbad0d4$lut for cells of type $lut.
+Using template $paramod$119b32ead809ad9e787d7e87f6a7d5f920130f37$lut for cells of type $lut.
+Using template $paramod$dcba541ad53a9873d71bfba6c13dc2a8e2a60a79$lut for cells of type $lut.
+Using template $paramod$571404c0889eaf57f492cb5e37f8acb5df5852f9$lut for cells of type $lut.
+Using template $paramod$d8aacfe44f73067ae624820f2e713299b336a863$lut for cells of type $lut.
+Using template $paramod$8321896849e33886303813cf171f4dbe057abee3$lut for cells of type $lut.
+Using template $paramod$61e281d560727232efeff44f14d859a8af1bbaf4$lut for cells of type $lut.
+Using template $paramod$d72c890fe5b8f4abd93706fd9c285cdb4bbc1a39$lut for cells of type $lut.
+Using template $paramod$be8aaa1356c8655e46233a6ef3de31b8f2b43444$lut for cells of type $lut.
+Using template $paramod$e637aa0496b8e0d083ba8ed9b2c3bbae48e59bda$lut for cells of type $lut.
+Using template $paramod$5e9766e1f48807ec6929ac531fe7008d425d8945$lut for cells of type $lut.
+Using template $paramod$cbc747b4f647f780722e2a49f348ebb06f1c2aaf$lut for cells of type $lut.
+Using template $paramod$658b9ed803f0d3d335616d3858b53e0a2522f1e8$lut for cells of type $lut.
+Using template $paramod$24064c3fb73ad6345420b36ee494602a7c69f759$lut for cells of type $lut.
+Using template $paramod$867ef7af575397262630bdc05a1ef9ff7c1304cf$lut for cells of type $lut.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'01001000 for cells of type $lut.
+Using template $paramod$6e238df02989b317f10820a22773676e71120644$lut for cells of type $lut.
+Using template $paramod$9bdc414229f06e785dc8fd97a243faa9336e164a$lut for cells of type $lut.
+Using template $paramod$ea2facd4b3ae1b233027f227e888ad5751cb77f2$lut for cells of type $lut.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'01000000 for cells of type $lut.
+Using template $paramod$eb2b8efb9a81a7aabfc24ade1f707f273845d6d3$lut for cells of type $lut.
+Using template $paramod$f708b7057af81b2f8c1afe1f7353a41e38939997$lut for cells of type $lut.
+Using template $paramod$eaea85d27cc0950ed001348e061727a194f5cf9c$lut for cells of type $lut.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'00100000 for cells of type $lut.
+Using template $paramod$9bf7de1162dd512fd883df784b5956e4feeb45e2$lut for cells of type $lut.
+Using template $paramod$8863cacda5a7abe69583309d0b7c476d2498e468$lut for cells of type $lut.
+Using template $paramod$ee19d45db61acb4c70d938b97483a4ed4b792645$lut for cells of type $lut.
+Using template $paramod$aea49449ff8b0f1602874cfa6c3a753c41a1b4a8$lut for cells of type $lut.
+Using template $paramod$2645ed3928f2726e8ccb403cb23252de43b617d7$lut for cells of type $lut.
+Using template $paramod$b34c4ab3beca5982065b4ba7542f9e39cfc3a9a8$lut for cells of type $lut.
+Using template $paramod$edf4d1e2c2b548e24d9e8e530b4e43d34197fd07$lut for cells of type $lut.
+Using template $paramod$498b8c6c73fc2700813de043cd4f324e180cf853$lut for cells of type $lut.
+Using template $paramod$31c876673e90bd72c8d9909b732a8579447b9fb2$lut for cells of type $lut.
+Using template $paramod$66caeb00a39d236782a97659e3bd99621b74681b$lut for cells of type $lut.
+Using template $paramod$655e7cdf1fce9923e771969f28446489197085e2$lut for cells of type $lut.
+Using template $paramod$a7be344af0979c41b8930051bf1455c2976339f4$lut for cells of type $lut.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'11011111 for cells of type $lut.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'11101100 for cells of type $lut.
+Using template $paramod$f054a7d7ab239e8c6ce022005b59678182897bfe$lut for cells of type $lut.
+Using template $paramod$dd860dc915df955be7c55367504d6e99660c7b0b$lut for cells of type $lut.
+Using template $paramod$1d45edc614defc815d133246b330a66b08944a6c$lut for cells of type $lut.
+Using template $paramod$lut\WIDTH=32'00000000000000000000000000000011\LUT=8'00000010 for cells of type $lut.
+No more expansions possible.
+<suppressed ~1110 debug messages>
+
+14.1.11. Executing XILINX_DFFOPT pass (optimize FF control signal usage).
+Optimizing FFs in $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+  Merging D + CE LUTs for $auto$ff.cc:337:slice$6300/$abc$42486$aiger$i324 (1 -> 4)
+Optimizing FFs in scaler_ctrl.
+  Merging D + CE LUTs for $auto$ff.cc:337:slice$3159/$abc$67412$aiger$i1015 (2 -> 6)
+  Merging D + CE LUTs for $auto$ff.cc:337:slice$3224/$techmap67706$auto$ff.cc:337:slice$3246.D (1 -> 3)
+  Merging D + CE LUTs for $auto$ff.cc:337:slice$3158/$abc$67412$aiger$i1014 (2 -> 6)
+  Merging D + CE LUTs for $auto$ff.cc:337:slice$3167/$abc$67412$aiger$i1039 (2 -> 6)
+  Merging D + CE LUTs for $auto$ff.cc:337:slice$3168/$abc$67412$aiger$i1040 (2 -> 6)
+  Merging D + CE LUTs for $auto$ff.cc:337:slice$3169/$abc$67412$aiger$i1049 (2 -> 6)
+  Merging D + CE LUTs for $auto$ff.cc:337:slice$3170/$abc$67412$aiger$i1050 (2 -> 6)
+  Merging D + CE LUTs for $auto$ff.cc:337:slice$3171/$abc$67412$aiger$i1051 (2 -> 6)
+  Merging D + CE LUTs for $auto$ff.cc:337:slice$3161/$abc$67412$aiger$i1025 (2 -> 6)
+  Merging D + CE LUTs for $auto$ff.cc:337:slice$3577/fb_wy (2 -> 5)
+  Merging D + CE LUTs for $auto$ff.cc:337:slice$3160/$abc$67412$aiger$i1016 (2 -> 6)
+  Merging D + CE LUTs for $auto$ff.cc:337:slice$3162/$abc$67412$aiger$i1026 (2 -> 6)
+  Merging D + CE LUTs for $auto$ff.cc:337:slice$3166/$abc$67412$aiger$i1038 (2 -> 6)
+  Merging D + CE LUTs for $auto$ff.cc:337:slice$3402/fb_wx (2 -> 5)
+  Merging D + CE LUTs for $auto$ff.cc:337:slice$3165/$abc$67412$aiger$i1037 (2 -> 6)
+  Merging D + CE LUTs for $auto$ff.cc:337:slice$3157/$abc$67412$aiger$i1013 (2 -> 6)
+  Merging D + CE LUTs for $auto$ff.cc:337:slice$3164/$abc$67412$aiger$i1028 (2 -> 6)
+  Merging D + CE LUTs for $auto$ff.cc:337:slice$3163/$abc$67412$aiger$i1027 (2 -> 6)
+  Merging D + CE LUTs for $auto$ff.cc:337:slice$3156/$abc$67412$aiger$i1004 (2 -> 6)
+
+14.1.12. Executing OPT_LUT_INS pass (discard unused LUT inputs).
+Optimizing LUTs in $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+Optimizing LUTs in scaler_ctrl.
+Removed 22 unused cells and 782 unused wires.
+
+15. Final checks
+
+15.1. Executing SYNTH_XILINX pass.
+
+15.1.1. Executing HIERARCHY pass (managing design hierarchy).
+Attribute `top' found on module `scaler_ctrl'. Setting top module to scaler_ctrl.
+
+15.1.1.1. Analyzing design hierarchy..
+Top module:  \scaler_ctrl
+Used module:     $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus
+
+15.1.1.2. Analyzing design hierarchy..
+Top module:  \scaler_ctrl
+Used module:     $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus
+Removed 0 unused modules.
+
+15.1.2. Printing statistics.
+
+=== $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus ===
+
+        +----------Local Count, excluding submodules.
+        | 
+       91 wires
+      278 wire bits
+       26 public wires
+      210 public wire bits
+       26 ports
+      210 port bits
+       14 cells
+        3   INV
+        3   LUT2
+        4   LUT3
+        4   LUT4
+      154 submodules
+      154   FDCE
+
+   Estimated number of LCs:          8
+
+=== scaler_ctrl ===
+
+        +----------Local Count, excluding submodules.
+        | 
+      601 wires
+     1763 wire bits
+       61 public wires
+      660 public wire bits
+       53 ports
+      587 port bits
+      318 cells
+       32   INV
+       60   LUT2
+       40   LUT3
+       23   LUT4
+       73   LUT5
+       90   LUT6
+      388 submodules
+        1   $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus
+       26   CARRY4
+      355   FDCE
+        6   FDPE
+
+   Estimated number of LCs:        234
+
+=== design hierarchy ===
+
+        +----------Count including submodules.
+        | 
+      332 scaler_ctrl
+       14 $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus
+
+        +----------Count including submodules.
+        | 
+      692 wires
+     2041 wire bits
+       87 public wires
+      870 public wire bits
+       79 ports
+      797 port bits
+        - memories
+        - memory bits
+        - processes
+      332 cells
+       35   INV
+       63   LUT2
+       44   LUT3
+       27   LUT4
+       73   LUT5
+       90   LUT6
+      388 submodules
+        1   $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus
+       26   CARRY4
+      355   FDCE
+        6   FDPE
+
+   Estimated number of LCs:        234
+
+15.1.3. Executing CHECK pass (checking for obvious problems).
+Checking module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus...
+Checking module scaler_ctrl...
+Found and reported 0 problems.
+
+16. Reports
+18. Executing Verilog backend.
+
+18.1. Executing BMUXMAP pass.
+
+18.2. Executing DEMUXMAP pass.
+Dumping module `$paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus'.
+Dumping module `\scaler_ctrl'.
+
+19. Executing EDIF backend.
+
+20. Timing estimate (cell delays only)
+
+21. Executing FLATTEN pass (flatten design).
+Deleting now unused module $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus.
+<suppressed ~1 debug messages>
+
+Warnings: 12 unique messages, 12 total
+Warnings: 1 experimental features used (not excluded with -x).
+End of script. Logfile hash: 011838506f, time: 7.97s, user: 7.26s, system: 0.25s, MEM: 153.52 MB peak
+Yosys 0.69+154 (git sha1 30d62572e-dirty, Release, Clang /usr/local/osxcross/target/bin/x86_64-apple-darwin25.5-clang++ 21.1.8)
+Time spent: 58% 27x read_verilog (4 sec), 7% 12x techmap (0 sec), ...

@@ -1,0 +1,17 @@
+Module     : scaler_dda
+Family     : xc7
+Parameters : (defaults)
+Tools      : Yosys 0.33, sv2v v0.0.12
+Run time   : 6 s
+
+Hierarchical utilization (Yosys synth_xilinx, totals include sub-instances)
+
+Instance                                            LUT   LUTRAM       FF    CARRY     MUXF   BRAM36      DSP
+-------------------------------------------------------------------------------------------------------------
+scaler_dda                                          195        0      165       32        6      0.0        0
+
+LUT = LUT1..LUT6 used as logic; LUTRAM = distributed RAM + SRL; BRAM36 counts
+RAMB36 as 1 and RAMB18 as 0.5. Yosys does not place or route, so these are
+pre-implementation estimates (Vivado will typically optimise further).
+
+Critical path (cell delays only, no routing): 2575 ps  (see timing.rpt)

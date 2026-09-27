@@ -1,0 +1,21 @@
+
+16. Printing statistics.
+
+=== axil_regbus ===
+
+   Number of wires:                203
+   Number of wire bits:            444
+   Number of public wires:          33
+   Number of public wire bits:     274
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                333
+     FDCE                          160
+     INV                           162
+     LUT2                            3
+     LUT3                            4
+     LUT4                            4
+
+   Estimated number of LCs:          8
+
