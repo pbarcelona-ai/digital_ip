@@ -1,23 +1,23 @@
 Module     : scaler_nearest
 Family     : xc7
 Parameters : MAX_W=640 MAX_H=480
-Tools      : Yosys 0.33, sv2v v0.0.12
-Run time   : 24 s
+Tools      : Yosys 0.69+154, sv2v v0.0.13
+Run time   : 22 s
 
 Hierarchical utilization (Yosys synth_xilinx, totals include sub-instances)
 
 Instance                                            LUT   LUTRAM       FF    CARRY     MUXF   BRAM36      DSP
 -------------------------------------------------------------------------------------------------------------
-scaler_nearest                                     1364        0      827       99       92    225.0        2
+scaler_nearest                                     1560        0      827       88        0    225.0        2
   (self)                                              5        0       68       10        0      0.0        0
-  scaler_ctrl                                       318        0      515       27       14      0.0        0
-    (self)                                          307        0      361       27       14      0.0        0
+  scaler_ctrl                                       317        0      515       26        0      0.0        0
+    (self)                                          306        0      361       26        0      0.0        0
     axil_regbus                                      11        0      154        0        0      0.0        0
-  banked_framebuf                                   845        0       79       30       72    225.0        2
-  scaler_dda                                        196        0      165       32        6      0.0        0
+  banked_framebuf                                  1044        0       79       20        0    225.0        2
+  scaler_dda                                        194        0      165       32        0      0.0        0
 
 LUT = LUT1..LUT6 used as logic; LUTRAM = distributed RAM + SRL; BRAM36 counts
 RAMB36 as 1 and RAMB18 as 0.5. Yosys does not place or route, so these are
 pre-implementation estimates (Vivado will typically optimise further).
 
-Critical path (cell delays only, no routing): 4145 ps  (see timing.rpt)
+Critical path (cell delays only, no routing): 3997 ps  (see timing.rpt)

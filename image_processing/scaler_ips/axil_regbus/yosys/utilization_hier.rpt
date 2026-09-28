@@ -1,7 +1,7 @@
 Module     : axil_regbus
 Family     : xc7
 Parameters : (defaults)
-Tools      : Yosys 0.33, sv2v v0.0.12
+Tools      : Yosys 0.69+154, sv2v v0.0.13
 Run time   : 7 s
 
 Hierarchical utilization (Yosys synth_xilinx, totals include sub-instances)
@@ -14,4 +14,4 @@ LUT = LUT1..LUT6 used as logic; LUTRAM = distributed RAM + SRL; BRAM36 counts
 RAMB36 as 1 and RAMB18 as 0.5. Yosys does not place or route, so these are
 pre-implementation estimates (Vivado will typically optimise further).
 
-Critical path (cell delays only, no routing): 1472 ps  (see timing.rpt)
+Critical path (cell delays only, no routing): 472 ps  (see timing.rpt)

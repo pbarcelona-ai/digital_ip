@@ -68,6 +68,10 @@ module scaler_bilinear #(
   localparam logic [31:0] IP_ID = 32'h424C_494E;             // "BLIN"
   localparam logic [31:0] CAPS  = {8'(PHASE_BITS), 8'(COMP_W), 8'(CHANNELS), 8'd2};
   localparam int          ONE   = 1 << PHASE_BITS;         // weight 1.0
+  logic               d_valid, d_sof, d_eol, d_eof, d_busy;
+  logic signed [31:0] d_x, d_y;
+  localparam int NST = 6;
+  logic [NST-1:0]        v_q;                    // valid per stage
 
   // ---------------------------------------------------------------- buffering
   // Frame store organisation (see scaler_ctrl / banked_framebuf):
@@ -127,8 +131,6 @@ module scaler_bilinear #(
   wire adv = !m_axis_tvalid || m_axis_tready;
 
   // stage 0 : DDA - source coordinate (s16.16) of each output pixel
-  logic               d_valid, d_sof, d_eol, d_eof, d_busy;
-  logic signed [31:0] d_x, d_y;
 
   // DDA: raster scan of the output, source coordinate per pixel
   scaler_dda u_dda (
@@ -172,8 +174,6 @@ module scaler_bilinear #(
   // One multiply or one add per stage; bit-identical to the single-cycle
   // form (exact products, same accumulator widths). The result is always
   // within [0, 2^COMP_W-1] because the weights are convex.
-  localparam int NST = 6;
-  logic [NST-1:0]        v_q;                    // valid per stage
   logic [2:0]            f_q [NST];              // {eof, eol, sof}
   logic [PHASE_BITS:0]   wx0, wx1, wy0_d [3], wy1_d [3];   // weights ONE-f, f
   logic [PHASE_BITS-1:0] fx_q [2], fy_q [2];     // phases A, B

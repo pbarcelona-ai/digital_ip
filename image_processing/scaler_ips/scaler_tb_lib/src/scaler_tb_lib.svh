@@ -42,6 +42,12 @@ bit                 lib_filter = 1'b0;
 // Extra CTRL bits OR-ed into the enable write (e.g. BYPASS of sharpen_cas)
 logic [31:0]        ctrl_bits  = '0;
 
+int fcov_x_up = 0, fcov_x_down = 0, fcov_x_same = 0;
+int fcov_y_up = 0, fcov_y_down = 0, fcov_y_same = 0;
+int fcov_mixed = 0, fcov_int2x = 0, fcov_nonint = 0, fcov_big_down = 0;
+int fcov_in_1px = 0, fcov_out_1px = 0, fcov_in_max = 0;
+int fcov_junk = 0, fcov_fullrate = 0, fcov_backpressure = 0, fcov_file = 0, fcov_multi = 0;
+int fcov_pattern [4];
 // ------------------------------------------------------------------ protocol checkers
 // Input stream: handshake rules only (the suite injects junk before SOF on
 // purpose). Output stream: handshake rules plus full video framing against
@@ -125,12 +131,6 @@ endtask
 
 // ------------------------------------------------------------------ feature coverage
 // Scaling-scenario bins filled by run_test(); reported by finish_report().
-int fcov_x_up = 0, fcov_x_down = 0, fcov_x_same = 0;
-int fcov_y_up = 0, fcov_y_down = 0, fcov_y_same = 0;
-int fcov_mixed = 0, fcov_int2x = 0, fcov_nonint = 0, fcov_big_down = 0;
-int fcov_in_1px = 0, fcov_out_1px = 0, fcov_in_max = 0;
-int fcov_junk = 0, fcov_fullrate = 0, fcov_backpressure = 0, fcov_file = 0, fcov_multi = 0;
-int fcov_pattern [4];
 initial for (int i = 0; i < 4; i++) fcov_pattern[i] = 0;
 
 task automatic sample_feature_cov(input int iw, input int ih, input int ow, input int oh,

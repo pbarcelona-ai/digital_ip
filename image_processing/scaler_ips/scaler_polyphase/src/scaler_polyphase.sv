@@ -77,6 +77,21 @@ module scaler_polyphase #(
   localparam int          PHASES = 1 << PHASE_BITS;           // filter phases
   localparam int          CTR    = (TAPS - 1) / 2;          // tap at integer position
   localparam logic [31:0] CAPS   = {8'(PHASE_BITS), 8'(COMP_W), 8'(CHANNELS), 8'(TAPS)};
+  logic               d_valid, d_sof, d_eol, d_eof, d_busy;
+  logic signed [31:0] d_x, d_y;
+  // Arithmetic widths (sized so that no intermediate can overflow)
+  localparam int LT  = $clog2(TAPS);
+  localparam int AW1 = COMP_W + 1 + COEF_W + LT + 1;      // vertical accumulator
+  localparam int VW  = COMP_W + LT + 3;                   // vertical result
+  localparam int AW2 = VW + COEF_W + LT + 1;              // horizontal accumulator
+
+  localparam int PV  = COMP_W + 1 + COEF_W;             // vertical product (exact)
+  localparam int PH  = VW + COEF_W;                       // horizontal product (exact)
+  localparam int NP  = 1 << LT;                           // TAPS padded to 2^LT
+  localparam int LV  = LT;                                // adder-tree levels
+  localparam int NST = 4 + LV + 1 + 1 + LV;              // stages before m_axis
+  logic [NST-1:0]           v_q;                         // valid per stage
+
 
   // Elaboration-time parameter checks
   initial begin
@@ -193,9 +208,6 @@ module scaler_polyphase #(
   // register holds a beat the sink has not accepted yet.
   wire adv = !m_axis_tvalid || m_axis_tready;
 
-  logic               d_valid, d_sof, d_eol, d_eof, d_busy;
-  logic signed [31:0] d_x, d_y;
-
   // DDA: raster scan of the output, source coordinate per pixel
   scaler_dda u_dda (
     .clk, .rst_n, .start(gen_start), .adv, .hold(lb_hold), .nxt_y(d_nxt_y),
@@ -225,17 +237,6 @@ module scaler_polyphase #(
     .rd_win(win)
   );
 
-  // Arithmetic widths (sized so that no intermediate can overflow)
-  localparam int LT  = $clog2(TAPS);
-  localparam int AW1 = COMP_W + 1 + COEF_W + LT + 1;      // vertical accumulator
-  localparam int VW  = COMP_W + LT + 3;                   // vertical result
-  localparam int AW2 = VW + COEF_W + LT + 1;              // horizontal accumulator
-
-  localparam int PV  = COMP_W + 1 + COEF_W;             // vertical product (exact)
-  localparam int PH  = VW + COEF_W;                       // horizontal product (exact)
-  localparam int NP  = 1 << LT;                           // TAPS padded to 2^LT
-  localparam int LV  = LT;                                // adder-tree levels
-
   // Pipeline (every register advances with adv; valid/flags follow the data)
   //   A      window origin / phases            (banked_framebuf stage A)
   //   B      RAM data, coefficient lookup      (banked_framebuf stage B)
@@ -253,8 +254,6 @@ module scaler_polyphase #(
   // Signed unpacked-array elements are wrapped in $signed() before casts:
   // sv2v otherwise emits an unsigned cast for them, which is numerically
   // identical but hides the operand width from the DSP mapper.
-  localparam int NST = 4 + LV + 1 + 1 + LV;              // stages before m_axis
-  logic [NST-1:0]           v_q;                         // valid per stage
   logic [2:0]               f_q [NST];                   // {eof, eol, sof}
   logic [PHASE_BITS-1:0]    px_q, py_q;                  // phases (stage A)
   // horizontal coefficients travel with the data until stage M2
