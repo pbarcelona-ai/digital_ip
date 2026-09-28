@@ -11,6 +11,12 @@ Contrast-adaptive sharpening (CAS) filter after AMD FidelityFX CAS: a 3×3 same-
 
 **Depends on:** `axil_regbus`
 
+## Block diagram
+
+[![sharpen_cas block diagram](doc/block_diagram.svg)](doc/block_diagram.svg)
+
+Blue is an interface, green control, amber memory or a table, grey a datapath stage, and red a stage built around DSP48 multipliers; solid arrows carry data, dashed arrows configuration or sequencing. Stage names such as `A`, `B`, `W`, `M1` are the ones in the pipeline comments of `src/sharpen_cas.sv`. The diagram is generated from `doc/block_diagram.dot` by `tools/docs/make_block_diagrams.py` (needs Graphviz); `--check` verifies that it still matches the RTL.
+
 ## Simulate
 
 ### run.sh (Icarus Verilog 12, no Python)

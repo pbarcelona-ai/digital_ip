@@ -1,19 +1,19 @@
 Module     : sharpen_cas
 Family     : xc7
 Parameters : (defaults)
-Tools      : Yosys 0.69+154, sv2v v0.0.13
-Run time   : 27 s
+Tools      : Yosys 0.33, sv2v v0.0.12
+Run time   : 21 s
 
 Hierarchical utilization (Yosys synth_xilinx, totals include sub-instances)
 
 Instance                                            LUT   LUTRAM       FF    CARRY     MUXF   BRAM36      DSP
 -------------------------------------------------------------------------------------------------------------
-sharpen_cas                                        3059        0     1590      217       48      6.0        9
-  (self)                                           3048        0     1454      217       48      6.0        9
+sharpen_cas                                        2192        0     1590      226      309      6.0        9
+  (self)                                           2181        0     1454      226      309      6.0        9
   axil_regbus                                        11        0      136        0        0      0.0        0
 
 LUT = LUT1..LUT6 used as logic; LUTRAM = distributed RAM + SRL; BRAM36 counts
 RAMB36 as 1 and RAMB18 as 0.5. Yosys does not place or route, so these are
 pre-implementation estimates (Vivado will typically optimise further).
 
-Critical path (cell delays only, no routing): 3180 ps  (see timing.rpt)
+Critical path (cell delays only, no routing): 3708 ps  (see timing.rpt)

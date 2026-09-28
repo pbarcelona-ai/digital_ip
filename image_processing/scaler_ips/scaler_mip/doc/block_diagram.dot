@@ -1,0 +1,99 @@
+digraph "scaler_mip" {
+  graph [rankdir=LR, fontname="Helvetica", nodesep=0.35, ranksep=0.6, pad=0.25, newrank=true, splines=true, bgcolor="white", labelloc=t, labeljust=l];
+  node  [shape=plain, fontname="Helvetica", fontsize=11];
+  edge  [fontname="Helvetica", fontsize=9, arrowsize=0.75];
+  label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="2"><TR><TD ALIGN="LEFT"><FONT POINT-SIZE="18"><B>scaler_mip - mip-map scaler engine (trilinear / anisotropic)</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT POINT-SIZE="11" COLOR="#374151">mip pyramid built in hardware (2x2 box filter), trilinear sampling, optional anisotropic probes (LEVELS, ANISO_MAX_LOG2)<BR ALIGN="LEFT"/>1 probe per clock: an output pixel takes NP clocks (one for trilinear) - latency: one input frame + mip build (about W*H/3 clocks)<BR ALIGN="LEFT"/>pixel = CHANNELS x COMP_W bits (default 3 x 8), component 0 in the LSBs<BR ALIGN="LEFT"/></FONT></TD></TR><TR><TD ALIGN="LEFT"><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="2"><TR><TD BGCOLOR="#dbeafe" COLOR="#2563eb" BORDER="1" STYLE="rounded"><FONT POINT-SIZE="9"> interface </FONT></TD><TD> </TD><TD BGCOLOR="#dcfce7" COLOR="#16a34a" BORDER="1" STYLE="rounded"><FONT POINT-SIZE="9"> control </FONT></TD><TD> </TD><TD BGCOLOR="#fef3c7" COLOR="#d97706" BORDER="1" STYLE="rounded"><FONT POINT-SIZE="9"> memory / table </FONT></TD><TD> </TD><TD BGCOLOR="#e5e7eb" COLOR="#4b5563" BORDER="1" STYLE="rounded"><FONT POINT-SIZE="9"> datapath stage </FONT></TD><TD> </TD><TD BGCOLOR="#fecaca" COLOR="#4b5563" BORDER="1" STYLE="rounded"><FONT POINT-SIZE="9"> DSP48 multipliers </FONT></TD><TD> </TD></TR></TABLE></TD></TR></TABLE>>;
+  s_axil [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#2563eb", penwidth=1.5, label="s_axil\nAXI4-Lite\n(control)"];
+  s_axis [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#2563eb", penwidth=1.5, label="s_axis\nAXI4-Stream\nvideo in"];
+  m_axis [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#2563eb", penwidth=1.5, label="m_axis\nAXI4-Stream\nvideo out"];
+  subgraph cluster_top {
+    label=<<B>scaler_mip</B>>; labeljust=l; style="rounded,filled"; fillcolor="#f9fafb"; color="#9ca3af"; penwidth=2; fontname="Helvetica"; fontsize=12; margin=12;
+    regbus [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#dcfce7" COLOR="#16a34a" STYLE="rounded">
+      <TR><TD BGCOLOR="#bbf7d0" STYLE="rounded"><B>axil_regbus</B></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">AXI4-Lite slave -&gt; one-cycle register bus<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">AW and W in any order, OKAY responses<BR ALIGN="LEFT"/></TD></TR>
+    </TABLE>>];
+    ctrl [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#dcfce7" COLOR="#16a34a" STYLE="rounded">
+      <TR><TD BGCOLOR="#bbf7d0" STYLE="rounded"><B>scaler_ctrl</B></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">common registers 0x000-0x02F: CTRL, STATUS,<BR ALIGN="LEFT"/>IN/OUT_SIZE, STEP_X/Y, OFFS_X/Y, FRAME_CNT,<BR ALIGN="LEFT"/>IP_ID, CAPS, MAX_SIZE<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">addresses &gt;= 0x040 -&gt; IP registers (ext bus)<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">capture FSM: SOF / EOL checks, writes the<BR ALIGN="LEFT"/>frame store, flags SOF_ERR / EOL_ERR<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">sequencing: frame | ping-pong | line buffer<BR ALIGN="LEFT"/></TD></TR>
+    </TABLE>>];
+    ipregs [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#dcfce7" COLOR="#16a34a" STYLE="rounded">
+      <TR><TD BGCOLOR="#bbf7d0" STYLE="rounded"><B>IP registers</B></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">0x040 LOD (8.8)   0x044 ANISO_LOG2<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">0x048/0x04C PROBE_STEP_X/Y   (s16.16)<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">0x050/0x054 PROBE_START_X/Y  (s16.16)<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">0x058 MIP_INFO (RO)<BR ALIGN="LEFT"/>0x060 + 4k  LEVEL_SIZE[k] (RO)<BR ALIGN="LEFT"/></TD></TR>
+    </TABLE>>];
+    levels [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#fef3c7" COLOR="#d97706" STYLE="rounded">
+      <TR><TD BGCOLOR="#fde68a" STYLE="rounded"><B>Mip pyramid: banked_framebuf x LEVELS</B></TD></TR>
+      <TR><TD><FONT POINT-SIZE="9" COLOR="#4b5563"><I>LEVELS = 4</I></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">L0 = input frame (written by the capture)<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">L1 .. L3: each half the size of the last<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">W[k+1] = max(1, W[k] &gt;&gt; 1), likewise H<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">each level gives a 2x2 window per clock<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">PINGPONG = 1 double-buffers the pyramid<BR ALIGN="LEFT"/></TD></TR>
+    </TABLE>>];
+    build [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#ffffff" COLOR="#4b5563" STYLE="rounded">
+      <TR><TD BGCOLOR="#e5e7eb" STYLE="rounded"><B>Mip build engine</B></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT"><B>G_IDLE</B>&nbsp;&nbsp;wait for a captured frame<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT"><B>G_MIP</B>&nbsp;&nbsp;read the 2x2 block of level k at (2x, 2y)<BR ALIGN="LEFT"/>box filter: (a + b + c + d + 2) &gt;&gt; 2<BR ALIGN="LEFT"/>write it to level k+1<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT"><B>G_DRAIN</B>&nbsp;&nbsp;wait for the last write of the level;<BR ALIGN="LEFT"/>then next level, or start sampling<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT"><B>G_SAMPLE</B>&nbsp;&nbsp;produce the output frame; back to<BR ALIGN="LEFT"/>G_IDLE when the last pixel is accepted<BR ALIGN="LEFT"/></TD></TR>
+    </TABLE>>];
+    dda [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#dcfce7" COLOR="#16a34a" STYLE="rounded">
+      <TR><TD BGCOLOR="#bbf7d0" STYLE="rounded"><B>scaler_dda</B></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">src_x = OFFS_X + ox * STEP_X<BR ALIGN="LEFT"/>src_y = OFFS_Y + oy * STEP_Y   (signed 16.16)<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">exact accumulation, SOF / EOL / EOF flags<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">stalls with the pipeline (adv), hold for LINE_BUF<BR ALIGN="LEFT"/></TD></TR>
+    </TABLE>>];
+    probe [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#ffffff" COLOR="#4b5563" STYLE="rounded">
+      <TR><TD BGCOLOR="#e5e7eb" STYLE="rounded"><B>Probe stage P</B></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">p = src + PROBE_START + n * PROBE_STEP<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">NP = 2^ANISO_LOG2 probes per pixel (up to 16)<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">the DDA advances once per pixel<BR ALIGN="LEFT"/></TD></TR>
+    </TABLE>>];
+    lodsel [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#ffffff" COLOR="#4b5563" STYLE="rounded">
+      <TR><TD BGCOLOR="#e5e7eb" STYLE="rounded"><B>Level select + coordinates</B></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">L = LOD[15:8], f = LOD[7:0]<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">lvl_a = L, lvl_b = L + 1 (top level: f = 0)<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">u_k = ((u + 0.5) &gt;&gt; k) - 0.5, both levels<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">-&gt; window origin and phases per level<BR ALIGN="LEFT"/></TD></TR>
+    </TABLE>>];
+    samp [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#ffffff" COLOR="#4b5563" STYLE="rounded">
+      <TR><TD BGCOLOR="#e5e7eb" STYLE="rounded"><B>Sampling pipeline</B></TD></TR>
+      <TR><TD><FONT POINT-SIZE="9" COLOR="#4b5563"><I>8 stages (A B W M1 S1 M2 S2 M3) + output stage</I></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT"><B>A, B</B>&nbsp;&nbsp;window origins of both levels; RAM data<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT"><B>W</B>&nbsp;&nbsp;level windows after the level muxes<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT" BGCOLOR="#fecaca"><B>M1</B>&nbsp;&nbsp;p*(ONE-fx), p*fx   both levels <FONT POINT-SIZE="8"><B>[DSP48]</B></FONT><BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT"><B>S1</B>&nbsp;&nbsp;top / bottom row sums<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT" BGCOLOR="#fecaca"><B>M2</B>&nbsp;&nbsp;top*(ONE-fy), bot*fy   both levels <FONT POINT-SIZE="8"><B>[DSP48]</B></FONT><BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT"><B>S2</B>&nbsp;&nbsp;bilinear samples sa, sb<BR ALIGN="LEFT"/>(sum + ONE^2/2) &gt;&gt; 2*PB<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT" BGCOLOR="#fecaca"><B>M3</B>&nbsp;&nbsp;sa*(256-f), sb*f   (trilinear blend) <FONT POINT-SIZE="8"><B>[DSP48]</B></FONT><BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT"><B>out</B>&nbsp;&nbsp;t = (sum + 128) &gt;&gt; 8<BR ALIGN="LEFT"/>accumulate over the probes of a pixel<BR ALIGN="LEFT"/>mean: (sum + NP/2) &gt;&gt; ANISO_LOG2<BR ALIGN="LEFT"/></TD></TR>
+    </TABLE>>];
+  }
+  { rank=same; s_axil; s_axis; }
+  { rank=same; regbus; ctrl; }
+  { rank=same; build; dda; ipregs; }
+  { rank=same; probe; lodsel; }
+  s_axil -> regbus [color="#374151", penwidth=1.6, label="AXI4-Lite"];
+  s_axis -> ctrl [color="#374151", penwidth=1.6, label="AXI4-Stream\nvideo in"];
+  regbus -> ctrl [color="#374151", penwidth=1.6, label="register bus"];
+  ctrl -> build [color="#6b7280", style=dashed, label="gen_start"];
+  ctrl -> dda [color="#6b7280", style=dashed, label="sizes, STEP, OFFS"];
+  ctrl -> ipregs [color="#6b7280", style=dashed, label="ext bus"];
+  build -> dda [color="#6b7280", style=dashed, label="start sampling"];
+  ctrl -> levels [color="#374151", penwidth=1.6, label="write port: L0", constraint=false];
+  build -> levels [color="#374151", penwidth=1.6, label="read L(k)\nwrite L(k+1)"];
+  dda -> probe [color="#374151", penwidth=1.6, label="source x, y"];
+  ipregs -> probe [color="#16a34a", style=dashed, label="probe step\n/ start"];
+  ipregs -> lodsel [color="#16a34a", style=dashed, label="LOD", constraint=false];
+  probe -> lodsel [color="#374151", penwidth=1.6];
+  lodsel -> levels [color="#374151", penwidth=1.6, label="window origins,\nphases"];
+  levels -> samp [color="#374151", penwidth=1.6, label="windows"];
+  samp -> m_axis [color="#374151", penwidth=1.6, label="AXI4-Stream\nvideo out"];
+  samp -> ctrl [color="#6b7280", style=dashed, label="gen_done", constraint=false];
+}

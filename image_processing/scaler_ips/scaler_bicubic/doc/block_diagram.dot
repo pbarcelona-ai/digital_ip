@@ -1,0 +1,90 @@
+digraph "scaler_bicubic" {
+  graph [rankdir=LR, fontname="Helvetica", nodesep=0.35, ranksep=0.6, pad=0.25, newrank=true, splines=true, bgcolor="white", labelloc=t, labeljust=l];
+  node  [shape=plain, fontname="Helvetica", fontsize=11];
+  edge  [fontname="Helvetica", fontsize=9, arrowsize=0.75];
+  label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="2"><TR><TD ALIGN="LEFT"><FONT POINT-SIZE="18"><B>scaler_bicubic - bicubic (4x4) scaler</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT POINT-SIZE="11" COLOR="#374151">separable polyphase FIR, TAPS = 4, programmable coefficient tables - any Mitchell-Netravali (B, C) cubic: Catmull-Rom, Mitchell, B-spline, Keys<BR ALIGN="LEFT"/>1 output pixel per clock - pipeline: 10 = 6 + 2*LV stages + output register (LV = 2)<BR ALIGN="LEFT"/>pixel = CHANNELS x COMP_W bits (default 3 x 8), component 0 in the LSBs<BR ALIGN="LEFT"/></FONT></TD></TR><TR><TD ALIGN="LEFT"><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="2"><TR><TD BGCOLOR="#dbeafe" COLOR="#2563eb" BORDER="1" STYLE="rounded"><FONT POINT-SIZE="9"> interface </FONT></TD><TD> </TD><TD BGCOLOR="#dcfce7" COLOR="#16a34a" BORDER="1" STYLE="rounded"><FONT POINT-SIZE="9"> control </FONT></TD><TD> </TD><TD BGCOLOR="#fef3c7" COLOR="#d97706" BORDER="1" STYLE="rounded"><FONT POINT-SIZE="9"> memory / table </FONT></TD><TD> </TD><TD BGCOLOR="#e5e7eb" COLOR="#4b5563" BORDER="1" STYLE="rounded"><FONT POINT-SIZE="9"> datapath stage </FONT></TD><TD> </TD><TD BGCOLOR="#fecaca" COLOR="#4b5563" BORDER="1" STYLE="rounded"><FONT POINT-SIZE="9"> DSP48 multipliers </FONT></TD><TD> </TD></TR></TABLE></TD></TR></TABLE>>;
+  s_axil [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#2563eb", penwidth=1.5, label="s_axil\nAXI4-Lite\n(control)"];
+  s_axis [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#2563eb", penwidth=1.5, label="s_axis\nAXI4-Stream video in\n(tuser = SOF, tlast = EOL)"];
+  m_axis [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#2563eb", penwidth=1.5, label="m_axis\nAXI4-Stream video out\n(tuser = SOF, tlast = EOL)"];
+  subgraph cluster_top {
+    label=<<B>scaler_bicubic (wrapper)</B>>; labeljust=l; style="rounded,filled"; fillcolor="#f9fafb"; color="#9ca3af"; penwidth=2; fontname="Helvetica"; fontsize=12; margin=12;
+    subgraph cluster_core {
+      label=<<B>u_core: scaler_polyphase (TAPS = 4, IP_ID BCUB)</B>>; labeljust=l; style="rounded,filled"; fillcolor="#f3f4f6"; color="#9ca3af"; penwidth=1; fontname="Helvetica"; fontsize=12; margin=12;
+      regbus [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#dcfce7" COLOR="#16a34a" STYLE="rounded">
+        <TR><TD BGCOLOR="#bbf7d0" STYLE="rounded"><B>axil_regbus</B></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">AXI4-Lite slave -&gt; one-cycle register bus<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">AW and W in any order, OKAY responses<BR ALIGN="LEFT"/></TD></TR>
+      </TABLE>>];
+      ctrl [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#dcfce7" COLOR="#16a34a" STYLE="rounded">
+        <TR><TD BGCOLOR="#bbf7d0" STYLE="rounded"><B>scaler_ctrl</B></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">common registers 0x000-0x02F: CTRL, STATUS,<BR ALIGN="LEFT"/>IN/OUT_SIZE, STEP_X/Y, OFFS_X/Y, FRAME_CNT,<BR ALIGN="LEFT"/>IP_ID, CAPS, MAX_SIZE<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">addresses &gt;= 0x040 -&gt; IP registers (ext bus)<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">capture FSM: SOF / EOL checks, writes the<BR ALIGN="LEFT"/>frame store, flags SOF_ERR / EOL_ERR<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">sequencing: frame | ping-pong | line buffer<BR ALIGN="LEFT"/></TD></TR>
+      </TABLE>>];
+      dda [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#dcfce7" COLOR="#16a34a" STYLE="rounded">
+        <TR><TD BGCOLOR="#bbf7d0" STYLE="rounded"><B>scaler_dda</B></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">src_x = OFFS_X + ox * STEP_X<BR ALIGN="LEFT"/>src_y = OFFS_Y + oy * STEP_Y   (signed 16.16)<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">exact accumulation, SOF / EOL / EOF flags<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">stalls with the pipeline (adv), hold for LINE_BUF<BR ALIGN="LEFT"/></TD></TR>
+      </TABLE>>];
+      prep [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#ffffff" COLOR="#4b5563" STYLE="rounded">
+        <TR><TD BGCOLOR="#e5e7eb" STYLE="rounded"><B>quantise to the phase grid</B></TD></TR>
+        <TR><TD><FONT POINT-SIZE="9" COLOR="#4b5563"><I>combinational</I></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">s_r = s + 2^(15 - PB)   (PB = PHASE_BITS = 6)<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">i = s_r &gt;&gt; 16 ; window origin = i - (TAPS/2 - 1)<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">px, py = s_r[15 : 16-PB]  (phases)<BR ALIGN="LEFT"/></TD></TR>
+      </TABLE>>];
+      fb [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#fef3c7" COLOR="#d97706" STYLE="rounded">
+        <TR><TD BGCOLOR="#fde68a" STYLE="rounded"><B>banked_framebuf</B></TD></TR>
+        <TR><TD><FONT POINT-SIZE="9" COLOR="#4b5563"><I>TAPS = 4</I></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">4 x 4 RAM banks (B = 4): a 4x4 window every clock<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">clamp-to-edge addressing<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT"><B>A</B>&nbsp;&nbsp;bank addresses, tap selects (registers)<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT"><B>B</B>&nbsp;&nbsp;RAM read data (registers)<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">tap multiplexer -&gt; window<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">modes: frame buffer | PINGPONG (2 frames) |<BR ALIGN="LEFT"/>LINE_BUF (ring of lines)<BR ALIGN="LEFT"/></TD></TR>
+      </TABLE>>];
+      dp [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#ffffff" COLOR="#4b5563" STYLE="rounded">
+        <TR><TD BGCOLOR="#e5e7eb" STYLE="rounded"><B>Pipelined datapath</B></TD></TR>
+        <TR><TD><FONT POINT-SIZE="9" COLOR="#4b5563"><I>10 stages + output register (LV = 2)</I></FONT></TD></TR>
+        <TR><TD BGCOLOR="#e5e7eb" ALIGN="LEFT"><FONT POINT-SIZE="10"><B>Window</B></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT"><B>W</B>&nbsp;&nbsp;4 x 4 window register<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD BGCOLOR="#e5e7eb" ALIGN="LEFT"><FONT POINT-SIZE="10"><B>Vertical FIR (per column k)</B></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT" BGCOLOR="#fecaca"><B>M1</B>&nbsp;&nbsp;pixel * CV[py][j]<BR ALIGN="LEFT"/>4x4 products per component <FONT POINT-SIZE="8"><B>[DSP48]</B></FONT><BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT"><B>T1..TLV</B>&nbsp;&nbsp;adder tree: one registered<BR ALIGN="LEFT"/>level per pairwise add<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT"><B>S1</B>&nbsp;&nbsp;v_k = (sum + 2^(F-1)) &gt;&gt; F<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD BGCOLOR="#e5e7eb" ALIGN="LEFT"><FONT POINT-SIZE="10"><B>Horizontal FIR</B></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT" BGCOLOR="#fecaca"><B>M2</B>&nbsp;&nbsp;v_k * CH[px][k]<BR ALIGN="LEFT"/>4 products per component <FONT POINT-SIZE="8"><B>[DSP48]</B></FONT><BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT"><B>H1..HLV</B>&nbsp;&nbsp;adder tree, one level per stage<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD BGCOLOR="#e5e7eb" ALIGN="LEFT"><FONT POINT-SIZE="10"><B>Output</B></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT"><B>out</B>&nbsp;&nbsp;(sum + 2^(F-1)) &gt;&gt; F<BR ALIGN="LEFT"/>clamp to [0, 2^COMP_W - 1]<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">-&gt; m_axis register<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">16 + 4 = 20 multipliers per component (60 for 3 components)<BR ALIGN="LEFT"/></TD></TR>
+      </TABLE>>];
+      tables [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#fef3c7" COLOR="#d97706" STYLE="rounded">
+        <TR><TD BGCOLOR="#fde68a" STYLE="rounded"><B>Coefficient tables (signed, COEF_W = 16, F = COEF_FRAC = 14)</B></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">CH: horizontal, 2^PB phases x TAPS   0x1000 + 4*(16*phase + tap)<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">CV: vertical,   2^PB phases x TAPS   0x2000 + 4*(16*phase + tap)<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">reset value: bilinear weights; write while idle<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">0x040 COEF_INFO (RO): TAPS, PHASE_BITS, COEF_W, COEF_FRAC<BR ALIGN="LEFT"/></TD></TR>
+      </TABLE>>];
+    }
+  }
+  { rank=same; s_axil; s_axis; }
+  { rank=same; regbus; ctrl; }
+  { rank=same; dda; prep; }
+  { rank=same; dp; tables; }
+  s_axil -> regbus [color="#374151", penwidth=1.6, label="AXI4-Lite"];
+  s_axis -> ctrl [color="#374151", penwidth=1.6, label="AXI4-Stream\nvideo in"];
+  regbus -> ctrl [color="#374151", penwidth=1.6, label="register bus"];
+  ctrl -> dda [color="#6b7280", style=dashed, label="sizes, STEP,\nOFFS, start"];
+  dda -> prep [color="#374151", penwidth=1.6, label="source x, y\n+ flags"];
+  ctrl -> fb [color="#374151", penwidth=1.6, label="write port\n(x, y, data, buffer)"];
+  prep -> fb [color="#374151", penwidth=1.6, label="window origin,\nphases"];
+  fb -> dp [color="#374151", penwidth=1.6, label="window"];
+  dp -> m_axis [color="#374151", penwidth=1.6, label="AXI4-Stream\nvideo out"];
+  dp -> ctrl [color="#6b7280", style=dashed, label="gen_done", constraint=false];
+  ctrl -> tables [color="#6b7280", style=dashed, label="ext bus (write)", constraint=false];
+  tables -> dp [color="#d97706", style=dashed, label="rows selected by\nphase (stage B)"];
+}

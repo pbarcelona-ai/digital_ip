@@ -51,6 +51,8 @@ jobs:
         os: [ubuntu-24.04, macos-14]
     steps:
       - uses: actions/checkout@v4
+      - name: Block diagrams are current and consistent with the RTL
+        run: python3 tools/docs/make_block_diagrams.py --check
       - name: awk formatter test (every awk on this machine, both Yosys report layouts)
         run: /bin/bash tools/yosys/test_util_hier.sh
       - name: Syntax check of every script, and synth.sh --help, with the system bash
