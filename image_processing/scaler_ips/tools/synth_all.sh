@@ -16,10 +16,13 @@ done
 printf "%-22s %-6s %8s %8s %8s %8s %8s %8s %8s %6s\n" Module Result LUT LUTRAM FF CARRY MUXF BRAM36 DSP Time
 fail=0
 for m in "${MODS[@]}"; do
-  if "$ROOT/$m/synth.sh" ${OPTS[@]+"${OPTS[@]}"} > /dev/null 2>&1; then r=PASS; else r=FAIL; fail=1; fi
   rpt="$ROOT/$m/yosys/utilization_hier.rpt"
+  rm -f "$rpt"          # never show results left over from an earlier run
+  if "$ROOT/$m/synth.sh" ${OPTS[@]+"${OPTS[@]}"} > /dev/null 2>&1; then r=PASS; else r=FAIL; fail=1; fi
   tot=$(awk -v m="$m" '$1==m {print $2, $3, $4, $5, $6, $7, $8; exit}' "$rpt" 2>/dev/null)
   t=$(awk '/^Run time/ {print $4 "s"}' "$rpt" 2>/dev/null)
+  [ -n "$tot" ] || tot="- - - - - - -"
+  [ -n "$t" ] || t="-"
   printf "%-22s %-6s %8s %8s %8s %8s %8s %8s %8s %6s\n" "$m" "$r" $tot "$t"
 done
 exit $fail

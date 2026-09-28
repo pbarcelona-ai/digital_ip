@@ -75,11 +75,21 @@ echo "gatesim.sh: synthesizing $IP ($PARAMS)"
 SYN_TOP="$IP" SYN_SRC="$OUT/$IP.sv2v.v" SYN_OUT="$OUT" SYN_PARAMS="$PARAMS" \
   yosys -q -l "$OUT/synth.log" -c "$ROOT/tools/yosys/synth_xilinx.tcl" > /dev/null 2>&1 \
   || { echo "gatesim.sh: synthesis failed (see $OUT/synth.log)" >&2; exit 1; }
+awk -f "$ROOT/tools/yosys/util_hier.awk" -v top="$IP" "$OUT/utilization.rpt" > "$OUT/utilization_hier.rpt" \
+  || echo "gatesim.sh: warning: could not format utilization report" >&2
 
 # 2. testbench with the DUT parameter override removed (the netlist top has
 #    its parameters already applied)
-sed -E ':a;N;$!ba;s/\n  '"$IP"' #\([^;]*\) dut \(/\n  '"$IP"' dut (/' \
-  "$DIR/tb/tb_$IP.sv" > "$OUT/tb_$IP.gl.sv"
+# (awk, not sed: BSD sed on macOS rejects ";" after a label and does not turn
+# "\n" in a replacement into a newline)
+awk -v ip="$IP" '
+  BEGIN { pat = "^  " ip " #\\(" }
+  skip == 0 && $0 ~ pat { skip = 1 }
+  skip == 1 {
+    if ($0 ~ /\) dut \(/) { sub(/^.*\) dut \(/, "  " ip " dut ("); skip = 2 }
+    else next
+  }
+  { print }' "$DIR/tb/tb_$IP.sv" > "$OUT/tb_$IP.gl.sv"
 grep -q "  $IP dut (" "$OUT/tb_$IP.gl.sv" || { echo "gatesim.sh: could not patch DUT instance" >&2; exit 1; }
 
 # 3. file list: verification sources from tb/build.f, RTL replaced by netlist

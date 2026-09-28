@@ -94,10 +94,6 @@ module scaler_nearest #(
   logic               ext_wr, ext_rd;  // IP register bus (>= 0x040)
   logic [ADDR_W-1:0]  ext_waddr, ext_raddr;
   logic [31:0]        ext_wdata;
-  logic               d_valid, d_sof, d_eol, d_eof, d_busy;
-  logic signed [31:0] d_x, d_y;
-  logic [1:0]         v_q;       // [0] = stage A, [1] = stage B (window ready)
-
 
   scaler_ctrl #(.PIX_W(PIX_W), .ADDR_W(ADDR_W), .MAX_W(MAX_W), .MAX_H(MAX_H),
                 .IP_ID(IP_ID), .CAPS(CAPS), .NBUF(NBUF), .LB_ROWS(LB_ROWS),
@@ -124,6 +120,9 @@ module scaler_nearest #(
   wire adv = !m_axis_tvalid || m_axis_tready;
 
   // stage 0 : DDA - source coordinate (s16.16) of each output pixel
+  logic               d_valid, d_sof, d_eol, d_eof, d_busy;
+  logic signed [31:0] d_x, d_y;
+
   // DDA: raster scan of the output, source coordinate per pixel
   scaler_dda u_dda (
     .clk, .rst_n, .start(gen_start), .adv, .hold(lb_hold), .nxt_y(d_nxt_y),
@@ -150,6 +149,7 @@ module scaler_nearest #(
   );
 
   // valid / flag shift registers that follow the frame buffer latency
+  logic [1:0] v_q;       // [0] = stage A, [1] = stage B (window ready)
   logic [2:0] f_q [2];   // {eof, eol, sof}
   logic       m_eof;     // output beat is the last pixel of the frame
 

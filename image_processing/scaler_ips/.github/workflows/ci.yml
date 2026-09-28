@@ -1,0 +1,281 @@
+# ***************
+# Filename: ci.yml
+# Author: Paul Barcelona
+# Description: Continuous integration for the scaler IP family. On every push
+#   to main (and on demand) it runs the simulation regression (Icarus Verilog,
+#   three frame-store modes), the Verilator regression with SVA assertions,
+#   Yosys synthesis of every module with a hierarchical utilization report,
+#   gate-level simulation of the synthesized netlists, and portability checks
+#   (awk formatter and shell scripts on macOS's awk and bash 3.2).
+#   Tool versions on ubuntu-24.04 (apt): Icarus 12.0, Verilator 5.020,
+#   Yosys 0.33 - the versions the repository was developed and tested with.
+#   The workflow file expects the repository root to be this project's root.
+# Date: 2026-09-28
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      heavy_gatesim:
+        description: "Also run the large gate-level simulations (8-tap polyphase, Lanczos, upscaler): slow, memory hungry, experimental"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# a newer push to the same branch cancels the run in progress
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash          # bash -eo pipefail
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Portability: the awk report formatter with each platform's own awk, and the
+  # run scripts under the system bash (macOS: Apple's bash 3.2 and BWK awk).
+  # ---------------------------------------------------------------------------
+  portability:
+    name: portability (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-14]
+    steps:
+      - uses: actions/checkout@v4
+      - name: awk formatter test (every awk on this machine, both Yosys report layouts)
+        run: /bin/bash tools/yosys/test_util_hier.sh
+      - name: Syntax check of every script, and synth.sh --help, with the system bash
+        run: |
+          /bin/bash --version | head -n 1
+          for f in $(git ls-files '*.sh'); do /bin/bash -n "$f"; done
+          for f in */synth.sh; do /bin/bash "$f" --help > /dev/null; done
+      - name: Install Icarus Verilog
+        run: tools/ci/install_tools.sh iverilog
+      - name: Run scripts with the system bash
+        run: |
+          /bin/bash axil_regbus/run.sh +NO_VCD
+          /bin/bash scaler_dda/run.sh +NO_VCD -noview
+          /bin/bash scaler_nearest/run.sh +QUICK +NO_VCD +NO_PPM
+          MODE=linebuf /bin/bash tools/run_all.sh scaler_bilinear +QUICK
+
+  # ---------------------------------------------------------------------------
+  # Simulation regression, Icarus Verilog. Groups keep every job short; the
+  # three modes are the single frame buffer, ping-pong and line buffer.
+  # ---------------------------------------------------------------------------
+  simulation:
+    name: sim ${{ matrix.mode }} / ${{ matrix.name }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { mode: frame,    name: modules,  dirs: "axi_checkers axil_regbus axil_split scaler_ctrl banked_framebuf scaler_dda scaler_nearest scaler_bilinear scaler_edge_directed sharpen_cas" }
+          - { mode: frame,    name: filters,  dirs: "scaler_polyphase scaler_bicubic scaler_lanczos" }
+          - { mode: frame,    name: mip,      dirs: "scaler_mip scaler_trilinear scaler_anisotropic" }
+          - { mode: frame,    name: upscaler, dirs: "spatial_upscaler" }
+          - { mode: pingpong, name: basic,    dirs: "scaler_ctrl scaler_nearest scaler_bilinear scaler_edge_directed scaler_polyphase" }
+          - { mode: pingpong, name: filters,  dirs: "scaler_bicubic scaler_lanczos" }
+          - { mode: pingpong, name: mip,      dirs: "scaler_mip scaler_trilinear scaler_anisotropic spatial_upscaler" }
+          - { mode: linebuf,  name: basic,    dirs: "scaler_nearest scaler_bilinear scaler_edge_directed scaler_polyphase scaler_bicubic" }
+          - { mode: linebuf,  name: filters,  dirs: "scaler_lanczos spatial_upscaler" }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Icarus Verilog
+        run: tools/ci/install_tools.sh iverilog
+      - name: Run testbenches
+        run: |
+          MODE=${{ matrix.mode }} SIM=iverilog tools/run_all.sh ${{ matrix.dirs }} | tee sim_summary.txt
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "### Simulation: ${{ matrix.mode }} / ${{ matrix.name }} (Icarus Verilog 12.0)"
+            echo '```'
+            cat sim_summary.txt 2>/dev/null || echo "(no summary)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sim-${{ matrix.mode }}-${{ matrix.name }}
+          path: |
+            sim_summary.txt
+            */sim_out/sim.log
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # Verilator regression. Unlike Icarus, Verilator also evaluates the SVA
+  # assertions of the protocol checkers (tools/run_sim.sh passes --assert).
+  # Fast testbenches only; the large filters are covered by the Icarus jobs.
+  # ---------------------------------------------------------------------------
+  verilator:
+    name: verilator (SVA assertions)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Verilator and Icarus Verilog
+        run: tools/ci/install_tools.sh verilator iverilog
+      - name: Run testbenches
+        run: |
+          SIM=verilator tools/run_all.sh axi_checkers axil_regbus axil_split scaler_ctrl scaler_dda scaler_nearest sharpen_cas | tee sim_summary.txt
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "### Verilator 5.020 with --assert"
+            echo '```'
+            cat sim_summary.txt 2>/dev/null || echo "(no summary)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ---------------------------------------------------------------------------
+  # Yosys synthesis of every module (Xilinx 7-series) with the hierarchical
+  # utilization report. Fails when any module does not synthesize.
+  # ---------------------------------------------------------------------------
+  synthesis:
+    name: synthesis / ${{ matrix.name }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: modules,  modules: "axil_regbus axil_split scaler_dda scaler_ctrl banked_framebuf sharpen_cas" }
+          - { name: simple,   modules: "scaler_nearest scaler_bilinear scaler_edge_directed" }
+          - { name: filters,  modules: "scaler_polyphase scaler_bicubic" }
+          - { name: lanczos,  modules: "scaler_lanczos" }
+          - { name: mip,      modules: "scaler_mip scaler_trilinear scaler_anisotropic" }
+          - { name: upscaler, modules: "spatial_upscaler" }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Yosys and sv2v
+        run: tools/ci/install_tools.sh yosys sv2v
+      - name: Synthesize
+        run: tools/synth_all.sh ${{ matrix.modules }} | tee synth_summary.txt
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "### Synthesis: ${{ matrix.name }} (Yosys 0.33, xc7, 640x480 where applicable)"
+            echo '```'
+            cat synth_summary.txt 2>/dev/null || echo "(no summary)"
+            echo '```'
+            for r in */yosys/utilization_hier.rpt; do
+              [ -f "$r" ] || continue
+              echo "<details><summary>${r%%/*}</summary>"; echo; echo '```'; cat "$r"; echo '```'; echo "</details>"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: synth-${{ matrix.name }}
+          path: |
+            synth_summary.txt
+            */yosys/utilization_hier.rpt
+            */yosys/utilization.rpt
+            */yosys/timing.rpt
+            */yosys/synth.log
+          retention-days: 30
+
+  # ---------------------------------------------------------------------------
+  # Gate-level simulation: synthesize at the testbench size and run the
+  # unchanged self-checking testbench on the mapped Xilinx netlist. This is
+  # what catches synthesis-tool bugs that RTL simulation cannot see.
+  # ---------------------------------------------------------------------------
+  gatelevel:
+    name: gate-level / ${{ matrix.ip }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { ip: scaler_nearest,       args: "" }
+          - { ip: scaler_bilinear,      args: "" }
+          - { ip: scaler_edge_directed, args: "" }
+          - { ip: sharpen_cas,          args: "" }
+          - { ip: scaler_bicubic,       args: "+QUICK" }
+          - { ip: scaler_trilinear,     args: "+QUICK" }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Yosys, sv2v and Icarus Verilog
+        run: tools/ci/install_tools.sh yosys sv2v iverilog
+      - name: Cache Xilinx UNISIM models
+        uses: actions/cache@v4
+        with:
+          path: tools/yosys/unisim
+          key: unisim-${{ hashFiles('tools/gatesim.sh') }}
+      - name: Gate-level simulation
+        run: tools/gatesim.sh ${{ matrix.ip }} ${{ matrix.args }} +NO_PPM
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gatelevel-${{ matrix.ip }}
+          path: |
+            ${{ matrix.ip }}/yosys/gatesim/sim.log
+            ${{ matrix.ip }}/yosys/gatesim/utilization_hier.rpt
+          retention-days: 14
+
+  # Large netlists: only on manual dispatch with heavy_gatesim=true. They were
+  # too large for a 4 GB machine; untested on GitHub's 16 GB runners.
+  gatelevel-heavy:
+    name: gate-level (heavy) / ${{ matrix.ip }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.heavy_gatesim }}
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        ip: [scaler_polyphase, scaler_lanczos, spatial_upscaler]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Yosys, sv2v and Icarus Verilog
+        run: tools/ci/install_tools.sh yosys sv2v iverilog
+      - name: Gate-level simulation (quick suite)
+        run: tools/gatesim.sh ${{ matrix.ip }} +QUICK +NO_PPM
+
+  # ---------------------------------------------------------------------------
+  # macOS with Homebrew tools (a much newer Yosys than 0.33). Experimental:
+  # written from analysis, not yet observed on a real macOS runner, so a
+  # failure here does not fail the workflow. It exercises exactly the setup
+  # that motivated the portability fixes (Apple's awk and bash 3.2, modern Yosys).
+  # ---------------------------------------------------------------------------
+  macos-flow:
+    name: macOS flow (Homebrew Yosys, experimental)
+    runs-on: macos-14
+    continue-on-error: true
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools (Homebrew)
+        run: tools/ci/install_tools.sh iverilog yosys sv2v
+      - name: Synthesis with Apple's bash 3.2 and awk
+        run: |
+          /bin/bash scaler_ctrl/synth.sh
+          /bin/bash scaler_nearest/synth.sh -p MAX_W=64 -p MAX_H=48
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-synth
+          path: |
+            scaler_ctrl/yosys/utilization_hier.rpt
+            scaler_ctrl/yosys/synth.log
+            scaler_nearest/yosys/utilization_hier.rpt
+            scaler_nearest/yosys/synth.log
+          retention-days: 14

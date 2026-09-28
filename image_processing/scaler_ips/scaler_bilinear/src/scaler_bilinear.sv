@@ -101,12 +101,6 @@ module scaler_bilinear #(
   logic               ext_wr, ext_rd;  // IP register bus (>= 0x040)
   logic [ADDR_W-1:0]  ext_waddr, ext_raddr;
   logic [31:0]        ext_wdata;
-  // stage 0 : DDA - source coordinate (s16.16) of each output pixel
-  logic               d_valid, d_sof, d_eol, d_eof, d_busy;
-  logic signed [31:0] d_x, d_y;
-  localparam int      NST = 6;
-  logic [NST-1:0]     v_q;                    // valid per stage
-
 
   scaler_ctrl #(.PIX_W(PIX_W), .ADDR_W(ADDR_W), .MAX_W(MAX_W), .MAX_H(MAX_H),
                 .IP_ID(IP_ID), .CAPS(CAPS), .NBUF(NBUF), .LB_ROWS(LB_ROWS),
@@ -131,6 +125,10 @@ module scaler_bilinear #(
   // Global pipeline advance: every stage moves forward unless the output
   // register holds a beat the sink has not accepted yet.
   wire adv = !m_axis_tvalid || m_axis_tready;
+
+  // stage 0 : DDA - source coordinate (s16.16) of each output pixel
+  logic               d_valid, d_sof, d_eol, d_eof, d_busy;
+  logic signed [31:0] d_x, d_y;
 
   // DDA: raster scan of the output, source coordinate per pixel
   scaler_dda u_dda (
@@ -174,6 +172,8 @@ module scaler_bilinear #(
   // One multiply or one add per stage; bit-identical to the single-cycle
   // form (exact products, same accumulator widths). The result is always
   // within [0, 2^COMP_W-1] because the weights are convex.
+  localparam int NST = 6;
+  logic [NST-1:0]        v_q;                    // valid per stage
   logic [2:0]            f_q [NST];              // {eof, eol, sof}
   logic [PHASE_BITS:0]   wx0, wx1, wy0_d [3], wy1_d [3];   // weights ONE-f, f
   logic [PHASE_BITS-1:0] fx_q [2], fy_q [2];     // phases A, B

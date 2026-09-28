@@ -2,7 +2,7 @@ Module     : scaler_dda
 Family     : xc7
 Parameters : (defaults)
 Tools      : Yosys 0.33, sv2v v0.0.12
-Run time   : 6 s
+Run time   : 7 s
 
 Hierarchical utilization (Yosys synth_xilinx, totals include sub-instances)
 
