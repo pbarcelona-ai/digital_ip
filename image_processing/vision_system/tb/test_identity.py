@@ -6,7 +6,7 @@ from cocotb.triggers import RisingEdge, ClockCycles, with_timeout
 
 sys.path.insert(0, os.path.dirname(__file__))
 import image_io as io
-from test_lens_distortion_correction import (axil_write, axil_read, init_signals,
+from test_vision_system import (axil_write, axil_read, init_signals,
                                   stream_frame_in, capture_frame_out,
                                   REG_K1, REG_K2, REG_K3, REG_CENTER_X, REG_CENTER_Y,
                                   REG_SCALE, REG_IMG_WIDTH, REG_IMG_HEIGHT, REG_STATUS)

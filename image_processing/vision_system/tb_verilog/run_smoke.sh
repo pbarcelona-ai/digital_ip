@@ -10,10 +10,18 @@
 set -e
 cd "$(dirname "$0")"
 
-iverilog -g2012 -o smoke.vvp \
+DEFS=""
+[ "${VCD:-0}" = "1" ] && DEFS="-DDUMP_VCD"
+
+iverilog -g2012 $DEFS -o smoke.vvp \
   ppm_io_pkg.sv golden_model_pkg.sv \
-  ../rtl/barrel_pkg.sv ../rtl/distortion_model_pkg.sv \
-  ../ip/fixed_recip/fixed_recip.sv ../ip/coord_gen/coord_gen.sv \
+  ../src/barrel_pkg.sv ../src/distortion_model_pkg.sv \
+  ../ip/fixed_recip/fixed_recip.sv ../ip/mulq/mulq_s.sv ../ip/coord_gen/coord_gen.sv \
   tb_smoke.sv
 
 vvp smoke.vvp
+
+# Optional waveform viewing: VCD=1 dumps waves.vcd; SURFER=1 opens it.
+if [ "${VCD:-0}" = "1" ] && [ "${SURFER:-0}" = "1" ]; then
+  ../synth/view_waves.sh waves.vcd
+fi

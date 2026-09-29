@@ -11,7 +11,7 @@
 // =============================================================================
 // vision_system.sv
 //
-// Top-level vision system core.
+// Top-level barrel-distortion-correction core.
 //
 //   - s_axis_*: AXI4-Stream video input. Each line = IMG_WIDTH back-to-back
 //     beats (tlast on the final pixel), followed by >=5 idle cycles before
@@ -27,12 +27,10 @@
 // docs/README for the ping-pong-buffer extension needed for fully
 // overlapped (back-to-back, no dead time) frame-rate operation.
 // =============================================================================
-import vision_system_pkg::*;
-import distortion_model_pkg::*;
 
 module vision_system #(
-  parameter int COORD_W = vision_system_pkg::COORD_W,
-  parameter int ADDR_W  = vision_system_pkg::ADDR_W
+  parameter int COORD_W = barrel_pkg::COORD_W,
+  parameter int ADDR_W  = barrel_pkg::ADDR_W
 ) (
   input  logic clk,
   input  logic rst_n,
@@ -40,14 +38,14 @@ module vision_system #(
   // AXI4-Stream slave (video in)
   input  logic                s_axis_tvalid,
   output logic                s_axis_tready,
-  input  logic [PIX_W-1:0]    s_axis_tdata,
+  input  logic [barrel_pkg::PIX_W-1:0]    s_axis_tdata,
   input  logic                s_axis_tlast,
   input  logic                s_axis_tuser,
 
   // AXI4-Stream master (video out)
   output logic                m_axis_tvalid,
   input  logic                m_axis_tready,
-  output logic [PIX_W-1:0]    m_axis_tdata,
+  output logic [barrel_pkg::PIX_W-1:0]    m_axis_tdata,
   output logic                m_axis_tlast,
   output logic                m_axis_tuser,
 
@@ -72,7 +70,7 @@ module vision_system #(
 );
 
   // ---- config regs ---------------------------------------------------
-  calib_params_t      cfg;
+  distortion_model_pkg::calib_params_t cfg;
   logic [COORD_W-1:0] img_width, img_height;
   logic                cfg_recip_busy;
   logic                interp_mode;
@@ -126,12 +124,12 @@ module vision_system #(
   // ---- frame buffer -----------------------------------------------------
   logic               fb_wr_en;
   logic [ADDR_W-1:0]  fb_wr_addr;
-  logic [PIX_W-1:0]   fb_wr_data;
+  logic [barrel_pkg::PIX_W-1:0]   fb_wr_data;
   logic               fb_rd_en;
   logic [ADDR_W-1:0]  fb_rd_addr0, fb_rd_addr1, fb_rd_addr2, fb_rd_addr3;
-  logic [PIX_W-1:0]   fb_rd_data0, fb_rd_data1, fb_rd_data2, fb_rd_data3;
+  logic [barrel_pkg::PIX_W-1:0]   fb_rd_data0, fb_rd_data1, fb_rd_data2, fb_rd_data3;
 
-  frame_buffer #(.PIX_W(PIX_W), .ADDR_W(ADDR_W)) u_fb (
+  frame_buffer #(.PIX_W(barrel_pkg::PIX_W), .ADDR_W(ADDR_W)) u_fb (
     .clk,
     .wr_en(fb_wr_en), .wr_addr(fb_wr_addr), .wr_data(fb_wr_data),
     .rd_en(fb_rd_en),

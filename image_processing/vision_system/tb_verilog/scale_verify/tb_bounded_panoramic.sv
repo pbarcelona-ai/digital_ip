@@ -33,7 +33,7 @@ module tb_bounded_panoramic;
   logic [7:0] s_axil_araddr; logic s_axil_arvalid, s_axil_arready;
   logic [31:0] s_axil_rdata; logic [1:0] s_axil_rresp; logic s_axil_rvalid, s_axil_rready;
 
-  lens_distortion_correction dut (
+  vision_system dut (
     .clk, .rst_n,
     .s_axis_tvalid, .s_axis_tready, .s_axis_tdata, .s_axis_tlast, .s_axis_tuser,
     .m_axis_tvalid, .m_axis_tready, .m_axis_tdata, .m_axis_tlast, .m_axis_tuser,

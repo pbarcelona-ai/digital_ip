@@ -7,14 +7,14 @@ two.
 
 ## Bugs found and fixed
 
-1. **`MAX_W`/`MAX_H` in `rtl/barrel_pkg.sv` were 512.** 720 (needed for
+1. **`MAX_W`/`MAX_H` in `src/barrel_pkg.sv` were 512.** 720 (needed for
    the portrait/landscape long edge) exceeds that -- the design's frame
    buffer and coordinate width (`COORD_W`) were architecturally too small
    for the requested sizes. This would have silently produced wrong
    addresses for any dimension over 512. Fixed by raising both to 720,
    with `ADDR_W`/`COORD_W` (computed from them) following automatically.
    This is a real, shipped RTL fix -- not specific to this test directory
-   -- see `rtl/barrel_pkg.sv`.
+   -- see `src/barrel_pkg.sv`.
 
 2. **A test-harness bug in this directory's own bounded-capture
    generator** (`gen_bounded_test.py`), not the RTL: the first version

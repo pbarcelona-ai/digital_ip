@@ -1,0 +1,5 @@
+# Python dependencies for the cocotb testbench (tb/run.py).
+# cocotb 2.x is required: run.py uses cocotb_tools.runner.
+cocotb==2.1.0
+numpy>=1.26
+pillow>=10.0

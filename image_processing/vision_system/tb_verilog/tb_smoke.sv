@@ -11,7 +11,7 @@
 // tb_smoke.sv
 //
 // Fast SystemVerilog smoke test -- NOT the full 12-scenario image-streaming
-// regression (see tb_lens_distortion_correction.sv / tb/ for that). This
+// regression (see tb_vision_system.sv / tb/ for that). This
 // drives coord_gen.sv DIRECTLY, point-by-point, against the independent
 // coord_gen_ref() reference, to give a quick (seconds,
 // not the multi-frame matrix's longer runtime) pass/fail signal for:
@@ -27,8 +27,8 @@
 //      happen to match when they're zero)
 //
 // Run: iverilog -g2012 -o smoke.vvp ppm_io_pkg.sv golden_model_pkg.sv \
-//        ../rtl/barrel_pkg.sv ../rtl/distortion_model_pkg.sv \
-//        ../rtl/fixed_recip.sv ../rtl/coord_gen.sv tb_smoke.sv && vvp smoke.vvp
+//        ../src/barrel_pkg.sv ../src/distortion_model_pkg.sv \
+//        ../src/fixed_recip.sv ../src/coord_gen.sv tb_smoke.sv && vvp smoke.vvp
 // (also wired into run.sh, see below)
 // =============================================================================
 `timescale 1ns/1ps
@@ -224,4 +224,13 @@ module tb_smoke;
 
     $finish;
   end
+
+  // Optional waveform dump: compile with -DDUMP_VCD (the run scripts do
+  // this when VCD=1). View with synth/view_waves.sh (Surfer).
+`ifdef DUMP_VCD
+  initial begin
+    $dumpfile("waves.vcd");
+    $dumpvars(0, tb_smoke);
+  end
+`endif
 endmodule

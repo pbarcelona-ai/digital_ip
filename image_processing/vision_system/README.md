@@ -1,6 +1,6 @@
-# Lens Distortion Correction Core
+# Vision System Core
 
-A 100 MHz-class hardware IP that corrects barrel/pincushion lens distortion
+A hardware IP (100 MHz target; see "Timing closure" for how far that is actually verified) that corrects barrel/pincushion lens distortion
 on a streaming video frame, with radial correction up through the **k3·r6**
 term plus tangential ("plumb bob") distortion, AXI4-Stream video I/O, and
 an AXI4-Lite control interface with both a simplified normalized-center
@@ -26,8 +26,28 @@ five most independently-reusable building blocks (`fixed_recip`,
 them can be lifted into a different project without pulling in this
 project's top-level integration or AXI framing (see "Reusable IP modules").
 
+## Block diagram
+
+![Block diagram of the vision system core](docs/block_diagram.svg)
+
+*(`docs/block_diagram.svg` / `.png`; regenerate with `make diagram` after
+editing `docs/make_block_diagram.py`.)*
+
+Reading it left to right: an AXI4-Stream frame is written into the
+4x-replicated `frame_buffer` by `axis_in_ctrl`; once the whole frame is
+loaded the top FSM starts `axis_out_ctrl`, whose raster generator asks
+`coord_gen` for the source coordinate of each output pixel (fast path for
+radial/tangential, per-pixel-divide slow path for fisheye/panoramic/
+perspective). The coordinate goes down one of two lanes -- bilinear (2x2,
+one pixel per clock) or bicubic (4x4, gathered as four row reads) -- both
+sharing the frame buffer's four read ports through the interpolation-mode
+mux. A tag delay line re-creates `tlast`/`tuser` for the output stream.
+The AXI4-Lite register file, and the derived-configuration math it runs
+whenever the geometry changes, feed everything through a single
+`calib_params_t` bus.
+
 ```
-rtl/
+src/
   barrel_pkg.sv              Q16.16 fixed-point format, shared params, qmul() --
                               shared dependency of the ip/ modules below
   distortion_model_pkg.sv    reusable calib_params_t struct + distortion_model_e enum --
@@ -35,9 +55,14 @@ rtl/
   axis_in_ctrl.sv            AXI4-Stream video slave -> frame buffer
   axis_out_ctrl.sv           raster gen + coord_gen + addressing + bilinear/bicubic -> AXI4-Stream video master
   axi_lite_regs.sv           AXI4-Lite config register file
-  lens_distortion_correction.sv    top-level integration + load/output sequencing FSM
+  vision_system.sv    top-level integration + load/output sequencing FSM
 
 ip/
+  mulq/
+    mulq_s.sv                 2-cycle pipelined 32x32 multiply with the Q16.16 shift built in
+                               (the timing-closure workhorse); no package dependency
+    tb_mulq.sv                self-checking testbench (20k random + corner vectors)
+    run.sh
   fixed_recip/
     fixed_recip.sv            iterative 1/x divider (config-plane only) -- no package dependency
     tb_fixed_recip.sv         self-checking testbench (vs. an independent 64-bit reference divide)
@@ -61,10 +86,27 @@ ip/
     tb_bicubic.sv                self-checking testbench (Python-cross-checked vectors, latency)
     run.sh
 
+Each ip/<name>/ and src/ also contain:
+  build.f                    RTL file list for Yosys synthesis of that module
+  run_yosys.sh               runs Yosys from build.f; results in ./yosys/
+
+synth/
+  yosys_common.ys            the shared Yosys script (xc7, BRAM + DSP mapping, hierarchical stat)
+  run_all_yosys.sh           synthesize every module + timing table (synth/summary.md)
+  est_timing.py              netlist-based timing estimator (explicit delay model)
+  summarize.py               one-line resource summary from a utilization report
+  view_waves.sh              open a VCD in the Surfer waveform viewer
+
+ci/
+  run_checked.sh             pass/fail from output markers, not just exit codes
+.github/workflows/ci.yml     GitHub Actions: sim + synthesis on every push to main
+Makefile                     make test-ip | test-smoke | test-sv | test-cocotb | sim | synth | ci
+
 tb/
+  requirements.txt         Python deps for the cocotb testbench (cocotb 2.x, numpy, pillow)
   image_io.py              image I/O (Pillow) + bit-exact Python model of the RTL datapath
                             (bilinear + bicubic + camera calibration + tangential + hooks)
-  test_lens_distortion_correction.py   cocotb self-checking testbench: 12-scenario matrix
+  test_vision_system.py   cocotb self-checking testbench: 12-scenario matrix
   test_identity.py         debug test: k=0 should reproduce the input exactly
   test_probe.py            debug test: peeks coord_gen internals vs. golden model
   run.py                   builds + runs everything under Icarus Verilog
@@ -75,7 +117,7 @@ tb_verilog/
   golden_model_pkg.sv       independent fixed-point golden model (bilinear + bicubic +
                             camera calibration + tangential + hooks) + coefficient fit +
                             synthetic chart generator, pure SystemVerilog
-  tb_lens_distortion_correction.sv  self-checking testbench: 12-scenario matrix, no Python/cocotb required
+  tb_vision_system.sv  self-checking testbench: 12-scenario matrix, no Python/cocotb required
   tb_smoke.sv                fast smoke test: coord_gen calibration/tangential/hook checks
   run.sh                    builds + runs the full 12-scenario matrix with iverilog/vvp only
   run_smoke.sh              builds + runs just the fast smoke test
@@ -84,21 +126,22 @@ tb_verilog/
 
 ## Reusable IP modules
 
-`fixed_recip`, `frame_buffer`, `coord_gen`, `bilinear` and `bicubic` are
-each self-contained in their own `ip/<name>/` directory: the module's
+`fixed_recip`, `mulq_s`, `frame_buffer`, `coord_gen`, `bilinear` and `bicubic`
+are each self-contained in their own `ip/<name>/` directory: the module's
 `.sv` file, a self-checking testbench (`tb_<name>.sv`), and a `run.sh`
 that builds and runs just that one testbench. Each `run.sh` is runnable
 standalone (`cd ip/<name> && ./run.sh`, pure Icarus Verilog, no Python)
 and prints its own PASS/FAIL summary, independent of the full 12-scenario
 regression or smoke test in `tb_verilog/`.
 
-Two of the five (`fixed_recip`, and every module's own internal logic)
+Two of the six (`fixed_recip` and `mulq_s`)
 need no package at all; `frame_buffer` and `bilinear`/`bicubic` need only
 `barrel_pkg.sv` (for `PIX_W`/`ADDR_W`/`qmul()` defaults, all overridable);
 `coord_gen` additionally needs `distortion_model_pkg.sv` (the
-`calib_params_t` struct it takes as its one configuration port). Both
-packages live in `rtl/`, this project's single shared-package location --
-each `ip/` testbench's `run.sh` reaches into `../../rtl/` for them rather
+`calib_params_t` struct it takes as its one configuration port) plus the
+`fixed_recip` and `mulq_s` IPs, and `bicubic` needs `mulq_s`. Both
+packages live in `src/`, this project's single shared-package location --
+each `ip/` testbench's `run.sh` reaches into `../../src/` for them rather
 than duplicating a second copy, so there is exactly one source of truth
 for the fixed-point format and struct layout, whether building the full
 core or a single IP standalone. Pulling one of these modules into a
@@ -113,10 +156,11 @@ Results (all pass, Icarus Verilog, no Python needed for any of these):
 | IP | checks | what's covered |
 |---|---|---|
 | `fixed_recip` | 12/12 | powers of two, non-powers-of-two, smallest/largest operand, zero (saturate) |
+| `mulq_s` | 20013/20013 | 2-cycle pipelined 32x32 multiply with the Q16.16 shift: corner values plus a 20k-vector pseudo-random sweep, exact vs. an independent 64-bit reference |
 | `frame_buffer` | 1017/1017 | write-then-readback, 4-port independence, 1-cycle read latency, concurrent write(A)/read(B) |
-| `bilinear` | 11/11 | 4 corners, exact center, 3 general cases, 2-cycle pipeline latency, no bubble leak-through |
-| `bicubic` | 7/7 | general case, exact-center degenerate weighting, high-contrast edge, 5-cycle pipeline latency |
-| `coord_gen` | 22/22 | identity, radial, tangential, direct camera calibration, real fisheye/panoramic/perspective, remaining architecture hooks (affine/scaling) |
+| `bilinear` | 12/12 | 4 corners, exact center, 3 general cases, 3-cycle pipeline latency, no bubble leak-through |
+| `bicubic` | 20/20 | general case, exact-center degenerate weighting, high-contrast edge, 18-cycle pipeline latency |
+| `coord_gen` | 39/39 | identity, radial, tangential, direct camera calibration, real fisheye/panoramic/perspective, remaining hooks, large-frame boundary coordinates |
 
 A real bug was found building `ip/frame_buffer/`'s testbench -- not in
 `frame_buffer.sv` itself, which was correct throughout, but in the
@@ -140,11 +184,16 @@ slowest/broadest:
 
 ```
 cd ip/fixed_recip  && ./run.sh
+cd ip/mulq         && ./run.sh
 cd ip/frame_buffer && ./run.sh
 cd ip/coord_gen    && ./run.sh
 cd ip/bilinear     && ./run.sh
 cd ip/bicubic      && ./run.sh
+make test-ip                      # all of the above, fail-on-bad-result
 ```
+
+Add `VCD=1` to any of them to dump `waves.vcd` (and `SURFER=1` to open it --
+see "Waveforms (Surfer)").
 
 Each tests exactly one module in isolation (see "Reusable IP modules"
 above for what each covers and the package dependencies involved).
@@ -171,6 +220,14 @@ perspective hooks are additionally exercised at the full image-streaming
 level by both testbenches below -- see "Verification results".)
 
 ### Full regression: two interchangeable testbenches
+
+Both default to the **full-size** frames (480x480 / 480x720 / 720x480),
+which take far too long for routine use. For everyday work and CI use small
+frames (48x48 / 32x56 / 56x32): `SMALL=1 tb_verilog/run.sh`,
+`SMALL_FRAMES=1 python3 tb/run.py`, or simply `make test-sv` /
+`make test-cocotb` (these set them; `FULL=1 make ...` for full size).
+Measured wall-clock on the development machine: ~4 minutes each at small
+frames.
 
 Both share the same RTL and the same verification strategy
 (bit-exact-vs-golden-model + quality sanity check) and run the full
@@ -258,7 +315,7 @@ barrel-bulged image pulls it back toward flat. This matches the AXI-Lite
 register documentation above (`k1<0` corrects barrel) and is exactly the
 convention both testbenches use: they synthesize `warped.*` with
 `k1=+0.08` (genuine barrel) and fit negative correction coefficients to
-undo it. See `tb/test_lens_distortion_correction.py` / `tb_verilog/tb_lens_distortion_correction.sv`
+undo it. See `tb/test_vision_system.py` / `tb_verilog/tb_vision_system.sv`
 for the exact values, and their inline comments for why the sign matters.
 
 Because this is a **global** 2-D remap (not a local filter), an output row
@@ -299,7 +356,7 @@ passed as a single port rather than a dozen individual scalar ports. This
 is what makes the pipeline **reusable**: extending it with a new model's
 parameters (see "Extension hooks" below) is a struct-field addition, not
 a port-list change that has to be propagated through `axis_out_ctrl.sv`,
-`lens_distortion_correction.sv`, and `axi_lite_regs.sv` every time. The
+`vision_system.sv`, and `axi_lite_regs.sv` every time. The
 same package also holds `distortion_model_e`, the model-selector enum.
 
 ## Fisheye, panoramic, and perspective correction
@@ -352,10 +409,12 @@ the config plane (`fixed_recip.sv`, used to derive `1/fx_pix` etc.).
 `SD_IDLE -> SD_ISSUE -> SD_WAIT -> SD_DONE`) that instantiates a second
 `fixed_recip` and runs it once per pixel for these three models only --
 `MODEL_RADIAL` (and the `MODEL_AFFINE`/`MODEL_SCALING` hooks) stay on the
-original always-flowing, fixed-9-cycle-latency path, completely
+original always-flowing, fixed-latency (now 23-cycle) path, completely
 untouched. The slow path's own latency was **measured directly, not
-guessed**: 38 cycles from request to result inside `coord_gen` alone,
-43 cycles end-to-end with bilinear downstream, 49 with bicubic downstream
+guessed**: originally 38 cycles from request to result inside `coord_gen`
+alone, 43 end-to-end with bilinear downstream, 49 with bicubic downstream;
+after the timing work (`coord_gen`'s slow path is now a free-running pre-
+pipeline -> divider -> post-pipeline) they are 71 and 88 end-to-end
 (see `axis_out_ctrl.sv`'s tag-delay-line comment for the measurement
 methodology, the same discipline the bicubic-latency bug earlier in this
 project's history established). `coord_gen`'s new `busy` output paces the
@@ -434,10 +493,11 @@ previous pixel's result has fully emerged (a `req_outstanding` handshake
 in `axis_out_ctrl.sv`; `coord_gen` sees the resulting sparse request
 stream as ordinary bubbles, exactly like the existing line-gap idle
 cycles it already tolerates, so it needed no changes at all). Measured
-end-to-end latency per pixel: coord_gen(9) + four sequential row-reads(4)
-+ 1-cycle registered handoff + bicubic.sv's own 5-stage pipeline = **19
-cycles/pixel** (see "A latency bug" below for why this number came from
-direct measurement rather than the hand-derived 18). Bicubic mode
+end-to-end latency per pixel: coord_gen(23) + the gather FSM (lock anchor,
+registered row-base multiply, four sequential row-reads) + bicubic.sv's own
+18-stage pipeline = **48 cycles/pixel** (measured; it was 19 before the
+timing-closure work -- see "Pipeline / timing", and "A real bug found"
+below for why these numbers are always measured, never hand-derived). Bicubic mode
 therefore does **not** reproduce the input's "line, then 5 idle" timing
 at the output — the output runs much slower and with different (also
 measured, not guessed) internal gaps. This is an honest, documented
@@ -462,35 +522,277 @@ per-pixel datapath.
 
 ## Pipeline / timing
 
+Latencies below are the **current** values (after the timing-closure work,
+next section) and are **measured in simulation**, not derived by hand --
+`axis_out_ctrl.sv`'s four `TOTAL_LATENCY_*` constants drive the tlast/tuser
+tag delay line, and the regression's tlast/tuser timing checks fail if any
+of them is off by even one.
+
 **Bilinear mode:**
-- `coord_gen`: 9-stage pipeline, one new (x,y) request accepted every
-  clock, latency 9 cycles from request to fractional source address.
-- address-expand (integer/fraction split, clamp-to-edge, row-base multiply
-  `y0*width`, four corner addresses): +1 cycle.
+- `coord_gen`: 23-stage feed-forward pipeline, one new (x,y) request
+  accepted every clock.
+- address-expand (integer/fraction split + clamp-to-edge, `y0*width`
+  row-base multiply, row-base add, four corner addresses): 4 cycles.
 - `frame_buffer` synchronous read: +1 cycle.
-- `bilinear`: 2-stage pipeline (weight products, then weighted accumulate).
-- **Total pipeline latency: 13 cycles**, request to output pixel, fully
+- `bilinear`: 3-stage pipeline (weights; the 12 pixel*weight products;
+  sum/round/select).
+- **Total pipeline latency: 31 cycles**, request to output pixel, fully
   pipelined at 1 pixel/clock.
 
-The whole bilinear datapath is feed-forward and never stalls once it
-starts (no backpressure capability mid-pipeline — see Limitations).
-Because of that, whatever valid/idle pattern is fed into the request side
-reappears identically at the output, 13 cycles later. `axis_out_ctrl`
-exploits this directly: it generates the output raster with the *same*
-"W cycles valid, then 5 idle cycles" timing the input used, and the
-correct output timing falls out for free rather than needing to be
-reconstructed after the fact.
+The bilinear datapath is feed-forward and never stalls once it starts (no
+backpressure capability mid-pipeline -- see Limitations). Because of that,
+whatever valid/idle pattern is fed into the request side reappears
+identically at the output, 31 cycles later. `axis_out_ctrl` exploits this
+directly: it generates the output raster with the *same* "W cycles valid,
+then 5 idle cycles" timing the input used, and the correct output timing
+falls out for free rather than needing to be reconstructed afterwards.
 
-**Bicubic mode:** one pixel processed at a time (see "Interpolation
-modes" above for why) — coord_gen(9) + four sequential frame_buffer
-row-reads(4) + 1-cycle registered handoff to `bicubic.sv` + bicubic.sv's
-own 5-stage pipeline = **19 cycles/pixel**, measured directly in
-simulation (`rtl/tb_measure_latency.sv`, no longer in the delivered tree
-but reproducible from this description — see "A latency bug" below).
+**Bicubic mode:** one pixel processed at a time (see "Interpolation modes"
+for why): coord_gen (23) + the gather FSM (lock anchor, registered row-base
+multiply, four sequential row reads) + `bicubic.sv`'s own 18-stage
+pipeline = **48 cycles/pixel**.
 
-Every stage in both modes is a single register + one 32x32 multiply (or
-narrower) — comfortably closes timing at 100 MHz on any modern FPGA (this
-is far below what a single DSP48-style multiply can do).
+**Slow-path models (fisheye / panoramic / perspective):** coord_gen's
+per-pixel-divide path replaces its 23-cycle fast latency, giving **71**
+cycles/pixel (bilinear downstream) and **88** (bicubic downstream).
+
+| mode | total latency (cycles) |
+|---|---|
+| bilinear, radial (fast path) | 31 |
+| bicubic, radial (fast path) | 48 |
+| bilinear, fisheye/panoramic/perspective | 71 |
+| bicubic, fisheye/panoramic/perspective | 88 |
+
+**Throughput consequence.** Only bilinear + a fast-path model sustains one
+pixel per clock; bicubic and the slow-path models process one pixel at a
+time (this was already true -- the timing work only lengthened each
+pixel's latency, roughly 2-3x). The simulation throughput figures quoted
+in "Large-frame verification" below (345 / 161 pixels/sec) were measured on
+the earlier, shallower pipeline; every mode is now slower to simulate.
+
+## Timing closure (pipeline updates)
+
+The design was originally documented as closing 100 MHz "comfortably ...
+on any modern FPGA". Measuring it showed that was **wrong**. With
+`synth/est_timing.py` (below) run on the Yosys netlist, the worst
+register-to-register paths against a 10 ns clock were:
+
+| module | before | after | what changed |
+|---|---|---|---|
+| `bilinear` | 10.2 ns | 7.75 ns | products and the 4-way sum moved to separate stages |
+| `bicubic` | 28.8 ns | 6.15 ns (7.2 in `mulq_s`) | every multiply split via `mulq_s`; row/column filters staged |
+| `coord_gen` | 48.5 ns | 6.5 ns (7.2 in `mulq_s`) | every multiply via `mulq_s`; slow path restructured (below) |
+| `axi_lite_regs` | 14.7 ns | 3.1 ns | config-plane `qmul()` chains moved to `mulq_s` pipelines |
+| address generation -> BRAM | 12.9 ns | (in 8.2 ns top) | row-base multiply registered; later rows by adding `width` |
+| **whole design, flattened** | 12.9 ns | **8.2 ns** | |
+
+Root causes, in the order they were found:
+
+1. **Every `qmul` put a 32x32 multiply, the >>16, the saturation compare and
+   often an add in one cycle.** Yosys builds a 32x32 multiply from four
+   DSP48E1s (25x18) whose partial products are summed in *fabric* adders
+   before reaching the product register -- ~11 ns even with registered
+   operands (measured on a 5-line micro-module). The saturate stage alone
+   is only 2.5-6.6 ns.
+2. **Async-reset datapath registers** (`FDCE` + one `INV` each; 5,978 `INV`
+   cells at the top level originally) cannot be absorbed into DSP-internal
+   registers. Data registers now have no reset; only valid bits do.
+3. **The slow path computed its denominator combinationally** -- five
+   chained 32x32 multiplies in one cycle (the 48 ns path). It is now a
+   free-running pre-pipeline -> `fixed_recip` -> post-pipeline; the FSM
+   only counts fixed depths, because the latched request coordinates are
+   held for the whole operation.
+4. **Paths that cross module boundaries** (e.g. `img_width` register ->
+   row-base multiply -> BRAM address) are invisible to a per-module view.
+   The flow now also writes a *flattened* netlist and the estimator treats
+   BRAM pins as endpoints (address setup 0.8 ns, clk->out 2.0 ns).
+
+**The fix, `ip/mulq/mulq_s.sv`.** A signed 32x32 multiply that returns
+exactly `(a*b) >>> 16` (48-bit) in 2 cycles: four 16x16 partial products
+(one DSP each; Yosys absorbs their register as `MREG`) combined in the second
+stage using `(a*b)>>>16 = ah*bh*2^16 + (ah*bl+al*bh) + floor(al*bl/2^16)`
+(exact, because the low half is unsigned). `barrel_pkg::qsat48()` then
+saturates it, so `qsat48(mulq_s(a,b)) == qmul(a,b)` for **all** inputs --
+verified on 20,013 vectors and, more importantly, by every bit-exact
+image-level check in both testbenches passing unchanged.
+
+**Bit-exactness was preserved throughout** -- only registers were added, so
+only latencies changed; the golden models were not touched.
+
+**Two bugs found on the way** (both in my own edits, both caught by the
+existing checks): (a) a Verilog part-select is *unsigned*, so
+`r[31:0] * w` silently became an unsigned multiply where the original had
+passed the value through `qmul`'s signed port -- caught by `tb_bicubic`;
+(b) a first `mulq_s` testbench drove inputs with blocking assignments at the
+clock edge and reported a spurious 50% mismatch rate -- a testbench race,
+not an RTL bug (fixed with the non-blocking `drive` task).
+
+**Costs, honestly.**
+- *Latency* grew ~2.4x per pixel (table above).
+- *DSP48E1 count grew*: bicubic 172 -> 224, coord_gen 152 -> 156, top-level
+  355 -> 423, because a 32x32 multiply is now four explicit 16x16 DSPs. Many
+  of those multiplies have a constant operand (the Catmull-Rom weight
+  constants 0.5/1.5/2.5/2/-1.5); replacing them with shift-add would save
+  roughly 60-70 DSPs but is bit-exact only for the documented
+  0 <= t < 1 input range, so it was left as a follow-up rather than done
+  silently.
+- The estimate is a **proxy**, not Vivado STA: no placement, no routing, an
+  editable delay model (`synth/est_timing.py`, header comment). Treat
+  "MET at 10 ns" as "no structural violation found", and expect real
+  numbers to differ. Constant/static configuration registers (like
+  `img_width`) are timed as if they toggle every cycle, which is
+  pessimistic.
+
+## Synthesis with Yosys (Xilinx 7-series)
+
+Every module directory (`ip/fixed_recip`, `ip/mulq`, `ip/frame_buffer`,
+`ip/bilinear`, `ip/bicubic`, `ip/coord_gen`, and `src/` for the whole
+top level) has:
+
+- `build.f` -- the RTL file list for that module, in dependency order
+  (packages first), `#` comments allowed;
+- `run_yosys.sh` -- reads `build.f`, runs Yosys, writes everything to that
+  directory's `yosys/` subdirectory, and prints a one-line resource summary.
+
+All of them execute the same shared script, `synth/yosys_common.ys`:
+`hierarchy -check -auto-top` -> `synth_xilinx -family xc7` (proc/opt/fsm,
+**memories mapped to BRAM** and **multiplies packed into DSP48E1**, both
+default-on, only disabled by `-nobram`/`-nodsp`; hierarchy kept, since
+flattening is opt-in) -> `stat` for the **hierarchical utilization report**
+-> netlist writes. Results in each `yosys/`:
+
+| file | contents |
+|---|---|
+| `yosys.log` | full Yosys log |
+| `utilization_hier.rpt` | per-module cell counts plus the rolled-up "design hierarchy" total |
+| `synth_netlist.v` / `.json` | hierarchical mapped netlist |
+| `synth_netlist_flat.json` | flattened copy, used only for timing estimation |
+
+```
+cd ip/coord_gen && ./run_yosys.sh     # one module
+make synth                            # all seven + timing table -> synth/summary.md
+CLOCK_NS=8 synth/run_all_yosys.sh     # tighter timing target
+```
+
+`make synth` (i.e. `synth/run_all_yosys.sh`) writes `synth/summary.md` and
+**exits non-zero if any module has negative estimated slack**, which is
+what CI gates on. Current results (Yosys 0.33, xc7, 10 ns target):
+
+| module | LUT | FF | DSP48E1 | RAMB36 | SRL | est. worst path | slack |
+|---|---|---|---|---|---|---|---|
+| `fixed_recip` | 173 | 140 | 0 | 0 | 0 | 4.65 ns | 5.35 |
+| `mulq_s` | 48 | 48 | 4 | 0 | 0 | 7.20 ns | 2.80 |
+| `frame_buffer` | 302 | 12 | 0 | **1536** | 0 | 2.80 ns | 7.20 |
+| `bilinear` | 0 | 27 | 16 | 0 | 0 | 7.75 ns | 2.25 |
+| `bicubic` | 5188 | 3818 | 224 | 0 | 704 | 7.20 ns | 2.80 |
+| `coord_gen` | 4975 | 3337 | 156 | 0 | 380 | 7.20 ns | 2.80 |
+| **top level (`src/`)** | 12436 | 9934 | **423** | **1536** | 1100 | **8.20 ns** | 1.80 |
+
+Two numbers deserve a plain statement:
+
+- **1,536 RAMB36E1.** `frame_buffer` is sized for `MAX_W x MAX_H = 720x720`
+  x 24 bit x 4 replicated banks (the 4-way replication is what gives
+  single-cycle 2x2 reads). That is more block RAM than most 7-series
+  devices have (only the largest Virtex-7 parts). The frame buffer is a
+  reference on-chip implementation; a real deployment at these sizes
+  belongs in external DDR with an on-chip tile cache (already listed under
+  Known limitations). `MAX_W/MAX_H` in `barrel_pkg.sv` can be reduced for a
+  smaller target.
+- **423 DSP48E1 at the top level** exceeds e.g. an Artix-7 100T (240). See
+  "Timing closure" for why it grew and the identified way to shrink it.
+
+### Yosys portability rules (what the RTL now obeys, and why)
+
+Open-source Yosys 0.33's Verilog frontend accepts only a *subset* of
+SystemVerilog. Every rule below was found by reproducing the failure in a
+minimal file, and the RTL was changed to comply (the simulator, Icarus,
+accepts both forms, so none of this changes simulated behaviour -- the full
+regression was re-run after each batch):
+
+1. **No `return` in functions** -- assign to the function name instead.
+2. **No file-scope `import pkg::*;`** before a module (nor in the module
+   header, in this version) -- qualify every package reference
+   (`barrel_pkg::PIX_W`, `distortion_model_pkg::MODEL_RADIAL`). Local
+   parameters that shadow a package name still work unqualified.
+3. **Package struct/enum types in port lists must be qualified**
+   (`input distortion_model_pkg::calib_params_t cfg`).
+4. **No struct-typed function arguments** ("failed to resolve identifier for
+   width detection") -- pass the individual fields.
+5. **No `pkg::type'(expr)` casts** -- a plain assignment converts the same bits.
+6. **Signed casts / signed function results used directly as a module
+   port-connection expression crash Yosys** (`Assert arg->is_signed ==
+   sig.as_wire()->is_signed`): `.a($signed(x))`, `.operand($unsigned(f(x)))`.
+   Declare an intermediate wire of the right signedness and connect that.
+7. **No packed multi-dimensional arrays** (`logic [1:0][31:0] x`) -- use flat
+   vectors or small helper modules instantiated from a `generate` loop
+   (which is how `bicubic.sv` is organised).
+
+A related simulator-side trap worth knowing: a Verilog **part-select is
+always unsigned** (`r[31:0] * w` is an unsigned multiply); wrap it in
+`$signed()` where signed arithmetic is intended.
+
+## Waveforms (Surfer)
+
+Every testbench can dump a VCD, and `synth/view_waves.sh` opens it in the
+[Surfer](https://surfer-project.org) waveform viewer:
+
+```
+cd ip/bicubic && VCD=1 ./run.sh                  # writes ip/bicubic/waves.vcd
+cd ip/bicubic && VCD=1 SURFER=1 ./run.sh         # ... and opens it in Surfer
+synth/view_waves.sh ip/bicubic/waves.vcd         # open an existing file
+SMALL=1 VCD=1 tb_verilog/run.sh                  # -> tb_verilog/work/waves.vcd
+WAVES=1 SMALL_FRAMES=1 python3 tb/run.py         # cocotb waveform (sim_build/)
+```
+
+The testbenches use a guarded `` `ifdef DUMP_VCD `` block, so normal runs
+pay nothing. The whole-design regression records only the first
+`VCD_WINDOW_NS` (default 300,000 ns; override with `-DVCD_WINDOW_NS=`)
+because a full multi-frame run would produce an unmanageably large file.
+If `surfer` is not on `PATH` the script prints install options (release
+binary, `cargo install`, or the in-browser viewer) and the VCD path -- any
+VCD viewer works with the files. (`view_waves.sh` was tested with a
+stand-in `surfer` executable; the GUI itself is not runnable in the
+headless environment used to build this.)
+
+## Continuous integration (GitHub Actions)
+
+`.github/workflows/ci.yml` runs on **every push to `main`** (and on manual
+dispatch) as four parallel jobs, each just a `make` target:
+
+| job | command | what it checks |
+|---|---|---|
+| Simulation - IP + smoke | `make test-ip test-smoke` | six standalone IP testbenches + coord_gen smoke test |
+| Simulation - SystemVerilog | `make test-sv` | 12-scenario matrix + fisheye/panoramic/perspective, bit-exact vs. golden model |
+| Simulation - cocotb | `make test-cocotb` | the same via cocotb/Python |
+| Synthesis | `make synth` | Yosys for all seven modules; **fails on estimated timing violation** |
+
+- Tests fail on a bad *result*, not just a bad exit code: `vvp` exits 0
+  even when a testbench prints FAIL, so `ci/run_checked.sh` requires the
+  PASS marker and rejects FAIL markers. This was verified by injecting a
+  functional bug, a compile error, and a timing violation -- each made
+  the gate fail.
+- CI uses **small frames** (48x48 / 32x56 / 56x32; `SMALL=1`,
+  `SMALL_FRAMES=1`); the 480x480/480x720/720x480 sets take hours. Run the
+  workflow manually with **full_frames** to use them, or **waves** to dump
+  and upload VCDs (open them with Surfer).
+- Logs (`ci/logs/`), generated images, synthesis reports
+  (`yosys/`, `synth/summary.md`) are uploaded as artifacts; the synthesis
+  table is also shown in the job summary.
+- Runner: `ubuntu-latest` by default (Ubuntu 24.04: `apt` provides
+  Icarus 12.0 and Yosys 0.33, the exact versions this project was
+  developed with). To use a **self-hosted runner**, set the repository
+  variable `CI_RUNNER_LABELS` to a JSON array of labels, e.g.
+  `["self-hosted","linux"]`; the tool-install steps are skipped when the
+  tools already exist. To also run on pull requests, add
+  `pull_request:` under `on:`.
+- The whole flow was verified locally from a *fresh clone* of a scratch
+  git repository (commit, clone, run the same `make` targets), which
+  catches missing/untracked files. The workflow YAML was parsed and
+  structure-checked, but **it has not been executed on GitHub** -- this
+  environment cannot reach GitHub Actions.
+
+Local equivalents: `make sim`, `make synth`, `make ci` (see the Makefile
+header), `FULL=1` for full-size frames, `make clean`.
 
 ## AXI4-Stream interfaces
 
@@ -552,6 +854,12 @@ changing any of these. K1/K2/K3 can be written at any time (no recompute
 needed).
 
 ## A real bug found & fixed during bring-up
+
+*(Historical account. The cycle counts quoted in this section -- 13, 18,
+19 -- were correct for the design at the time; the timing-closure work
+later changed them to 31 and 48 and the same measure-don't-derive
+discipline was used to re-establish them. See "Pipeline / timing".)*
+
 
 Bring-up on the full test image initially produced a badly-shifted,
 wrong output despite `fixed_recip` and `coord_gen` each passing isolated
@@ -650,6 +958,12 @@ identical, just not the more compact aggregate syntax.
 
 ## Large-frame (480x480 / 480x720) verification
 
+*(Measured on the design before the timing-closure pipelining. The
+simulation-throughput figures below -- 5,620 / 345 / 161 pixels/sec -- and
+the resulting frame times are now optimistic: every mode has ~2-3x more
+cycles per pixel, so full frames take proportionally longer. The
+bounded-capture methodology and the two bugs found are unaffected.)*
+
 The 12-scenario matrix and the fisheye/panoramic/perspective correction
 tests were re-run with the square test image at a minimum of 480x480 and
 portrait/landscape at a minimum of 480x720/720x480 -- both to confirm the
@@ -690,8 +1004,8 @@ INT32_MAX) well before the true singularity, confirming this was a
 testbench parameter-scaling mistake, not an RTL defect. Fixed by scaling
 the keystone coefficients down (`hf31=0.0002, hf32=-0.000125`, pushing
 the zero-crossing out to `x=5000`, far past any frame size this project
-uses) in both `tb_verilog/tb_lens_distortion_correction.sv` and
-`tb/test_lens_distortion_correction.py`. Re-run after the fix: bit-exact,
+uses) in both `tb_verilog/tb_vision_system.sv` and
+`tb/test_vision_system.py`. Re-run after the fix: bit-exact,
 0 mismatches.
 
 **What was run to full completion, at true full size, bit-exact:** all
@@ -885,14 +1199,14 @@ reserved (`MODEL_AFFINE`/`MODEL_SCALING`) architecture hooks. **Result:
 
 - **Single-buffered sequencing**: a new input frame is only accepted after
   the previous frame's output has finished streaming (see
-  `lens_distortion_correction`'s `T_LOAD`/`T_OUTPUT` FSM). A production version
+  `vision_system`'s `T_LOAD`/`T_OUTPUT` FSM). A production version
   processing back-to-back frames at full frame rate would ping-pong two
   frame buffers so frame N+1 can load while frame N is still draining out.
 - **Frame buffer is on-chip, 4x replicated** (`frame_buffer.sv`) to get
   single-cycle 4-corner bilinear reads. Sized to `MAX_W x MAX_H`
-  (parameterizable in `barrel_pkg.sv`, default 512x512); this is a
-  reasonable amount of BRAM for that resolution but would not scale to
-  e.g. 4K. At larger resolutions the frame store would move to external
+  (parameterizable in `barrel_pkg.sv`, now 720x720 -- **1,536 RAMB36E1**
+  per Yosys, more than most 7-series devices offer; see "Synthesis with
+  Yosys"); it would not scale to e.g. 4K. At larger resolutions the frame store would move to external
   DDR with an on-chip windowed read-ahead cache around the (locally
   smooth) predicted source row — the AXI-Stream/AXI-Lite boundary and all
   of `coord_gen`'s math are unaffected by that change.
@@ -923,3 +1237,15 @@ reserved (`MODEL_AFFINE`/`MODEL_SCALING`) architecture hooks. **Result:
   measured quality improvement (see the correction-test results), but not
   claimed to be an optimal fit. Perspective correction, by contrast, uses
   an exact closed-form homography inverse.
+- **Timing is estimated, not signed off.** "MET at 10 ns" comes from
+  `synth/est_timing.py` (an explicit per-cell delay model on the Yosys
+  netlist, no placement or routing), not Vivado/nextpnr STA. Static
+  configuration registers are timed as if they toggle every cycle
+  (pessimistic); real routing delay is ignored (optimistic). Re-check with a
+  vendor tool before relying on 100 MHz.
+- **DSP usage is high** (423 DSP48E1 at the top level) because every 32x32
+  multiply is four explicit 16x16 DSPs; shift-add replacements for the
+  constant Catmull-Rom multiplies would save ~60-70 (see "Timing closure").
+- **The GitHub Actions workflow is unexecuted on GitHub** (see
+  "Continuous integration"); its commands were verified locally from a
+  fresh clone.

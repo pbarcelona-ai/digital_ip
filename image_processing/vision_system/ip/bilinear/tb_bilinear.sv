@@ -3,7 +3,7 @@
 // Author: Paul Barcelona
 // Description: Self-checking standalone testbench for bilinear.
 // Verifies the 4 corner cases, exact center, general non-
-// degenerate cases, 2-cycle pipeline latency, and correct
+// degenerate cases, 3-cycle pipeline latency, and correct
 // bubble (no spurious output) behavior.
 // Date: September 26, 2026
 // ***************
@@ -21,12 +21,12 @@
 //   - the exact center (fx=fy=128 -- output should be very close to the
 //     unweighted average of all 4 corners)
 //   - several general (non-degenerate) fx/fy/corner combinations
-//   - pipeline latency (exactly 2 cycles from valid_in to valid_out)
+//   - pipeline latency (exactly 3 cycles from valid_in to valid_out)
 //   - valid_in de-asserted -> valid_out de-asserted 2 cycles later (no
 //     spurious output from a bubble)
 // =============================================================================
 `timescale 1ns/1ps
-import vision_system_pkg::*;
+import barrel_pkg::*;
 
 module tb_bilinear;
   logic clk = 0, rst_n = 0;
@@ -68,11 +68,12 @@ module tb_bilinear;
       tl <= TL; tr <= TR; bl <= BL; br <= BR; fx <= FX; fy <= FY; valid_in <= 1'b1;
       @(posedge clk);
       valid_in <= 1'b0;
-      @(posedge clk);   // LATENCY=2: valid_out should now be asserted
+      @(posedge clk);
+      @(posedge clk);   // LATENCY=3: valid_out should now be asserted
       #1;
       checks = checks + 1;
       if (!valid_out) begin
-        $display("[%s] FAIL: valid_out not asserted at expected 2-cycle latency", label);
+        $display("[%s] FAIL: valid_out not asserted at expected 3-cycle latency", label);
         fails = fails + 1;
       end else if (pixel_out !== expected) begin
         $display("[%s] FAIL: pixel_out=0x%06h expected=0x%06h (TL=%06h TR=%06h BL=%06h BR=%06h fx=%0d fy=%0d)",
@@ -109,13 +110,14 @@ module tb_bilinear;
 
     // ---- latency / bubble behavior ---------------------------------------
     // Edge A: valid_in<=1 driven (visible starting next edge).
-    // Edge B: valid_in<=0 driven (this is also the edge where stage A
-    //         samples valid_in=1, so vA becomes 1 right after edge B).
-    // Edge C: stage B samples vA=1 (from edge B), so valid_out=1 right
-    //         after edge C -- exactly 2 edges after edge A, the
-    //         documented LATENCY=2.
-    // Edge D: vA has been 0 since edge C (valid_in was only a 1-cycle
-    //         pulse), so valid_out falls back to 0 right after edge D.
+    // Edge B: valid_in<=0 driven (also where stage A samples valid_in=1,
+    //         so vA becomes 1 right after edge B).
+    // Edge C: stage B1 samples vA=1, so vB1=1 right after edge C
+    //         (valid_out must still be 0).
+    // Edge D: stage B2 samples vB1=1, so valid_out=1 right after edge D --
+    //         exactly 3 edges after edge A, the documented LATENCY=3.
+    // Edge E: valid_in was only a 1-cycle pulse, so valid_out falls back
+    //         to 0 right after edge E.
     @(posedge clk);   // edge A
     tl <= 24'h123456; tr <= 24'h123456; bl <= 24'h123456; br <= 24'h123456;
     fx <= 8'd0; fy <= 8'd0; valid_in <= 1'b1;
@@ -124,29 +126,38 @@ module tb_bilinear;
     #1;
     checks = checks + 1;
     if (valid_out) begin
-      $display("[latency_check] FAIL: valid_out asserted too early (right after edge B, 1 edge after valid_in was raised)");
+      $display("[latency_check] FAIL: valid_out asserted too early (right after edge B)");
       fails = fails + 1;
     end else begin
       $display("[latency_check after-edge-B-still-low] PASS");
     end
-    @(posedge clk);   // edge C -- the LATENCY=2 point
-    #1;
-    checks = checks + 1;
-    if (!valid_out || pixel_out !== 24'h123456) begin
-      $display("[latency_check] FAIL: expected valid_out=1, pixel_out=0x123456 right after edge C (2-edge latency), got valid_out=%0d pixel_out=0x%06h",
-                 valid_out, pixel_out);
-      fails = fails + 1;
-    end else begin
-      $display("[latency_check after-edge-C-correct-2cyc-latency] PASS");
-    end
-    @(posedge clk);   // edge D -- pulse should have fallen back to 0
+    @(posedge clk);   // edge C
     #1;
     checks = checks + 1;
     if (valid_out) begin
-      $display("[latency_check] FAIL: valid_out still high right after edge D (a single 1-cycle valid_in pulse leaked through as a longer/repeated output)");
+      $display("[latency_check] FAIL: valid_out asserted too early (right after edge C)");
       fails = fails + 1;
     end else begin
-      $display("[latency_check after-edge-D-bubble-does-not-repeat] PASS");
+      $display("[latency_check after-edge-C-still-low] PASS");
+    end
+    @(posedge clk);   // edge D -- the LATENCY=3 point
+    #1;
+    checks = checks + 1;
+    if (!valid_out || pixel_out !== 24'h123456) begin
+      $display("[latency_check] FAIL: expected valid_out=1, pixel_out=0x123456 right after edge D (3-edge latency), got valid_out=%0d pixel_out=0x%06h",
+                 valid_out, pixel_out);
+      fails = fails + 1;
+    end else begin
+      $display("[latency_check after-edge-D-correct-3cyc-latency] PASS");
+    end
+    @(posedge clk);   // edge E -- pulse should have fallen back to 0
+    #1;
+    checks = checks + 1;
+    if (valid_out) begin
+      $display("[latency_check] FAIL: valid_out still high right after edge E (a single 1-cycle valid_in pulse leaked through as a longer/repeated output)");
+      fails = fails + 1;
+    end else begin
+      $display("[latency_check after-edge-E-bubble-does-not-repeat] PASS");
     end
 
     $display("=== bilinear self-check: %0d/%0d checks passed ===", checks - fails, checks);
@@ -154,17 +165,13 @@ module tb_bilinear;
     else             $display(">>> FAIL (%0d mismatches) <<<", fails);
     $finish;
   end
-  // ---------------------------------------------------------------- waveform dump
-  // Writes a VCD of the whole testbench hierarchy.
-  //   +VCD=<file>  output file (default tb_bilinear.vcd in the working directory)
-  //   +NO_VCD      disable dumping (faster, no large file)
-  // With the Verilator simulator, compile with --trace (tools/run_sim.sh does).
-  initial begin : vcd_dump
-    string vcd_file;
-    if (!$test$plusargs("NO_VCD")) begin
-      if (!$value$plusargs("VCD=%s", vcd_file)) vcd_file = "tb_bilinear.vcd";
-      $dumpfile(vcd_file);
-      $dumpvars(0, tb_bilinear);
-    end
+
+  // Optional waveform dump: compile with -DDUMP_VCD (the run scripts do
+  // this when VCD=1). View with synth/view_waves.sh (Surfer).
+`ifdef DUMP_VCD
+  initial begin
+    $dumpfile("waves.vcd");
+    $dumpvars(0, tb_bilinear);
   end
+`endif
 endmodule

@@ -4,7 +4,7 @@
 // Description: Self-checking standalone testbench for bicubic, using
 // Python-cross-checked Q16.16 test vectors. Covers a general
 // case, exact-center degenerate weighting, a high-contrast
-// edge, and 5-cycle pipeline latency.
+// edge, and 18-cycle pipeline latency.
 // Date: September 26, 2026
 // ***************
 // =============================================================================
@@ -24,13 +24,13 @@
 //   - t near (1,1): weight should be concentrated on the opposite corner
 //   - a high-contrast footprint (tests the clamp-to-[0,255] path, since
 //     Catmull-Rom's negative-weight taps can overshoot the source range)
-//   - pipeline latency (exactly 5 cycles from valid_in to valid_out)
+//   - pipeline latency (exactly 18 cycles from valid_in to valid_out)
 // =============================================================================
 `timescale 1ns/1ps
-import vision_system_pkg::*;
+import barrel_pkg::*;
 
 module tb_bicubic;
-  localparam int BICUBIC_LATENCY = 5;   // bicubic.sv's documented pipeline depth
+  localparam int BICUBIC_LATENCY = 18;  // bicubic.sv's documented pipeline depth
   logic clk = 0, rst_n = 0;
   logic valid_in;
   logic [31:0] tx_q16, ty_q16;
@@ -126,7 +126,7 @@ module tb_bicubic;
       32'd58982 /* ~0.9 */, 32'd58982,
       {8'd239, 8'd239, 8'd239});
 
-    // ---- latency check (LATENCY=5) ---------------------------------------
+    // ---- latency check (LATENCY=18) ---------------------------------------
     // Edge A: inputs + valid_in<=1 driven (visible starting next edge).
     // Edge B: valid_in<=0 driven; this is also the edge where stage 1
     //         samples valid_in=1. Edges C,D,E (3rd/4th/5th... counting
@@ -139,7 +139,7 @@ module tb_bicubic;
     tx_q16 <= 0; ty_q16 <= 0; valid_in <= 1'b1;
     @(posedge clk);   // edge B -- stage 1 samples valid_in here
     valid_in <= 1'b0;
-    repeat (BICUBIC_LATENCY - 2) begin   // edges C, D, E: still low
+    repeat (BICUBIC_LATENCY - 2) begin   // edges C.. still low
       @(posedge clk);
       #1;
       checks = checks + 1;
@@ -148,15 +148,15 @@ module tb_bicubic;
         fails = fails + 1;
       end
     end
-    @(posedge clk);   // edge F -- the 5th edge after A, LATENCY=5 point
+    @(posedge clk);   // edge F -- the 18th edge after A, LATENCY=18 point
     #1;
     checks = checks + 1;
     if (!valid_out || pixel_out !== 24'hAABBCC) begin
-      $display("[latency_check] FAIL: expected valid_out=1 pixel_out=0xAABBCC at 5-cycle latency, got valid_out=%0d pixel_out=0x%06h",
+      $display("[latency_check] FAIL: expected valid_out=1 pixel_out=0xAABBCC at 18-cycle latency, got valid_out=%0d pixel_out=0x%06h",
                  valid_out, pixel_out);
       fails = fails + 1;
     end else begin
-      $display("[latency_check 5-cycle-latency-correct] PASS");
+      $display("[latency_check 18-cycle-latency-correct] PASS");
     end
 
     $display("=== bicubic self-check: %0d/%0d checks passed ===", checks - fails, checks);
@@ -164,17 +164,13 @@ module tb_bicubic;
     else             $display(">>> FAIL (%0d mismatches) <<<", fails);
     $finish;
   end
-  // ---------------------------------------------------------------- waveform dump
-  // Writes a VCD of the whole testbench hierarchy.
-  //   +VCD=<file>  output file (default tb_bicubic.vcd in the working directory)
-  //   +NO_VCD      disable dumping (faster, no large file)
-  // With the Verilator simulator, compile with --trace (tools/run_sim.sh does).
-  initial begin : vcd_dump
-    string vcd_file;
-    if (!$test$plusargs("NO_VCD")) begin
-      if (!$value$plusargs("VCD=%s", vcd_file)) vcd_file = "tb_bicubic.vcd";
-      $dumpfile(vcd_file);
-      $dumpvars(0, tb_bicubic);
-    end
+
+  // Optional waveform dump: compile with -DDUMP_VCD (the run scripts do
+  // this when VCD=1). View with synth/view_waves.sh (Surfer).
+`ifdef DUMP_VCD
+  initial begin
+    $dumpfile("waves.vcd");
+    $dumpvars(0, tb_bicubic);
   end
+`endif
 endmodule

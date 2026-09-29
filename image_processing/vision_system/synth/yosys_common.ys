@@ -1,0 +1,42 @@
+# ***************
+# Filename: yosys_common.ys
+# Author: Paul Barcelona
+# Description: Common Yosys synthesis steps shared by every module's
+# run_yosys.sh. Assumes the RTL was already loaded with read_verilog
+# (file list comes from that module's build.f). Runs from the module
+# directory; all results are written to its yosys/ subdirectory.
+# Date: September 26, 2026
+# ***************
+
+# 1. Elaborate: resolve hierarchy, auto-detect the top module (each
+#    module's build.f lists exactly one uninstantiated top), and fail
+#    loudly on missing modules/ports.
+hierarchy -check -auto-top
+
+# 2. Compile + optimize + map to Xilinx 7-series. synth_xilinx runs
+#    proc/opt/fsm/memory passes, maps memories to BRAM (RAMB18/36, on by
+#    default -- disabled only by -nobram), packs multiplies into DSP48
+#    blocks (on by default -- disabled only by -nodsp), then techmaps and
+#    ABC-optimizes the rest to LUTs/FFs/carry chains.
+#    Hierarchy is kept (flattening is opt-in via -flatten, deliberately not
+#    used) so utilization can be reported per sub-module, not only as one
+#    flat total.
+synth_xilinx -family xc7
+
+# 3. Hierarchical utilization report (per-module cell counts + rolled-up
+#    total for the top), saved to the yosys/ results directory and echoed
+#    to the log.
+tee -o yosys/utilization_hier.rpt stat -width
+
+# 4. Write the synthesized netlist for downstream inspection/simulation.
+write_verilog -noattr yosys/synth_netlist.v
+write_json yosys/synth_netlist.json
+
+# 5. Flattened copy of the synthesized netlist, for timing estimation only.
+#    The hierarchical netlist above keeps per-module utilization; timing
+#    needs the flat view so paths that cross module boundaries (e.g. out
+#    of axis_out_ctrl into the frame_buffer BRAM address pins) are seen.
+design -save hier_done
+flatten
+write_json yosys/synth_netlist_flat.json
+design -load hier_done

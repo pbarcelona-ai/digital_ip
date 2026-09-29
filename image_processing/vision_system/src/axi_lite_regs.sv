@@ -86,11 +86,9 @@
 // meanwhile. The core must not be started (a new frame captured) while
 // recip_busy is high -- the top-level FSM enforces this.
 // =============================================================================
-import vision_system_pkg::*;
-import distortion_model_pkg::*;
 
 module axi_lite_regs #(
-  parameter int COORD_W = COORD_W
+  parameter int COORD_W = barrel_pkg::COORD_W
 ) (
   input  logic         clk,
   input  logic         rst_n,
@@ -120,7 +118,7 @@ module axi_lite_regs #(
 
   // derived configuration, out to axis_out_ctrl / coord_gen -- bundled as
   // a single struct (see distortion_model_pkg.sv)
-  output calib_params_t       cfg_out,
+  output distortion_model_pkg::calib_params_t cfg_out,
   output logic [COORD_W-1:0] img_width,
   output logic [COORD_W-1:0] img_height,
   output logic                cfg_recip_busy,
@@ -267,9 +265,6 @@ module axi_lite_regs #(
     end
   end
 
-  assign k1_q16 = reg_k1;
-  assign k2_q16 = reg_k2;
-  assign k3_q16 = reg_k3;
   assign img_width  = reg_img_width[COORD_W-1:0];
   assign img_height = reg_img_height[COORD_W-1:0];
   assign interp_mode = reg_interp_mode[0];
@@ -289,10 +284,44 @@ module axi_lite_regs #(
 
   logic signed [31:0] cx_pix_c, cy_pix_c, fx_pix_c, fy_pix_c;
   logic signed [31:0] cx_pix_legacy, cy_pix_legacy, fx_pix_legacy, fy_pix_legacy;
-  assign cx_pix_legacy = qmul($signed(reg_center_x), imgw_q16);
-  assign cy_pix_legacy = qmul($signed(reg_center_y), imgh_q16);
-  assign fx_pix_legacy = qmul(qmul(imgw_q16, 32'h0000_8000), $signed(reg_scale));
-  assign fy_pix_legacy = qmul(qmul(imgh_q16, 32'h0000_8000), $signed(reg_scale));
+
+  // The legacy derivations are multiplies (cx = center_x*width, fx =
+  // width*0.5*scale, ...). They used to be combinational qmul() chains
+  // feeding the register load -- two chained 32x32 multiplies in one
+  // cycle, the design's worst top-level path. This is the config plane
+  // (runs once per geometry write, latency does not matter), so they now
+  // run through free-running mulq_s pipelines from the register values,
+  // and the config FSM below simply waits CFG_SETTLE_CYCLES for them to
+  // settle before latching. If a register is written mid-pass, `pending`
+  // triggers another full pass, so the final result always reflects the
+  // final register values (same convergence argument as before).
+  // Signed views of the registers (intermediate wires, not $signed() in
+  // port connections: Yosys 0.33 frontend signedness bug).
+  logic signed [31:0] center_x_s, center_y_s, scale_s;
+  assign center_x_s = reg_center_x;
+  assign center_y_s = reg_center_y;
+  assign scale_s    = reg_scale;
+
+  localparam int CFG_SETTLE_CYCLES = 10;   // >= depth of the deepest pipeline (6)
+
+  logic signed [47:0] m_cx, m_cy, m_wh, m_hh, m_fx, m_fy;
+  logic signed [31:0] w_half, h_half;
+  mulq_s u_m_cx (.clk, .a(center_x_s), .b(imgw_q16), .s(m_cx));
+  mulq_s u_m_cy (.clk, .a(center_y_s), .b(imgh_q16), .s(m_cy));
+  // half extents: qmul(size, 0.5)
+  mulq_s u_m_wh (.clk, .a(imgw_q16), .b(32'sh0000_8000), .s(m_wh));
+  mulq_s u_m_hh (.clk, .a(imgh_q16), .b(32'sh0000_8000), .s(m_hh));
+  // f = half_extent * scale (second multiply, after the first is saturated)
+  mulq_s u_m_fx (.clk, .a(w_half), .b(scale_s), .s(m_fx));
+  mulq_s u_m_fy (.clk, .a(h_half), .b(scale_s), .s(m_fy));
+  always_ff @(posedge clk) begin
+    cx_pix_legacy <= barrel_pkg::qsat48(m_cx);
+    cy_pix_legacy <= barrel_pkg::qsat48(m_cy);
+    w_half        <= barrel_pkg::qsat48(m_wh);
+    h_half        <= barrel_pkg::qsat48(m_hh);
+    fx_pix_legacy <= barrel_pkg::qsat48(m_fx);
+    fy_pix_legacy <= barrel_pkg::qsat48(m_fy);
+  end
 
   assign cx_pix_c = calib_mode ? $signed(reg_cx) : cx_pix_legacy;
   assign cy_pix_c = calib_mode ? $signed(reg_cy) : cy_pix_legacy;
@@ -307,12 +336,13 @@ module axi_lite_regs #(
   // fx_pix_c etc. from the CURRENT register values at that instant
   // -- so a burst of writes always converges to a pass computed from the
   // final, settled register values, and no write is ever silently lost.
-  typedef enum logic [2:0] {C_IDLE, C_START_W, C_WAIT_W, C_START_H, C_WAIT_H_DONE} cstate_t;
+  typedef enum logic [2:0] {C_IDLE, C_SETTLE, C_START_W, C_WAIT_W, C_START_H, C_WAIT_H_DONE} cstate_t;
   cstate_t cstate;
 
   logic recip_w_start, recip_h_start, recip_w_done, recip_h_done, recip_w_busy, recip_h_busy;
   logic [31:0] recip_w_result, recip_h_result;
   logic pending;
+  logic [3:0] settle_cnt;
 
   logic signed [31:0] cx_pix_r, cy_pix_r, fx_pix_r, fy_pix_r;
   logic        [31:0] recip_fx_r, recip_fy_r;
@@ -325,19 +355,28 @@ module axi_lite_regs #(
       recip_fx_r <= 32'h0001_0000; recip_fy_r <= 32'h0001_0000;
       recip_w_start <= 1'b0; recip_h_start <= 1'b0;
       pending <= 1'b0;
+      settle_cnt <= '0;
     end else begin
       recip_w_start <= 1'b0; recip_h_start <= 1'b0;
       if (geom_write_pulse) pending <= 1'b1;
       unique case (cstate)
         C_IDLE: begin
           if (pending || geom_write_pulse) begin
-            pending          <= 1'b0;
-            cx_pix_r         <= cx_pix_c;        // combinationally from CURRENT regs
+            pending    <= 1'b0;
+            settle_cnt <= '0;
+            cstate     <= C_SETTLE;         // let the derivation pipelines settle
+          end
+        end
+        C_SETTLE: begin
+          if (settle_cnt == CFG_SETTLE_CYCLES - 1) begin
+            cx_pix_r         <= cx_pix_c;   // settled values from CURRENT regs
             cy_pix_r         <= cy_pix_c;
             fx_pix_r         <= fx_pix_c;
             fy_pix_r         <= fy_pix_c;
             recip_w_start    <= 1'b1;
             cstate           <= C_START_W;
+          end else begin
+            settle_cnt <= settle_cnt + 1'b1;
           end
         end
         C_START_W: cstate <= C_WAIT_W; // allow start pulse to register
@@ -362,10 +401,18 @@ module axi_lite_regs #(
 
   assign cfg_recip_busy = (cstate != C_IDLE) || pending || geom_write_pulse;
 
+  // Intermediate unsigned wires rather than $unsigned(fx_pix_c)/
+  // $unsigned(fy_pix_c) written directly as the port-connection
+  // expression below -- see coord_gen.sv's identical workaround comment
+  // for the Yosys 0.33 frontend assertion this avoids.
+  logic [31:0] fx_pix_c_u, fy_pix_c_u;
+  assign fx_pix_c_u = fx_pix_c;
+  assign fy_pix_c_u = fy_pix_c;
+
   fixed_recip #(.W(32)) u_recip_w (
     .clk, .rst_n,
     .start   (recip_w_start),
-    .operand ($unsigned(fx_pix_c)),
+    .operand (fx_pix_c_u),
     .result  (recip_w_result),
     .busy    (recip_w_busy),
     .done    (recip_w_done)
@@ -374,7 +421,7 @@ module axi_lite_regs #(
   fixed_recip #(.W(32)) u_recip_h (
     .clk, .rst_n,
     .start   (recip_h_start),
-    .operand ($unsigned(fy_pix_c)),
+    .operand (fy_pix_c_u),
     .result  (recip_h_result),
     .busy    (recip_h_busy),
     .done    (recip_h_done)
@@ -403,6 +450,6 @@ module axi_lite_regs #(
   assign cfg_out.h23       = reg_h23;
   assign cfg_out.h31       = reg_h31;
   assign cfg_out.h32       = reg_h32;
-  assign cfg_out.model_sel = distortion_model_e'(reg_model_sel[2:0]);
+  assign cfg_out.model_sel = reg_model_sel[2:0];
 
 endmodule

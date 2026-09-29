@@ -1,5 +1,5 @@
 """
-test_lens_distortion_correction.py  (cocotb testbench for lens_distortion_correction)
+test_vision_system.py  (cocotb testbench for vision_system)
 
 Flow (matches the spec), run once per distortion type (barrel, pincushion):
   1. Load test.jpg or test.ppm (auto-generated if absent) -- shared
@@ -314,7 +314,7 @@ async def run_division_model_correction_test(dut, label: str, model_sel_val: int
     exactness against the golden model and a genuine MAE improvement --
     the exact same evidentiary standard the barrel/pincushion (radial)
     tests are held to, not merely "the hook was a no-op". Mirrors
-    tb_verilog/tb_lens_distortion_correction.sv's
+    tb_verilog/tb_vision_system.sv's
     run_division_model_correction_test."""
     h, w = src.shape[0], src.shape[1]
     dut._log.info(f"=== {label} correction test (MODEL_SEL={model_sel_val}, {w}x{h}, "
@@ -394,7 +394,7 @@ async def run_perspective_correction_test(dut, label: str, src: np.ndarray, test
     (invert_homography -- unlike the division model, a homography's
     correction is not approximate), applies that correction through the
     DUT, and checks both bit-exactness and a genuine MAE improvement.
-    Mirrors tb_verilog/tb_lens_distortion_correction.sv's
+    Mirrors tb_verilog/tb_vision_system.sv's
     run_perspective_correction_test."""
     h, w = src.shape[0], src.shape[1]
     dut._log.info(f"=== {label} correction test ({w}x{h}) ===")
@@ -408,13 +408,16 @@ async def run_perspective_correction_test(dut, label: str, src: np.ndarray, test
     # genuine mathematical singularity, not an RTL bug) inside a much
     # larger frame -- found exactly this way in the SystemVerilog
     # testbench when it was scaled up to 720x480 (see
-    # tb_verilog/tb_lens_distortion_correction.sv's comment on this same
+    # tb_verilog/tb_vision_system.sv's comment on this same
     # constant for the full account). These values keep the zero-crossing
     # far outside any frame size this project's testbenches use (~5000,
     # vs. a maximum frame dimension of 720).
     hf11, hf12, hf13 = 1.0, 0.0, 0.0
     hf21, hf22, hf23 = 0.0, 1.0, 0.0
-    hf31, hf32 = 0.0002, -0.000125
+    # Scaled to the frame (0.144/W, -0.06/H): equals 0.0002/-0.000125 at
+    # 720x480 and keeps the corrected homography's zero-crossing ~7x
+    # beyond the frame at ANY size (see the SystemVerilog testbench).
+    hf31, hf32 = 0.144 / w, -0.06 / h
 
     hc11, hc12, hc13, hc21, hc22, hc23, hc31, hc32 = io.invert_homography(
         hf11, hf12, hf13, hf21, hf22, hf23, hf31, hf32)
@@ -504,7 +507,13 @@ def load_or_make_shaped_images(dut):
     work_dir = os.path.join(os.path.dirname(__file__), "work")
     os.makedirs(work_dir, exist_ok=True)
     shapes = []
-    for shape_label, w, h in (("square", 480, 480), ("portrait", 480, 720), ("landscape", 720, 480)):
+    # SMALL_FRAMES=1 selects small frames (fast; used by CI); default is the
+    # full-size 480x480 / 480x720 / 720x480 set.
+    if os.environ.get("SMALL_FRAMES", "0") == "1":
+        shape_dims = (("square", 48, 48), ("portrait", 32, 56), ("landscape", 56, 32))
+    else:
+        shape_dims = (("square", 480, 480), ("portrait", 480, 720), ("landscape", 720, 480))
+    for shape_label, w, h in shape_dims:
         path = os.path.join(work_dir, f"test_{shape_label}.ppm")
         if not os.path.exists(path):
             io.make_synthetic_chart(path, w, h)
@@ -551,7 +560,7 @@ async def test_fisheye_panoramic_perspective_correction(dut):
     frame path with MODEL_SEL itself changing between consecutive
     frames, and (for fisheye/panoramic) coord_gen's per-pixel-divide
     "slow path" under real back-to-back-frame conditions. Mirrors
-    tb_verilog/tb_lens_distortion_correction.sv's three correction tests."""
+    tb_verilog/tb_vision_system.sv's three correction tests."""
     await setup_dut(dut)
     shapes = load_or_make_shaped_images(dut)
     sq, pt, ls = shapes[0], shapes[1], shapes[2]

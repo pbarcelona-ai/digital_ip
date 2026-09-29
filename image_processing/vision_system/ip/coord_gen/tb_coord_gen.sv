@@ -14,7 +14,7 @@
 // Self-checking testbench for coord_gen.sv (reusable IP). Depends on
 // barrel_pkg.sv (Q16.16 format, qmul) and distortion_model_pkg.sv (the
 // calib_params_t struct / distortion_model_e enum) -- this IP's two
-// package dependencies, both in ../../rtl/, this project's shared
+// package dependencies, both in ../../src/, this project's shared
 // package location.
 //
 // The golden reference (coord_gen_ref/recip_ref below) is written FRESH,
@@ -62,6 +62,7 @@ module tb_coord_gen;
     end
   endfunction
 
+  localparam longint ONE_Q16 = 32'h0001_0000;
   task automatic coord_gen_ref(
     input  longint cx_pix, input longint cy_pix,
     input  longint fx_pix, input longint fy_pix,
@@ -133,7 +134,6 @@ module tb_coord_gen;
     end
   endtask
 
-  localparam longint ONE_Q16 = 32'h0001_0000;
 
   // ---- DUT ---------------------------------------------------------------
   logic clk = 0, rst_n = 0;
@@ -149,7 +149,7 @@ module tb_coord_gen;
     .out_valid, .out_sx_q16, .out_sy_q16
   );
 
-  localparam int COORD_GEN_LATENCY = 9;   // coord_gen.sv's documented pipeline depth
+  localparam int COORD_GEN_LATENCY = 23;  // coord_gen.sv's documented pipeline depth
 
   always #5 clk = ~clk;
 
@@ -323,17 +323,13 @@ module tb_coord_gen;
 
     $finish;
   end
-  // ---------------------------------------------------------------- waveform dump
-  // Writes a VCD of the whole testbench hierarchy.
-  //   +VCD=<file>  output file (default tb_coord_gen.vcd in the working directory)
-  //   +NO_VCD      disable dumping (faster, no large file)
-  // With the Verilator simulator, compile with --trace (tools/run_sim.sh does).
-  initial begin : vcd_dump
-    string vcd_file;
-    if (!$test$plusargs("NO_VCD")) begin
-      if (!$value$plusargs("VCD=%s", vcd_file)) vcd_file = "tb_coord_gen.vcd";
-      $dumpfile(vcd_file);
-      $dumpvars(0, tb_coord_gen);
-    end
+
+  // Optional waveform dump: compile with -DDUMP_VCD (the run scripts do
+  // this when VCD=1). View with synth/view_waves.sh (Surfer).
+`ifdef DUMP_VCD
+  initial begin
+    $dumpfile("waves.vcd");
+    $dumpvars(0, tb_coord_gen);
   end
+`endif
 endmodule

@@ -21,8 +21,8 @@
 //
 //   BILINEAR (interp_mode=0, default): the original, fully-pipelined,
 //   never-stalling 2x2-tap datapath. One output pixel per clock, with a
-//   fixed TOTAL_LATENCY_BILINEAR=13-cycle delay -- this reproduces the
-//   exact same "line, then LINE_GAP_CYCLES idle" timing at the output as
+//   fixed TOTAL_LATENCY_BILINEAR=31-cycle delay -- this reproduces the
+//   exact same "line, then barrel_pkg::LINE_GAP_CYCLES idle" timing at the output as
 //   at the input, because every stage always flows.
 //
 //   BICUBIC (interp_mode=1): a 4x4-tap separable Catmull-Rom filter
@@ -34,7 +34,7 @@
 //   sustain 1 pixel/clock and does NOT reproduce the input's line timing
 //   at the output -- it processes one pixel at a time (a new source
 //   request is only issued once the previous one has fully completed),
-//   taking TOTAL_LATENCY_BICUBIC=19 cycles per pixel end-to-end. This is
+//   taking TOTAL_LATENCY_BICUBIC=48 cycles per pixel end-to-end. This is
 //   an honest trade-off for a reference design reusing an existing
 //   bilinear-sized memory system; a production design targeting bicubic
 //   at full rate would size the frame buffer with 16 read ports (or use
@@ -51,12 +51,10 @@
 // pipeline; there is no mid-pipeline stall capability (documented
 // trade-off, see README).
 // =============================================================================
-import vision_system_pkg::*;
-import distortion_model_pkg::*;
 
 module axis_out_ctrl #(
-  parameter int COORD_W = COORD_W,
-  parameter int ADDR_W  = ADDR_W
+  parameter int COORD_W = barrel_pkg::COORD_W,
+  parameter int ADDR_W  = barrel_pkg::ADDR_W
 ) (
   input  logic                 clk,
   input  logic                 rst_n,
@@ -71,7 +69,7 @@ module axis_out_ctrl #(
 
   // configuration (passed straight through to coord_gen as a single
   // struct -- see distortion_model_pkg.sv)
-  input  calib_params_t        cfg,
+  input  distortion_model_pkg::calib_params_t cfg,
 
   // frame_buffer read port
   output logic                 fb_rd_en,
@@ -79,15 +77,15 @@ module axis_out_ctrl #(
   output logic [ADDR_W-1:0]    fb_rd_addr1,
   output logic [ADDR_W-1:0]    fb_rd_addr2,
   output logic [ADDR_W-1:0]    fb_rd_addr3,
-  input  logic [PIX_W-1:0]     fb_rd_data0,
-  input  logic [PIX_W-1:0]     fb_rd_data1,
-  input  logic [PIX_W-1:0]     fb_rd_data2,
-  input  logic [PIX_W-1:0]     fb_rd_data3,
+  input  logic [barrel_pkg::PIX_W-1:0]     fb_rd_data0,
+  input  logic [barrel_pkg::PIX_W-1:0]     fb_rd_data1,
+  input  logic [barrel_pkg::PIX_W-1:0]     fb_rd_data2,
+  input  logic [barrel_pkg::PIX_W-1:0]     fb_rd_data3,
 
   // AXI4-Stream master (video out)
   output logic                 m_axis_tvalid,
   input  logic                 m_axis_tready,
-  output logic [PIX_W-1:0]     m_axis_tdata,
+  output logic [barrel_pkg::PIX_W-1:0]     m_axis_tdata,
   output logic                 m_axis_tlast,
   output logic                 m_axis_tuser
 );
@@ -102,11 +100,12 @@ module axis_out_ctrl #(
   logic [2:0]          gap_cnt;
   logic                 req_valid, req_tlast, req_tuser;
   logic [COORD_W-1:0]   req_x, req_y;
+  logic               cg_valid;
 
   // Bicubic mode has no per-cycle throughput -- only one source request
   // may be outstanding (in flight through coord_gen + the bicubic gather
   // FSM) at a time. Neither does coord_gen's own "slow path" for
-  // MODEL_FISHEYE/MODEL_PANORAMIC/MODEL_PERSPECTIVE (a per-pixel
+  // distortion_model_pkg::MODEL_FISHEYE/distortion_model_pkg::MODEL_PANORAMIC/distortion_model_pkg::MODEL_PERSPECTIVE (a per-pixel
   // reciprocal divide -- see coord_gen.sv). req_outstanding is set when
   // a request is issued under either condition and cleared once the
   // LAST stage that's actually slow finishes: bc_valid if bicubic mode
@@ -117,18 +116,16 @@ module axis_out_ctrl #(
   // downstream is fast/always-flowing, so coord_gen's own result is the
   // bottleneck). The raster generator simply holds at the current pixel
   // (no req_valid, no advance) while req_outstanding is set. When
-  // neither condition applies (bilinear + MODEL_RADIAL/MODEL_AFFINE/
-  // MODEL_SCALING) this is unused (the original fully-pipelined,
+  // neither condition applies (bilinear + distortion_model_pkg::MODEL_RADIAL/distortion_model_pkg::MODEL_AFFINE/
+  // distortion_model_pkg::MODEL_SCALING) this is unused (the original fully-pipelined,
   // always-advancing design).
   logic req_outstanding;
   logic bc_valid;             // forward-declared; driven by the gather FSM below
   logic cg_busy;              // forward-declared; driven by coord_gen below
   logic model_is_slow_div;
-  logic               cg_valid;
-  logic signed [31:0] cg_sx, cg_sy;
-  assign model_is_slow_div = (cfg.model_sel == MODEL_FISHEYE) ||
-                              (cfg.model_sel == MODEL_PANORAMIC) ||
-                              (cfg.model_sel == MODEL_PERSPECTIVE);
+  assign model_is_slow_div = (cfg.model_sel == distortion_model_pkg::MODEL_FISHEYE) ||
+                              (cfg.model_sel == distortion_model_pkg::MODEL_PANORAMIC) ||
+                              (cfg.model_sel == distortion_model_pkg::MODEL_PERSPECTIVE);
   logic need_pacing;
   assign need_pacing = interp_mode || model_is_slow_div;
   logic raster_can_issue;
@@ -176,7 +173,7 @@ module axis_out_ctrl #(
           // current x_cnt,y_cnt and re-check next cycle.
         end
         R_GAP: begin
-          if (gap_cnt == LINE_GAP_CYCLES - 1) rstate <= R_ACTIVE;
+          if (gap_cnt == barrel_pkg::LINE_GAP_CYCLES - 1) rstate <= R_ACTIVE;
           else                                gap_cnt <= gap_cnt + 1'b1;
         end
         R_DONE: begin
@@ -190,12 +187,13 @@ module axis_out_ctrl #(
   assign busy = (rstate != R_IDLE);
 
   // ---------------------------------------------------------------------
-  // coord_gen: request (x,y) -> fractional source address. 9-cycle fixed
-  // latency for MODEL_RADIAL/MODEL_AFFINE/MODEL_SCALING; for MODEL_
-  // FISHEYE/MODEL_PANORAMIC/MODEL_PERSPECTIVE, a much longer, also-fixed
+  // coord_gen: request (x,y) -> fractional source address. 23-cycle fixed
+  // latency for distortion_model_pkg::MODEL_RADIAL/distortion_model_pkg::MODEL_AFFINE/distortion_model_pkg::MODEL_SCALING; for MODEL_
+  // FISHEYE/distortion_model_pkg::MODEL_PANORAMIC/distortion_model_pkg::MODEL_PERSPECTIVE, a much longer, also-fixed
   // latency (measured, not assumed -- see README) via coord_gen's own
   // internal per-pixel-divide "slow path", signaled by cg_busy.
   // ---------------------------------------------------------------------
+  logic signed [31:0] cg_sx, cg_sy;
 
   coord_gen #(.COORD_W(COORD_W)) u_coord_gen (
     .clk, .rst_n,
@@ -221,11 +219,10 @@ module axis_out_ctrl #(
   logic signed [COORD_W+1:0] x0_s, y0_s;      // extra headroom for clamp compares
   logic [7:0]                fx_c, fy_c;
   logic [COORD_W-1:0]        x0_clamped, y0_clamped;
-  logic [ADDR_W-1:0]         rowbase0, rowbase1;
 
   always_comb begin
-    x0_s = cg_sx >>> FRAC_BITS;
-    y0_s = cg_sy >>> FRAC_BITS;
+    x0_s = cg_sx >>> barrel_pkg::FRAC_BITS;
+    y0_s = cg_sy >>> barrel_pkg::FRAC_BITS;
 
     if (cg_sx < 0) begin
       x0_clamped = '0;
@@ -249,23 +246,51 @@ module axis_out_ctrl #(
       fy_c       = cg_sy[15:8];
     end
 
-    rowbase0 = y0_clamped * img_width;
-    rowbase1 = rowbase0 + img_width;
   end
+
+  // Address generation is pipelined over 4 register stages (timing: the
+  // row-base multiply y0*width, the row-base adds, and the four corner
+  // adds each get their own cycle, instead of clamp+multiply+add in one):
+  //   AE0: clamp / split into integer + fraction
+  //   AE1: rowbase0 = y0 * width      (registered product)
+  //   AE2: rowbase1 = rowbase0 + width
+  //   AE3: the four corner addresses
+  // fx/fy/valid are delayed alongside so everything stays aligned.
+  logic                v_ae0, v_ae1, v_ae2;
+  logic [7:0]          fx_ae0, fy_ae0, fx_ae1, fy_ae1, fx_ae2, fy_ae2;
+  logic [COORD_W-1:0]  x_ae0, y_ae0, x_ae1, x_ae2;
+  logic [ADDR_W-1:0]   rowbase0_ae1, rowbase0_ae2, rowbase1_ae2;
+  logic [ADDR_W-1:0]   img_width_x;            // width zero-extended to address width
+  assign img_width_x = {{(ADDR_W-COORD_W){1'b0}}, img_width};
 
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      ae_valid <= 1'b0; ae_fx <= '0; ae_fy <= '0;
-      ae_addr_tl <= '0; ae_addr_tr <= '0; ae_addr_bl <= '0; ae_addr_br <= '0;
+      v_ae0 <= 1'b0; v_ae1 <= 1'b0; v_ae2 <= 1'b0; ae_valid <= 1'b0;
     end else begin
-      ae_valid   <= cg_valid;
-      ae_fx      <= fx_c;
-      ae_fy      <= fy_c;
-      ae_addr_tl <= rowbase0 + x0_clamped;
-      ae_addr_tr <= rowbase0 + x0_clamped + 1'b1;
-      ae_addr_bl <= rowbase1 + x0_clamped;
-      ae_addr_br <= rowbase1 + x0_clamped + 1'b1;
+      v_ae0    <= cg_valid;
+      v_ae1    <= v_ae0;
+      v_ae2    <= v_ae1;
+      ae_valid <= v_ae2;
     end
+  end
+  // Data registers carry no reset (only the valid bits do), so the
+  // synthesizer can absorb the multiplier's product register into the DSP.
+  always_ff @(posedge clk) begin
+    // AE0
+    x_ae0 <= x0_clamped; y_ae0 <= y0_clamped; fx_ae0 <= fx_c; fy_ae0 <= fy_c;
+    // AE1
+    rowbase0_ae1 <= {{(ADDR_W-COORD_W){1'b0}}, y_ae0} * img_width_x;
+    x_ae1 <= x_ae0; fx_ae1 <= fx_ae0; fy_ae1 <= fy_ae0;
+    // AE2
+    rowbase0_ae2 <= rowbase0_ae1;
+    rowbase1_ae2 <= rowbase0_ae1 + img_width_x;
+    x_ae2 <= x_ae1; fx_ae2 <= fx_ae1; fy_ae2 <= fy_ae1;
+    // AE3
+    ae_addr_tl <= rowbase0_ae2 + {{(ADDR_W-COORD_W){1'b0}}, x_ae2};
+    ae_addr_tr <= rowbase0_ae2 + {{(ADDR_W-COORD_W){1'b0}}, x_ae2} + 1'b1;
+    ae_addr_bl <= rowbase1_ae2 + {{(ADDR_W-COORD_W){1'b0}}, x_ae2};
+    ae_addr_br <= rowbase1_ae2 + {{(ADDR_W-COORD_W){1'b0}}, x_ae2} + 1'b1;
+    ae_fx <= fx_ae2; ae_fy <= fy_ae2;
   end
 
   // These become the BILINEAR-path candidate for the frame_buffer read
@@ -293,10 +318,10 @@ module axis_out_ctrl #(
   end
 
   // ---------------------------------------------------------------------
-  // Bilinear interpolation, 2-cycle latency
+  // Bilinear interpolation, 3-cycle latency
   // ---------------------------------------------------------------------
   logic               bl_valid;
-  logic [PIX_W-1:0]   bl_pixel;
+  logic [barrel_pkg::PIX_W-1:0]   bl_pixel;
 
   bilinear u_bilinear (
     .clk, .rst_n,
@@ -326,8 +351,8 @@ module axis_out_ctrl #(
   logic [31:0]                bctx_c, bcty_c;
 
   always_comb begin
-    bcx0_s = cg_sx >>> FRAC_BITS;
-    bcy0_s = cg_sy >>> FRAC_BITS;
+    bcx0_s = cg_sx >>> barrel_pkg::FRAC_BITS;
+    bcy0_s = cg_sy >>> barrel_pkg::FRAC_BITS;
 
     if (cg_sx < 0 || bcx0_s < 1) begin
       bcx0_c = (img_width >= 4) ? 1 : 1;
@@ -352,44 +377,48 @@ module axis_out_ctrl #(
     end
   end
 
-  typedef enum logic [2:0] {BC_IDLE, BC_R1, BC_R2, BC_R3, BC_R4} bcstate_t;
+  // Gather FSM. Timing: the row-base multiply (row*width) is NOT in front
+  // of the BRAM address any more -- it gets its own registered state
+  // (BC_MUL), and later rows are produced by adding `width` to the
+  // registered row base each cycle:
+  //   BC_IDLE: on cg_valid, lock the clamped anchor / weights
+  //   BC_MUL : rowbase <= (anchor_y - 1) * width         (registered)
+  //   BC_R0  : issue row 0 read ;  rowbase += width
+  //   BC_R1  : capture row 0, issue row 1 ; rowbase += width
+  //   BC_R2  : capture row 1, issue row 2 ; rowbase += width
+  //   BC_R3  : capture row 2, issue row 3
+  //   BC_R4  : capture row 3, pulse bc_gather_valid
+  typedef enum logic [2:0] {BC_IDLE, BC_MUL, BC_R0, BC_R1, BC_R2, BC_R3, BC_R4} bcstate_t;
   bcstate_t bcstate;
 
   logic [COORD_W-1:0] bcx0_lock, bcy0_lock;
   logic [31:0]         bctx_lock, bcty_lock;
-  logic [PIX_W-1:0]    p0_0,p0_1,p0_2,p0_3, p1_0,p1_1,p1_2,p1_3,
+  logic [barrel_pkg::PIX_W-1:0]    p0_0,p0_1,p0_2,p0_3, p1_0,p1_1,p1_2,p1_3,
                         p2_0,p2_1,p2_2,p2_3, p3_0,p3_1,p3_2,p3_3;
 
   logic              bc_rd_en;
   logic [ADDR_W-1:0] bc_rd_addr0, bc_rd_addr1, bc_rd_addr2, bc_rd_addr3;
-  logic [ADDR_W-1:0] bc_rowbase;
+  logic [ADDR_W-1:0] bc_rowbase;            // registered row base address
   logic              bc_gather_valid;   // pulses for 1 cycle: taps+weights ready, feed bicubic.sv
 
-  // Row base address for whichever row (relative to the locked anchor)
-  // is being read THIS cycle -- row index selected by bcstate.
-  logic [COORD_W-1:0] bc_row_y;
+  logic [ADDR_W-1:0] bc_xb;
+  assign bc_xb = {{(ADDR_W-COORD_W){1'b0}}, bcx0_lock};
   always_comb begin
-    unique case (bcstate)
-      BC_IDLE: bc_row_y = bcy0_c - 1'b1;         // uses COMBINATIONAL anchor (not yet locked)
-      BC_R1:   bc_row_y = bcy0_lock;
-      BC_R2:   bc_row_y = bcy0_lock + 1'b1;
-      BC_R3:   bc_row_y = bcy0_lock + 1'b1 + 1'b1;
-      default: bc_row_y = bcy0_lock;
-    endcase
-    bc_rowbase = {{(ADDR_W-COORD_W){1'b0}}, bc_row_y} * img_width;
+    // Column addresses: x0-1,x0,x0+1,x0+2 from the locked anchor.
+    bc_rd_en    = (bcstate == BC_R0) || (bcstate == BC_R1) ||
+                  (bcstate == BC_R2) || (bcstate == BC_R3);
+    bc_rd_addr0 = bc_rowbase + bc_xb - 1'b1;
+    bc_rd_addr1 = bc_rowbase + bc_xb;
+    bc_rd_addr2 = bc_rowbase + bc_xb + 1'b1;
+    bc_rd_addr3 = bc_rowbase + bc_xb + 2'd2;
   end
 
-  always_comb begin
-    // Column addresses: x0-1,x0,x0+1,x0+2, using combinational anchor
-    // while still in BC_IDLE (row0 issue), locked anchor afterward.
-    logic [COORD_W-1:0] xb;
-    xb = (bcstate == BC_IDLE) ? bcx0_c : bcx0_lock;
-    bc_rd_en    = (bcstate == BC_IDLE && cg_valid) || (bcstate == BC_R1) ||
-                  (bcstate == BC_R2)                || (bcstate == BC_R3);
-    bc_rd_addr0 = bc_rowbase + {{(ADDR_W-COORD_W){1'b0}}, xb} - 1'b1;
-    bc_rd_addr1 = bc_rowbase + {{(ADDR_W-COORD_W){1'b0}}, xb};
-    bc_rd_addr2 = bc_rowbase + {{(ADDR_W-COORD_W){1'b0}}, xb} + 1'b1;
-    bc_rd_addr3 = bc_rowbase + {{(ADDR_W-COORD_W){1'b0}}, xb} + 2'd2;
+  // Row base register: no reset (only meaningful in BC_R0..R3).
+  always_ff @(posedge clk) begin
+    if (bcstate == BC_MUL)
+      bc_rowbase <= {{(ADDR_W-COORD_W){1'b0}}, (bcy0_lock - 1'b1)} * img_width_x;
+    else if (bcstate == BC_R0 || bcstate == BC_R1 || bcstate == BC_R2)
+      bc_rowbase <= bc_rowbase + img_width_x;
   end
 
   always_ff @(posedge clk or negedge rst_n) begin
@@ -406,9 +435,11 @@ module axis_out_ctrl #(
           if (cg_valid) begin
             bcx0_lock <= bcx0_c; bcy0_lock <= bcy0_c;
             bctx_lock <= bctx_c; bcty_lock <= bcty_c;
-            bcstate   <= BC_R1;
+            bcstate   <= BC_MUL;
           end
         end
+        BC_MUL: bcstate <= BC_R0;
+        BC_R0:  bcstate <= BC_R1;
         BC_R1: begin
           {p0_0,p0_1,p0_2,p0_3} <= {fb_rd_data0, fb_rd_data1, fb_rd_data2, fb_rd_data3};
           bcstate <= BC_R2;
@@ -431,7 +462,7 @@ module axis_out_ctrl #(
     end
   end
 
-  logic [PIX_W-1:0] bc_pixel;
+  logic [barrel_pkg::PIX_W-1:0] bc_pixel;
 
   bicubic u_bicubic (
     .clk, .rst_n,
@@ -462,23 +493,26 @@ module axis_out_ctrl #(
   // own fixed total latency, all four measured directly in simulation
   // (never hand-derived alone -- see README's account of the bicubic
   // hand-count originally being off by one until checked this way):
-  //   TOTAL_LATENCY_BILINEAR         = 13 cycles  (MODEL_RADIAL/AFFINE/SCALING)
-  //   TOTAL_LATENCY_BICUBIC          = 19 cycles  (MODEL_RADIAL/AFFINE/SCALING)
-  //   TOTAL_LATENCY_BILINEAR_SLOWDIV = 43 cycles  (MODEL_FISHEYE/PANORAMIC/PERSPECTIVE)
-  //   TOTAL_LATENCY_BICUBIC_SLOWDIV  = 49 cycles  (MODEL_FISHEYE/PANORAMIC/PERSPECTIVE)
+  //   TOTAL_LATENCY_BILINEAR         = 31 cycles  (distortion_model_pkg::MODEL_RADIAL/AFFINE/SCALING)
+  //   TOTAL_LATENCY_BICUBIC          = 48 cycles  (distortion_model_pkg::MODEL_RADIAL/AFFINE/SCALING)
+  //   TOTAL_LATENCY_BILINEAR_SLOWDIV = 71 cycles  (distortion_model_pkg::MODEL_FISHEYE/PANORAMIC/PERSPECTIVE)
+  //   TOTAL_LATENCY_BICUBIC_SLOWDIV  = 88 cycles  (distortion_model_pkg::MODEL_FISHEYE/PANORAMIC/PERSPECTIVE)
   // The two SLOWDIV figures are coord_gen's own much longer per-pixel-
   // divide latency (see coord_gen.sv's "slow path") in place of its
-  // usual 9-cycle fast latency, plus the same downstream bilinear/
+  // usual 23-cycle fast latency, plus the same downstream bilinear/
   // bicubic latency as the fast case -- but, as with bicubic's own
   // earlier off-by-one, this was confirmed by measurement rather than
   // by adding coord_gen's slow-path cycle count to the fast-path
-  // downstream figures by hand (which would have predicted 42 and 48).
+  // downstream figures by hand. (Since the timing pipelining -- every
+  // multiply split across mulq_s + a saturate stage -- coord_gen's fast
+  // path is 23 cycles, bicubic.sv is 18, bilinear.sv is 3, the address-
+  // expand stage 4, and the bicubic gather FSM gained a row-base state.)
   // ---------------------------------------------------------------------
-  localparam int TOTAL_LATENCY_BILINEAR         = 13;
-  localparam int TOTAL_LATENCY_BICUBIC          = 19;
-  localparam int TOTAL_LATENCY_BILINEAR_SLOWDIV = 43;
-  localparam int TOTAL_LATENCY_BICUBIC_SLOWDIV  = 49;
-  localparam int TAG_SR_DEPTH = 49;
+  localparam int TOTAL_LATENCY_BILINEAR         = 31;
+  localparam int TOTAL_LATENCY_BICUBIC          = 48;
+  localparam int TOTAL_LATENCY_BILINEAR_SLOWDIV = 71;
+  localparam int TOTAL_LATENCY_BICUBIC_SLOWDIV  = 88;
+  localparam int TAG_SR_DEPTH = 88;
   logic [TAG_SR_DEPTH-1:0] tlast_sr, tuser_sr;
 
   always_ff @(posedge clk or negedge rst_n) begin
@@ -490,7 +524,7 @@ module axis_out_ctrl #(
     end
   end
 
-  logic [5:0] active_tag_depth;
+  logic [6:0] active_tag_depth;
   always_comb begin
     if (model_is_slow_div) active_tag_depth = interp_mode ? TOTAL_LATENCY_BICUBIC_SLOWDIV : TOTAL_LATENCY_BILINEAR_SLOWDIV;
     else                   active_tag_depth = interp_mode ? TOTAL_LATENCY_BICUBIC         : TOTAL_LATENCY_BILINEAR;
@@ -525,6 +559,5 @@ module axis_out_ctrl #(
       end
     end
   end
-  
 
 endmodule

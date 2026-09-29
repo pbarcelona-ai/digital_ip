@@ -32,12 +32,12 @@
 `timescale 1ns/1ps
 
 module tb_vision_system;
-  import vision_system_pkg::*;
+  import barrel_pkg::*;
   import ppm_io_pkg::*;
   import golden_model_pkg::*;
 
   localparam int CLK_PERIOD_NS = 10;   // 100 MHz
-  localparam int LINE_GAP      = LINE_GAP_CYCLES;
+  localparam int LINE_GAP      = barrel_pkg::LINE_GAP_CYCLES;
 
   localparam int REG_STATUS     = 8'h04;
   localparam int REG_IMG_WIDTH  = 8'h08;
@@ -82,13 +82,11 @@ module tb_vision_system;
   logic [1:0]   s_axil_bresp;   logic s_axil_bvalid, s_axil_bready;
   logic [7:0]   s_axil_araddr;  logic s_axil_arvalid, s_axil_arready;
   logic [31:0]  s_axil_rdata;   logic [1:0] s_axil_rresp; logic s_axil_rvalid, s_axil_rready;
-  int ok;
-  string work_dir = "work";
   int sq_w, sq_h, pt_w, pt_h, ls_w, ls_h;
   logic [7:0] sq_r[], sq_g[], sq_b[];
   logic [7:0] pt_r[], pt_g[], pt_b[];
   logic [7:0] ls_r[], ls_g[], ls_b[];
-
+  string work_dir = "work";
 
 
   vision_system dut (
@@ -452,7 +450,10 @@ module tb_vision_system;
       // testbenches use (~5000, vs. a maximum frame dimension of 720).
       hf11=1.0; hf12=0.0;    hf13=0.0;
       hf21=0.0; hf22=1.0;    hf23=0.0;
-      hf31=0.0002; hf32=-0.000125;
+      // Scaled to the frame: 0.144/W and -0.06/H give 0.0002/-0.000125 at
+      // 720x480 (the values found safe there) and keep the corrected
+      // homography's zero-crossing ~7x beyond the frame at ANY size.
+      hf31 = 0.144 / real'(fw); hf32 = -0.06 / real'(fh);
 
       invert_homography(hf11,hf12,hf13, hf21,hf22,hf23, hf31,hf32,
                           hc11,hc12,hc13, hc21,hc22,hc23, hc31,hc32);
@@ -581,6 +582,8 @@ module tb_vision_system;
   endtask
 
   // ---- main sequence ------------------------------------------------------
+  int ok;
+
   // Three test-image shapes, sizes read from the actual generated/loaded
   // images (not hardcoded into the scenario logic) -- IMG_WIDTH/IMG_HEIGHT
   // are programmed per-frame from these.
@@ -597,19 +600,31 @@ module tb_vision_system;
     // ---- load or generate the three shaped test images ------------------
     ppm_read({work_dir, "/test_square.ppm"}, sq_w, sq_h, ok, sq_r, sq_g, sq_b);
     if (ok == 0) begin
+`ifdef SMALL_FRAMES
+      sq_w = 48; sq_h = 48;
+`else
       sq_w = 480; sq_h = 480;
+`endif
       generate_synthetic_chart(sq_w, sq_h, sq_r, sq_g, sq_b);
       ppm_write({work_dir, "/test_square.ppm"}, sq_w, sq_h, sq_r, sq_g, sq_b);
     end
     ppm_read({work_dir, "/test_portrait.ppm"}, pt_w, pt_h, ok, pt_r, pt_g, pt_b);
     if (ok == 0) begin
+`ifdef SMALL_FRAMES
+      pt_w = 32; pt_h = 56;
+`else
       pt_w = 480; pt_h = 720;
+`endif
       generate_synthetic_chart(pt_w, pt_h, pt_r, pt_g, pt_b);
       ppm_write({work_dir, "/test_portrait.ppm"}, pt_w, pt_h, pt_r, pt_g, pt_b);
     end
     ppm_read({work_dir, "/test_landscape.ppm"}, ls_w, ls_h, ok, ls_r, ls_g, ls_b);
     if (ok == 0) begin
+`ifdef SMALL_FRAMES
+      ls_w = 56; ls_h = 32;
+`else
       ls_w = 720; ls_h = 480;
+`endif
       generate_synthetic_chart(ls_w, ls_h, ls_r, ls_g, ls_b);
       ppm_write({work_dir, "/test_landscape.ppm"}, ls_w, ls_h, ls_r, ls_g, ls_b);
     end
@@ -668,18 +683,20 @@ module tb_vision_system;
     $display("ERROR: global timeout -- simulation did not finish");
     $fatal;
   end
-  // ---------------------------------------------------------------- waveform dump
-  // Writes a VCD of the whole testbench hierarchy.
-  //   +VCD=<file>  output file (default tb_vision_system.vcd in the working directory)
-  //   +NO_VCD      disable dumping (faster, no large file)
-  // With the Verilator simulator, compile with --trace (tools/run_sim.sh does).
-  initial begin : vcd_dump
-    string vcd_file;
-    if (!$test$plusargs("NO_VCD")) begin
-      if (!$value$plusargs("VCD=%s", vcd_file)) vcd_file = "tb_vision_system.vcd";
-      $dumpfile(vcd_file);
-      $dumpvars(0, tb_vision_system);
-    end
-  end
 
+
+  // Optional waveform dump: compile with -DDUMP_VCD (run.sh does this when
+  // VCD=1). Only the first VCD_WINDOW_NS nanoseconds are recorded -- a
+  // whole multi-frame regression would produce an unmanageably large file.
+  // Override with -DVCD_WINDOW_NS=<ns>. View with synth/view_waves.sh.
+`ifdef DUMP_VCD
+`ifndef VCD_WINDOW_NS
+`define VCD_WINDOW_NS 300000
+`endif
+  initial begin
+    $dumpfile("work/waves.vcd");
+    $dumpvars(0, dut);
+    #(`VCD_WINDOW_NS) $dumpoff;
+  end
+`endif
 endmodule

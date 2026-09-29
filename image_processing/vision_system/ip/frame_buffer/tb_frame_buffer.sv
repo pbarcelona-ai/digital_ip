@@ -44,7 +44,7 @@
 // check below already relied on).
 // =============================================================================
 `timescale 1ns/1ps
-import vision_system_pkg::*;
+import barrel_pkg::*;
 
 module tb_frame_buffer;
   localparam int PIX_W  = 24;
@@ -200,17 +200,13 @@ module tb_frame_buffer;
     else             $display(">>> FAIL (%0d mismatches) <<<", fails);
     $finish;
   end
-  // ---------------------------------------------------------------- waveform dump
-  // Writes a VCD of the whole testbench hierarchy.
-  //   +VCD=<file>  output file (default tb_frame_buffer.vcd in the working directory)
-  //   +NO_VCD      disable dumping (faster, no large file)
-  // With the Verilator simulator, compile with --trace (tools/run_sim.sh does).
-  initial begin : vcd_dump
-    string vcd_file;
-    if (!$test$plusargs("NO_VCD")) begin
-      if (!$value$plusargs("VCD=%s", vcd_file)) vcd_file = "tb_frame_buffer.vcd";
-      $dumpfile(vcd_file);
-      $dumpvars(0, tb_frame_buffer);
-    end
+
+  // Optional waveform dump: compile with -DDUMP_VCD (the run scripts do
+  // this when VCD=1). View with synth/view_waves.sh (Surfer).
+`ifdef DUMP_VCD
+  initial begin
+    $dumpfile("waves.vcd");
+    $dumpvars(0, tb_frame_buffer);
   end
+`endif
 endmodule

@@ -20,11 +20,10 @@
 // frame is stored in raster order, the write address is simply a
 // free-running counter (no multiply needed on the write side).
 // =============================================================================
-import vision_system_pkg::*;
 
 module axis_in_ctrl #(
-  parameter int COORD_W = COORD_W,
-  parameter int ADDR_W  = ADDR_W
+  parameter int COORD_W = barrel_pkg::COORD_W,
+  parameter int ADDR_W  = barrel_pkg::ADDR_W
 ) (
   input  logic                    clk,
   input  logic                    rst_n,
@@ -40,14 +39,14 @@ module axis_in_ctrl #(
   // AXI4-Stream slave
   input  logic                    s_axis_tvalid,
   output logic                    s_axis_tready,
-  input  logic [PIX_W-1:0]        s_axis_tdata,
+  input  logic [barrel_pkg::PIX_W-1:0]        s_axis_tdata,
   input  logic                    s_axis_tlast,
   input  logic                    s_axis_tuser,
 
   // frame_buffer write port
   output logic                    wr_en,
   output logic [ADDR_W-1:0]       wr_addr,
-  output logic [PIX_W-1:0]        wr_data
+  output logic [barrel_pkg::PIX_W-1:0]        wr_data
 );
 
   logic [ADDR_W-1:0]  addr_cnt;

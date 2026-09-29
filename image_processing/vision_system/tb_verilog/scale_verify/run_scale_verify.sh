@@ -23,11 +23,11 @@ build_and_run() {
   local vvp="/tmp/$(basename "$src" .sv).vvp"
   iverilog -g2012 -o "$vvp" \
     ../ppm_io_pkg.sv ../golden_model_pkg.sv \
-    ../../rtl/barrel_pkg.sv ../../rtl/distortion_model_pkg.sv \
-    ../../ip/fixed_recip/fixed_recip.sv ../../ip/coord_gen/coord_gen.sv \
+    ../../src/barrel_pkg.sv ../../src/distortion_model_pkg.sv \
+    ../../ip/fixed_recip/fixed_recip.sv ../../ip/mulq/mulq_s.sv ../../ip/coord_gen/coord_gen.sv \
     ../../ip/bilinear/bilinear.sv ../../ip/bicubic/bicubic.sv ../../ip/frame_buffer/frame_buffer.sv \
-    ../../rtl/axis_in_ctrl.sv ../../rtl/axis_out_ctrl.sv ../../rtl/axi_lite_regs.sv \
-    ../../rtl/lens_distortion_correction.sv \
+    ../../src/axis_in_ctrl.sv ../../src/axis_out_ctrl.sv ../../src/axi_lite_regs.sv \
+    ../../src/vision_system.sv \
     "$src"
   vvp "$vvp"
 }

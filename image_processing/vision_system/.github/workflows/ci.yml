@@ -1,0 +1,145 @@
+# ***************
+# Filename: ci.yml
+# Author: Paul Barcelona
+# Description: GitHub Actions workflow. On every push to main (and on
+# manual dispatch) it runs the simulation regressions (IP + smoke,
+# top-level SystemVerilog, top-level cocotb) and the Yosys synthesis +
+# timing-estimate flow for every module, each as its own parallel job.
+# Date: September 26, 2026
+# ***************
+name: CI
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      full_frames:
+        description: "Use full-size frames (480x480/480x720/720x480) -- takes hours"
+        type: boolean
+        default: false
+      waves:
+        description: "Dump VCD waveforms and upload them (view with Surfer)"
+        type: boolean
+        default: false
+
+# A newer push to the same branch supersedes an in-flight run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  FULL: ${{ inputs.full_frames && '1' || '0' }}
+  VCD:  ${{ inputs.waves && '1' || '0' }}
+  WAVES: ${{ inputs.waves && '1' || '0' }}
+
+# Runner selection: GitHub-hosted ubuntu-latest by default. To use your own
+# self-hosted runner instead, define the repository variable
+# CI_RUNNER_LABELS as a JSON array of labels, e.g. ["self-hosted","linux"]
+# (Settings -> Secrets and variables -> Actions -> Variables). The tool
+# install steps below are skipped when the tools are already present.
+jobs:
+  sim-ip-smoke:
+    name: Simulation - IP + smoke tests
+    runs-on: ${{ vars.CI_RUNNER_LABELS && fromJSON(vars.CI_RUNNER_LABELS) || 'ubuntu-latest' }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Icarus Verilog
+        run: |
+          command -v iverilog >/dev/null || { sudo apt-get update && sudo apt-get install -y --no-install-recommends iverilog; }
+          iverilog -V 2>/dev/null | head -1 || true
+      - name: Standalone IP testbenches
+        run: make test-ip
+      - name: coord_gen smoke test
+        run: make test-smoke
+      - name: Upload logs and waveforms
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sim-ip-smoke
+          path: |
+            ci/logs/
+            ip/**/waves.vcd
+            tb_verilog/waves.vcd
+          if-no-files-found: ignore
+
+  sim-sv:
+    name: Simulation - top-level SystemVerilog regression
+    runs-on: ${{ vars.CI_RUNNER_LABELS && fromJSON(vars.CI_RUNNER_LABELS) || 'ubuntu-latest' }}
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Icarus Verilog
+        run: command -v iverilog >/dev/null || { sudo apt-get update && sudo apt-get install -y --no-install-recommends iverilog; }
+      - name: 12-scenario matrix + fisheye/panoramic/perspective (bit-exact vs golden model)
+        run: make test-sv
+      - name: Upload logs, images and waveforms
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sim-sv
+          path: |
+            ci/logs/
+            tb_verilog/work/
+          if-no-files-found: ignore
+
+  sim-cocotb:
+    name: Simulation - top-level cocotb regression
+    runs-on: ${{ vars.CI_RUNNER_LABELS && fromJSON(vars.CI_RUNNER_LABELS) || 'ubuntu-latest' }}
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Icarus Verilog
+        run: command -v iverilog >/dev/null || { sudo apt-get update && sudo apt-get install -y --no-install-recommends iverilog; }
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: tb/requirements.txt
+      - name: Install Python dependencies
+        run: pip install -r tb/requirements.txt
+      - name: cocotb regression (barrel, pincushion, fisheye/panoramic/perspective)
+        run: make test-cocotb
+      - name: Upload logs, images and waveforms
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sim-cocotb
+          path: |
+            ci/logs/
+            tb/work/
+            tb/sim_build/**/*.vcd
+            tb/sim_build/**/*.fst
+          if-no-files-found: ignore
+
+  synth:
+    name: Synthesis - Yosys (Xilinx 7-series) + timing estimate
+    runs-on: ${{ vars.CI_RUNNER_LABELS && fromJSON(vars.CI_RUNNER_LABELS) || 'ubuntu-latest' }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Yosys
+        run: |
+          command -v yosys >/dev/null || { sudo apt-get update && sudo apt-get install -y --no-install-recommends yosys; }
+          yosys -V
+      - name: Synthesize every module and check estimated timing (fails on a violation)
+        run: make synth
+      - name: Publish utilization/timing table
+        if: always()
+        run: |
+          if [ -f synth/summary.md ]; then cat synth/summary.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - name: Upload synthesis results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: synth-results
+          path: |
+            ci/logs/
+            synth/summary.md
+            rtl/yosys/
+            ip/*/yosys/
+          if-no-files-found: ignore
