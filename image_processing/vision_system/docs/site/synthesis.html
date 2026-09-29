@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Yosys utilization and estimated timing dashboard for vision_system.">
+  <title>Vision System | Synthesis Reports</title>
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+  <header><div class="shell topbar">
+    <a class="brand" href="index.html"><span class="brand-mark">VS</span><span>VISION SYSTEM / 01</span></a>
+    <nav aria-label="Documentation"><a href="index.html">Overview</a><a href="architecture.html">Architecture</a><a href="registers.html">Registers</a><a href="synthesis.html" aria-current="page">Synthesis</a></nav>
+  </div></header>
+  <main class="shell">
+    <section class="hero">
+      <p class="eyebrow">Yosys / Xilinx 7-series mapping</p>
+      <h1>Area and timing,<br><em>in the open.</em></h1>
+      <p class="lede">Run the project synthesis sweep to collect LUT, FF, DSP48, BRAM, SRL utilization and the estimated worst register-to-register path for each reusable IP and the integrated top.</p>
+      <div class="actions"><a class="action action-primary" href="../../synth/run_all_yosys.sh">Inspect synthesis runner</a><a class="action" href="../../synth/est_timing.py">Inspect timing model</a></div>
+    </section>
+    <section class="section">
+      <div class="section-head"><h2>Resource and timing summary</h2><span class="index" id="target">xc7, target 10.0 ns</span></div>
+      <div id="report"><p class="file-link"><a href="../../synth/summary.md">Open raw Markdown summary</a></p><div class="table-wrap"><table class="data-table"><thead><tr><th>Module</th><th>LUT</th><th>FF</th><th>DSP48E1</th><th>RAMB36</th><th>RAMB18</th><th>SRL</th><th>Worst path</th><th>Slack (ns)</th><th>Timing</th></tr></thead><tbody><tr><td><a href="../../ip/fixed_recip/yosys/utilization_hier.rpt">ip/fixed_recip</a></td><td>175</td><td>141</td><td>0</td><td>0</td><td>0</td><td>0</td><td>4.65 (fixed_recip)</td><td>5.35</td><td><span class="status status-ok">MET</span></td></tr><tr><td><a href="../../ip/mulq/yosys/utilization_hier.rpt">ip/mulq</a></td><td>48</td><td>48</td><td>4</td><td>0</td><td>0</td><td>0</td><td>7.20 (mulq_s)</td><td>2.80</td><td><span class="status status-ok">MET</span></td></tr><tr><td><a href="../../ip/frame_buffer/yosys/utilization_hier.rpt">ip/frame_buffer</a></td><td>296</td><td>12</td><td>0</td><td>1536</td><td>0</td><td>0</td><td>2.80 (frame_buffer)</td><td>7.20</td><td><span class="status status-ok">MET</span></td></tr><tr><td><a href="../../ip/ext_frame_buffer/yosys/utilization_hier.rpt">ip/ext_frame_buffer</a></td><td>937</td><td>1714</td><td>0</td><td>0</td><td>0</td><td>0</td><td>5.75 (ext_frame_buffer)</td><td>4.25</td><td><span class="status status-ok">MET</span></td></tr><tr><td><a href="../../ip/bilinear/yosys/utilization_hier.rpt">ip/bilinear</a></td><td>0</td><td>27</td><td>16</td><td>0</td><td>0</td><td>0</td><td>7.75 (bilinear)</td><td>2.25</td><td><span class="status status-ok">MET</span></td></tr><tr><td><a href="../../ip/bicubic/yosys/utilization_hier.rpt">ip/bicubic</a></td><td>4992</td><td>3818</td><td>224</td><td>0</td><td>0</td><td>704</td><td>7.20 (bicubic)</td><td>2.80</td><td><span class="status status-ok">MET</span></td></tr><tr><td><a href="../../ip/coord_gen/yosys/utilization_hier.rpt">ip/coord_gen</a></td><td>4815</td><td>3338</td><td>156</td><td>0</td><td>0</td><td>380</td><td>7.20 (coord_gen)</td><td>2.80</td><td><span class="status status-ok">MET</span></td></tr><tr><td><a href="../../src/yosys/utilization_hier.rpt">src</a></td><td>12194</td><td>9943</td><td>423</td><td>1536</td><td>0</td><td>1100</td><td>8.20 (vision_system)</td><td>1.80</td><td><span class="status status-ok">MET</span></td></tr></tbody></table></div><p class="quiet">Select a module name to open its raw hierarchical utilization report.</p></div>
+    </section>
+    <section class="section">
+      <div class="section-head"><h2>How to read this</h2><span class="index">01 / LIMITATIONS</span></div>
+      <div class="callout"><p><strong>Timing is an estimate, not static timing analysis.</strong> <code>est_timing.py</code> applies an explicit per-cell delay model to a flattened Yosys netlist. It does not include actual placement and routing, so the result is a proxy for comparing RTL paths, not a timing-closure guarantee.</p></div>
+      <p>Utilization comes from the hierarchical <code>stat</code> report after <code>synth_xilinx -family xc7</code>. The integrated <code>src</code> row represents the top-level design; standalone <code>ip/</code> rows characterize reusable blocks in isolation.</p>
+      <p class="file-link">Detailed scripts: <a href="../../synth/summarize.py">summarize.py</a> · <a href="../../synth/est_timing.py">est_timing.py</a> · <a href="../../synth/yosys_common.ys">yosys_common.ys</a></p>
+    </section>
+  </main>
+  <footer><div class="shell"><a href="index.html">← Overview</a> · <a href="../../README.md">Full README</a></div></footer>
+</body>
+</html>

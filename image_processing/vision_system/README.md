@@ -20,13 +20,19 @@ matrix: 2 distortion types x 2 interpolation modes x 3 image aspect ratios
 streamed as 3 consecutive frames (no reset between them) to continue
 exercising the back-to-back multi-frame path -- plus a fast SystemVerilog
 smoke test for the calibration/tangential/model-selector features. The
-five most independently-reusable building blocks (`fixed_recip`,
-`frame_buffer`, `coord_gen`, `bilinear`, `bicubic`) each live in their own
+independently-reusable building blocks (`fixed_recip`, `mulq_s`,
+`frame_buffer`, `ext_frame_buffer`, `coord_gen`, `bilinear`, `bicubic`) each live in their own
 `ip/` subdirectory with a standalone self-checking testbench, so any one of
 them can be lifted into a different project without pulling in this
 project's top-level integration or AXI framing (see "Reusable IP modules").
 
 ## Block diagram
+
+Open the [HTML documentation site](docs/site/index.html) for a browsable
+overview, architecture, register map, and synthesis dashboard. Run
+`make html` to refresh the dashboard from the latest synthesis summary;
+`make synth` runs the existing Yosys utilization and estimated-timing flow
+and refreshes the dashboard automatically.
 
 ![Block diagram of the vision system core](docs/block_diagram.svg)
 
@@ -47,48 +53,49 @@ whenever the geometry changes, feed everything through a single
 `calib_params_t` bus.
 
 ```
+include/
+  barrel_pkg.sv              Q16.16 fixed-point format, shared params, qmul()
+  distortion_model_pkg.sv    calib_params_t struct + distortion_model_e enum
+
 src/
-  barrel_pkg.sv              Q16.16 fixed-point format, shared params, qmul() --
-                              shared dependency of the ip/ modules below
-  distortion_model_pkg.sv    reusable calib_params_t struct + distortion_model_e enum --
-                              shared dependency of ip/coord_gen/
   axis_in_ctrl.sv            AXI4-Stream video slave -> frame buffer
   axis_out_ctrl.sv           raster gen + coord_gen + addressing + bilinear/bicubic -> AXI4-Stream video master
   axi_lite_regs.sv           AXI4-Lite config register file
-  vision_system.sv    top-level integration + load/output sequencing FSM
+  vision_system.sv            top-level integration + selectable BRAM/SDRAM buffer
 
 ip/
   mulq/
-    mulq_s.sv                 2-cycle pipelined 32x32 multiply with the Q16.16 shift built in
-                               (the timing-closure workhorse); no package dependency
-    tb_mulq.sv                self-checking testbench (20k random + corner vectors)
-    run.sh
+    src/mulq_s.sv             2-cycle pipelined 32x32 multiply; no package dependency
+    tb/tb_mulq.sv             self-checking testbench (20k random + corner vectors)
+    scripts/{build.f,run.sh,run_yosys.sh}
   fixed_recip/
-    fixed_recip.sv            iterative 1/x divider (config-plane only) -- no package dependency
-    tb_fixed_recip.sv         self-checking testbench (vs. an independent 64-bit reference divide)
-    run.sh
+    src/fixed_recip.sv        iterative 1/x divider -- no package dependency
+    tb/tb_fixed_recip.sv      self-checking reference testbench
+    scripts/{build.f,run.sh,run_yosys.sh}
   frame_buffer/
-    frame_buffer.sv           4x-replicated full-frame BRAM store
-    tb_frame_buffer.sv        self-checking testbench (write/readback, 4-port independence,
-                              read latency, concurrent write/read)
-    run.sh
+    src/frame_buffer.sv       4x-replicated full-frame BRAM store
+    tb/tb_frame_buffer.sv     self-checking 4-port/read-latency test
+    scripts/{build.f,run.sh,run_yosys.sh}
+  ext_frame_buffer/
+    src/ext_frame_buffer.sv   parameterized SDR SDRAM controller and pixel store
+    tb/tb_ext_frame_buffer.sv SDRAM command/data behavioral-model test
+    scripts/{build.f,run.sh,run_yosys.sh}
   coord_gen/
-    coord_gen.sv               per-pixel address-generation pipeline: camera-calibration
-                               normalization + radial/tangential distortion + hook gate
-    tb_coord_gen.sv            self-checking testbench, inline independent golden reference
-    run.sh
+    src/coord_gen.sv          per-pixel coordinate-generation pipeline
+    tb/tb_coord_gen.sv        independent golden-reference testbench
+    scripts/{build.f,run.sh,run_yosys.sh}
   bilinear/
-    bilinear.sv                 2x2 bilinear interpolator
-    tb_bilinear.sv              self-checking testbench (corners, center, general cases, latency)
-    run.sh
+    src/bilinear.sv           2x2 bilinear interpolator
+    tb/tb_bilinear.sv         self-checking interpolation/latency test
+    scripts/{build.f,run.sh,run_yosys.sh}
   bicubic/
-    bicubic.sv                   4x4 separable Catmull-Rom bicubic interpolator
-    tb_bicubic.sv                self-checking testbench (Python-cross-checked vectors, latency)
-    run.sh
+    src/bicubic.sv            4x4 separable Catmull-Rom interpolator
+    tb/tb_bicubic.sv          self-checking interpolation/latency test
+    scripts/{build.f,run.sh,run_yosys.sh}
 
-Each ip/<name>/ and src/ also contain:
-  build.f                    RTL file list for Yosys synthesis of that module
-  run_yosys.sh               runs Yosys from build.f; results in ./yosys/
+scripts/
+  build.f                    integrated top source list
+  run_yosys.sh               integrated top synthesis runner
 
 synth/
   yosys_common.ys            the shared Yosys script (xc7, BRAM + DSP mapping, hierarchical stat)
@@ -100,7 +107,7 @@ synth/
 ci/
   run_checked.sh             pass/fail from output markers, not just exit codes
 .github/workflows/ci.yml     GitHub Actions: sim + synthesis on every push to main
-Makefile                     make test-ip | test-smoke | test-sv | test-cocotb | sim | synth | ci
+Makefile                     make test-ip | test-smoke | test-sv | test-ext-sdram | test-cocotb | sim | synth | ci
 
 tb/
   requirements.txt         Python deps for the cocotb testbench (cocotb 2.x, numpy, pillow)
@@ -109,39 +116,43 @@ tb/
   test_vision_system.py   cocotb self-checking testbench: 12-scenario matrix
   test_identity.py         debug test: k=0 should reproduce the input exactly
   test_probe.py            debug test: peeks coord_gen internals vs. golden model
-  run.py                   builds + runs everything under Icarus Verilog
-  work/                    test_{square,portrait,landscape}.ppm, warped_*.*, corrected_*.*
+  scripts/run.py           builds + runs everything under Icarus Verilog
+  work/                       generated simulation artifacts
 
 tb_verilog/
-  ppm_io_pkg.sv             binary PPM (P6) reader/writer, pure SystemVerilog
-  golden_model_pkg.sv       independent fixed-point golden model (bilinear + bicubic +
+  include/ppm_io_pkg.sv     binary PPM (P6) reader/writer
+  include/golden_model_pkg.sv independent fixed-point golden model (bilinear + bicubic +
                             camera calibration + tangential + hooks) + coefficient fit +
                             synthetic chart generator, pure SystemVerilog
   tb_vision_system.sv  self-checking testbench: 12-scenario matrix, no Python/cocotb required
   tb_smoke.sv                fast smoke test: coord_gen calibration/tangential/hook checks
-  run.sh                    builds + runs the full 12-scenario matrix with iverilog/vvp only
-  run_smoke.sh              builds + runs just the fast smoke test
-  work/                     test_{square,portrait,landscape}.ppm, warped_*.ppm, corrected_*.ppm
+  scripts/run.sh             full 12-scenario image regression
+  scripts/run_smoke.sh              builds + runs just the fast smoke test
+  scripts/run_ext_sdram.sh   USE_EXT_FB integration test
+  scale_verify/scripts/      large-frame verification runner
+  work/                       generated simulation artifacts
 ```
 
 ## Reusable IP modules
 
-`fixed_recip`, `mulq_s`, `frame_buffer`, `coord_gen`, `bilinear` and `bicubic`
-are each self-contained in their own `ip/<name>/` directory: the module's
-`.sv` file, a self-checking testbench (`tb_<name>.sv`), and a `run.sh`
-that builds and runs just that one testbench. Each `run.sh` is runnable
-standalone (`cd ip/<name> && ./run.sh`, pure Icarus Verilog, no Python)
+`fixed_recip`, `mulq_s`, `frame_buffer`, `ext_frame_buffer`, `coord_gen`, `bilinear` and `bicubic`
+are organized by role inside their `ip/<name>/` directory: synthesizable RTL
+is in `src/`, testbenches are in `tb/`, and entry points are in `scripts/`.
+Each `scripts/run.sh` builds and runs just that IP's testbench and is runnable
+standalone (`cd ip/<name> && ./scripts/run.sh`, pure Icarus Verilog, no Python)
 and prints its own PASS/FAIL summary, independent of the full 12-scenario
 regression or smoke test in `tb_verilog/`.
 
-Two of the six (`fixed_recip` and `mulq_s`)
+Two of the seven (`fixed_recip` and `mulq_s`)
 need no package at all; `frame_buffer` and `bilinear`/`bicubic` need only
-`barrel_pkg.sv` (for `PIX_W`/`ADDR_W`/`qmul()` defaults, all overridable);
-`coord_gen` additionally needs `distortion_model_pkg.sv` (the
+`include/barrel_pkg.sv` (for `PIX_W`/`ADDR_W`/`qmul()` defaults, all overridable);
+`ext_frame_buffer` additionally uses `include/barrel_pkg.sv` for the pixel/address
+defaults and exposes a raw SDR SDRAM command/data interface.
+`coord_gen` additionally needs `include/distortion_model_pkg.sv` (the
 `calib_params_t` struct it takes as its one configuration port) plus the
 `fixed_recip` and `mulq_s` IPs, and `bicubic` needs `mulq_s`. Both
-packages live in `src/`, this project's single shared-package location --
-each `ip/` testbench's `run.sh` reaches into `../../src/` for them rather
+packages live in `include/`, this project's single shared-package location --
+each IP's `scripts/run.sh` reaches into `../../include/` for them rather
 than duplicating a second copy, so there is exactly one source of truth
 for the fixed-point format and struct layout, whether building the full
 core or a single IP standalone. Pulling one of these modules into a
@@ -158,13 +169,39 @@ Results (all pass, Icarus Verilog, no Python needed for any of these):
 | `fixed_recip` | 12/12 | powers of two, non-powers-of-two, smallest/largest operand, zero (saturate) |
 | `mulq_s` | 20013/20013 | 2-cycle pipelined 32x32 multiply with the Q16.16 shift: corner values plus a 20k-vector pseudo-random sweep, exact vs. an independent 64-bit reference |
 | `frame_buffer` | 1017/1017 | write-then-readback, 4-port independence, 1-cycle read latency, concurrent write(A)/read(B) |
+| `ext_frame_buffer` | PASS | SDRAM initialization, queued writes, row changes, serialized four-address reads |
 | `bilinear` | 12/12 | 4 corners, exact center, 3 general cases, 3-cycle pipeline latency, no bubble leak-through |
 | `bicubic` | 20/20 | general case, exact-center degenerate weighting, high-contrast edge, 18-cycle pipeline latency |
 | `coord_gen` | 39/39 | identity, radial, tangential, direct camera calibration, real fisheye/panoramic/perspective, remaining hooks, large-frame boundary coordinates |
 
-A real bug was found building `ip/frame_buffer/`'s testbench -- not in
-`frame_buffer.sv` itself, which was correct throughout, but in the
-testbench's own signal-driving discipline. See `tb_frame_buffer.sv`'s
+### External SDRAM frame buffer
+
+`vision_system` selects `frame_buffer` by default. Set the elaboration
+parameter `.USE_EXT_FB(1'b1)` to select `ext_frame_buffer`; this exposes
+`sdram_clk`, `sdram_cke`, command/address/bank/mask pins, and a bidirectional
+SDRAM data bus at the top level. The default external interface is 64-bit
+DQ, 13 address bits, 10 column bits, CAS latency 2, and timing counts
+intended as a starting point at the project’s 100 MHz target. Override the
+`SDRAM_*` parameters to match the actual device and clock.
+
+The controller is for **single-data-rate SDR SDRAM**, not DDR. It performs
+power-up initialization, row activate/precharge, single-word transfers,
+write buffering, and periodic refresh. Each 24-bit pixel occupies one
+SDRAM word (low bits); it serializes the four bilinear taps, so external
+memory mode is deliberately paced and much slower than the BRAM backend.
+Input `tready` applies backpressure while writes queue or refresh runs, and
+the top waits for pending writes to drain before starting output. Bicubic
+mode serializes all sixteen taps per output pixel.
+
+The forwarded `sdram_clk` is currently the core `clk`; the RTL does not
+generate a phase-shifted clock or board-specific pin constraints. Validate
+clock phase, I/O timing, refresh/timing parameters, and bus width against
+the exact SDRAM part and FPGA board before hardware use. Run
+`make test-ext-sdram` for the behavioral-model end-to-end check.
+
+A real bug was found building `ip/frame_buffer/tb/tb_frame_buffer.sv` -- not in
+`ip/frame_buffer/src/frame_buffer.sv` itself, which was correct throughout, but in the
+testbench's own signal-driving discipline. See `tb/tb_frame_buffer.sv`'s
 header comment for the full account: driving DUT inputs with blocking
 assignment immediately after `@(posedge clk)` races against the DUT's
 own same-edge `always_ff` (Icarus resolved it by silently dropping every
@@ -183,13 +220,15 @@ slowest/broadest:
 ### Individual IP testbenches (fastest, one module at a time, no Python needed)
 
 ```
-cd ip/fixed_recip  && ./run.sh
-cd ip/mulq         && ./run.sh
-cd ip/frame_buffer && ./run.sh
-cd ip/coord_gen    && ./run.sh
-cd ip/bilinear     && ./run.sh
-cd ip/bicubic      && ./run.sh
+cd ip/fixed_recip  && ./scripts/run.sh
+cd ip/mulq         && ./scripts/run.sh
+cd ip/frame_buffer && ./scripts/run.sh
+cd ip/ext_frame_buffer && ./scripts/run.sh
+cd ip/coord_gen    && ./scripts/run.sh
+cd ip/bilinear     && ./scripts/run.sh
+cd ip/bicubic      && ./scripts/run.sh
 make test-ip                      # all of the above, fail-on-bad-result
+make test-ext-sdram               # top-level USE_EXT_FB integration with SDRAM model
 ```
 
 Add `VCD=1` to any of them to dump `waves.vcd` (and `SURFER=1` to open it --
@@ -204,7 +243,7 @@ the frame-streaming pipeline at all.
 
 ```
 cd tb_verilog
-./run_smoke.sh
+./scripts/run_smoke.sh
 ```
 
 Drives `coord_gen.sv` directly (not the full streaming pipeline) against
@@ -214,7 +253,7 @@ camera-calibration fx/fy/cx/cy, real fisheye/panoramic/perspective
 correction math, and the two remaining reserved (MODEL_AFFINE/
 MODEL_SCALING) architecture-hook gates. Use
 this for a quick sanity check while iterating on `coord_gen.sv` or
-`distortion_model_pkg.sv` -- it doesn't stream any image data, so it's
+`include/distortion_model_pkg.sv` -- it doesn't stream any image data, so it's
 far faster than either full testbench below. (The fisheye/panoramic/
 perspective hooks are additionally exercised at the full image-streaming
 level by both testbenches below -- see "Verification results".)
@@ -223,8 +262,8 @@ level by both testbenches below -- see "Verification results".)
 
 Both default to the **full-size** frames (480x480 / 480x720 / 720x480),
 which take far too long for routine use. For everyday work and CI use small
-frames (48x48 / 32x56 / 56x32): `SMALL=1 tb_verilog/run.sh`,
-`SMALL_FRAMES=1 python3 tb/run.py`, or simply `make test-sv` /
+frames (48x48 / 32x56 / 56x32): `SMALL=1 tb_verilog/scripts/run.sh`,
+`SMALL_FRAMES=1 python3 tb/scripts/run.py`, or simply `make test-sv` /
 `make test-cocotb` (these set them; `FULL=1 make ...` for full size).
 Measured wall-clock on the development machine: ~4 minutes each at small
 frames.
@@ -239,7 +278,7 @@ Requires only Icarus Verilog:
 
 ```
 cd tb_verilog
-./run.sh
+./scripts/run.sh
 ```
 
 Drop your own `test.ppm` into `tb_verilog/work/` first to correct a
@@ -274,8 +313,7 @@ Requires Icarus Verilog plus `cocotb`, `numpy`, `Pillow`:
 
 ```
 pip install cocotb cocotb-bus pillow numpy
-cd tb
-python3 run.py
+python3 tb/scripts/run.py
 ```
 
 Drop your own `test.jpg` or `test.ppm` into `tb/work/` first if you want to
@@ -351,7 +389,7 @@ where those four numbers come from.
 
 Every per-frame parameter `coord_gen.sv` needs -- calibration intrinsics,
 radial and tangential distortion coefficients, and the model selector --
-is bundled into one packed struct, `calib_params_t` (`distortion_model_pkg.sv`),
+is bundled into one packed struct, `calib_params_t` (`include/distortion_model_pkg.sv`),
 passed as a single port rather than a dozen individual scalar ports. This
 is what makes the pipeline **reusable**: extending it with a new model's
 parameters (see "Extension hooks" below) is a struct-field addition, not
@@ -361,7 +399,7 @@ same package also holds `distortion_model_e`, the model-selector enum.
 
 ## Fisheye, panoramic, and perspective correction
 
-`MODEL_SEL` (AXI-Lite 0x4C, `distortion_model_e` in `distortion_model_pkg.sv`)
+`MODEL_SEL` (AXI-Lite 0x4C, `distortion_model_e` in `include/distortion_model_pkg.sv`)
 selects which projection `coord_gen.sv` applies. Four of the six are
 implemented: `MODEL_RADIAL` (above), and now `MODEL_FISHEYE`,
 `MODEL_PANORAMIC`, and `MODEL_PERSPECTIVE` too. `MODEL_AFFINE` and
@@ -607,7 +645,7 @@ Root causes, in the order they were found:
    The flow now also writes a *flattened* netlist and the estimator treats
    BRAM pins as endpoints (address setup 0.8 ns, clk->out 2.0 ns).
 
-**The fix, `ip/mulq/mulq_s.sv`.** A signed 32x32 multiply that returns
+**The fix, `ip/mulq/src/mulq_s.sv`.** A signed 32x32 multiply that returns
 exactly `(a*b) >>> 16` (48-bit) in 2 cycles: four 16x16 partial products
 (one DSP each; Yosys absorbs their register as `MREG`) combined in the second
 stage using `(a*b)>>>16 = ah*bh*2^16 + (ah*bl+al*bh) + floor(al*bl/2^16)`
@@ -645,13 +683,14 @@ not an RTL bug (fixed with the non-blocking `drive` task).
 
 ## Synthesis with Yosys (Xilinx 7-series)
 
-Every module directory (`ip/fixed_recip`, `ip/mulq`, `ip/frame_buffer`,
-`ip/bilinear`, `ip/bicubic`, `ip/coord_gen`, and `src/` for the whole
-top level) has:
+Every IP directory (`ip/fixed_recip`, `ip/mulq`, `ip/frame_buffer`,
+`ip/ext_frame_buffer`, `ip/bilinear`, `ip/bicubic`, `ip/coord_gen`) has its
+own synthesis manifest and runner. The integrated top uses `scripts/build.f`
+and `scripts/run_yosys.sh`:
 
-- `build.f` -- the RTL file list for that module, in dependency order
+- `scripts/build.f` -- the RTL file list for that module, in dependency order
   (packages first), `#` comments allowed;
-- `run_yosys.sh` -- reads `build.f`, runs Yosys, writes everything to that
+- `scripts/run_yosys.sh` -- reads the manifest, runs Yosys, writes everything to that
   directory's `yosys/` subdirectory, and prints a one-line resource summary.
 
 All of them execute the same shared script, `synth/yosys_common.ys`:
@@ -669,24 +708,25 @@ flattening is opt-in) -> `stat` for the **hierarchical utilization report**
 | `synth_netlist_flat.json` | flattened copy, used only for timing estimation |
 
 ```
-cd ip/coord_gen && ./run_yosys.sh     # one module
-make synth                            # all seven + timing table -> synth/summary.md
+cd ip/coord_gen && ./scripts/run_yosys.sh     # one module
+make synth                            # all eight + timing table -> synth/summary.md
 CLOCK_NS=8 synth/run_all_yosys.sh     # tighter timing target
 ```
 
 `make synth` (i.e. `synth/run_all_yosys.sh`) writes `synth/summary.md` and
 **exits non-zero if any module has negative estimated slack**, which is
-what CI gates on. Current results (Yosys 0.33, xc7, 10 ns target):
+what CI gates on. Current results (Yosys 0.69+154, xc7, 10 ns target):
 
 | module | LUT | FF | DSP48E1 | RAMB36 | SRL | est. worst path | slack |
 |---|---|---|---|---|---|---|---|
-| `fixed_recip` | 173 | 140 | 0 | 0 | 0 | 4.65 ns | 5.35 |
+| `fixed_recip` | 175 | 141 | 0 | 0 | 0 | 4.65 ns | 5.35 |
 | `mulq_s` | 48 | 48 | 4 | 0 | 0 | 7.20 ns | 2.80 |
-| `frame_buffer` | 302 | 12 | 0 | **1536** | 0 | 2.80 ns | 7.20 |
+| `frame_buffer` | 296 | 12 | 0 | **1536** | 0 | 2.80 ns | 7.20 |
+| `ext_frame_buffer` | 937 | 1714 | 0 | 0 | 0 | 5.75 ns | 4.25 |
 | `bilinear` | 0 | 27 | 16 | 0 | 0 | 7.75 ns | 2.25 |
-| `bicubic` | 5188 | 3818 | 224 | 0 | 704 | 7.20 ns | 2.80 |
-| `coord_gen` | 4975 | 3337 | 156 | 0 | 380 | 7.20 ns | 2.80 |
-| **top level (`src/`)** | 12436 | 9934 | **423** | **1536** | 1100 | **8.20 ns** | 1.80 |
+| `bicubic` | 4992 | 3818 | 224 | 0 | 704 | 7.20 ns | 2.80 |
+| `coord_gen` | 4815 | 3338 | 156 | 0 | 380 | 7.20 ns | 2.80 |
+| **top level (`src/`)** | 12194 | 9943 | **423** | **1536** | 1100 | **8.20 ns** | 1.80 |
 
 Two numbers deserve a plain statement:
 
@@ -694,10 +734,12 @@ Two numbers deserve a plain statement:
   x 24 bit x 4 replicated banks (the 4-way replication is what gives
   single-cycle 2x2 reads). That is more block RAM than most 7-series
   devices have (only the largest Virtex-7 parts). The frame buffer is a
-  reference on-chip implementation; a real deployment at these sizes
-  belongs in external DDR with an on-chip tile cache (already listed under
-  Known limitations). `MAX_W/MAX_H` in `barrel_pkg.sv` can be reduced for a
-  smaller target.
+  reference on-chip implementation. The optional `ext_frame_buffer`
+  backend stores pixels in external SDR SDRAM without a tile cache and
+  serializes sampling, so it trades throughput for capacity; its raw pins
+  and board-timing caveats are described under "External SDRAM frame
+  buffer". `MAX_W/MAX_H` in `include/barrel_pkg.sv` can be reduced for a smaller
+  target.
 - **423 DSP48E1 at the top level** exceeds e.g. an Artix-7 100T (240). See
   "Timing closure" for why it grew and the identified way to shrink it.
 
@@ -737,11 +779,11 @@ Every testbench can dump a VCD, and `synth/view_waves.sh` opens it in the
 [Surfer](https://surfer-project.org) waveform viewer:
 
 ```
-cd ip/bicubic && VCD=1 ./run.sh                  # writes ip/bicubic/waves.vcd
-cd ip/bicubic && VCD=1 SURFER=1 ./run.sh         # ... and opens it in Surfer
+cd ip/bicubic && VCD=1 ./scripts/run.sh                  # writes ip/bicubic/waves.vcd
+cd ip/bicubic && VCD=1 SURFER=1 ./scripts/run.sh         # ... and opens it in Surfer
 synth/view_waves.sh ip/bicubic/waves.vcd         # open an existing file
-SMALL=1 VCD=1 tb_verilog/run.sh                  # -> tb_verilog/work/waves.vcd
-WAVES=1 SMALL_FRAMES=1 python3 tb/run.py         # cocotb waveform (sim_build/)
+SMALL=1 VCD=1 tb_verilog/scripts/run.sh                  # -> tb_verilog/work/waves.vcd
+WAVES=1 SMALL_FRAMES=1 python3 tb/scripts/run.py         # cocotb waveform (sim_build/)
 ```
 
 The testbenches use a guarded `` `ifdef DUMP_VCD `` block, so normal runs
@@ -973,7 +1015,7 @@ test images never touch. It found two real issues, one in the RTL and
 one in the testbench.
 
 **Bug #1 (RTL): `MAX_W`/`MAX_H` were 512, too small for a 720-pixel
-dimension.** `barrel_pkg.sv`'s frame-size limit predates this project's
+dimension.** `include/barrel_pkg.sv`'s frame-size limit predates this project's
 own request to test 720-pixel-wide/tall frames; 720 exceeds the old
 512 limit, which would have silently produced wrong (wrapped/truncated)
 addresses rather than an obvious failure. Fixed by raising `MAX_W`/
@@ -1042,7 +1084,7 @@ A capture starting from `(0,0)` in raster order already exercises the
 which is exactly the dimension the `MAX_W`/`MAX_H` bug above depended on
 -- so this bounded methodology is a meaningful, targeted check of the
 large-frame risk, not merely a token sample. It's complemented by direct
-`coord_gen` checks (in both `tb_smoke.sv` and `ip/coord_gen/tb_coord_gen.sv`)
+`coord_gen` checks (in both `tb_smoke.sv` and `ip/coord_gen/tb/tb_coord_gen.sv`)
 at the exact boundary coordinates (479 and 719, the true maximum indices
 for these frame sizes) for all four implemented models, independent of
 streaming any frame at all -- these run in seconds and passed bit-exact
@@ -1202,14 +1244,15 @@ reserved (`MODEL_AFFINE`/`MODEL_SCALING`) architecture hooks. **Result:
   `vision_system`'s `T_LOAD`/`T_OUTPUT` FSM). A production version
   processing back-to-back frames at full frame rate would ping-pong two
   frame buffers so frame N+1 can load while frame N is still draining out.
-- **Frame buffer is on-chip, 4x replicated** (`frame_buffer.sv`) to get
+- **The default frame buffer is on-chip, 4x replicated** (`frame_buffer.sv`) to get
   single-cycle 4-corner bilinear reads. Sized to `MAX_W x MAX_H`
-  (parameterizable in `barrel_pkg.sv`, now 720x720 -- **1,536 RAMB36E1**
+  (parameterizable in `include/barrel_pkg.sv`, now 720x720 -- **1,536 RAMB36E1**
   per Yosys, more than most 7-series devices offer; see "Synthesis with
-  Yosys"); it would not scale to e.g. 4K. At larger resolutions the frame store would move to external
-  DDR with an on-chip windowed read-ahead cache around the (locally
-  smooth) predicted source row — the AXI-Stream/AXI-Lite boundary and all
-  of `coord_gen`'s math are unaffected by that change.
+  Yosys"); it would not scale to e.g. 4K. The optional `USE_EXT_FB`
+  backend avoids BRAM replication by storing pixels in external SDR SDRAM,
+  but currently has no tile cache and serializes reads, so it trades
+  throughput for capacity. Its generic timing and forwarded clock need
+  board-specific validation (see "External SDRAM frame buffer").
 - **No mid-pipeline backpressure**: `m_axis_tready` is assumed high
   throughout. Adding true stalling would require either a small output
   FIFO plus pausing the raster generator, or (cleaner) sizing the design

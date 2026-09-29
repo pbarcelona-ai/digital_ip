@@ -17,20 +17,21 @@ import os
 import sys
 from cocotb_tools.runner import get_runner
 
-THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+THIS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RTL_DIR = os.path.join(THIS_DIR, "..", "src")
 IP_DIR = os.path.join(THIS_DIR, "..", "ip")
+INCLUDE_DIR = os.path.join(THIS_DIR, "..", "include")
 
 SOURCES = [
-    os.path.join(RTL_DIR, "barrel_pkg.sv"),
-    os.path.join(RTL_DIR, "distortion_model_pkg.sv"),
-    os.path.join(IP_DIR, "fixed_recip", "fixed_recip.sv"),
-    os.path.join(IP_DIR, "mulq", "mulq_s.sv"),
-    os.path.join(IP_DIR, "coord_gen", "coord_gen.sv"),
-    os.path.join(IP_DIR, "bilinear", "bilinear.sv"),
-    os.path.join(IP_DIR, "bicubic", "bicubic.sv"),
-    os.path.join(IP_DIR, "frame_buffer", "frame_buffer.sv"),
-    os.path.join(IP_DIR, "ext_frame_buffer", "ext_frame_buffer.sv"),
+    os.path.join(INCLUDE_DIR, "barrel_pkg.sv"),
+    os.path.join(INCLUDE_DIR, "distortion_model_pkg.sv"),
+    os.path.join(IP_DIR, "fixed_recip", "src", "fixed_recip.sv"),
+    os.path.join(IP_DIR, "mulq", "src", "mulq_s.sv"),
+    os.path.join(IP_DIR, "coord_gen", "src", "coord_gen.sv"),
+    os.path.join(IP_DIR, "bilinear", "src", "bilinear.sv"),
+    os.path.join(IP_DIR, "bicubic", "src", "bicubic.sv"),
+    os.path.join(IP_DIR, "frame_buffer", "src", "frame_buffer.sv"),
+    os.path.join(IP_DIR, "ext_frame_buffer", "src", "ext_frame_buffer.sv"),
     os.path.join(RTL_DIR, "axis_in_ctrl.sv"),
     os.path.join(RTL_DIR, "axis_out_ctrl.sv"),
     os.path.join(RTL_DIR, "axi_lite_regs.sv"),
@@ -51,6 +52,7 @@ def main():
     runner.test(
         hdl_toplevel="vision_system",
         test_module="test_vision_system",
+        test_dir=THIS_DIR,
         waves=os.environ.get("WAVES", "0") == "1",
     )
 

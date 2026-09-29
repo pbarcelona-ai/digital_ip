@@ -147,7 +147,7 @@ module tb_vision_system;
           s_axis_tdata  <= {img_r[y*w+x], img_g[y*w+x], img_b[y*w+x]};
           s_axis_tlast  <= (x == w-1);
           s_axis_tuser  <= (x == 0) && (y == 0);
-          @(posedge clk);
+          do @(posedge clk); while (!s_axis_tready);
         end
         s_axis_tvalid <= 1'b0;
         s_axis_tlast  <= 1'b0;
@@ -588,6 +588,7 @@ module tb_vision_system;
   // images (not hardcoded into the scenario logic) -- IMG_WIDTH/IMG_HEIGHT
   // are programmed per-frame from these.
   initial begin
+    void'($value$plusargs("WORK_DIR=%s", work_dir));
     m_axis_tready  <= 1'b1;
     s_axis_tvalid  <= 1'b0; s_axis_tlast <= 1'b0; s_axis_tuser <= 1'b0; s_axis_tdata <= '0;
     s_axil_awvalid <= 1'b0; s_axil_wvalid <= 1'b0; s_axil_bready <= 1'b0;

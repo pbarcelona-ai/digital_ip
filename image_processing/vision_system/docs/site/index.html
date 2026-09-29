@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Hardware overview of the vision_system streaming lens-distortion correction core.">
+  <title>Vision System | Hardware Overview</title>
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+  <header>
+    <div class="shell topbar">
+      <a class="brand" href="index.html"><span class="brand-mark">VS</span><span>VISION SYSTEM / 01</span></a>
+      <nav aria-label="Documentation">
+        <a href="index.html" aria-current="page">Overview</a>
+        <a href="architecture.html">Architecture</a>
+        <a href="registers.html">Registers</a>
+        <a href="synthesis.html">Synthesis</a>
+      </nav>
+    </div>
+  </header>
+  <main class="shell">
+    <section class="hero">
+      <p class="eyebrow">Streaming image-processing IP / SystemVerilog</p>
+      <h1>Correct the lens.<br><em>Keep the pixels moving.</em></h1>
+      <p class="lede">A frame-buffered 2-D remap engine with AXI4-Stream video, AXI4-Lite configuration, selectable distortion models, and bilinear or bicubic interpolation.</p>
+      <div class="hero-meta">
+        <span class="chip">Top: vision_system</span>
+        <span class="chip">Q16.16 datapath</span>
+        <span class="chip">Target: 100 MHz estimate</span>
+        <span class="chip">Whole-frame buffering</span>
+      </div>
+      <div class="actions">
+        <a class="action action-primary" href="architecture.html">Explore architecture</a>
+        <a class="action" href="synthesis.html">View utilization &amp; timing</a>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><h2>One frame, remapped</h2><span class="index">01 / DATA FLOW</span></div>
+      <div class="columns">
+        <div><h3>Capture first</h3><p>The input controller writes a complete frame to the replicated frame buffer. The global remap can sample from anywhere in the source image, so line buffers alone are not sufficient.</p></div>
+        <div><h3>Map coordinates</h3><p><code>coord_gen</code> computes source coordinates from calibration, distortion coefficients, and the selected model. Radial mapping is the fast path; division-based models are paced per pixel.</p></div>
+        <div><h3>Interpolate &amp; stream</h3><p>The output controller reads the source footprint, interpolates each output pixel, and recreates frame and line markers on AXI4-Stream.</p></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><h2>System at a glance</h2><span class="index">02 / INTEGRATION</span></div>
+      <a href="../block_diagram.svg" aria-label="Open the full system block diagram">
+        <img class="diagram" src="../block_diagram.svg" alt="Vision system dataflow from AXI stream input through frame buffer, coordinate generation and interpolation to AXI stream output, controlled by AXI Lite registers">
+      </a>
+      <a class="diagram-link" href="architecture.html">Read the architecture notes →</a>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><h2>Choose the trade-off</h2><span class="index">03 / MODES</span></div>
+      <div class="table-wrap"><table class="data-table">
+        <thead><tr><th>Mode</th><th>Mapping</th><th>Interpolation</th><th>Behavior</th></tr></thead>
+        <tbody>
+          <tr><td>Default</td><td>Radial + tangential</td><td>Bilinear</td><td>Fully pipelined, 1 pixel/clock</td></tr>
+          <tr><td>Higher quality</td><td>Radial + tangential</td><td>Bicubic</td><td>Sequential 4-row gather; 48 cycles/pixel</td></tr>
+          <tr><td>Wide-angle / perspective</td><td>Fisheye, panoramic, homography</td><td>Either</td><td>Per-pixel reciprocal; raster requests are paced</td></tr>
+        </tbody>
+      </table></div>
+      <p class="quiet">Affine and scaling selectors are reserved hooks and currently fall back to identity mapping.</p>
+    </section>
+
+    <section class="section">
+      <div class="section-head"><h2>Useful entry points</h2><span class="index">04 / SOURCE</span></div>
+      <div class="columns">
+        <div><h3>RTL top</h3><p><a class="file-link" href="../../src/vision_system.sv">src/vision_system.sv</a><br>Frame sequencing and top-level integration.</p></div>
+        <div><h3>Control surface</h3><p><a class="file-link" href="registers.html">AXI4-Lite register map</a><br>Geometry, model, interpolation, and status registers.</p></div>
+        <div><h3>Build &amp; verify</h3><p><code>make test-sv</code> runs the SystemVerilog image regression.<br><code>make synth</code> runs utilization and estimated timing.</p></div>
+      </div>
+    </section>
+  </main>
+  <footer><div class="shell">vision_system / local hardware notes / <a href="../../README.md">README</a></div></footer>
+</body>
+</html>

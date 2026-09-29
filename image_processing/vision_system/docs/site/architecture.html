@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Vision system RTL architecture and dataflow.">
+  <title>Vision System | Architecture</title>
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+  <header><div class="shell topbar">
+    <a class="brand" href="index.html"><span class="brand-mark">VS</span><span>VISION SYSTEM / 01</span></a>
+    <nav aria-label="Documentation"><a href="index.html">Overview</a><a href="architecture.html" aria-current="page">Architecture</a><a href="registers.html">Registers</a><a href="synthesis.html">Synthesis</a></nav>
+  </div></header>
+  <main class="shell">
+    <section class="hero">
+      <p class="eyebrow">RTL map / src/vision_system.sv</p>
+      <h1>Capture. Compute.<br><em>Reconstruct.</em></h1>
+      <p class="lede">The top-level FSM separates input capture from corrected output. A full frame lives in the four-read-port buffer while the output raster asks the coordinate pipeline where to sample next.</p>
+    </section>
+    <section class="section">
+      <div class="section-head"><h2>Integrated data path</h2><span class="index">01 / BLOCKS</span></div>
+      <img class="diagram" src="../block_diagram.svg" alt="Vision system RTL block diagram">
+      <div class="columns" style="margin-top:28px">
+        <div><h3>01 / Input capture</h3><p><code>axis_in_ctrl</code> accepts AXI4-Stream video, checks line framing, and writes pixels into <code>frame_buffer</code>. The whole image must be present before output starts.</p></div>
+        <div><h3>02 / Coordinate engine</h3><p><code>coord_gen</code> converts output raster coordinates to fractional source coordinates. Radial/tangential correction is a fixed-latency pipeline; fisheye, panoramic, and perspective use a per-pixel divider and assert busy while it runs.</p></div>
+        <div><h3>03 / Sampling &amp; output</h3><p><code>axis_out_ctrl</code> clamps sample taps to the image edge, selects bilinear or bicubic interpolation, then emits output <code>tlast</code> and <code>tuser</code> from its tag pipeline.</p></div>
+      </div>
+    </section>
+    <section class="section">
+      <div class="section-head"><h2>Top-level control</h2><span class="index">02 / SEQUENCING</span></div>
+      <ol>
+        <li><strong>T_LOAD:</strong> accept a frame while configuration reciprocal calculations are idle.</li>
+        <li>When <code>frame_done_in</code> pulses, wait for external-buffer writes to drain if selected, then issue <code>start_output</code>.</li>
+        <li>Hold the core busy until <code>frame_out_done</code>, then return to <strong>T_LOAD</strong>.</li>
+      </ol>
+      <div class="callout"><p><strong>Frame-rate constraint.</strong> The single full-frame store means capture and output do not overlap. Sustained back-to-back frame-rate operation requires a ping-pong buffer extension.</p></div>
+    </section>
+    <section class="section">
+      <div class="section-head"><h2>Datapath choices</h2><span class="index">03 / LATENCY</span></div>
+      <div class="table-wrap"><table class="data-table">
+        <thead><tr><th>Path</th><th>Mapping / sampling</th><th>Throughput</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Fast</td><td>Radial + tangential; bilinear</td><td>1 pixel/clock</td><td>Always-flowing fixed-latency coordinate pipeline.</td></tr>
+          <tr><td>Wide-angle</td><td>Fisheye / panoramic / perspective; bilinear</td><td>Paced per pixel</td><td>Per-pixel reciprocal in coordinate generation.</td></tr>
+          <tr><td>Bicubic</td><td>Any supported coordinate model; 4x4 Catmull-Rom</td><td>One pixel at a time</td><td>Four sequential row reads reuse the existing four buffer ports; 48 cycles/pixel for radial mapping.</td></tr>
+        </tbody>
+      </table></div>
+      <p>All arithmetic uses signed Q16.16. Reciprocal calculations for camera geometry are performed in the configuration plane when geometry registers change.</p>
+    </section>
+    <section class="section">
+      <div class="section-head"><h2>External SDRAM backend</h2><span class="index">04 / STORAGE</span></div>
+      <p>Set <code>vision_system #(.USE_EXT_FB(1'b1))</code> to replace the default BRAM store with <code>ext_frame_buffer</code>. The top exposes raw single-data-rate SDRAM command, address, bank, mask, clock, and bidirectional data pins. It initializes the device, buffers writes, and refreshes periodically.</p>
+      <div class="callout"><p><strong>Throughput and board timing.</strong> The SDRAM path serializes four bilinear tap reads (or sixteen bicubic taps), and backpressures input when its write queue is full. Defaults target 64-bit DQ, CAS 2, and the project’s nominal 100 MHz clock, but this is not a board-qualified PHY: forwarded <code>sdram_clk</code> equals the core clock. Match timing parameters and clock phase to the exact SDRAM and FPGA board before hardware use.</p></div>
+      <p class="file-link"><a href="../../ip/ext_frame_buffer/src/ext_frame_buffer.sv">ext_frame_buffer.sv</a> · <a href="../../tb_verilog/tb_ext_sdram.sv">Top-level behavioral test</a></p>
+    </section>
+    <section class="section">
+      <div class="section-head"><h2>Source map</h2><span class="index">05 / RTL</span></div>
+      <div class="columns">
+        <div><h3>Control &amp; packages</h3><p><a href="../../src/vision_system.sv">vision_system.sv</a><br><a href="../../src/axi_lite_regs.sv">axi_lite_regs.sv</a><br><a href="../../include/barrel_pkg.sv">barrel_pkg.sv</a><br><a href="../../include/distortion_model_pkg.sv">distortion_model_pkg.sv</a></p></div>
+        <div><h3>Stream controllers</h3><p><a href="../../src/axis_in_ctrl.sv">axis_in_ctrl.sv</a><br><a href="../../src/axis_out_ctrl.sv">axis_out_ctrl.sv</a></p></div>
+        <div><h3>Reusable datapath</h3><p><a href="../../ip/frame_buffer/src/frame_buffer.sv">frame_buffer</a><br><a href="../../ip/coord_gen/src/coord_gen.sv">coord_gen</a><br><a href="../../ip/bilinear/src/bilinear.sv">bilinear</a><br><a href="../../ip/bicubic/src/bicubic.sv">bicubic</a></p></div>
+      </div>
+    </section>
+  </main>
+  <footer><div class="shell"><a href="index.html">← Overview</a> · <a href="../../README.md">Full README</a></div></footer>
+</body>
+</html>

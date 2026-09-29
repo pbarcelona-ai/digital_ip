@@ -15,7 +15,7 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 ROOT=$PWD
 CLOCK_NS="${CLOCK_NS:-10.0}"
-MODULES=("${@:-ip/fixed_recip ip/mulq ip/frame_buffer ip/bilinear ip/bicubic ip/coord_gen src}")
+MODULES=("${@:-ip/fixed_recip ip/mulq ip/frame_buffer ip/ext_frame_buffer ip/bilinear ip/bicubic ip/coord_gen src}")
 # shellcheck disable=SC2206
 MODULES=(${MODULES[@]})
 
@@ -30,7 +30,9 @@ OUT="$ROOT/synth/summary.md"
 RC=0
 for m in "${MODULES[@]}"; do
   echo "=== synthesizing $m ==="
-  if ! ( cd "$ROOT/$m" && ./run_yosys.sh > /tmp/run_yosys_$(basename "$m").log 2>&1 ); then
+  RUNNER="$ROOT/$m/scripts/run_yosys.sh"
+  [ "$m" = src ] && RUNNER="$ROOT/scripts/run_yosys.sh"
+  if ! "$RUNNER" > /tmp/run_yosys_$(basename "$m").log 2>&1; then
     echo "  SYNTHESIS FAILED (see /tmp/run_yosys_$(basename "$m").log)"
     echo "| $m | - | - | - | - | - | - | - | - | SYNTH FAIL |" >> "$OUT"
     RC=1; continue

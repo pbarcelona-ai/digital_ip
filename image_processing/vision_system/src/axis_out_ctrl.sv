@@ -54,7 +54,8 @@
 
 module axis_out_ctrl #(
   parameter int COORD_W = barrel_pkg::COORD_W,
-  parameter int ADDR_W  = barrel_pkg::ADDR_W
+  parameter int ADDR_W  = barrel_pkg::ADDR_W,
+  parameter bit USE_EXT_FB = 1'b0
 ) (
   input  logic                 clk,
   input  logic                 rst_n,
@@ -81,6 +82,8 @@ module axis_out_ctrl #(
   input  logic [barrel_pkg::PIX_W-1:0]     fb_rd_data1,
   input  logic [barrel_pkg::PIX_W-1:0]     fb_rd_data2,
   input  logic [barrel_pkg::PIX_W-1:0]     fb_rd_data3,
+  input  logic                 fb_rd_ready,
+  input  logic                 fb_rd_valid,
 
   // AXI4-Stream master (video out)
   output logic                 m_axis_tvalid,
@@ -101,6 +104,7 @@ module axis_out_ctrl #(
   logic                 req_valid, req_tlast, req_tuser;
   logic [COORD_W-1:0]   req_x, req_y;
   logic               cg_valid;
+  logic               bl_valid;
 
   // Bicubic mode has no per-cycle throughput -- only one source request
   // may be outstanding (in flight through coord_gen + the bicubic gather
@@ -127,11 +131,13 @@ module axis_out_ctrl #(
                               (cfg.model_sel == distortion_model_pkg::MODEL_PANORAMIC) ||
                               (cfg.model_sel == distortion_model_pkg::MODEL_PERSPECTIVE);
   logic need_pacing;
-  assign need_pacing = interp_mode || model_is_slow_div;
+  assign need_pacing = interp_mode || model_is_slow_div || USE_EXT_FB;
   logic raster_can_issue;
   assign raster_can_issue = need_pacing ? !req_outstanding : 1'b1;
   logic req_done_pulse;
-  assign req_done_pulse = interp_mode ? bc_valid : (model_is_slow_div && cg_valid);
+  assign req_done_pulse = interp_mode ? bc_valid :
+                          ((model_is_slow_div && !USE_EXT_FB) ? cg_valid :
+                           (USE_EXT_FB ? bl_valid : 1'b0));
 
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
@@ -297,11 +303,33 @@ module axis_out_ctrl #(
   // port; muxed against the bicubic gather FSM's requests below.
   logic              bl_rd_en;
   logic [ADDR_W-1:0] bl_rd_addr0, bl_rd_addr1, bl_rd_addr2, bl_rd_addr3;
+  logic              ext_bl_pending;
+  logic [ADDR_W-1:0] ext_bl_addr0, ext_bl_addr1, ext_bl_addr2, ext_bl_addr3;
   assign bl_rd_en    = ae_valid;
   assign bl_rd_addr0 = ae_addr_tl;
   assign bl_rd_addr1 = ae_addr_tr;
   assign bl_rd_addr2 = ae_addr_bl;
   assign bl_rd_addr3 = ae_addr_br;
+
+  always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      ext_bl_pending <= 1'b0;
+      ext_bl_addr0 <= '0;
+      ext_bl_addr1 <= '0;
+      ext_bl_addr2 <= '0;
+      ext_bl_addr3 <= '0;
+    end else if (USE_EXT_FB) begin
+      if (!ext_bl_pending && bl_rd_en && !fb_rd_ready) begin
+        ext_bl_pending <= 1'b1;
+        ext_bl_addr0 <= bl_rd_addr0;
+        ext_bl_addr1 <= bl_rd_addr1;
+        ext_bl_addr2 <= bl_rd_addr2;
+        ext_bl_addr3 <= bl_rd_addr3;
+      end else if (ext_bl_pending && fb_rd_ready) begin
+        ext_bl_pending <= 1'b0;
+      end
+    end
+  end
 
   // frame_buffer read itself is synchronous (+1 cycle); delay fx,fy and
   // valid to stay aligned with fb_rd_data*.
@@ -311,16 +339,23 @@ module axis_out_ctrl #(
     if (!rst_n) begin
       rd_valid <= 1'b0; rd_fx <= '0; rd_fy <= '0;
     end else begin
-      rd_valid <= ae_valid;
-      rd_fx    <= ae_fx;
-      rd_fy    <= ae_fy;
+      if (USE_EXT_FB) begin
+        rd_valid <= fb_rd_valid;
+        if (ae_valid) begin
+          rd_fx <= ae_fx;
+          rd_fy <= ae_fy;
+        end
+      end else begin
+        rd_valid <= ae_valid;
+        rd_fx    <= ae_fx;
+        rd_fy    <= ae_fy;
+      end
     end
   end
 
   // ---------------------------------------------------------------------
   // Bilinear interpolation, 3-cycle latency
   // ---------------------------------------------------------------------
-  logic               bl_valid;
   logic [barrel_pkg::PIX_W-1:0]   bl_pixel;
 
   bilinear u_bilinear (
@@ -397,6 +432,7 @@ module axis_out_ctrl #(
                         p2_0,p2_1,p2_2,p2_3, p3_0,p3_1,p3_2,p3_3;
 
   logic              bc_rd_en;
+  logic              bc_req_sent;
   logic [ADDR_W-1:0] bc_rd_addr0, bc_rd_addr1, bc_rd_addr2, bc_rd_addr3;
   logic [ADDR_W-1:0] bc_rowbase;            // registered row base address
   logic              bc_gather_valid;   // pulses for 1 cycle: taps+weights ready, feed bicubic.sv
@@ -405,8 +441,9 @@ module axis_out_ctrl #(
   assign bc_xb = {{(ADDR_W-COORD_W){1'b0}}, bcx0_lock};
   always_comb begin
     // Column addresses: x0-1,x0,x0+1,x0+2 from the locked anchor.
-    bc_rd_en    = (bcstate == BC_R0) || (bcstate == BC_R1) ||
-                  (bcstate == BC_R2) || (bcstate == BC_R3);
+    bc_rd_en    = ((bcstate == BC_R0) || (bcstate == BC_R1) ||
+             (bcstate == BC_R2) || (bcstate == BC_R3)) &&
+            (!USE_EXT_FB || !bc_req_sent);
     bc_rd_addr0 = bc_rowbase + bc_xb - 1'b1;
     bc_rd_addr1 = bc_rowbase + bc_xb;
     bc_rd_addr2 = bc_rowbase + bc_xb + 1'b1;
@@ -428,37 +465,78 @@ module axis_out_ctrl #(
       {p0_0,p0_1,p0_2,p0_3,p1_0,p1_1,p1_2,p1_3,
        p2_0,p2_1,p2_2,p2_3,p3_0,p3_1,p3_2,p3_3} <= '0;
       bc_gather_valid <= 1'b0;
+      bc_req_sent <= 1'b0;
     end else begin
       bc_gather_valid <= 1'b0;
-      unique case (bcstate)
-        BC_IDLE: begin
-          if (cg_valid) begin
-            bcx0_lock <= bcx0_c; bcy0_lock <= bcy0_c;
-            bctx_lock <= bctx_c; bcty_lock <= bcty_c;
-            bcstate   <= BC_MUL;
+      if (USE_EXT_FB) begin
+        unique case (bcstate)
+          BC_IDLE: begin
+            if (cg_valid) begin
+              bcx0_lock <= bcx0_c; bcy0_lock <= bcy0_c;
+              bctx_lock <= bctx_c; bcty_lock <= bcty_c;
+              bcstate <= BC_MUL;
+            end
           end
-        end
-        BC_MUL: bcstate <= BC_R0;
-        BC_R0:  bcstate <= BC_R1;
-        BC_R1: begin
-          {p0_0,p0_1,p0_2,p0_3} <= {fb_rd_data0, fb_rd_data1, fb_rd_data2, fb_rd_data3};
-          bcstate <= BC_R2;
-        end
-        BC_R2: begin
-          {p1_0,p1_1,p1_2,p1_3} <= {fb_rd_data0, fb_rd_data1, fb_rd_data2, fb_rd_data3};
-          bcstate <= BC_R3;
-        end
-        BC_R3: begin
-          {p2_0,p2_1,p2_2,p2_3} <= {fb_rd_data0, fb_rd_data1, fb_rd_data2, fb_rd_data3};
-          bcstate <= BC_R4;
-        end
-        BC_R4: begin
-          {p3_0,p3_1,p3_2,p3_3} <= {fb_rd_data0, fb_rd_data1, fb_rd_data2, fb_rd_data3};
-          bc_gather_valid <= 1'b1;
-          bcstate <= BC_IDLE;
-        end
-        default: bcstate <= BC_IDLE;
-      endcase
+          BC_MUL: bcstate <= BC_R0;
+          BC_R0, BC_R1, BC_R2, BC_R3: begin
+            if (!bc_req_sent) begin
+              if (fb_rd_ready) bc_req_sent <= 1'b1;
+            end else if (fb_rd_valid) begin
+              bc_req_sent <= 1'b0;
+              case (bcstate)
+                BC_R0: begin
+                  {p0_0,p0_1,p0_2,p0_3} <= {fb_rd_data0, fb_rd_data1, fb_rd_data2, fb_rd_data3};
+                  bcstate <= BC_R1;
+                end
+                BC_R1: begin
+                  {p1_0,p1_1,p1_2,p1_3} <= {fb_rd_data0, fb_rd_data1, fb_rd_data2, fb_rd_data3};
+                  bcstate <= BC_R2;
+                end
+                BC_R2: begin
+                  {p2_0,p2_1,p2_2,p2_3} <= {fb_rd_data0, fb_rd_data1, fb_rd_data2, fb_rd_data3};
+                  bcstate <= BC_R3;
+                end
+                default: begin
+                  {p3_0,p3_1,p3_2,p3_3} <= {fb_rd_data0, fb_rd_data1, fb_rd_data2, fb_rd_data3};
+                  bc_gather_valid <= 1'b1;
+                  bcstate <= BC_IDLE;
+                end
+              endcase
+            end
+          end
+          default: bcstate <= BC_IDLE;
+        endcase
+      end else begin
+        unique case (bcstate)
+          BC_IDLE: begin
+            if (cg_valid) begin
+              bcx0_lock <= bcx0_c; bcy0_lock <= bcy0_c;
+              bctx_lock <= bctx_c; bcty_lock <= bcty_c;
+              bcstate   <= BC_MUL;
+            end
+          end
+          BC_MUL: bcstate <= BC_R0;
+          BC_R0:  bcstate <= BC_R1;
+          BC_R1: begin
+            {p0_0,p0_1,p0_2,p0_3} <= {fb_rd_data0, fb_rd_data1, fb_rd_data2, fb_rd_data3};
+            bcstate <= BC_R2;
+          end
+          BC_R2: begin
+            {p1_0,p1_1,p1_2,p1_3} <= {fb_rd_data0, fb_rd_data1, fb_rd_data2, fb_rd_data3};
+            bcstate <= BC_R3;
+          end
+          BC_R3: begin
+            {p2_0,p2_1,p2_2,p2_3} <= {fb_rd_data0, fb_rd_data1, fb_rd_data2, fb_rd_data3};
+            bcstate <= BC_R4;
+          end
+          BC_R4: begin
+            {p3_0,p3_1,p3_2,p3_3} <= {fb_rd_data0, fb_rd_data1, fb_rd_data2, fb_rd_data3};
+            bc_gather_valid <= 1'b1;
+            bcstate <= BC_IDLE;
+          end
+          default: bcstate <= BC_IDLE;
+        endcase
+      end
     end
   end
 
@@ -480,11 +558,12 @@ module axis_out_ctrl #(
   // frame_buffer read-port mux: bicubic's sequential row reads when
   // interp_mode=1, bilinear's single-cycle 2x2 read otherwise.
   // ---------------------------------------------------------------------
-  assign fb_rd_en    = interp_mode ? bc_rd_en    : bl_rd_en;
-  assign fb_rd_addr0 = interp_mode ? bc_rd_addr0 : bl_rd_addr0;
-  assign fb_rd_addr1 = interp_mode ? bc_rd_addr1 : bl_rd_addr1;
-  assign fb_rd_addr2 = interp_mode ? bc_rd_addr2 : bl_rd_addr2;
-  assign fb_rd_addr3 = interp_mode ? bc_rd_addr3 : bl_rd_addr3;
+  assign fb_rd_en = interp_mode ? bc_rd_en :
+                    (USE_EXT_FB ? (ext_bl_pending ? fb_rd_ready : (bl_rd_en && fb_rd_ready)) : bl_rd_en);
+  assign fb_rd_addr0 = interp_mode ? bc_rd_addr0 : (ext_bl_pending ? ext_bl_addr0 : bl_rd_addr0);
+  assign fb_rd_addr1 = interp_mode ? bc_rd_addr1 : (ext_bl_pending ? ext_bl_addr1 : bl_rd_addr1);
+  assign fb_rd_addr2 = interp_mode ? bc_rd_addr2 : (ext_bl_pending ? ext_bl_addr2 : bl_rd_addr2);
+  assign fb_rd_addr3 = interp_mode ? bc_rd_addr3 : (ext_bl_pending ? ext_bl_addr3 : bl_rd_addr3);
 
   // ---------------------------------------------------------------------
   // tlast/tuser tag delay line. Fed every cycle by the same req_tlast/
@@ -525,6 +604,18 @@ module axis_out_ctrl #(
   end
 
   logic [6:0] active_tag_depth;
+  logic ext_tlast, ext_tuser;
+
+  always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      ext_tlast <= 1'b0;
+      ext_tuser <= 1'b0;
+    end else if (req_valid) begin
+      ext_tlast <= req_tlast;
+      ext_tuser <= req_tuser;
+    end
+  end
+
   always_comb begin
     if (model_is_slow_div) active_tag_depth = interp_mode ? TOTAL_LATENCY_BICUBIC_SLOWDIV : TOTAL_LATENCY_BILINEAR_SLOWDIV;
     else                   active_tag_depth = interp_mode ? TOTAL_LATENCY_BICUBIC         : TOTAL_LATENCY_BILINEAR;
@@ -532,8 +623,8 @@ module axis_out_ctrl #(
 
   assign m_axis_tvalid = interp_mode ? bc_valid : bl_valid;
   assign m_axis_tdata   = interp_mode ? bc_pixel : bl_pixel;
-  assign m_axis_tlast   = tlast_sr[active_tag_depth-1];
-  assign m_axis_tuser   = tuser_sr[active_tag_depth-1];
+  assign m_axis_tlast   = USE_EXT_FB ? ext_tlast : tlast_sr[active_tag_depth-1];
+  assign m_axis_tuser   = USE_EXT_FB ? ext_tuser : tuser_sr[active_tag_depth-1];
 
   // ---------------------------------------------------------------------
   // Output beat counter -> frame_out_done

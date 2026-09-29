@@ -21,9 +21,17 @@ def parse(path):
     if body is None:                       # single-module design: last block
         body = blocks[-1]
     cells = {}
-    for m in re.finditer(r"^\s{4,}([A-Z][A-Z0-9_]+)\s+(\d+)\s*$", body, re.M):
-        cells[m.group(1)] = int(m.group(2))
+    for pattern, count_group, cell_group in (
+        (r"^\s{4,}([A-Z][A-Z0-9_]+)\s+(\d+)\s*$", 2, 1),
+        (r"^\s{4,}(\d+)\s+([A-Z][A-Z0-9_]+)\s*$", 1, 2),
+    ):
+        for match in re.finditer(pattern, body, re.M):
+            cells[match.group(cell_group)] = int(match.group(count_group))
     m = re.search(r"Number of cells:\s+(\d+)", body)
+    if m is None:
+        m = re.search(r"^\s*(\d+)\s+cells\s*$", body, re.M)
+    if not cells:
+        raise ValueError(f"No cell counts found in Yosys report: {path}")
     total = int(m.group(1)) if m else sum(cells.values())
     return cells, total
 

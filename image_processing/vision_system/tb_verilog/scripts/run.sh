@@ -9,11 +9,11 @@
 # Date: September 26, 2026
 # ***************
 # Usage:
-#   ./run.sh                 full-size frames (480x480 / 480x720 / 720x480)
-#   SMALL=1 ./run.sh         small frames (48x48 / 32x56 / 56x32)
-#   SMALL=1 VCD=1 ./run.sh   ... and write work/waves.vcd
+#   ./scripts/run.sh                 full-size frames (480x480 / 480x720 / 720x480)
+#   SMALL=1 ./scripts/run.sh         small frames (48x48 / 32x56 / 56x32)
+#   SMALL=1 VCD=1 ./scripts/run.sh   ... and write work/waves.vcd
 set -e
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 mkdir -p work
 RUN_ARGS=()
 if [ "${SMALL:-0}" = "1" ]; then
@@ -26,11 +26,11 @@ DEFS=""
 [ "${VCD:-0}" = "1" ]   && DEFS="$DEFS -DDUMP_VCD"
 
 iverilog -g2012 $DEFS -o sim.vvp \
-  ppm_io_pkg.sv golden_model_pkg.sv \
-  ../src/barrel_pkg.sv ../src/distortion_model_pkg.sv \
-  ../ip/fixed_recip/fixed_recip.sv ../ip/mulq/mulq_s.sv ../ip/coord_gen/coord_gen.sv \
-  ../ip/bilinear/bilinear.sv ../ip/bicubic/bicubic.sv ../ip/frame_buffer/frame_buffer.sv \
-  ../ip/ext_frame_buffer/ext_frame_buffer.sv \
+  include/ppm_io_pkg.sv include/golden_model_pkg.sv \
+  ../include/barrel_pkg.sv ../include/distortion_model_pkg.sv \
+  ../ip/fixed_recip/src/fixed_recip.sv ../ip/mulq/src/mulq_s.sv ../ip/coord_gen/src/coord_gen.sv \
+  ../ip/bilinear/src/bilinear.sv ../ip/bicubic/src/bicubic.sv ../ip/frame_buffer/src/frame_buffer.sv \
+  ../ip/ext_frame_buffer/src/ext_frame_buffer.sv \
   ../src/axis_in_ctrl.sv ../src/axis_out_ctrl.sv ../src/axi_lite_regs.sv \
   ../src/vision_system.sv \
   tb_vision_system.sv

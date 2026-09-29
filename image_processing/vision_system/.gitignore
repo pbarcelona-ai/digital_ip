@@ -6,6 +6,7 @@ __pycache__/
 # Generated test images and logs
 tb/work/
 tb_verilog/work/
+tb_verilog/work_small/
 ci/logs/
 # Waveforms (view with synth/view_waves.sh -> Surfer)
 *.vcd

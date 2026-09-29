@@ -30,6 +30,7 @@ module axis_in_ctrl #(
 
   // control
   input  logic                    capture_en,    // top FSM: allowed to receive a frame
+  input  logic                    fb_wr_ready,
   input  logic [COORD_W-1:0]      img_width,
   input  logic [COORD_W-1:0]      img_height,
   output logic                    frame_done,    // 1-cycle pulse: last pixel of frame written
@@ -54,7 +55,7 @@ module axis_in_ctrl #(
   logic [COORD_W-1:0] row_cnt;
   logic                active;   // mid-frame
 
-  assign s_axis_tready = capture_en;
+  assign s_axis_tready = capture_en && fb_wr_ready;
   assign wr_en   = capture_en && s_axis_tvalid && s_axis_tready;
   // The tuser (first-pixel-of-frame) beat must always land at address 0,
   // regardless of whatever addr_cnt was left holding at the end of the

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="AXI4-Lite register map for the vision system core.">
+  <title>Vision System | Register Map</title>
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+  <header><div class="shell topbar">
+    <a class="brand" href="index.html"><span class="brand-mark">VS</span><span>VISION SYSTEM / 01</span></a>
+    <nav aria-label="Documentation"><a href="index.html">Overview</a><a href="architecture.html">Architecture</a><a href="registers.html" aria-current="page">Registers</a><a href="synthesis.html">Synthesis</a></nav>
+  </div></header>
+  <main class="shell">
+    <section class="hero">
+      <p class="eyebrow">AXI4-Lite / word-aligned / 32-bit</p>
+      <h1>Configure the<br><em>remap.</em></h1>
+      <p class="lede">All addresses are byte offsets. Coefficients and coordinates use signed Q16.16 unless noted. Geometry writes trigger reciprocal recalculation; wait for <code>STATUS.recip_busy</code> to clear before capturing a frame.</p>
+    </section>
+    <section class="section">
+      <div class="section-head"><h2>Register map</h2><span class="index">01 / 0x00–0x6C</span></div>
+      <div class="table-wrap"><table class="data-table">
+        <thead><tr><th>Address</th><th>Name</th><th>Access</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td>0x00</td><td>CTRL</td><td>W</td><td>[0] soft reset, self-clearing.</td></tr>
+          <tr><td>0x04</td><td>STATUS</td><td>R/W1C</td><td>[0] busy; [1] frame_done, sticky and write-1-to-clear; [2] recip_busy.</td></tr>
+          <tr><td>0x08</td><td>IMG_WIDTH</td><td>R/W</td><td>Active frame width, 1..MAX_W.</td></tr>
+          <tr><td>0x0C</td><td>IMG_HEIGHT</td><td>R/W</td><td>Active frame height, 1..MAX_H.</td></tr>
+          <tr><td>0x10</td><td>K1</td><td>R/W</td><td>Radial r² coefficient; also used by division-model fisheye and panoramic modes.</td></tr>
+          <tr><td>0x14</td><td>K2</td><td>R/W</td><td>Radial r⁴ coefficient; also used by division-model fisheye.</td></tr>
+          <tr><td>0x18</td><td>K3</td><td>R/W</td><td>Radial r⁶ coefficient.</td></tr>
+          <tr><td>0x1C</td><td>CENTER_X</td><td>R/W</td><td>Unsigned Q16.16 fraction of frame width; default 0.5.</td></tr>
+          <tr><td>0x20</td><td>CENTER_Y</td><td>R/W</td><td>Unsigned Q16.16 fraction of frame height; default 0.5.</td></tr>
+          <tr><td>0x24</td><td>SCALE</td><td>R/W</td><td>Unsigned Q16.16 edge-crop zoom; default 1.0.</td></tr>
+          <tr><td>0x28</td><td>VERSION</td><td>RO</td><td>Version value 0x0001_0000.</td></tr>
+          <tr><td>0x2C</td><td>INTERP_MODE</td><td>R/W</td><td>0 bilinear (default); 1 bicubic. Hold constant for a frame.</td></tr>
+          <tr><td>0x30</td><td>CALIB_MODE</td><td>R/W</td><td>0 derive intrinsics from center/scale; 1 use FX/FY/CX/CY directly.</td></tr>
+          <tr><td>0x34</td><td>FX</td><td>R/W</td><td>Focal length X in pixels; active in direct calibration mode.</td></tr>
+          <tr><td>0x38</td><td>FY</td><td>R/W</td><td>Focal length Y in pixels; active in direct calibration mode.</td></tr>
+          <tr><td>0x3C</td><td>CX</td><td>R/W</td><td>Principal point X in pixels; active in direct calibration mode.</td></tr>
+          <tr><td>0x40</td><td>CY</td><td>R/W</td><td>Principal point Y in pixels; active in direct calibration mode.</td></tr>
+          <tr><td>0x44</td><td>P1</td><td>R/W</td><td>Tangential distortion coefficient 1; radial model only.</td></tr>
+          <tr><td>0x48</td><td>P2</td><td>R/W</td><td>Tangential distortion coefficient 2; radial model only.</td></tr>
+          <tr><td>0x4C</td><td>MODEL_SEL</td><td>R/W</td><td>0 radial; 1 fisheye; 2 affine hook; 3 perspective; 4 scaling hook; 5 panoramic.</td></tr>
+          <tr><td>0x50</td><td>H11</td><td>R/W</td><td>Perspective homography coefficient; default 1.0.</td></tr>
+          <tr><td>0x54</td><td>H12</td><td>R/W</td><td>Perspective homography coefficient; default 0.</td></tr>
+          <tr><td>0x58</td><td>H13</td><td>R/W</td><td>Perspective X translation in pixels; default 0.</td></tr>
+          <tr><td>0x5C</td><td>H21</td><td>R/W</td><td>Perspective homography coefficient; default 0.</td></tr>
+          <tr><td>0x60</td><td>H22</td><td>R/W</td><td>Perspective homography coefficient; default 1.0.</td></tr>
+          <tr><td>0x64</td><td>H23</td><td>R/W</td><td>Perspective Y translation in pixels; default 0.</td></tr>
+          <tr><td>0x68</td><td>H31</td><td>R/W</td><td>Perspective projective coefficient; default 0.</td></tr>
+          <tr><td>0x6C</td><td>H32</td><td>R/W</td><td>Perspective projective coefficient; default 0. H33 is fixed at 1.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+    <section class="section">
+      <div class="section-head"><h2>Programming notes</h2><span class="index">02 / OPERATION</span></div>
+      <div class="columns">
+        <div><h3>Geometry updates</h3><p>Writes to image size, calibration mode, center/scale, or intrinsics retrigger reciprocal calculation. Gate frame capture on <code>recip_busy=0</code>.</p></div>
+        <div><h3>Frame stability</h3><p>Set interpolation and distortion mode before a frame begins. These controls are not intended to change mid-frame.</p></div>
+        <div><h3>Model availability</h3><p>Radial, fisheye, panoramic, and perspective are implemented. Affine and scaling currently select an identity fallback.</p></div>
+      </div>
+      <p class="file-link">Register definitions in RTL: <a href="../../src/axi_lite_regs.sv">src/axi_lite_regs.sv</a></p>
+    </section>
+  </main>
+  <footer><div class="shell"><a href="index.html">← Overview</a> · <a href="../../README.md">Full README</a></div></footer>
+</body>
+</html>
