@@ -3,8 +3,8 @@
 # Filename: make_block_diagrams.py
 # Author: Paul Barcelona
 # Description: Generates the block diagram of every image IP as a Graphviz
-#   source (<ip>/doc/block_diagram.dot) and renders it to SVG
-#   (<ip>/doc/block_diagram.svg) with "dot". The stage names and counts come
+#   source (<ip>/docs/block_diagram.dot) and renders it to SVG
+#   (<ip>/docs/block_diagram.svg) with "dot". The stage names and counts come
 #   from the RTL (see the pipeline comments in <ip>/src/<ip>.sv), so when a
 #   datapath changes, update the matching entry below and re-run.
 #
@@ -677,7 +677,7 @@ def main():
         if n not in DIAGRAMS:
             sys.exit(f"unknown IP {n}; choose from: {', '.join(DIAGRAMS)}")
         text = DIAGRAMS[n]()
-        outdir = os.path.join(ROOT, n, "doc")
+        outdir = os.path.join(ROOT, n, "docs")
         dotf = os.path.join(outdir, "block_diagram.dot")
         if a.check:
             old = open(dotf).read() if os.path.exists(dotf) else None

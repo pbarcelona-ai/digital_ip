@@ -71,7 +71,6 @@ module tb_scaler_ctrl;
   int               fb_cnt [MAX_H][MAX_W];
   int               n_writes = 0, n_starts = 0;
   bit               write_after_start = 0;
-  int e_pre;
   always @(posedge clk) begin
     if (fb_we) begin
       fb[fb_wy][fb_wx] <= fb_wdata; fb_cnt[fb_wy][fb_wx]++; n_writes++;
@@ -147,6 +146,7 @@ module tb_scaler_ctrl;
     $display("capture %0dx%0d junk=%0d bad_eol=%0b restart=%0d : %s", w, h, junk, bad_eol,
              restart_at, errors == e_pre ? "pass" : "FAIL");
   endtask
+  int e_pre;
 
   // Main sequence: register checks, ext bus forwarding, then captures
 

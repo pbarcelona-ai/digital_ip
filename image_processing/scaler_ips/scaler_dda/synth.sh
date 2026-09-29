@@ -39,24 +39,16 @@ OUT="$HERE/yosys"
 TCL="$ROOT/tools/yosys/synth_xilinx.tcl"
 AWK="$ROOT/tools/yosys/util_hier.awk"
 
-# Parameter overrides are kept as a plain list of NAME=VALUE words (no
-# associative array: macOS still ships bash 3.2). A later value for the same
-# name replaces the earlier one and keeps the original position.
-PARAMS=""
-set_param() {                       # set_param NAME=VALUE
-  local name="${1%%=*}" out="" seen=0 kv
-  for kv in $PARAMS; do
-    if [ "${kv%%=*}" = "$name" ]; then out="$out $1"; seen=1; else out="$out $kv"; fi
-  done
-  [ $seen = 1 ] || out="$out $1"
-  PARAMS="$out"
-}
+declare -A PARAM=()
+PORDER=()
 DEFPARAMS=""
-for kv in $DEFPARAMS; do set_param "$kv"; done
+for kv in $DEFPARAMS; do
+  PARAM[${kv%%=*}]="${kv#*=}"; PORDER+=("${kv%%=*}")
+done
 FAMILY=xc7; FLAGS=""; IOPAD=0; JSON=0
 while [ $# -gt 0 ]; do
   case "$1" in
-    -p)       shift; set_param "$1" ;;
+    -p)       shift; k="${1%%=*}"; [ -n "${PARAM[$k]+x}" ] || PORDER+=("$k"); PARAM[$k]="${1#*=}" ;;
     -family)  shift; FAMILY="$1" ;;
     -flags)   shift; FLAGS="$1" ;;
     -iopad)   IOPAD=1 ;;
@@ -66,6 +58,8 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
+PARAMS=""
+for k in ${PORDER[@]+"${PORDER[@]}"}; do PARAMS="$PARAMS $k=${PARAM[$k]}"; done
 
 command -v sv2v  >/dev/null || { echo "synth.sh: sv2v not found (https://github.com/zachjs/sv2v)" >&2; exit 1; }
 command -v yosys >/dev/null || { echo "synth.sh: yosys not found" >&2; exit 1; }

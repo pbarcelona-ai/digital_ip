@@ -11,12 +11,6 @@ Mip-map scaler engine: hardware 2×2 box pyramid, trilinear sampling, optional a
 
 **Depends on:** `axil_regbus`, `scaler_ctrl`, `scaler_dda`, `banked_framebuf`
 
-## Block diagram
-
-[![scaler_mip block diagram](doc/block_diagram.svg)](doc/block_diagram.svg)
-
-Blue is an interface, green control, amber memory or a table, grey a datapath stage, and red a stage built around DSP48 multipliers; solid arrows carry data, dashed arrows configuration or sequencing. Stage names such as `A`, `B`, `W`, `M1` are the ones in the pipeline comments of `src/scaler_mip.sv`. The diagram is generated from `doc/block_diagram.dot` by `tools/docs/make_block_diagrams.py` (needs Graphviz); `--check` verifies that it still matches the RTL.
-
 ## Buffering modes
 
 `PINGPONG=1` doubles the frame store (including the mip pyramid) so the next frame is captured while the current one is output. There is no line-buffer mode: the mip pyramid needs the complete frame. See *Buffering modes* in the top-level README.

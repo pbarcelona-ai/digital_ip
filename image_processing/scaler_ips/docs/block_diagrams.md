@@ -1,6 +1,6 @@
 # Block diagrams
 
-One diagram per image IP, generated from the RTL structure by `tools/docs/make_block_diagrams.py` (Graphviz sources next to each IP in `doc/block_diagram.dot`). Click a diagram to open the SVG at full size.
+One diagram per image IP, generated from the RTL structure by `tools/docs/make_block_diagrams.py` (Graphviz sources next to each IP in `docs/block_diagram.dot`). Click a diagram to open the SVG at full size.
 
 **Legend.** Blue: interface. Green: control. Amber: memory or table. Grey: datapath stage. Red: stage built around DSP48 multipliers. Solid arrows carry data; dashed arrows carry configuration or sequencing. Stage names (`A`, `B`, `W`, `M1`, ...) are those of the pipeline comments in each IP's source file.
 
@@ -24,64 +24,64 @@ One diagram per image IP, generated from the RTL structure by `tools/docs/make_b
 
 Point sampling: the frame store returns the source pixel closest to each output position, with no arithmetic on the pixel. Details: [`scaler_nearest/README.md`](../scaler_nearest/README.md).
 
-[![scaler_nearest](../scaler_nearest/doc/block_diagram.svg)](../scaler_nearest/doc/block_diagram.svg)
+[![scaler_nearest](../scaler_nearest/docs/block_diagram.svg)](../scaler_nearest/docs/block_diagram.svg)
 
 ## scaler_bilinear
 
 2x2 interpolation with weights computed in hardware from the sub-pixel phase; six pipeline stages, three of them multiplier stages. Details: [`scaler_bilinear/README.md`](../scaler_bilinear/README.md).
 
-[![scaler_bilinear](../scaler_bilinear/doc/block_diagram.svg)](../scaler_bilinear/doc/block_diagram.svg)
+[![scaler_bilinear](../scaler_bilinear/docs/block_diagram.svg)](../scaler_bilinear/docs/block_diagram.svg)
 
 ## scaler_edge_directed
 
 Bilinear with an edge decision: the 2x2 cell is split along the stronger diagonal so interpolation never crosses an edge. Details: [`scaler_edge_directed/README.md`](../scaler_edge_directed/README.md).
 
-[![scaler_edge_directed](../scaler_edge_directed/doc/block_diagram.svg)](../scaler_edge_directed/doc/block_diagram.svg)
+[![scaler_edge_directed](../scaler_edge_directed/docs/block_diagram.svg)](../scaler_edge_directed/docs/block_diagram.svg)
 
 ## scaler_polyphase
 
 The separable FIR engine: vertical then horizontal pass with programmable coefficient tables, any even tap count from 2 to 16. Details: [`scaler_polyphase/README.md`](../scaler_polyphase/README.md).
 
-[![scaler_polyphase](../scaler_polyphase/doc/block_diagram.svg)](../scaler_polyphase/doc/block_diagram.svg)
+[![scaler_polyphase](../scaler_polyphase/docs/block_diagram.svg)](../scaler_polyphase/docs/block_diagram.svg)
 
 ## scaler_bicubic
 
 scaler_polyphase with 4 taps: any Mitchell-Netravali cubic (Catmull-Rom, Mitchell, B-spline, Keys). Details: [`scaler_bicubic/README.md`](../scaler_bicubic/README.md).
 
-[![scaler_bicubic](../scaler_bicubic/doc/block_diagram.svg)](../scaler_bicubic/doc/block_diagram.svg)
+[![scaler_bicubic](../scaler_bicubic/docs/block_diagram.svg)](../scaler_bicubic/docs/block_diagram.svg)
 
 ## scaler_lanczos
 
 scaler_polyphase with 6 taps and Lanczos-3 coefficients. Details: [`scaler_lanczos/README.md`](../scaler_lanczos/README.md).
 
-[![scaler_lanczos](../scaler_lanczos/doc/block_diagram.svg)](../scaler_lanczos/doc/block_diagram.svg)
+[![scaler_lanczos](../scaler_lanczos/docs/block_diagram.svg)](../scaler_lanczos/docs/block_diagram.svg)
 
 ## scaler_mip
 
 Hardware mip pyramid, trilinear sampling and optional anisotropic probes: the engine behind trilinear and anisotropic. Details: [`scaler_mip/README.md`](../scaler_mip/README.md).
 
-[![scaler_mip](../scaler_mip/doc/block_diagram.svg)](../scaler_mip/doc/block_diagram.svg)
+[![scaler_mip](../scaler_mip/docs/block_diagram.svg)](../scaler_mip/docs/block_diagram.svg)
 
 ## scaler_trilinear
 
 scaler_mip with one probe per pixel: blends the two mip levels around the requested level of detail. Details: [`scaler_trilinear/README.md`](../scaler_trilinear/README.md).
 
-[![scaler_trilinear](../scaler_trilinear/doc/block_diagram.svg)](../scaler_trilinear/doc/block_diagram.svg)
+[![scaler_trilinear](../scaler_trilinear/docs/block_diagram.svg)](../scaler_trilinear/docs/block_diagram.svg)
 
 ## scaler_anisotropic
 
 scaler_mip with up to 16 trilinear probes along the major axis of the pixel footprint. Details: [`scaler_anisotropic/README.md`](../scaler_anisotropic/README.md).
 
-[![scaler_anisotropic](../scaler_anisotropic/doc/block_diagram.svg)](../scaler_anisotropic/doc/block_diagram.svg)
+[![scaler_anisotropic](../scaler_anisotropic/docs/block_diagram.svg)](../scaler_anisotropic/docs/block_diagram.svg)
 
 ## sharpen_cas
 
 Line-buffered 3x3 sharpener after AMD FidelityFX CAS, about two lines of latency. Details: [`sharpen_cas/README.md`](../sharpen_cas/README.md).
 
-[![sharpen_cas](../sharpen_cas/doc/block_diagram.svg)](../sharpen_cas/doc/block_diagram.svg)
+[![sharpen_cas](../sharpen_cas/docs/block_diagram.svg)](../sharpen_cas/docs/block_diagram.svg)
 
 ## spatial_upscaler
 
 Lanczos-3 scaler followed by the sharpener behind one AXI4-Lite port (an FSR 1-style pipeline). Details: [`spatial_upscaler/README.md`](../spatial_upscaler/README.md).
 
-[![spatial_upscaler](../spatial_upscaler/doc/block_diagram.svg)](../spatial_upscaler/doc/block_diagram.svg)
+[![spatial_upscaler](../spatial_upscaler/docs/block_diagram.svg)](../spatial_upscaler/docs/block_diagram.svg)
