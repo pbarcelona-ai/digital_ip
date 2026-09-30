@@ -1,0 +1,6 @@
+digraph "single_port_ram" {
+  graph [rankdir=LR, bgcolor="white", pad=0.25, nodesep=0.35, ranksep=0.65, label="single_port_ram RTL hierarchy", labelloc=t, fontname="Helvetica", fontsize=16];
+  node [shape=box, fontname="Helvetica", fontsize=10, margin="0.14,0.08"];
+  edge [color="#52635c", arrowsize=0.7];
+  n0 [label="single_port_ram\n(top)", style="rounded,filled", fillcolor="#dcefe8", color="#176b59"];
+}

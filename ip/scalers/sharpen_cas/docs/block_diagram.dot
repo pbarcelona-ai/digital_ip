@@ -1,0 +1,84 @@
+digraph "sharpen_cas" {
+  graph [rankdir=LR, fontname="Helvetica", nodesep=0.35, ranksep=0.6, pad=0.25, newrank=true, splines=true, bgcolor="white", labelloc=t, labeljust=l];
+  node  [shape=plain, fontname="Helvetica", fontsize=11];
+  edge  [fontname="Helvetica", fontsize=9, arrowsize=0.75];
+  label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="2"><TR><TD ALIGN="LEFT"><FONT POINT-SIZE="18"><B>sharpen_cas - contrast-adaptive sharpening</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT POINT-SIZE="11" COLOR="#374151">contrast-adaptive sharpening after AMD FidelityFX CAS: more enhancement where there is headroom, less near clipping or on strong edges<BR ALIGN="LEFT"/>same-size in / out - 3x3 neighbourhood - line-buffer architecture, about two lines of latency - 1 pixel per clock<BR ALIGN="LEFT"/>pixel = CHANNELS x COMP_W bits (default 3 x 8), component 0 in the LSBs<BR ALIGN="LEFT"/></FONT></TD></TR><TR><TD ALIGN="LEFT"><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="2"><TR><TD BGCOLOR="#dbeafe" COLOR="#2563eb" BORDER="1" STYLE="rounded"><FONT POINT-SIZE="9"> interface </FONT></TD><TD> </TD><TD BGCOLOR="#dcfce7" COLOR="#16a34a" BORDER="1" STYLE="rounded"><FONT POINT-SIZE="9"> control </FONT></TD><TD> </TD><TD BGCOLOR="#fef3c7" COLOR="#d97706" BORDER="1" STYLE="rounded"><FONT POINT-SIZE="9"> memory / table </FONT></TD><TD> </TD><TD BGCOLOR="#e5e7eb" COLOR="#4b5563" BORDER="1" STYLE="rounded"><FONT POINT-SIZE="9"> datapath stage </FONT></TD><TD> </TD><TD BGCOLOR="#fecaca" COLOR="#4b5563" BORDER="1" STYLE="rounded"><FONT POINT-SIZE="9"> DSP48 multipliers </FONT></TD><TD> </TD></TR></TABLE></TD></TR></TABLE>>;
+  s_axil [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#2563eb", penwidth=1.5, label="s_axil\nAXI4-Lite\n(control)"];
+  s_axis [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#2563eb", penwidth=1.5, label="s_axis\nAXI4-Stream\nvideo in"];
+  m_axis [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#2563eb", penwidth=1.5, label="m_axis\nAXI4-Stream\nvideo out"];
+  subgraph cluster_top {
+    label=<<B>sharpen_cas</B>>; labeljust=l; style="rounded,filled"; fillcolor="#f9fafb"; color="#9ca3af"; penwidth=2; fontname="Helvetica"; fontsize=12; margin=12;
+    regbus [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#dcfce7" COLOR="#16a34a" STYLE="rounded">
+      <TR><TD BGCOLOR="#bbf7d0" STYLE="rounded"><B>axil_regbus</B></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">AXI4-Lite slave -&gt; one-cycle register bus<BR ALIGN="LEFT"/></TD></TR>
+    </TABLE>>];
+    regs [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#dcfce7" COLOR="#16a34a" STYLE="rounded">
+      <TR><TD BGCOLOR="#bbf7d0" STYLE="rounded"><B>Registers</B></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">0x000 CTRL [0] ENABLE [1] BYPASS<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">0x004 STATUS  BUSY, FRAME_DONE*,<BR ALIGN="LEFT"/>SOF_ERR*, EOL_ERR*   (* write 1 to clear)<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">0x008 SIZE (width, height)<BR ALIGN="LEFT"/>0x020 FRAME_CNT   0x028 CAPS<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">0x024 IP_ID 'SHRP'   0x02C MAX_SIZE<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">0x040 SHARPNESS  0..256<BR ALIGN="LEFT"/></TD></TR>
+    </TABLE>>];
+    inp [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#dcfce7" COLOR="#16a34a" STYLE="rounded">
+      <TR><TD BGCOLOR="#bbf7d0" STYLE="rounded"><B>Input side</B></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">first beat must carry tuser: data before SOF<BR ALIGN="LEFT"/>is dropped (SOF_ERR); tlast must mark the last<BR ALIGN="LEFT"/>column (EOL_ERR)<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">SIZE and SHARPNESS latched at start of frame<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">column / row write counters<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">input stalls when all four line buffers are in use<BR ALIGN="LEFT"/></TD></TR>
+    </TABLE>>];
+    lb [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#fef3c7" COLOR="#d97706" STYLE="rounded">
+      <TR><TD BGCOLOR="#fde68a" STYLE="rounded"><B>Line buffers x 4</B></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">row r is stored in buffer (r mod 4)<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">each MAX_W pixels: one write, one read port<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">block RAM: about two lines of latency,<BR ALIGN="LEFT"/>no frame buffer<BR ALIGN="LEFT"/></TD></TR>
+    </TABLE>>];
+    outeng [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#dcfce7" COLOR="#16a34a" STYLE="rounded">
+      <TR><TD BGCOLOR="#bbf7d0" STYLE="rounded"><B>Output engine</B></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">output row oy, read column oj = 0..W<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">waits until the rows needed for oy have arrived<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">W + 1 clocks per line: 1 pixel per clock<BR ALIGN="LEFT"/></TD></TR>
+    </TABLE>>];
+    roms [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#fef3c7" COLOR="#d97706" STYLE="rounded">
+      <TR><TD BGCOLOR="#fde68a" STYLE="rounded"><B>ROM tables (lookup, no logic)</B></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">recip_rom: round(2^24 / v), v = 0 .. 2M<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">sqrt_rom:  round(16 * sqrt(a)), a = 0 .. 256<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">gain_rom:  round(65536 / (1024 - 3*SHARPNESS))<BR ALIGN="LEFT"/></TD></TR>
+    </TABLE>>];
+    dp [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#ffffff" COLOR="#4b5563" STYLE="rounded">
+      <TR><TD BGCOLOR="#e5e7eb" STYLE="rounded"><B>Pipelined datapath</B></TD></TR>
+      <TR><TD><FONT POINT-SIZE="9" COLOR="#4b5563"><I>stages 0-2, X1-X4, R1, R2, Y1, Y2 + output register</I></FONT></TD></TR>
+      <TR><TD BGCOLOR="#e5e7eb" ALIGN="LEFT"><FONT POINT-SIZE="10"><B>Front end</B></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT"><B>0</B>&nbsp;&nbsp;read address, row selects<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT"><B>1</B>&nbsp;&nbsp;RAM read: all four buffers, same column<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT"><B>2</B>&nbsp;&nbsp;3x3 window shift register w[row][col]<BR ALIGN="LEFT"/>(edges clamp); centre e goes on a delay line<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD BGCOLOR="#e5e7eb" ALIGN="LEFT"><FONT POINT-SIZE="10"><B>Amplitude (per component)</B></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT"><B>X1</B>&nbsp;&nbsp;5-tap cross and 4-corner min / max<BR ALIGN="LEFT"/>lap = 4e - b - d - f - h<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT"><B>X2</B>&nbsp;&nbsp;soft min mn = min5 + min9<BR ALIGN="LEFT"/>soft max mx = max5 + max9<BR ALIGN="LEFT"/>head = min(mn, 2M - mx)<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT"><B>R1</B>&nbsp;&nbsp;recip = recip_rom[mx]<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT" BGCOLOR="#fecaca"><B>X3</B>&nbsp;&nbsp;head * recip <FONT POINT-SIZE="8"><B>[DSP48]</B></FONT><BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT"><B>X4</B>&nbsp;&nbsp;amp = min(256, (prod + 2^15) &gt;&gt; 16)<BR ALIGN="LEFT"/>0 when mx = 0<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD BGCOLOR="#e5e7eb" ALIGN="LEFT"><FONT POINT-SIZE="10"><B>Strength</B></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT"><B>R2</B>&nbsp;&nbsp;sq = sqrt_rom[amp]<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT" BGCOLOR="#fecaca"><B>Y1</B>&nbsp;&nbsp;k = (sq * gain + 128) &gt;&gt; 8 <FONT POINT-SIZE="8"><B>[DSP48]</B></FONT><BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT" BGCOLOR="#fecaca"><B>Y2</B>&nbsp;&nbsp;kd = (k * lap + 128) &gt;&gt;&gt; 8 <FONT POINT-SIZE="8"><B>[DSP48]</B></FONT><BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD BGCOLOR="#e5e7eb" ALIGN="LEFT"><FONT POINT-SIZE="10"><B>Apply</B></FONT></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT"><B>out</B>&nbsp;&nbsp;v = e + kd   (v = e when BYPASS)<BR ALIGN="LEFT"/>clamp to [0, M] -&gt; m_axis register<BR ALIGN="LEFT"/></TD></TR>
+    </TABLE>>];
+  }
+  { rank=same; s_axil; s_axis; }
+  { rank=same; regbus; regs; inp; }
+  { rank=same; lb; outeng; }
+  { rank=same; dp; roms; }
+  s_axil -> regbus [color="#374151", penwidth=1.6, label="AXI4-Lite"];
+  regbus -> regs [color="#374151", penwidth=1.6, label="register bus"];
+  s_axis -> inp [color="#374151", penwidth=1.6, label="AXI4-Stream\nvideo in"];
+  regs -> inp [color="#6b7280", style=dashed, label="SIZE, SHARPNESS,\nENABLE"];
+  inp -> lb [color="#374151", penwidth=1.6, label="write rows"];
+  inp -> outeng [color="#6b7280", style=dashed, label="rows received"];
+  lb -> dp [color="#374151", penwidth=1.6, label="4 rows"];
+  outeng -> dp [color="#374151", penwidth=1.6, label="column, row"];
+  roms -> dp [color="#d97706", style=dashed, label="recip / sqrt / gain"];
+  regs -> dp [color="#16a34a", style=dashed, label="BYPASS, SHARPNESS", constraint=false];
+  dp -> m_axis [color="#374151", penwidth=1.6, label="AXI4-Stream\nvideo out"];
+}

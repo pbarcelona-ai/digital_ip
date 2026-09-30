@@ -1,0 +1,155 @@
+
+6. Printing statistics.
+
+=== $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus ===
+
+        +----------Local Count, excluding submodules.
+        | 
+       44 wires
+      278 wire bits
+       30 public wires
+      261 public wire bits
+       26 ports
+      210 port bits
+      168 cells
+      154   FDCE
+        4   INV
+        3   LUT2
+        3   LUT3
+        4   LUT4
+
+   Estimated number of LCs:          7
+
+=== $paramod$8332d5ded719775c9dc679367f992b6c30a862f7\banked_framebuf ===
+
+        +----------Local Count, excluding submodules.
+        | 
+      308 wires
+     1110 wire bits
+       49 public wires
+      642 public wire bits
+       13 ports
+      153 port bits
+      176 cells
+       22   CARRY4
+       54   FDRE
+       30   INV
+       20   LUT2
+        8   LUT4
+       13   LUT5
+       26   LUT6
+        3   RAMB18E1
+
+   Estimated number of LCs:         53
+
+=== $paramod$fc263998d47fadbe3f30477910b7848f577b6840\scaler_ctrl ===
+
+        +----------Local Count, excluding submodules.
+        | 
+      545 wires
+     2149 wire bits
+       80 public wires
+     1050 public wire bits
+       53 ports
+      587 port bits
+      731 cells
+       26   CARRY4
+      355   FDCE
+        6   FDPE
+       34   INV
+       58   LUT2
+       42   LUT3
+       92   LUT4
+       81   LUT5
+       37   LUT6
+        1 submodules
+        1   $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus
+
+   Estimated number of LCs:        259
+
+=== scaler_dda ===
+
+        +----------Local Count, excluding submodules.
+        | 
+      474 wires
+     1028 wire bits
+       22 public wires
+      331 public wire bits
+       19 ports
+      266 port bits
+      424 cells
+       32   CARRY4
+      165   FDCE
+       33   INV
+       68   LUT2
+       18   LUT4
+       40   LUT5
+       68   LUT6
+
+   Estimated number of LCs:        151
+
+=== scaler_nearest ===
+
+        +----------Local Count, excluding submodules.
+        | 
+      126 wires
+      843 wire bits
+       71 public wires
+      786 public wire bits
+       29 ports
+      168 port bits
+       86 cells
+       10   CARRY4
+       36   FDCE
+       32   FDRE
+        3   INV
+        1   LUT2
+        2   LUT3
+        2   LUT5
+        3 submodules
+        1   $paramod$8332d5ded719775c9dc679367f992b6c30a862f7\banked_framebuf
+        1   $paramod$fc263998d47fadbe3f30477910b7848f577b6840\scaler_ctrl
+        1   scaler_dda
+
+   Estimated number of LCs:        436
+
+=== design hierarchy ===
+
+        +----------Count including submodules.
+        | 
+     1585 scaler_nearest
+      176 $paramod$8332d5ded719775c9dc679367f992b6c30a862f7\banked_framebuf
+      731 $paramod$fc263998d47fadbe3f30477910b7848f577b6840\scaler_ctrl
+      168   $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus
+      424 scaler_dda
+
+        +----------Count including submodules.
+        | 
+     1497 wires
+     5408 wire bits
+      252 public wires
+     3070 public wire bits
+      140 ports
+     1384 port bits
+        - memories
+        - memory bits
+        - processes
+     1585 cells
+       90   CARRY4
+      710   FDCE
+        6   FDPE
+       86   FDRE
+      104   INV
+      150   LUT2
+       47   LUT3
+      122   LUT4
+      136   LUT5
+      131   LUT6
+        3   RAMB18E1
+        3 submodules
+        1   $paramod$8332d5ded719775c9dc679367f992b6c30a862f7\banked_framebuf
+        1   $paramod$fc263998d47fadbe3f30477910b7848f577b6840\scaler_ctrl
+        1   scaler_dda
+
+   Estimated number of LCs:        436
+

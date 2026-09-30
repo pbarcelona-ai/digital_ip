@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a192f">
+<meta name="description" content="Generic programmable up/down counter. Version 1.0.0. DIRECTION 0 counts up from 0 to top_i then wraps to 0, 1 counts down from top_i to 0 then reloads top_i, 2 selects up or down at run time through dir_i (up wraps top-&gt;0, down wraps 0-&gt;top). Synchronous load has priority over counting. wrap_o is a registered one-clock pulse on every wrap. Clock - clk; en_i is a clock enable. Reset - synchronous active low, count = 0. Latency - count_o updates one clock after en_i; wrap_o in the same clock as the wrapped count. Errors - WIDTH &lt; 1 or invalid DIRECTION rejected at elaboration; load_val_i above top_i is clamped to top_i.">
+<title>Counter | Digital IP</title><link rel="stylesheet" href="../../../docs/site.css">
+</head><body>
+<header class="topbar"><a class="brand" href="../../../docs/index.html">BARCELONA ENTERPRISES / DIGITAL IP / TIMING</a><a href="../../../README.md">Repository README</a></header>
+<main class="shell">
+<section class="hero"><p class="eyebrow">timing / counter</p><h1>Counter</h1><p class="lede">Generic programmable up/down counter. Version 1.0.0. DIRECTION 0 counts up from 0 to top_i then wraps to 0, 1 counts down from top_i to 0 then reloads top_i, 2 selects up or down at run time through dir_i (up wraps top-&gt;0, down wraps 0-&gt;top). Synchronous load has priority over counting. wrap_o is a registered one-clock pulse on every wrap. Clock - clk; en_i is a clock enable. Reset - synchronous active low, count = 0. Latency - count_o updates one clock after en_i; wrap_o in the same clock as the wrapped count. Errors - WIDTH &lt; 1 or invalid DIRECTION rejected at elaboration; load_val_i above top_i is clamped to top_i.</p>
+<div class="actions"><code>make -C timing/counter test</code><code>make -C timing/counter diagrams</code></div></section>
+<section class="content"><article><p class="eyebrow">Implementation</p><h2>RTL sources</h2><ul class="file-list"><li><a href="../src/counter.sv">src/counter.sv</a></li></ul>
+<h2>Verification</h2><ul class="file-list"><li><a href="../tb/counter_tb.sv">tb/counter_tb.sv</a></li><li><a href="../../../shared/tb/lib/axil_bfm.sv">../../shared/tb/lib/axil_bfm.sv</a></li><li><a href="../../../shared/tb/lib/axi4_mem_model.sv">../../shared/tb/lib/axi4_mem_model.sv</a></li></ul></article>
+<aside><p class="eyebrow">Build surface</p><h2>Commands</h2><ul class="targets"><li><code>make test</code> simulation</li><li><code>make yosys</code> synthesis</li><li><code>make docs</code> HTML and Markdown</li><li><code>make diagrams</code> DOT and SVG</li></ul><h2>Diagram</h2><p><a href="block_diagram.svg">SVG diagram</a> · <a href="block_diagram.dot">DOT source</a></p><p><a href="../scripts/build.f">RTL manifest</a> · <a href="../tb/scripts/build.f">Testbench manifest</a></p></aside></section>
+<footer><a href="../../../docs/index.html">All IP modules</a><span>Generated from the catalog and RTL headers.</span></footer>
+</main></body></html>

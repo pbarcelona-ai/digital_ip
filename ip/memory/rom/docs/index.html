@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a192f">
+<meta name="description" content="Parameterized synchronous ROM. Version 1.0.0. Contents come from INIT_FILE (hex text read with $readmemh, one word per line) or, when INIT_FILE is empty, from a deterministic built-in pattern (word index XOR 32&#x27;hA5A5_5A5A truncated to WIDTH) so the module is testable without files. Clock - clk. Reset - output register resets synchronously (active low) to zero. Latency - data valid one clock after addr_i with en_i. Errors - out-of-range addresses cannot occur (DEPTH need not be a power of two - addresses &gt;= DEPTH return zero and raise oob_o); DEPTH&lt;2 rejected at elaboration. Inferred as block RAM or LUT ROM.">
+<title>Rom | Digital IP</title><link rel="stylesheet" href="../../../docs/site.css">
+</head><body>
+<header class="topbar"><a class="brand" href="../../../docs/index.html">BARCELONA ENTERPRISES / DIGITAL IP / MEMORY</a><a href="../../../README.md">Repository README</a></header>
+<main class="shell">
+<section class="hero"><p class="eyebrow">memory / rom</p><h1>Rom</h1><p class="lede">Parameterized synchronous ROM. Version 1.0.0. Contents come from INIT_FILE (hex text read with $readmemh, one word per line) or, when INIT_FILE is empty, from a deterministic built-in pattern (word index XOR 32&#x27;hA5A5_5A5A truncated to WIDTH) so the module is testable without files. Clock - clk. Reset - output register resets synchronously (active low) to zero. Latency - data valid one clock after addr_i with en_i. Errors - out-of-range addresses cannot occur (DEPTH need not be a power of two - addresses &gt;= DEPTH return zero and raise oob_o); DEPTH&lt;2 rejected at elaboration. Inferred as block RAM or LUT ROM.</p>
+<div class="actions"><code>make -C memory/rom test</code><code>make -C memory/rom diagrams</code></div></section>
+<section class="content"><article><p class="eyebrow">Implementation</p><h2>RTL sources</h2><ul class="file-list"><li><a href="../src/rom.sv">src/rom.sv</a></li></ul>
+<h2>Verification</h2><ul class="file-list"><li><a href="../tb/rom_tb.sv">tb/rom_tb.sv</a></li><li><a href="../../../shared/tb/lib/axil_bfm.sv">../../shared/tb/lib/axil_bfm.sv</a></li><li><a href="../../../shared/tb/lib/axi4_mem_model.sv">../../shared/tb/lib/axi4_mem_model.sv</a></li></ul></article>
+<aside><p class="eyebrow">Build surface</p><h2>Commands</h2><ul class="targets"><li><code>make test</code> simulation</li><li><code>make yosys</code> synthesis</li><li><code>make docs</code> HTML and Markdown</li><li><code>make diagrams</code> DOT and SVG</li></ul><h2>Diagram</h2><p><a href="block_diagram.svg">SVG diagram</a> · <a href="block_diagram.dot">DOT source</a></p><p><a href="../scripts/build.f">RTL manifest</a> · <a href="../tb/scripts/build.f">Testbench manifest</a></p></aside></section>
+<footer><a href="../../../docs/index.html">All IP modules</a><span>Generated from the catalog and RTL headers.</span></footer>
+</main></body></html>

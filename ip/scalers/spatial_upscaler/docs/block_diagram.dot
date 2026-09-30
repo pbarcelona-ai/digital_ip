@@ -1,0 +1,77 @@
+digraph "spatial_upscaler" {
+  graph [rankdir=LR, fontname="Helvetica", nodesep=0.35, ranksep=0.6, pad=0.25, newrank=true, splines=true, bgcolor="white", labelloc=t, labeljust=l];
+  node  [shape=plain, fontname="Helvetica", fontsize=11];
+  edge  [fontname="Helvetica", fontsize=9, arrowsize=0.75];
+  label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="2"><TR><TD ALIGN="LEFT"><FONT POINT-SIZE="18"><B>spatial_upscaler - Lanczos + contrast-adaptive sharpening</B></FONT></TD></TR><TR><TD ALIGN="LEFT"><FONT POINT-SIZE="11" COLOR="#374151">FSR 1-style spatial upscaler: Lanczos resampling followed by contrast-adaptive sharpening, behind one AXI4-Lite port<BR ALIGN="LEFT"/>s_axis -&gt; scaler_lanczos (any size change) -&gt; sharpen_cas -&gt; m_axis - 1 pixel per clock end to end<BR ALIGN="LEFT"/>pixel = CHANNELS x COMP_W bits (default 3 x 8), component 0 in the LSBs<BR ALIGN="LEFT"/></FONT></TD></TR><TR><TD ALIGN="LEFT"><TABLE BORDER="0" CELLSPACING="0" CELLPADDING="2"><TR><TD BGCOLOR="#dbeafe" COLOR="#2563eb" BORDER="1" STYLE="rounded"><FONT POINT-SIZE="9"> interface </FONT></TD><TD> </TD><TD BGCOLOR="#dcfce7" COLOR="#16a34a" BORDER="1" STYLE="rounded"><FONT POINT-SIZE="9"> control </FONT></TD><TD> </TD><TD BGCOLOR="#fef3c7" COLOR="#d97706" BORDER="1" STYLE="rounded"><FONT POINT-SIZE="9"> memory / table </FONT></TD><TD> </TD><TD BGCOLOR="#e5e7eb" COLOR="#4b5563" BORDER="1" STYLE="rounded"><FONT POINT-SIZE="9"> datapath stage </FONT></TD><TD> </TD><TD BGCOLOR="#fecaca" COLOR="#4b5563" BORDER="1" STYLE="rounded"><FONT POINT-SIZE="9"> DSP48 multipliers </FONT></TD><TD> </TD></TR></TABLE></TD></TR></TABLE>>;
+  s_axil [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#2563eb", penwidth=1.5, label="s_axil\nAXI4-Lite\n(ADDR_W = 15)"];
+  s_axis [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#2563eb", penwidth=1.5, label="s_axis\nAXI4-Stream\nvideo in\n(MAX_W x MAX_H)"];
+  m_axis [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#2563eb", penwidth=1.5, label="m_axis\nAXI4-Stream\nvideo out\n(OUT_W x OUT_H)"];
+  subgraph cluster_top {
+    label=<<B>spatial_upscaler</B>>; labeljust=l; style="rounded,filled"; fillcolor="#f9fafb"; color="#9ca3af"; penwidth=2; fontname="Helvetica"; fontsize=12; margin=12;
+    split [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#dcfce7" COLOR="#16a34a" STYLE="rounded">
+      <TR><TD BGCOLOR="#bbf7d0" STYLE="rounded"><B>axil_split</B></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">address bit 14 selects the slave:<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">0x0000-0x3FFF -&gt; scaler_lanczos<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">0x4000-0x40FF -&gt; sharpen_cas<BR ALIGN="LEFT"/></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">AW / W held until both are present<BR ALIGN="LEFT"/></TD></TR>
+    </TABLE>>];
+    note [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#fffbeb" COLOR="#a16207" STYLE="rounded">
+      <TR><TD BGCOLOR="#fef3c7" STYLE="rounded"><B>Programming order</B></TD></TR>
+      <TR><TD ALIGN="LEFT" BALIGN="LEFT">the sharpener SIZE (0x4008) must equal<BR ALIGN="LEFT"/>the scaler OUT_SIZE: program the sharpener<BR ALIGN="LEFT"/>and enable it before enabling the scaler<BR ALIGN="LEFT"/></TD></TR>
+    </TABLE>>];
+    subgraph cluster_scal {
+      label=<<B>u_scaler: scaler_lanczos</B>>; labeljust=l; style="rounded,filled"; fillcolor="#f3f4f6"; color="#9ca3af"; penwidth=1; fontname="Helvetica"; fontsize=12; margin=12;
+      sctrl [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#dcfce7" COLOR="#16a34a" STYLE="rounded">
+        <TR><TD BGCOLOR="#bbf7d0" STYLE="rounded"><B>scaler_ctrl + scaler_dda</B></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">registers: common map, COEF_INFO 0x040,<BR ALIGN="LEFT"/>H table 0x1000, V table 0x2000<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">capture FSM, frame sequencing<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">output raster scan -&gt; source coordinates<BR ALIGN="LEFT"/></TD></TR>
+      </TABLE>>];
+      sfb [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#fef3c7" COLOR="#d97706" STYLE="rounded">
+        <TR><TD BGCOLOR="#fde68a" STYLE="rounded"><B>banked_framebuf</B></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">6x6 window per clock (8 x 8 RAM banks)<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">sized for the input: MAX_W x MAX_H<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">frame buffer | ping-pong | line buffer<BR ALIGN="LEFT"/>(PINGPONG / LINE_BUF parameters)<BR ALIGN="LEFT"/></TD></TR>
+      </TABLE>>];
+      sdp [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#ffffff" COLOR="#4b5563" STYLE="rounded">
+        <TR><TD BGCOLOR="#e5e7eb" STYLE="rounded"><B>6x6 polyphase datapath</B></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">vertical FIR -&gt; horizontal FIR -&gt; clamp<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">programmable Lanczos-3 coefficient tables<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">1 output pixel per clock, any size change<BR ALIGN="LEFT"/></TD></TR>
+      </TABLE>>];
+    }
+    subgraph cluster_shrp {
+      label=<<B>u_sharpen: sharpen_cas</B>>; labeljust=l; style="rounded,filled"; fillcolor="#f3f4f6"; color="#9ca3af"; penwidth=1; fontname="Helvetica"; fontsize=12; margin=12;
+      sin [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#dcfce7" COLOR="#16a34a" STYLE="rounded">
+        <TR><TD BGCOLOR="#bbf7d0" STYLE="rounded"><B>Registers + input side</B></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">axil_regbus, SIZE, SHARPNESS, BYPASS<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">SOF / EOL checks, back-pressure<BR ALIGN="LEFT"/></TD></TR>
+      </TABLE>>];
+      slb [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#fef3c7" COLOR="#d97706" STYLE="rounded">
+        <TR><TD BGCOLOR="#fde68a" STYLE="rounded"><B>Line buffers x 4</B></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">sized for the output width: OUT_MAX_W<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">about two lines of latency<BR ALIGN="LEFT"/></TD></TR>
+      </TABLE>>];
+      scas [label=<<TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#ffffff" COLOR="#4b5563" STYLE="rounded">
+        <TR><TD BGCOLOR="#e5e7eb" STYLE="rounded"><B>3x3 window + CAS datapath</B></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">front end: read address, RAM read,<BR ALIGN="LEFT"/>3x3 shift register (edges clamp)<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">amplitude -&gt; strength -&gt; apply<BR ALIGN="LEFT"/></TD></TR>
+        <TR><TD ALIGN="LEFT" BALIGN="LEFT">1 pixel per clock<BR ALIGN="LEFT"/></TD></TR>
+      </TABLE>>];
+    }
+  }
+  { rank=same; s_axil; s_axis; }
+  { rank=same; split; note; }
+  { rank=same; sin; slb; }
+  s_axil -> split [color="#374151", penwidth=1.6, label="AXI4-Lite"];
+  split -> sctrl [color="#6b7280", style=dashed, label="m0: scaler\nregisters"];
+  split -> sin [color="#6b7280", style=dashed, label="m1: sharpener\nregisters", constraint=false];
+  s_axis -> sctrl [color="#374151", penwidth=1.6, label="AXI4-Stream\nvideo in"];
+  sctrl -> sfb [color="#374151", penwidth=1.6, label="write port,\nwindow origin, phases"];
+  sfb -> sdp [color="#374151", penwidth=1.6, label="6x6 window"];
+  sdp -> sin [color="#374151", penwidth=1.6, label="AXI4-Stream\nupscaled video\n(mid_t*)"];
+  sin -> slb [color="#374151", penwidth=1.6, label="write rows"];
+  slb -> scas [color="#374151", penwidth=1.6, label="4 rows"];
+  scas -> m_axis [color="#374151", penwidth=1.6, label="AXI4-Stream\nvideo out"];
+  sdp -> sctrl [color="#6b7280", style=dashed, label="gen_done", constraint=false];
+}

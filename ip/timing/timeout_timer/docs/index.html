@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a192f">
+<meta name="description" content="Inactivity timeout timer. Version 1.0.0. Counts clocks since the last activity_i pulse; when the count reaches timeout_i, expired_o goes high (level, registered) and timeout_pulse_o pulses once. Any activity clears the count and expired_o. timeout_i = 0 disables the timer. Clock - clk (use ce_i to count slower ticks). Reset - synchronous active low, not expired. Latency - expired_o rises timeout_i + 1 clocks after the last activity. Errors - WIDTH &lt; 1 rejected at elaboration; the counter saturates at timeout_i so it never wraps.">
+<title>Timeout Timer | Digital IP</title><link rel="stylesheet" href="../../../docs/site.css">
+</head><body>
+<header class="topbar"><a class="brand" href="../../../docs/index.html">BARCELONA ENTERPRISES / DIGITAL IP / TIMING</a><a href="../../../README.md">Repository README</a></header>
+<main class="shell">
+<section class="hero"><p class="eyebrow">timing / timeout_timer</p><h1>Timeout Timer</h1><p class="lede">Inactivity timeout timer. Version 1.0.0. Counts clocks since the last activity_i pulse; when the count reaches timeout_i, expired_o goes high (level, registered) and timeout_pulse_o pulses once. Any activity clears the count and expired_o. timeout_i = 0 disables the timer. Clock - clk (use ce_i to count slower ticks). Reset - synchronous active low, not expired. Latency - expired_o rises timeout_i + 1 clocks after the last activity. Errors - WIDTH &lt; 1 rejected at elaboration; the counter saturates at timeout_i so it never wraps.</p>
+<div class="actions"><code>make -C timing/timeout_timer test</code><code>make -C timing/timeout_timer diagrams</code></div></section>
+<section class="content"><article><p class="eyebrow">Implementation</p><h2>RTL sources</h2><ul class="file-list"><li><a href="../src/timeout_timer.sv">src/timeout_timer.sv</a></li></ul>
+<h2>Verification</h2><ul class="file-list"><li><a href="../tb/timeout_timer_tb.sv">tb/timeout_timer_tb.sv</a></li><li><a href="../../../shared/tb/lib/axil_bfm.sv">../../shared/tb/lib/axil_bfm.sv</a></li><li><a href="../../../shared/tb/lib/axi4_mem_model.sv">../../shared/tb/lib/axi4_mem_model.sv</a></li></ul></article>
+<aside><p class="eyebrow">Build surface</p><h2>Commands</h2><ul class="targets"><li><code>make test</code> simulation</li><li><code>make yosys</code> synthesis</li><li><code>make docs</code> HTML and Markdown</li><li><code>make diagrams</code> DOT and SVG</li></ul><h2>Diagram</h2><p><a href="block_diagram.svg">SVG diagram</a> · <a href="block_diagram.dot">DOT source</a></p><p><a href="../scripts/build.f">RTL manifest</a> · <a href="../tb/scripts/build.f">Testbench manifest</a></p></aside></section>
+<footer><a href="../../../docs/index.html">All IP modules</a><span>Generated from the catalog and RTL headers.</span></footer>
+</main></body></html>

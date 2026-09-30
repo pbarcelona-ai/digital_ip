@@ -1,0 +1,83 @@
+# Verification status
+
+Last full run: every testbench with Icarus Verilog 12, every IP synthesized with Yosys 0.33 `synth_xilinx` (7 series). LUT/FF/BRAM/DSP counts are Yosys estimates for default parameters; depth is the longest coarse-cell path from Yosys LTP (rough indicator, not timing; 0 means no path was reported). Watch ecc_memory_ctrl (depth 54: scrub decode-then-encode path is combinational, expect to add a pipeline stage for 100 MHz) and the wide DSP blocks.
+
+| IP | Category | Simulation | Yosys | LUT | FF | BRAM18/36 | DSP | Depth |
+|---|---|---|---|---|---|---|---|---|
+| reset_ctrl | cdc | PASS | OK | 460 | 705 | 0/0 | 0 | 6 |
+| baud_nco | timing | PASS | OK | 922 | 944 | 0/0 | 4 | 7 |
+| uart | peripherals | PASS | OK | 627 | 830 | 3/0 | 0 | 7 |
+| i2c_master | peripherals | PASS | OK | 725 | 804 | 3/0 | 0 | 8 |
+| spi_master | peripherals | PASS | OK | 739 | 946 | 3/0 | 0 | 9 |
+| gpio | peripherals | PASS | OK | 880 | 1046 | 0/0 | 0 | 11 |
+| intc | peripherals | PASS | OK | 800 | 856 | 0/0 | 0 | 8 |
+| pwm | timing | PASS | OK | 1026 | 1176 | 0/0 | 0 | 10 |
+| quadrature_decoder | peripherals | PASS | OK | 1034 | 1152 | 0/0 | 0 | 8 |
+| watchdog | timing | PASS | OK | 974 | 912 | 0/0 | 0 | 9 |
+| edge_event_capture | peripherals | PASS | OK | 1168 | 1670 | 0/2 | 0 | 11 |
+| async_fifo | fifo | PASS | OK | 63 | 114 | 1/0 | 0 | 0 |
+| axis_async_bridge | cdc | PASS | OK | 130 | 248 | 0/2 | 0 | 10 |
+| axi4_lite_cdc | cdc | PASS | OK | 108 | 266 | 0/0 | 0 | 0 |
+| dma_engine | bus | PASS | OK | 962 | 1026 | 0/0 | 0 | 7 |
+| axis_dma | bus | PASS | OK | 1133 | 1182 | 0/0 | 0 | 7 |
+| bit_sync | cdc | PASS | OK | 0 | 2 | 0/0 | 0 | 0 |
+| toggle_sync | cdc | PASS | OK | 6 | 10 | 0/0 | 0 | 0 |
+| pulse_sync | cdc | PASS | OK | 10 | 14 | 0/0 | 0 | 0 |
+| reset_sync | cdc | PASS | OK | 0 | 2 | 0/0 | 0 | 0 |
+| edge_detect | common | PASS | OK | 2 | 2 | 0/0 | 0 | 0 |
+| clock_enable | timing | PASS | OK | 18 | 17 | 0/0 | 0 | 0 |
+| counter | timing | PASS | OK | 42 | 17 | 0/0 | 0 | 0 |
+| timeout_timer | timing | PASS | OK | 49 | 26 | 0/0 | 0 | 0 |
+| priority_encoder | common | PASS | OK | 12 | 0 | 0/0 | 0 | 0 |
+| onehot_decoder | common | PASS | OK | 25 | 0 | 0/0 | 0 | 0 |
+| single_port_ram | memory | PASS | OK | 2 | 0 | 0/1 | 0 | 0 |
+| simple_dual_port_ram | memory | PASS | OK | 1 | 0 | 0/1 | 0 | 0 |
+| true_dual_port_ram | memory | PASS | OK | 74 | 2 | 0/1 | 0 | 0 |
+| rom | memory | PASS | OK | 5 | 10 | 0/0 | 0 | 0 |
+| register_file | memory | PASS | OK | 336 | 512 | 0/0 | 0 | 0 |
+| sync_fifo | fifo | PASS | OK | 57 | 25 | 1/0 | 0 | 0 |
+| fallthrough_fifo | fifo | PASS | OK | 25 | 14 | 0/0 | 0 | 0 |
+| packet_fifo | fifo | PASS | OK | 70 | 43 | 1/0 | 0 | 0 |
+| memory_arbiter | memory | PASS | OK | 117 | 19 | 0/0 | 0 | 0 |
+| nco | timing | PASS | OK | 98 | 65 | 0/0 | 0 | 0 |
+| baud_generator | timing | PASS | OK | 38 | 38 | 0/0 | 0 | 0 |
+| pulse_generator | timing | PASS | OK | 114 | 35 | 0/0 | 0 | 0 |
+| frequency_counter | timing | PASS | OK | 82 | 206 | 0/0 | 0 | 0 |
+| timestamp_counter | timing | PASS | OK | 81 | 130 | 0/0 | 0 | 0 |
+| rate_limiter | timing | PASS | OK | 52 | 24 | 0/0 | 0 | 0 |
+| interval_timer | timing | PASS | OK | 87 | 51 | 0/0 | 0 | 0 |
+| axi4_lite_slave | bus | PASS | OK | 52 | 97 | 0/0 | 0 | 0 |
+| axi4_lite_regs | bus | PASS | OK | 2844 | 726 | 0/0 | 0 | 7 |
+| axi4_lite_decoder | bus | PASS | OK | 12 | 0 | 0/0 | 0 | 0 |
+| axi4_lite_mux | bus | PASS | OK | 338 | 296 | 0/0 | 0 | 6 |
+| axi_stream_fifo | bus | PASS | OK | 46 | 122 | 0/2 | 0 | 7 |
+| axi_stream_width_converter | bus | PASS | OK | 27 | 45 | 0/0 | 0 | 0 |
+| axi_stream_arbiter | bus | PASS | OK | 71 | 46 | 0/0 | 0 | 0 |
+| parity_gen | integrity | PASS | OK | 4 | 0 | 0/0 | 0 | 0 |
+| parity_check | integrity | PASS | OK | 7 | 10 | 0/0 | 0 | 0 |
+| crc8 | integrity | PASS | OK | 22 | 16 | 0/0 | 0 | 16 |
+| crc16 | integrity | PASS | OK | 38 | 32 | 0/0 | 0 | 4 |
+| crc32 | integrity | PASS | OK | 100 | 64 | 0/0 | 0 | 16 |
+| checksum | integrity | PASS | OK | 43 | 25 | 0/0 | 0 | 0 |
+| lfsr | integrity | PASS | OK | 10 | 8 | 0/0 | 0 | 0 |
+| error_status | integrity | PASS | OK | 75 | 28 | 0/0 | 0 | 0 |
+| spi_slave | peripherals | PASS | OK | 62 | 82 | 0/0 | 0 | 0 |
+| clock_domain_bridge | cdc | PASS | OK | 12 | 140 | 0/0 | 0 | 0 |
+| uart_tx | peripherals | PASS | OK | 37 | 20 | 0/0 | 0 | 0 |
+| uart_rx | peripherals | PASS | OK | 62 | 35 | 0/0 | 0 | 0 |
+| cordic | common | PASS | OK | 1278 | 993 | 0/0 | 2 | 0 |
+| dds | common | PASS | OK | 2754 | 2118 | 0/0 | 4 | 4 |
+| fir | common | PASS | OK | 36 | 146 | 0/0 | 8 | 0 |
+| cic | common | PASS | OK | 523 | 237 | 0/0 | 0 | 0 |
+| ecc_memory_ctrl | integrity | PASS | OK | 631 | 274 | 6/0 | 0 | 54 |
+| packet_parser | bus | PASS | OK | 974 | 168 | 0/0 | 0 | 0 |
+| packet_formatter | bus | PASS | OK | 78 | 100 | 0/0 | 0 | 0 |
+| i2s | peripherals | PASS | OK | 79 | 120 | 0/0 | 0 | 0 |
+| eth_mac_if | peripherals | PASS | OK | 438 | 332 | 0/0 | 0 | 16 |
+| spi_flash_ctrl | peripherals | PASS | OK | 1050 | 1008 | 0/0 | 0 | 9 |
+| sdio_host | peripherals | PASS | OK | 2990 | 2226 | 4/0 | 0 | 13 |
+| demo_regs | bus | PASS | OK | 2872 | 584 | 0/0 | 0 | 19 |
+| pcie_tl_ep | peripherals | PASS | OK | 2049 | 2986 | 3/2 | 0 | 12 |
+| usb_fs_sie | peripherals | PASS | OK | 1237 | 1444 | 3/0 | 0 | 15 |
+
+Simulation passed: 75/75. Yosys clean: 75/75.

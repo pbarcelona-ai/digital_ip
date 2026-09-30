@@ -1,0 +1,15 @@
+Hierarchical utilization (Yosys synth_xilinx, totals include sub-instances)
+
+Instance                                            LUT   LUTRAM       FF    CARRY     MUXF   BRAM36      DSP
+-------------------------------------------------------------------------------------------------------------
+scaler_nearest                                      586        0      802       90        0      1.5        0
+  (self)                                              5        0       68       10        0      0.0        0
+  banked_framebuf                                    67        0       54       22        0      1.5        0
+  scaler_ctrl                                       320        0      515       26        0      0.0        0
+    (self)                                          310        0      361       26        0      0.0        0
+    axil_regbus                                      10        0      154        0        0      0.0        0
+  scaler_dda                                        194        0      165       32        0      0.0        0
+
+LUT = LUT1..LUT6 used as logic; LUTRAM = distributed RAM + SRL; BRAM36 counts
+RAMB36 as 1 and RAMB18 as 0.5. Yosys does not place or route, so these are
+pre-implementation estimates (Vivado will typically optimise further).

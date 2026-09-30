@@ -1,0 +1,28 @@
+Module     : scaler_trilinear
+Family     : xc7
+Parameters : MAX_W=640 MAX_H=480
+Tools      : Yosys 0.33, sv2v v0.0.12
+Run time   : 29 s
+
+Hierarchical utilization (Yosys synth_xilinx, totals include sub-instances)
+
+Instance                                            LUT   LUTRAM       FF    CARRY     MUXF   BRAM36      DSP
+-------------------------------------------------------------------------------------------------------------
+scaler_trilinear                                   5975        0     3128      634      964    310.0       51
+  (self)                                              0        0        0        0        0      0.0        0
+  scaler_mip                                       5975        0     3128      634      964    310.0       51
+    (self)                                         2109        0     2024      258       73      0.0       42
+    banked_framebuf                                 782        0      112       79      288     60.0        3
+    banked_framebuf#2                               481        0       84       80        0      6.0        0
+    banked_framebuf#3                               773        0      104       79      288     16.0        3
+    scaler_ctrl                                     313        0      515       27       15      0.0        0
+      (self)                                        302        0      361       27       15      0.0        0
+      axil_regbus                                    11        0      154        0        0      0.0        0
+    banked_framebuf#4                              1323        0      124       79      288    228.0        3
+    scaler_dda                                      194        0      165       32       12      0.0        0
+
+LUT = LUT1..LUT6 used as logic; LUTRAM = distributed RAM + SRL; BRAM36 counts
+RAMB36 as 1 and RAMB18 as 0.5. Yosys does not place or route, so these are
+pre-implementation estimates (Vivado will typically optimise further).
+
+Critical path (cell delays only, no routing): 4620 ps  (see timing.rpt)

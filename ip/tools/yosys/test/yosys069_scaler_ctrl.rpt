@@ -1,0 +1,80 @@
+
+5. Printing statistics.
+
+=== $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus ===
+
+        +----------Local Count, excluding submodules.
+        | 
+       44 wires
+      278 wire bits
+       30 public wires
+      261 public wire bits
+       26 ports
+      210 port bits
+      168 cells
+      154   FDCE
+        4   INV
+        3   LUT2
+        3   LUT3
+        4   LUT4
+
+   Estimated number of LCs:          7
+
+=== scaler_ctrl ===
+
+        +----------Local Count, excluding submodules.
+        | 
+      523 wires
+     2106 wire bits
+       80 public wires
+     1050 public wire bits
+       53 ports
+      587 port bits
+      706 cells
+       26   CARRY4
+      355   FDCE
+        6   FDPE
+       34   INV
+       61   LUT2
+       38   LUT3
+       25   LUT4
+       74   LUT5
+       87   LUT6
+        1 submodules
+        1   $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus
+
+   Estimated number of LCs:        231
+
+=== design hierarchy ===
+
+        +----------Count including submodules.
+        | 
+      874 scaler_ctrl
+      168 $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus
+
+        +----------Count including submodules.
+        | 
+      567 wires
+     2384 wire bits
+      110 public wires
+     1311 public wire bits
+       79 ports
+      797 port bits
+        - memories
+        - memory bits
+        - processes
+      874 cells
+       26   CARRY4
+      509   FDCE
+        6   FDPE
+       38   INV
+       64   LUT2
+       41   LUT3
+       29   LUT4
+       74   LUT5
+       87   LUT6
+        1 submodules
+        1   $paramod$22b184c8b09b5b69755fa74a5884a8273e8154f8\axil_regbus
+
+   Estimated number of LCs:        231
+

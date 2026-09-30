@@ -1,0 +1,12 @@
+{
+  "name": "demo_regs",
+  "desc": "Example register map used to test the generator.",
+  "registers": [
+    {"name": "ID",      "access": "RO",  "desc": "Block identifier", "fields": [{"name": "VALUE", "bit": "31:0", "desc": "Constant supplied by hardware"}]},
+    {"name": "CTRL",    "access": "RW",  "reset": "0x00000010", "desc": "Control", "fields": [{"name": "EN", "bit": 0, "desc": "Enable"}, {"name": "MODE", "bit": "3:1", "desc": "Operating mode"}, {"name": "DIV", "bit": "15:8", "desc": "Clock divider"}]},
+    {"name": "STATUS",  "access": "W1C", "desc": "Sticky status", "fields": [{"name": "DONE", "bit": 0, "desc": "Operation done"}, {"name": "ERR", "bit": 1, "desc": "Error"}]},
+    {"name": "THRESH",  "access": "RW",  "reset": "0x00000100", "desc": "Threshold"},
+    {"name": "COUNT",   "access": "RO",  "desc": "Live counter"},
+    {"name": "TRIG",    "access": "W1S", "desc": "Software trigger bits, hardware clears when served", "fields": [{"name": "GO", "bit": 0, "desc": "Start"}]}
+  ]
+}

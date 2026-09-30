@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0a192f">
+  <meta name="description" content="AXI4-Lite 1-to-2 address decoder: routes each transaction to slave port 0 or 1 by address bit SEL_BIT (default: the top address bit) and forwards the full address. One write and one read can be in flight; AW and W may arrive in any order. Used by spatial_upscaler to put two IPs behind one control port. The testbench puts a register file behind each port and checks every access, with protocol checkers on the master link and both slave links.">
+  <title>axil_split | Scaler IP</title>
+    <link rel="stylesheet" href="../../../tools/docs/site.css">
+</head>
+<body>
+    <header class="topbar"><a class="brand" href="../../../tools/docs/index.html"><span>BARCELONA ENTERPRISES / SCALER IP MODULE</span></a><a class="back-link" href="../../../tools/docs/index.html">All modules <span aria-hidden="true">↗</span></a></header>
+  <main class="page-shell">
+    <section class="hero">
+      <p class="eyebrow">module / axil_split</p>
+      <h1>axil_split</h1>
+      <p class="lede">AXI4-Lite 1-to-2 address decoder: routes each transaction to slave port 0 or 1 by address bit SEL_BIT (default: the top address bit) and forwards the full address. One write and one read can be in flight; AW and W may arrive in any order. Used by spatial_upscaler to put two IPs behind one control port. The testbench puts a register file behind each port and checks every access, with protocol checkers on the master link and both slave links.</p>
+    <div class="actions"><a class="button secondary" href="../README.md">README</a><span class="command">make -C scalers/axil_split test · make -C scalers/axil_split synth</span></div>
+    </section>
+    <section class="content-grid">
+      <article class="panel main-panel">
+        <p class="eyebrow">RTL source</p>
+        <h2>Implementation</h2>
+        <ul class="file-list"><li><a href="../src/axil_split.sv">src/axil_split.sv</a></li><li><a href="../src/build.f">src/build.f</a></li></ul>
+        <h2>Verification</h2>
+        <ul class="file-list"><li><a href="../tb/axil_split_tb.sv">tb/axil_split_tb.sv</a></li><li><a href="../tb/build.f">tb/build.f</a></li><li><a href="../tb/scripts/build.f">tb/scripts/build.f</a></li></ul>
+      </article>
+      <aside class="panel side-panel">
+              <p class="eyebrow">Build surface</p>
+        <h2>Scripts &amp; manifests</h2>
+        <ul class="file-list"><li><a href="../scripts/build.f">scripts/build.f</a></li><li><a href="../scripts/run.sh">scripts/run.sh</a></li><li><a href="../scripts/synth.sh">scripts/synth.sh</a></li></ul>
+        <h2>Includes</h2>
+        <p class="quiet">No include/ directory was found for this module.</p>
+        <p class="dependency"><strong>Depends on:</strong> none</p>
+      </aside>
+    </section>
+    <footer class="page-footer"><a href="../../../tools/docs/index.html">← Back to scaler IP index</a><span>Generated from this module's README and file tree.</span></footer>
+  </main>
+</body>
+</html>
