@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a192f">
 <meta name="description" content="Event transfer between clock domains using a toggle level. Version 1.0.0. Every one-clock event_i pulse in the source domain flips a toggle flop; the destination synchronizes the toggle and emits event_o for each change. No handshake, so events must be spaced at least STAGES+2 destination clocks apart (source clock period permitting) or they are lost; use pulse_sync when spacing cannot be guaranteed. Clocks - src_clk and dst_clk are unrelated. Reset - synchronous per domain, active low. Latency - STAGES+1 dst clocks. Errors - none reported; STAGES&lt;2 rejected at elaboration. Clock - the clock of the parent block, all signals are synchronous to it. synchronous to it.">
 <title>Toggle Sync | Digital IP</title><link rel="stylesheet" href="../../../docs/site.css">
 </head><body>
-<header class="topbar"><a class="brand" href="../../../docs/index.html">DIGITAL IP / CDC</a><a href="../../../README.md">Repository README</a></header>
+<header class="topbar"><a class="brand" href="../../../docs/index.html">BARCELONA ENTERPRISES / DIGITAL IP / CDC</a><a href="../../../README.md">Repository README</a></header>
 <main class="shell">
 <section class="hero"><p class="eyebrow">cdc / toggle_sync</p><h1>Toggle Sync</h1><p class="lede">Event transfer between clock domains using a toggle level. Version 1.0.0. Every one-clock event_i pulse in the source domain flips a toggle flop; the destination synchronizes the toggle and emits event_o for each change. No handshake, so events must be spaced at least STAGES+2 destination clocks apart (source clock period permitting) or they are lost; use pulse_sync when spacing cannot be guaranteed. Clocks - src_clk and dst_clk are unrelated. Reset - synchronous per domain, active low. Latency - STAGES+1 dst clocks. Errors - none reported; STAGES&lt;2 rejected at elaboration. Clock - the clock of the parent block, all signals are synchronous to it. synchronous to it.</p>
 <div class="actions"><code>make -C cdc/toggle_sync test</code><code>make -C cdc/toggle_sync diagrams</code></div></section>

@@ -1,0 +1,22 @@
+# Shared tool selection. Keep assignments valid for both GNU Make and shell.
+SIMULATOR=iverilog
+#SIMULATOR=vcs
+#SIMULATOR=modelsim
+#SIMULATOR=questa
+#SIMULATOR=questasim
+
+PYTHON_SIMULATOR=verilator
+#PYTHON_SIMULATOR=iverilog
+#PYTHON_SIMULATOR=vcs
+#PYTHON_SIMULATOR=modelsim
+#PYTHON_SIMULATOR=questa
+#PYTHON_SIMULATOR=questasim
+
+SYNTHESIS=yosys
+#SYNTHESIS=synplify
+#SYNPLIFY_RUNNER=/client/path/to/synplify_wrapper
+
+PLACE_ROUTE=
+#PLACE_ROUTE=vivado
+#VIVADO_TCL=/client/path/to/project_pnr.tcl
+#VIVADO_BIN=vivado

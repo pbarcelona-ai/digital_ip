@@ -1,6 +1,9 @@
 SCALER_ROOT ?= $(abspath $(dir $(lastword $(MAKEFILE_LIST)))/..)
+include $(SCALER_ROOT)/.tools
 IP ?= all
-SIM ?= iverilog
+SIM ?= $(SIMULATOR)
+PYTHON_SIM ?= $(PYTHON_SIMULATOR)
+SYNTH_TOOL ?= $(SYNTHESIS)
 MODE ?= frame
 VCD ?= 0
 RUN_ARGS ?=
@@ -14,12 +17,12 @@ IP_MODULES := axi_checkers axil_regbus axil_split banked_framebuf \
 	scaler_edge_directed scaler_lanczos scaler_mip scaler_nearest scaler_polyphase \
 	scaler_trilinear sharpen_cas spatial_upscaler
 
-.PHONY: all help list test run sim synth gatesim docs diagrams diagram-check clean
+.PHONY: all help list test run sim synth synplify gatesim docs diagrams diagram-check clean
 all: help
 
 help:
 	@printf '%s\n' \
-	  'Targets: test, sim, synth, gatesim, docs, diagrams, diagram-check, clean, list' \
+	  'Targets: test, sim, synth, synplify, gatesim, docs, diagrams, diagram-check, clean, list' \
 	  'Per-IP: make -C scalers/scaler_bicubic test|sim|synth|gatesim|clean' \
 	  'Common:  make test [IP=scaler_bicubic] [MODE=frame|pingpong|linebuf]' \
 	  '         make sim [IP=scaler_bicubic] [RUN_ARGS="+IMG=photo.ppm"]' \
@@ -41,13 +44,18 @@ diagram-check:
 
 ifeq ($(IP),all)
 test:
-	@SIM=iverilog MODE=$(MODE) VCD=$(VCD) $(SCALER_ROOT)/tools/run_all.sh $(RUN_ARGS)
+	@SIM=$(SIM) MODE=$(MODE) VCD=$(VCD) $(SCALER_ROOT)/tools/run_all.sh $(RUN_ARGS)
 
 sim:
-	@SIM=verilator MODE=$(MODE) VCD=$(VCD) $(SCALER_ROOT)/tools/run_all.sh $(RUN_ARGS)
+	@SIM=$(SIM) MODE=$(MODE) VCD=$(VCD) $(SCALER_ROOT)/tools/run_all.sh $(RUN_ARGS)
 
+ifeq ($(SYNTH_TOOL),synplify)
+synth:
+	@set -e; for module in $(IP_MODULES); do SYNTH_TOOL=synplify "$(SCALER_ROOT)/scripts/run_synplify.sh" "$$module"; done
+else
 synth:
 	@$(SCALER_ROOT)/tools/synth_all.sh -- $(SYNTH_ARGS)
+endif
 
 clean:
 	@for module in $(IP_MODULES); do \
@@ -56,14 +64,19 @@ clean:
 	@rm -rf "$(SCALER_ROOT)/build/scaler"
 else
 test:
-	@NO_VIEW=1 $(SCALER_ROOT)/tools/run_iverilog.sh $(IP) $(RUN_ARGS)
+	@NO_VIEW=1 SIM=$(SIM) MODE=$(MODE) $(SCALER_ROOT)/tools/run_all.sh $(IP) $(RUN_ARGS)
 
 sim:
-	@NO_VIEW=1 $(SCALER_ROOT)/tools/run_sim.sh $(IP) $(RUN_ARGS)
+	@NO_VIEW=1 SIM=$(SIM) MODE=$(MODE) $(SCALER_ROOT)/tools/run_all.sh $(IP) $(RUN_ARGS)
 
+ifeq ($(SYNTH_TOOL),synplify)
+synth:
+	@SYNTH_TOOL=synplify "$(SCALER_ROOT)/scripts/run_synplify.sh" "$(IP)"
+else
 synth:
 	@test -x "$(SCALER_ROOT)/scalers/$(IP)/scripts/synth.sh" || { echo "$(IP) has no synthesis flow" >&2; exit 2; }
 	@"$(SCALER_ROOT)/scalers/$(IP)/scripts/synth.sh" $(SYNTH_ARGS)
+endif
 
 gatesim:
 	@test -x "$(SCALER_ROOT)/scalers/$(IP)/scripts/synth.sh" || { echo "$(IP) has no gate-simulation flow" >&2; exit 2; }
@@ -74,3 +87,6 @@ clean:
 endif
 
 run: test
+
+synplify:
+	@set -e; for module in $(IP_MODULES); do SYNTH_TOOL=synplify "$(SCALER_ROOT)/scripts/run_synplify.sh" "$$module"; done

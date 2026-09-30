@@ -3,12 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0a192f">
   <meta name="description" content="Passive protocol checkers with functional coverage. axis_checker covers AXI4-Stream handshake rules (no valid retraction, stable payload under stall, no X) and video framing (tuser on the first beat, tlast at the end of each line, complete frames). axil_checker covers the AXI4-Lite master and slave rules on all five channels, response ordering and OKAY responses. Each rule is implemented twice: as procedural checks that run on every simulator including Icarus, and as SVA properties compiled with +define+SVA_ON. Coverage counters (orderings, stalls, stall-length buckets, back-to-back transfers, frames) are printed by report(). The testbench drives legal traffic (zero errors expected) and then violates every rule on purpose (each must be detected).">
   <title>axi_checkers | Scaler IP</title>
     <link rel="stylesheet" href="../../../tools/docs/site.css">
 </head>
 <body>
-  <header class="topbar"><a class="brand" href="../../../tools/docs/index.html"><span class="brand-mark">S</span><span>SCALER IP / MODULE NOTE</span></a><a class="back-link" href="../../../tools/docs/index.html">All modules <span aria-hidden="true">↗</span></a></header>
+    <header class="topbar"><a class="brand" href="../../../tools/docs/index.html"><span>BARCELONA ENTERPRISES / SCALER IP MODULE</span></a><a class="back-link" href="../../../tools/docs/index.html">All modules <span aria-hidden="true">↗</span></a></header>
   <main class="page-shell">
     <section class="hero">
       <p class="eyebrow">verification IP / axi_checkers</p>

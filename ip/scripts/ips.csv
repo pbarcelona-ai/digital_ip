@@ -91,3 +91,4 @@ scaler_polyphase,scalers,scaler_polyphase
 scaler_trilinear,scalers,scaler_trilinear
 sharpen_cas,scalers,sharpen_cas
 spatial_upscaler,scalers,spatial_upscaler
+mac,math,mac

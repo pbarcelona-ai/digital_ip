@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a192f">
 <meta name="description" content="Generic synchronous single-port RAM. Version 1.0.0. One clock, one address, optional byte write enables (BYTE_EN). Read behaviour on a write to the same address is selectable - MODE 0 READ_FIRST (old data), 1 WRITE_FIRST (new data), 2 NO_CHANGE (output holds). Inferred as block RAM by Yosys and Vivado. Clock - clk. Reset - none on the array; the output register resets synchronously (active low) to zero, memory content is undefined until written unless INIT_ZERO=1. Latency - read data valid one clock after the address. Errors - DEPTH&lt;2, WIDTH&lt;1, or invalid MODE rejected at elaboration; BYTE_EN requires WIDTH multiple of 8.">
 <title>Single Port Ram | Digital IP</title><link rel="stylesheet" href="../../../docs/site.css">
 </head><body>
-<header class="topbar"><a class="brand" href="../../../docs/index.html">DIGITAL IP / MEMORY</a><a href="../../../README.md">Repository README</a></header>
+<header class="topbar"><a class="brand" href="../../../docs/index.html">BARCELONA ENTERPRISES / DIGITAL IP / MEMORY</a><a href="../../../README.md">Repository README</a></header>
 <main class="shell">
 <section class="hero"><p class="eyebrow">memory / single_port_ram</p><h1>Single Port Ram</h1><p class="lede">Generic synchronous single-port RAM. Version 1.0.0. One clock, one address, optional byte write enables (BYTE_EN). Read behaviour on a write to the same address is selectable - MODE 0 READ_FIRST (old data), 1 WRITE_FIRST (new data), 2 NO_CHANGE (output holds). Inferred as block RAM by Yosys and Vivado. Clock - clk. Reset - none on the array; the output register resets synchronously (active low) to zero, memory content is undefined until written unless INIT_ZERO=1. Latency - read data valid one clock after the address. Errors - DEPTH&lt;2, WIDTH&lt;1, or invalid MODE rejected at elaboration; BYTE_EN requires WIDTH multiple of 8.</p>
 <div class="actions"><code>make -C memory/single_port_ram test</code><code>make -C memory/single_port_ram diagrams</code></div></section>

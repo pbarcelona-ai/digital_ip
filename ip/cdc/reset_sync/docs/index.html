@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a192f">
 <meta name="description" content="Reset synchronizer. Version 1.0.0. Brings an asynchronous reset into the clk domain. ASYNC_ASSERT=1 (default) asserts the output immediately and releases it synchronously after STAGES clocks; ASYNC_ASSERT=0 samples the input with the clock so both edges are synchronous. Polarity of the input and output is selectable. Clock - clk; arst_i may be asynchronous. Reset state - output asserted. Latency - release takes STAGES clocks (assert is immediate for async type). Timing - the flops are marked async_reg. Errors - STAGES&lt;2 rejected at elaboration.">
 <title>Reset Sync | Digital IP</title><link rel="stylesheet" href="../../../docs/site.css">
 </head><body>
-<header class="topbar"><a class="brand" href="../../../docs/index.html">DIGITAL IP / CDC</a><a href="../../../README.md">Repository README</a></header>
+<header class="topbar"><a class="brand" href="../../../docs/index.html">BARCELONA ENTERPRISES / DIGITAL IP / CDC</a><a href="../../../README.md">Repository README</a></header>
 <main class="shell">
 <section class="hero"><p class="eyebrow">cdc / reset_sync</p><h1>Reset Sync</h1><p class="lede">Reset synchronizer. Version 1.0.0. Brings an asynchronous reset into the clk domain. ASYNC_ASSERT=1 (default) asserts the output immediately and releases it synchronously after STAGES clocks; ASYNC_ASSERT=0 samples the input with the clock so both edges are synchronous. Polarity of the input and output is selectable. Clock - clk; arst_i may be asynchronous. Reset state - output asserted. Latency - release takes STAGES clocks (assert is immediate for async type). Timing - the flops are marked async_reg. Errors - STAGES&lt;2 rejected at elaboration.</p>
 <div class="actions"><code>make -C cdc/reset_sync test</code><code>make -C cdc/reset_sync diagrams</code></div></section>

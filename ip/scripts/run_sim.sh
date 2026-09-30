@@ -2,8 +2,8 @@
 # ***************
 # Filename: run_sim.sh
 # Author: Paul Barcelona
-# Description: Compile and run the self-checking testbench of one IP
-#   with Icarus Verilog. Optional VCD dump and Surfer waveform viewer.
+# Description: Compile and run the self-checking testbench of one IP with the
+#   selected simulator. Optional VCD dump and Surfer waveform viewer.
 # Date: 2026-09-29
 #
 # Usage: scripts/run_sim.sh <ip> [--vcd] [--wave] [--lint]
@@ -14,6 +14,10 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 [ $# -ge 1 ] || { echo "usage: $0 <ip> [--vcd] [--wave] [--lint]"; exit 2; }
 IP="$1"; shift; lookup "$IP"
+SIM="${SIM:-iverilog}"
+if [[ "$SIM" == vcs || "$SIM" == modelsim || "$SIM" == questa || "$SIM" == questasim ]]; then
+  exec "$SCRIPT_DIR/run_vendor_sim.sh" "$IP" "$@"
+fi
 if [[ "$CAT" == scalers ]]; then
   SCALER_ARGS=()
   for a in "$@"; do
@@ -24,7 +28,11 @@ if [[ "$CAT" == scalers ]]; then
       *) SCALER_ARGS+=("$a") ;;
     esac
   done
-  exec "$REPO/tools/run_iverilog.sh" "$IP" "${SCALER_ARGS[@]}"
+  case "$SIM" in
+    iverilog|icarus) exec "$REPO/tools/run_iverilog.sh" "$IP" "${SCALER_ARGS[@]}" ;;
+    verilator) exec "$REPO/tools/run_sim.sh" "$IP" "${SCALER_ARGS[@]}" ;;
+    *) echo "unsupported simulator '$SIM'" >&2; exit 2 ;;
+  esac
 fi
 VCD=0; WAVE=0; LINT=0
 for a in "$@"; do
@@ -38,6 +46,11 @@ SRCS="$(filelist "$IP" | tr '\n' ' ')"
 case "$SRCS" in *ip_axil_regs.sv*) ;; *) EXTRA="$REPO/shared/src/common/ip_axil_regs.sv" ;; esac
 TB_SRCS="$(filelist "$IP" tb/scripts/build.f | tr '\n' ' ')"
 
+case "$SIM" in
+  iverilog|icarus) ;;
+  *) echo "unsupported general-IP simulator '$SIM' (use iverilog, vcs, modelsim, questa, or questasim)" >&2; exit 2 ;;
+esac
+
 if [ "$LINT" = 1 ]; then
   verilator --lint-only -Wall -Wno-fatal --top-module "$TOP" $SRCS
 fi
@@ -47,6 +60,9 @@ ARGS=""; [ "$VCD" = 1 ] && ARGS="+vcd"
 vvp -n "$TB.vvp" $ARGS | tee "$TB.log"
 grep -q "TEST PASSED" "$TB.log" || { echo "[$IP] SIMULATION FAILED"; exit 1; }
 echo "[$IP] PASSED"
+if [[ -f "$IPDIR/tb/python/run_python.py" ]]; then
+  PYTHON_SIM="${PYTHON_SIM:-${PYTHON_SIMULATOR:-verilator}}" python3 "$IPDIR/tb/python/run_python.py"
+fi
 if [ "$WAVE" = 1 ]; then
   VF="$(ls -1 "$OUT"/*.vcd 2>/dev/null | head -1 || true)"
   if command -v surfer >/dev/null 2>&1 && [ -n "$VF" ]; then surfer "$VF" &

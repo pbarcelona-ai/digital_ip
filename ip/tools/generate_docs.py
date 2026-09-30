@@ -144,12 +144,13 @@ def module_page(module: Path, modules: list[Path]) -> str:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0a192f">
   <meta name="description" content="{escape(description, quote=True)}">
   <title>{escape(title)} | Scaler IP</title>
     <link rel="stylesheet" href="../../../tools/docs/site.css">
 </head>
 <body>
-  <header class="topbar"><a class="brand" href="{back}"><span class="brand-mark">S</span><span>SCALER IP / MODULE NOTE</span></a><a class="back-link" href="{back}">All modules <span aria-hidden="true">↗</span></a></header>
+    <header class="topbar"><a class="brand" href="{back}"><span>BARCELONA ENTERPRISES / SCALER IP MODULE</span></a><a class="back-link" href="{back}">All modules <span aria-hidden="true">↗</span></a></header>
   <main class="page-shell">
     <section class="hero">
       <p class="eyebrow">{escape(kind)} / {escape(module_name)}</p>
@@ -205,12 +206,13 @@ def summary_page(modules: list[Path]) -> str:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0a192f">
   <meta name="description" content="Generated index of the scaler IP modules, source code, tests, and build scripts.">
   <title>Scaler IP Atlas</title>
   <link rel="stylesheet" href="site.css">
 </head>
 <body>
-    <header class="topbar"><a class="brand" href="index.html"><span class="brand-mark">S</span><span>SCALER IP / DIRECTORY</span></a><a class="back-link" href="../../SCALER_README.md">Project README <span aria-hidden="true">↗</span></a></header>
+    <header class="topbar"><a class="brand" href="index.html"><span>BARCELONA ENTERPRISES / SCALER IP CATALOG</span></a><a class="back-link" href="../../SCALER_README.md">Project README <span aria-hidden="true">↗</span></a></header>
   <main class="page-shell">
     <section class="hero index-hero">
       <p class="eyebrow">Hardware library / SystemVerilog</p>

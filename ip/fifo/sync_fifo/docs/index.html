@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a192f">
 <meta name="description" content="Synchronous FIFO with registered read (standard mode). Version 1.0.0. Write with wr_en_i, read with rd_en_i; read data is valid the clock after rd_en_i (rd_valid_o marks it). Full/empty flags, level, programmable almost-full and almost-empty thresholds, sticky overflow/underflow error flags (cleared by clr_err_i). Overflowing writes and underflowing reads are ignored so state is never corrupted. Clock - single clk. Reset - synchronous active low, FIFO empty, flags cleared. Latency - write to empty deassert 1 clock; read 1 clock. Storage - inferred RAM (block RAM for large depths). Errors - DEPTH must be a power of two &gt;= 4 (rejected at elaboration).">
 <title>Sync Fifo | Digital IP</title><link rel="stylesheet" href="../../../docs/site.css">
 </head><body>
-<header class="topbar"><a class="brand" href="../../../docs/index.html">DIGITAL IP / FIFO</a><a href="../../../README.md">Repository README</a></header>
+<header class="topbar"><a class="brand" href="../../../docs/index.html">BARCELONA ENTERPRISES / DIGITAL IP / FIFO</a><a href="../../../README.md">Repository README</a></header>
 <main class="shell">
 <section class="hero"><p class="eyebrow">fifo / sync_fifo</p><h1>Sync Fifo</h1><p class="lede">Synchronous FIFO with registered read (standard mode). Version 1.0.0. Write with wr_en_i, read with rd_en_i; read data is valid the clock after rd_en_i (rd_valid_o marks it). Full/empty flags, level, programmable almost-full and almost-empty thresholds, sticky overflow/underflow error flags (cleared by clr_err_i). Overflowing writes and underflowing reads are ignored so state is never corrupted. Clock - single clk. Reset - synchronous active low, FIFO empty, flags cleared. Latency - write to empty deassert 1 clock; read 1 clock. Storage - inferred RAM (block RAM for large depths). Errors - DEPTH must be a power of two &gt;= 4 (rejected at elaboration).</p>
 <div class="actions"><code>make -C fifo/sync_fifo test</code><code>make -C fifo/sync_fifo diagrams</code></div></section>

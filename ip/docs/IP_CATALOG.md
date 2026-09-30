@@ -96,6 +96,7 @@ Generated from `scripts/ips.csv`, RTL headers, and scaler module READMEs.
 | [scaler_trilinear](../scalers/scaler_trilinear/docs/index.html) | scalers | `scaler_trilinear` | [`scaler_trilinear_tb.sv`](../scalers/scaler_trilinear/tb/scaler_trilinear_tb.sv) |
 | [sharpen_cas](../scalers/sharpen_cas/docs/index.html) | scalers | `sharpen_cas` | [`sharpen_cas_tb.sv`](../scalers/sharpen_cas/tb/sharpen_cas_tb.sv) |
 | [spatial_upscaler](../scalers/spatial_upscaler/docs/index.html) | scalers | `spatial_upscaler` | [`spatial_upscaler_tb.sv`](../scalers/spatial_upscaler/tb/spatial_upscaler_tb.sv) |
+| [mac](../math/mac/docs/index.html) | math | `mac` | [`mac_tb.sv`](../math/mac/tb/mac_tb.sv) |
 
 ## reset_ctrl
 
@@ -1016,3 +1017,13 @@ FSR 1-style spatial upscaler: scaler_lanczos resampling followed by sharpen_cas,
 Sources: `src/../../axil_split/src/axil_split.sv`, `src/../../axil_regbus/src/axil_regbus.sv`, `src/../../scaler_ctrl/src/scaler_ctrl.sv`, `src/../../scaler_dda/src/scaler_dda.sv`, `src/../../banked_framebuf/src/banked_framebuf.sv`, `src/../../scaler_polyphase/src/scaler_polyphase.sv`, `src/../../scaler_lanczos/src/scaler_lanczos.sv`, `src/../../sharpen_cas/src/sharpen_cas.sv`, `src/spatial_upscaler.sv`
 
 [HTML module page](../scalers/spatial_upscaler/docs/index.html)
+
+## mac
+
+**Mac** · category `math` · top `mac`
+
+One-cycle-latency multiply-accumulate unit. Fixed-point mode supports independent operand widths/signs and Q-format binary points, optional round-to-nearest-even, output saturation, and overflow/inexact flags. Floating-point mode is IEEE-754 binary32 fused multiply-add with round-to-nearest-even and overflow/underflow/inexact/invalid flags. Clock - clk. Reset - synchronous active-low rst_n. Latency - one clock from valid_i to valid_o. Throughput - one result per clock. Errors - bad widths/fraction positions or non-binary32 floating-point widths rejected at elaboration.
+
+Sources: `src/mac.sv`, `src/fp32_fma.sv`
+
+[HTML module page](../math/mac/docs/index.html)

@@ -7,6 +7,12 @@
 # Date: 2026-09-29
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$SCRIPT_DIR/.." && pwd)"
+source "$REPO/.tools"
+SIM="${SIM:-${SIMULATOR:-iverilog}}"
+SYNTH_TOOL="${SYNTH_TOOL:-${SYNTHESIS:-yosys}}"
+PNR_TOOL="${PNR_TOOL:-${PLACE_ROUTE:-}}"
+PYTHON_SIM="${PYTHON_SIM:-${PYTHON_SIMULATOR:-verilator}}"
+export SIM SYNTH_TOOL PNR_TOOL PYTHON_SIM
 
 # lookup <ip>  -> sets CAT TOP TB ; exits when the IP is unknown
 lookup() {

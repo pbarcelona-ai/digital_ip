@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a192f">
 <meta name="description" content="AXI4-Lite address decoder. Version 1.0.0. Purely combinational decode of an address into a one-hot slave select over NSLAVE regions. Region i matches when (addr &amp; MASK[i]) == BASE[i] (MASK selects the compared address bits, so a 4 KB region at 0x1000 uses BASE=0x1000 and MASK=0xFFFFF000). When more than one region matches the lowest index wins and multi_o is raised (a configuration error the parameter check also reports for constant overlaps). No match sets miss_o (unmapped access, the caller returns DECERR). Clock - none (combinational, 0 latency). Reset - none. Timing - one masked compare per region. Errors - overlapping regions rejected at elaboration; NSLAVE &lt; 1 rejected. Latency - 0 clocks (combinational).">
 <title>Axi4 Lite Decoder | Digital IP</title><link rel="stylesheet" href="../../../docs/site.css">
 </head><body>
-<header class="topbar"><a class="brand" href="../../../docs/index.html">DIGITAL IP / BUS</a><a href="../../../README.md">Repository README</a></header>
+<header class="topbar"><a class="brand" href="../../../docs/index.html">BARCELONA ENTERPRISES / DIGITAL IP / BUS</a><a href="../../../README.md">Repository README</a></header>
 <main class="shell">
 <section class="hero"><p class="eyebrow">bus / axi4_lite_decoder</p><h1>Axi4 Lite Decoder</h1><p class="lede">AXI4-Lite address decoder. Version 1.0.0. Purely combinational decode of an address into a one-hot slave select over NSLAVE regions. Region i matches when (addr &amp; MASK[i]) == BASE[i] (MASK selects the compared address bits, so a 4 KB region at 0x1000 uses BASE=0x1000 and MASK=0xFFFFF000). When more than one region matches the lowest index wins and multi_o is raised (a configuration error the parameter check also reports for constant overlaps). No match sets miss_o (unmapped access, the caller returns DECERR). Clock - none (combinational, 0 latency). Reset - none. Timing - one masked compare per region. Errors - overlapping regions rejected at elaboration; NSLAVE &lt; 1 rejected. Latency - 0 clocks (combinational).</p>
 <div class="actions"><code>make -C bus/axi4_lite_decoder test</code><code>make -C bus/axi4_lite_decoder diagrams</code></div></section>

@@ -18,12 +18,12 @@ images/                                 Scaler sample input
 examples/regmap/                        Register-map generator example
 ```
 
-Categories: `common` (small blocks and DSP), `cdc`, `fifo`, `memory`, `timing`, `bus`, `integrity`, `peripherals`, `scalers`.
+Categories: `common` (small blocks and DSP), `cdc`, `fifo`, `math`, `memory`, `timing`, `bus`, `integrity`, `peripherals`, `scalers`.
 
 ## Use
 
 ```
-make -C <category>/<ip> test                     # local Icarus simulation
+make -C <category>/<ip> test                     # local simulation via .tools
 make -C <category>/<ip> yosys                    # local Yosys Xilinx flow
 make -C <category>/<ip> docs                     # generate HTML and Markdown catalog
 make -C <category>/<ip> diagrams                 # generate module hierarchy DOT/SVG
@@ -52,6 +52,12 @@ Synchronous reset, documented clock-domain assumptions, elaboration-time paramet
 - `cordic`, `dds`, `fir`, and `cic` are independent modules; category names remain catalog metadata.
 
 The scaler modules live under [scalers](scalers/). Their overview is [SCALER_README.md](SCALER_README.md), reference documentation is in [docs/scaler](docs/scaler), and shared tooling is in [tools](tools). The default `make test` runs both the general IP and scaler regressions.
+
+## Tool selection
+
+Edit `.tools` to select the active `SIMULATOR`, `PYTHON_SIMULATOR`, `SYNTHESIS`, and `PLACE_ROUTE` backends; the root and per-IP Makefiles and runners read this file. Simulation options are `iverilog`, `vcs`, `modelsim`, `questa`, and `questasim`; synthesis options are `yosys` and `synplify`; place and route supports `vivado`. Command-line overrides are available, for example `make test SIM=questa`, `make synth SYNTH_TOOL=synplify`, and `make pnr IP=<ip> PNR_TOOL=vivado`.
+
+Synplify and Vivado are client-specific hooks, not bundled project flows. Configure `SYNPLIFY_RUNNER` with a wrapper executable and `PLACE_ROUTE=vivado` plus `VIVADO_TCL` with a project Tcl script. The scripts pass each IP's directory, top module, source manifest, and output directory to those hooks. VCS, ModelSim, Questa, Synplify, and Vivado are not validated in this environment.
 
 ## Register-map generator
 

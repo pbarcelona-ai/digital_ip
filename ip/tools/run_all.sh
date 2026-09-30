@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Runs every testbench and prints a summary. Bash only - no Python needed.
-# Usage: [SIM=iverilog|verilator] [MODE=frame|pingpong|linebuf] [VCD=1] \
+# Usage: [SIM=iverilog|verilator|vcs|modelsim|questa|questasim] [MODE=frame|pingpong|linebuf] [VCD=1] \
 #        tools/run_all.sh [dir ...] [+plusarg ...]
 #   SIM  : simulator (default iverilog)
 #   MODE : frame-store mode of the DUTs (default frame)
@@ -15,13 +15,16 @@
 #   Arguments starting with '+' are passed to every IP testbench, e.g.
 #     tools/run_all.sh +IMG=photo.ppm        (all IPs scale photo.ppm)
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+source "$ROOT/.tools"
 export NO_VIEW=1          # never open waveform viewers during a regression
-SIM="${SIM:-iverilog}"
+SIM="${SIM:-${SIMULATOR:-iverilog}}"
+export SIM
 MODE="${MODE:-frame}"
 SCALER_OUTDIR="${SCALER_OUTDIR:-}"
 case "$SIM" in
-  iverilog)  RUN="$ROOT/tools/run_iverilog.sh"; LOGDIR="" ;;
-  verilator) RUN="$ROOT/tools/run_sim.sh";      LOGDIR="$ROOT/build/scaler" ;;
+  iverilog|icarus) RUN="$ROOT/tools/run_iverilog.sh"; LOGDIR="" ;;
+  verilator)       RUN="$ROOT/tools/run_sim.sh";      LOGDIR="$ROOT/build/scaler" ;;
+  vcs|modelsim|questa|questasim) RUN="$ROOT/tools/run_vendor_sim.sh"; LOGDIR="$ROOT/build/vendor/$SIM" ;;
   *) echo "unknown SIM=$SIM"; exit 2 ;;
 esac
 MODULES=(axi_checkers axil_regbus axil_split scaler_ctrl banked_framebuf scaler_dda)
@@ -57,6 +60,8 @@ for d in "${DIRS[@]}"; do
   if "$RUN" "$d" ${A[@]+"${A[@]}"} > /dev/null 2>&1; then r=PASS; else r=FAIL; fail=1; fi
   if [ "$SIM" = verilator ]; then
     SIMLOG="$ROOT/build/scaler/$d/sim.log"
+  elif [[ "$SIM" == vcs || "$SIM" == modelsim || "$SIM" == questa || "$SIM" == questasim ]]; then
+    SIMLOG="$ROOT/build/vendor/$SIM/$d/sim.log"
   elif [ -n "$SCALER_OUTDIR" ]; then
     SIMLOG="$SCALER_OUTDIR/$d/sim.log"
   else

@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a192f">
 <meta name="description" content="Edge detector for WIDTH signals. Version 1.0.0. EDGE selects rising (0), falling (1) or both (2). Optional two-flop input synchronizer (SYNC_INPUT=1) for asynchronous inputs. Clock - clk; input must be synchronous unless SYNC_INPUT=1. Reset - synchronous active low, previous-value register resets to RESET_LEVEL so no false edge appears after reset. Latency - pulse_o is registered: 1 clock after the input changes (3 with SYNC_INPUT). Output - one clock wide pulse. Errors - invalid EDGE or WIDTH rejected at elaboration.">
 <title>Edge Detect | Digital IP</title><link rel="stylesheet" href="../../../docs/site.css">
 </head><body>
-<header class="topbar"><a class="brand" href="../../../docs/index.html">DIGITAL IP / COMMON</a><a href="../../../README.md">Repository README</a></header>
+<header class="topbar"><a class="brand" href="../../../docs/index.html">BARCELONA ENTERPRISES / DIGITAL IP / COMMON</a><a href="../../../README.md">Repository README</a></header>
 <main class="shell">
 <section class="hero"><p class="eyebrow">common / edge_detect</p><h1>Edge Detect</h1><p class="lede">Edge detector for WIDTH signals. Version 1.0.0. EDGE selects rising (0), falling (1) or both (2). Optional two-flop input synchronizer (SYNC_INPUT=1) for asynchronous inputs. Clock - clk; input must be synchronous unless SYNC_INPUT=1. Reset - synchronous active low, previous-value register resets to RESET_LEVEL so no false edge appears after reset. Latency - pulse_o is registered: 1 clock after the input changes (3 with SYNC_INPUT). Output - one clock wide pulse. Errors - invalid EDGE or WIDTH rejected at elaboration.</p>
 <div class="actions"><code>make -C common/edge_detect test</code><code>make -C common/edge_detect diagrams</code></div></section>

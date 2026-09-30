@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a192f">
 <meta name="description" content="Free-running system timestamp counter. Version 1.0.0. WIDTH-bit counter incrementing on every tick_i (tie to 1 for clk resolution, or use clock_enable for microseconds). clear_i zeroes it and load_i loads a value. capture_i latches the count into capture_o (one clock later, with cap_valid_o) so software can read a coherent snapshot of a wide value; TS_CAPTURE_EDGE adds a synchronized event input for external timestamping. Clock - clk. Reset - synchronous active low, count 0. Latency - capture_o valid 1 clock after capture_i. Rollover - wraps silently; wrap_o pulses on overflow. Errors - WIDTH &lt; 2 rejected at elaboration.">
 <title>Timestamp Counter | Digital IP</title><link rel="stylesheet" href="../../../docs/site.css">
 </head><body>
-<header class="topbar"><a class="brand" href="../../../docs/index.html">DIGITAL IP / TIMING</a><a href="../../../README.md">Repository README</a></header>
+<header class="topbar"><a class="brand" href="../../../docs/index.html">BARCELONA ENTERPRISES / DIGITAL IP / TIMING</a><a href="../../../README.md">Repository README</a></header>
 <main class="shell">
 <section class="hero"><p class="eyebrow">timing / timestamp_counter</p><h1>Timestamp Counter</h1><p class="lede">Free-running system timestamp counter. Version 1.0.0. WIDTH-bit counter incrementing on every tick_i (tie to 1 for clk resolution, or use clock_enable for microseconds). clear_i zeroes it and load_i loads a value. capture_i latches the count into capture_o (one clock later, with cap_valid_o) so software can read a coherent snapshot of a wide value; TS_CAPTURE_EDGE adds a synchronized event input for external timestamping. Clock - clk. Reset - synchronous active low, count 0. Latency - capture_o valid 1 clock after capture_i. Rollover - wraps silently; wrap_o pulses on overflow. Errors - WIDTH &lt; 2 rejected at elaboration.</p>
 <div class="actions"><code>make -C timing/timestamp_counter test</code><code>make -C timing/timestamp_counter diagrams</code></div></section>

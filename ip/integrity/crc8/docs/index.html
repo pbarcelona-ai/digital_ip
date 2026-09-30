@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a192f">
 <meta name="description" content="CRC-8 (polynomial 0x07, init 0, no reflection). Version 1.0.0. Thin wrapper around crc_core with the standard CRC8 parameters as defaults (POLY, INIT, reflection and final XOR are overridable for other 8-bit CRCs). Bytes are consumed little-endian, DATA_W bits per clock, keep_i marks valid bytes of a partial last word. Clock - clk. Reset - synchronous active low, register = INIT. Latency - crc_o updates 1 clock after valid_i. Check value - CRC of the ASCII string 123456789 is 0xF4. Errors - invalid widths rejected at elaboration by crc_core.">
 <title>Crc8 | Digital IP</title><link rel="stylesheet" href="../../../docs/site.css">
 </head><body>
-<header class="topbar"><a class="brand" href="../../../docs/index.html">DIGITAL IP / INTEGRITY</a><a href="../../../README.md">Repository README</a></header>
+<header class="topbar"><a class="brand" href="../../../docs/index.html">BARCELONA ENTERPRISES / DIGITAL IP / INTEGRITY</a><a href="../../../README.md">Repository README</a></header>
 <main class="shell">
 <section class="hero"><p class="eyebrow">integrity / crc8</p><h1>Crc8</h1><p class="lede">CRC-8 (polynomial 0x07, init 0, no reflection). Version 1.0.0. Thin wrapper around crc_core with the standard CRC8 parameters as defaults (POLY, INIT, reflection and final XOR are overridable for other 8-bit CRCs). Bytes are consumed little-endian, DATA_W bits per clock, keep_i marks valid bytes of a partial last word. Clock - clk. Reset - synchronous active low, register = INIT. Latency - crc_o updates 1 clock after valid_i. Check value - CRC of the ASCII string 123456789 is 0xF4. Errors - invalid widths rejected at elaboration by crc_core.</p>
 <div class="actions"><code>make -C integrity/crc8 test</code><code>make -C integrity/crc8 diagrams</code></div></section>
