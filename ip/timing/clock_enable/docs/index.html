@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Programmable clock-enable generator. Version 1.0.0. Produces a one-clock ce_o pulse every DIV clocks (DIV = div_i, values 0 and 1 give a pulse every clock). The divide ratio may change at any time and takes effect at the next pulse. Clock - clk. Reset - synchronous active low; counter cleared, ce_o low. Latency - ce_o is registered; first pulse DIV clocks after en_i rises. Timing - one counter compare per clock, DIV_W bit wide. Errors - DIV_W &lt; 1 rejected at elaboration. Does not divide the clock itself; use ce_o as an enable on clk.">
+<title>Clock Enable | Digital IP</title><link rel="stylesheet" href="../../../docs/site.css">
+</head><body>
+<header class="topbar"><a class="brand" href="../../../docs/index.html">DIGITAL IP / TIMING</a><a href="../../../README.md">Repository README</a></header>
+<main class="shell">
+<section class="hero"><p class="eyebrow">timing / clock_enable</p><h1>Clock Enable</h1><p class="lede">Programmable clock-enable generator. Version 1.0.0. Produces a one-clock ce_o pulse every DIV clocks (DIV = div_i, values 0 and 1 give a pulse every clock). The divide ratio may change at any time and takes effect at the next pulse. Clock - clk. Reset - synchronous active low; counter cleared, ce_o low. Latency - ce_o is registered; first pulse DIV clocks after en_i rises. Timing - one counter compare per clock, DIV_W bit wide. Errors - DIV_W &lt; 1 rejected at elaboration. Does not divide the clock itself; use ce_o as an enable on clk.</p>
+<div class="actions"><code>make -C timing/clock_enable test</code><code>make -C timing/clock_enable diagrams</code></div></section>
+<section class="content"><article><p class="eyebrow">Implementation</p><h2>RTL sources</h2><ul class="file-list"><li><a href="../src/clock_enable.sv">src/clock_enable.sv</a></li></ul>
+<h2>Verification</h2><ul class="file-list"><li><a href="../tb/clock_enable_tb.sv">tb/clock_enable_tb.sv</a></li><li><a href="../../../shared/tb/lib/axil_bfm.sv">../../shared/tb/lib/axil_bfm.sv</a></li><li><a href="../../../shared/tb/lib/axi4_mem_model.sv">../../shared/tb/lib/axi4_mem_model.sv</a></li></ul></article>
+<aside><p class="eyebrow">Build surface</p><h2>Commands</h2><ul class="targets"><li><code>make test</code> simulation</li><li><code>make yosys</code> synthesis</li><li><code>make docs</code> HTML and Markdown</li><li><code>make diagrams</code> DOT and SVG</li></ul><h2>Diagram</h2><p><a href="block_diagram.svg">SVG diagram</a> · <a href="block_diagram.dot">DOT source</a></p><p><a href="../scripts/build.f">RTL manifest</a> · <a href="../tb/scripts/build.f">Testbench manifest</a></p></aside></section>
+<footer><a href="../../../docs/index.html">All IP modules</a><span>Generated from the catalog and RTL headers.</span></footer>
+</main></body></html>

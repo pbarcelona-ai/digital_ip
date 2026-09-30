@@ -1,0 +1,27 @@
+# simulation output
+*/sim_out/
+/scalers/*/sim_out/
+build/
+build_iverilog/
+ppm_out/
+obj_dir/
+*.vvp
+*.vcd
+*.fst
+
+# synthesis output of each module (regenerate with <module>/synth.sh or
+# tools/synth_all.sh); the hierarchical utilization reports are kept as
+# reference results. Anchored with a leading "/" so it does NOT match
+# tools/yosys/, which holds the shared synthesis script, formatter and tests.
+/*/yosys/*
+!/*/yosys/utilization_hier.rpt
+/scalers/*/yosys/*
+!/scalers/*/yosys/utilization_hier.rpt
+!/tools/yosys/*
+
+# downloaded Xilinx UNISIM simulation models (tools/gatesim.sh fetches them)
+tools/yosys/unisim/
+
+__pycache__/
+*.pyc
+#.DS_Store

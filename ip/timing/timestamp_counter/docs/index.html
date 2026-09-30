@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Free-running system timestamp counter. Version 1.0.0. WIDTH-bit counter incrementing on every tick_i (tie to 1 for clk resolution, or use clock_enable for microseconds). clear_i zeroes it and load_i loads a value. capture_i latches the count into capture_o (one clock later, with cap_valid_o) so software can read a coherent snapshot of a wide value; TS_CAPTURE_EDGE adds a synchronized event input for external timestamping. Clock - clk. Reset - synchronous active low, count 0. Latency - capture_o valid 1 clock after capture_i. Rollover - wraps silently; wrap_o pulses on overflow. Errors - WIDTH &lt; 2 rejected at elaboration.">
+<title>Timestamp Counter | Digital IP</title><link rel="stylesheet" href="../../../docs/site.css">
+</head><body>
+<header class="topbar"><a class="brand" href="../../../docs/index.html">DIGITAL IP / TIMING</a><a href="../../../README.md">Repository README</a></header>
+<main class="shell">
+<section class="hero"><p class="eyebrow">timing / timestamp_counter</p><h1>Timestamp Counter</h1><p class="lede">Free-running system timestamp counter. Version 1.0.0. WIDTH-bit counter incrementing on every tick_i (tie to 1 for clk resolution, or use clock_enable for microseconds). clear_i zeroes it and load_i loads a value. capture_i latches the count into capture_o (one clock later, with cap_valid_o) so software can read a coherent snapshot of a wide value; TS_CAPTURE_EDGE adds a synchronized event input for external timestamping. Clock - clk. Reset - synchronous active low, count 0. Latency - capture_o valid 1 clock after capture_i. Rollover - wraps silently; wrap_o pulses on overflow. Errors - WIDTH &lt; 2 rejected at elaboration.</p>
+<div class="actions"><code>make -C timing/timestamp_counter test</code><code>make -C timing/timestamp_counter diagrams</code></div></section>
+<section class="content"><article><p class="eyebrow">Implementation</p><h2>RTL sources</h2><ul class="file-list"><li><a href="../src/timestamp_counter.sv">src/timestamp_counter.sv</a></li></ul>
+<h2>Verification</h2><ul class="file-list"><li><a href="../tb/timestamp_counter_tb.sv">tb/timestamp_counter_tb.sv</a></li><li><a href="../../../shared/tb/lib/axil_bfm.sv">../../shared/tb/lib/axil_bfm.sv</a></li><li><a href="../../../shared/tb/lib/axi4_mem_model.sv">../../shared/tb/lib/axi4_mem_model.sv</a></li></ul></article>
+<aside><p class="eyebrow">Build surface</p><h2>Commands</h2><ul class="targets"><li><code>make test</code> simulation</li><li><code>make yosys</code> synthesis</li><li><code>make docs</code> HTML and Markdown</li><li><code>make diagrams</code> DOT and SVG</li></ul><h2>Diagram</h2><p><a href="block_diagram.svg">SVG diagram</a> · <a href="block_diagram.dot">DOT source</a></p><p><a href="../scripts/build.f">RTL manifest</a> · <a href="../tb/scripts/build.f">Testbench manifest</a></p></aside></section>
+<footer><a href="../../../docs/index.html">All IP modules</a><span>Generated from the catalog and RTL headers.</span></footer>
+</main></body></html>

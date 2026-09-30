@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="AXI-Stream FIFO. Version 1.0.0. Buffers a full AXI-Stream (tdata, tkeep, tlast, tuser) in a block-RAM FIFO of DEPTH beats with standard valid/ready handshakes and a fill level. Built on ip_axis_fifo (two-register output pipeline for timing). Clock - aclk. Reset - synchronous aresetn, empty. Latency - 3 clocks from an input beat to the output when empty. Throughput - one beat per clock. Backpressure - s_axis_tready low when full; no data is ever dropped. Errors - DEPTH must be a power of two &gt;= 4 (rejected at elaboration); USER_W &gt;= 1.">
+<title>Axi Stream Fifo | Digital IP</title><link rel="stylesheet" href="../../../docs/site.css">
+</head><body>
+<header class="topbar"><a class="brand" href="../../../docs/index.html">DIGITAL IP / BUS</a><a href="../../../README.md">Repository README</a></header>
+<main class="shell">
+<section class="hero"><p class="eyebrow">bus / axi_stream_fifo</p><h1>Axi Stream Fifo</h1><p class="lede">AXI-Stream FIFO. Version 1.0.0. Buffers a full AXI-Stream (tdata, tkeep, tlast, tuser) in a block-RAM FIFO of DEPTH beats with standard valid/ready handshakes and a fill level. Built on ip_axis_fifo (two-register output pipeline for timing). Clock - aclk. Reset - synchronous aresetn, empty. Latency - 3 clocks from an input beat to the output when empty. Throughput - one beat per clock. Backpressure - s_axis_tready low when full; no data is ever dropped. Errors - DEPTH must be a power of two &gt;= 4 (rejected at elaboration); USER_W &gt;= 1.</p>
+<div class="actions"><code>make -C bus/axi_stream_fifo test</code><code>make -C bus/axi_stream_fifo diagrams</code></div></section>
+<section class="content"><article><p class="eyebrow">Implementation</p><h2>RTL sources</h2><ul class="file-list"><li><a href="../../../shared/src/fifo/ip_axis_fifo.sv">../../shared/src/fifo/ip_axis_fifo.sv</a></li><li><a href="../src/axi_stream_fifo.sv">src/axi_stream_fifo.sv</a></li></ul>
+<h2>Verification</h2><ul class="file-list"><li><a href="../tb/axi_stream_fifo_tb.sv">tb/axi_stream_fifo_tb.sv</a></li><li><a href="../../../shared/tb/lib/axil_bfm.sv">../../shared/tb/lib/axil_bfm.sv</a></li><li><a href="../../../shared/tb/lib/axi4_mem_model.sv">../../shared/tb/lib/axi4_mem_model.sv</a></li></ul></article>
+<aside><p class="eyebrow">Build surface</p><h2>Commands</h2><ul class="targets"><li><code>make test</code> simulation</li><li><code>make yosys</code> synthesis</li><li><code>make docs</code> HTML and Markdown</li><li><code>make diagrams</code> DOT and SVG</li></ul><h2>Diagram</h2><p><a href="block_diagram.svg">SVG diagram</a> · <a href="block_diagram.dot">DOT source</a></p><p><a href="../scripts/build.f">RTL manifest</a> · <a href="../tb/scripts/build.f">Testbench manifest</a></p></aside></section>
+<footer><a href="../../../docs/index.html">All IP modules</a><span>Generated from the catalog and RTL headers.</span></footer>
+</main></body></html>

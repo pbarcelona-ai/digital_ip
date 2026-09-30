@@ -1,0 +1,48 @@
+# ***************
+# Filename: synth.ys
+# Author: Paul Barcelona
+# Description: Common Yosys script for every IP. Reads the design
+#   (generated read_design.ys), elaborates, optimizes, infers memories
+#   into block RAM, packs multipliers into DSP48 and synthesizes to
+#   Xilinx 7-series primitives. Hierarchical utilization is reported.
+# Date: 2026-09-29
+#
+# Working directory is build/yosys/<ip>; every result is written here.
+
+# ---- 1. Read sources and set the top module ----
+script read_design.ys
+
+# ---- 2. Compile / elaborate to RTL cells ----
+proc
+opt_expr
+opt_clean
+check -assert
+tee -o pre_synth.rpt stat
+
+# ---- 3. Technology independent optimization ----
+opt -full
+wreduce
+peepopt
+opt_clean
+
+# ---- 3b. Logic depth estimate (Yosys has no static timing engine) ----
+# Longest topological path per module before technology mapping. Flops
+# and memories break paths (-noff). Keep depth small (about <= 10) for
+# 100 MHz closure; use Vivado or nextpnr for real static timing.
+tee -o logic_depth.rpt ltp -noff
+
+# ---- 4. Memories -> BRAM/LUTRAM, multipliers -> DSP48E1, LUT6 map ----
+# Hierarchy is kept (no -flatten) so utilization can be reported per module.
+synth_xilinx -family xc7 -noiopad -noclkbuf -run :map_ffs
+opt -full
+synth_xilinx -family xc7 -noiopad -noclkbuf -run map_ffs:
+
+# ---- 5. Clean up and check ----
+opt_clean -purge
+check
+
+# ---- 6. Reports and netlist ----
+tee -o utilization_hier.rpt stat -tech xilinx -width
+tee -o utilization_flat.rpt stat -tech xilinx
+write_verilog -noattr netlist.v
+write_json netlist.json

@@ -1,0 +1,8 @@
+digraph "crc8" {
+  graph [rankdir=LR, bgcolor="white", pad=0.25, nodesep=0.35, ranksep=0.65, label="crc8 RTL hierarchy", labelloc=t, fontname="Helvetica", fontsize=16];
+  node [shape=box, fontname="Helvetica", fontsize=10, margin="0.14,0.08"];
+  edge [color="#52635c", arrowsize=0.7];
+  n0 [label="crc8\n(top)", style="rounded,filled", fillcolor="#dcefe8", color="#176b59"];
+  n1 [label="crc_core\n(u_core)", style="rounded,filled", fillcolor="#f4f6f5", color="#71817a"];
+  n0 -> n1;
+}

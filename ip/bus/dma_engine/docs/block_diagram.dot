@@ -1,0 +1,14 @@
+digraph "dma_engine" {
+  graph [rankdir=LR, bgcolor="white", pad=0.25, nodesep=0.35, ranksep=0.65, label="dma_engine RTL hierarchy", labelloc=t, fontname="Helvetica", fontsize=16];
+  node [shape=box, fontname="Helvetica", fontsize=10, margin="0.14,0.08"];
+  edge [color="#52635c", arrowsize=0.7];
+  n0 [label="dma_engine\n(top)", style="rounded,filled", fillcolor="#dcefe8", color="#176b59"];
+  n1 [label="ip_axil_regs\n(u_regs)", style="rounded,filled", fillcolor="#f4f6f5", color="#71817a"];
+  n2 [label="dma_rd_engine\n(u_rd)", style="rounded,filled", fillcolor="#f4f6f5", color="#71817a"];
+  n3 [label="ip_axis_fifo\n(u_fifo)", style="rounded,filled", fillcolor="#f4f6f5", color="#71817a"];
+  n4 [label="dma_wr_engine\n(u_wr)", style="rounded,filled", fillcolor="#f4f6f5", color="#71817a"];
+  n0 -> n1;
+  n0 -> n2;
+  n0 -> n3;
+  n0 -> n4;
+}

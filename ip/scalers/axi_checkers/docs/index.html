@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Passive protocol checkers with functional coverage. axis_checker covers AXI4-Stream handshake rules (no valid retraction, stable payload under stall, no X) and video framing (tuser on the first beat, tlast at the end of each line, complete frames). axil_checker covers the AXI4-Lite master and slave rules on all five channels, response ordering and OKAY responses. Each rule is implemented twice: as procedural checks that run on every simulator including Icarus, and as SVA properties compiled with +define+SVA_ON. Coverage counters (orderings, stalls, stall-length buckets, back-to-back transfers, frames) are printed by report(). The testbench drives legal traffic (zero errors expected) and then violates every rule on purpose (each must be detected).">
+  <title>axi_checkers | Scaler IP</title>
+    <link rel="stylesheet" href="../../../tools/docs/site.css">
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="../../../tools/docs/index.html"><span class="brand-mark">S</span><span>SCALER IP / MODULE NOTE</span></a><a class="back-link" href="../../../tools/docs/index.html">All modules <span aria-hidden="true">↗</span></a></header>
+  <main class="page-shell">
+    <section class="hero">
+      <p class="eyebrow">verification IP / axi_checkers</p>
+      <h1>axi_checkers</h1>
+      <p class="lede">Passive protocol checkers with functional coverage. axis_checker covers AXI4-Stream handshake rules (no valid retraction, stable payload under stall, no X) and video framing (tuser on the first beat, tlast at the end of each line, complete frames). axil_checker covers the AXI4-Lite master and slave rules on all five channels, response ordering and OKAY responses. Each rule is implemented twice: as procedural checks that run on every simulator including Icarus, and as SVA properties compiled with +define+SVA_ON. Coverage counters (orderings, stalls, stall-length buckets, back-to-back transfers, frames) are printed by report(). The testbench drives legal traffic (zero errors expected) and then violates every rule on purpose (each must be detected).</p>
+    <div class="actions"><a class="button secondary" href="../README.md">README</a><span class="command">make -C scalers/axi_checkers test</span></div>
+    </section>
+    <section class="content-grid">
+      <article class="panel main-panel">
+        <p class="eyebrow">RTL source</p>
+        <h2>Implementation</h2>
+        <ul class="file-list"><li><a href="../src/axil_checker.sv">src/axil_checker.sv</a></li><li><a href="../src/axis_checker.sv">src/axis_checker.sv</a></li></ul>
+        <h2>Verification</h2>
+        <ul class="file-list"><li><a href="../tb/axi_checkers_tb.sv">tb/axi_checkers_tb.sv</a></li><li><a href="../tb/build.f">tb/build.f</a></li><li><a href="../tb/scripts/build.f">tb/scripts/build.f</a></li></ul>
+      </article>
+      <aside class="panel side-panel">
+              <p class="eyebrow">Build surface</p>
+        <h2>Scripts &amp; manifests</h2>
+        <ul class="file-list"><li><a href="../scripts/run.sh">scripts/run.sh</a></li></ul>
+        <h2>Includes</h2>
+        <p class="quiet">No include/ directory was found for this module.</p>
+        <p class="dependency"><strong>Depends on:</strong> none</p>
+      </aside>
+    </section>
+    <footer class="page-footer"><a href="../../../tools/docs/index.html">← Back to scaler IP index</a><span>Generated from this module's README and file tree.</span></footer>
+  </main>
+</body>
+</html>
