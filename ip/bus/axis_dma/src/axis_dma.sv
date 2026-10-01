@@ -1,25 +1,25 @@
 // ***************
 // Filename: axis_dma.sv
 // Author: FPGA Cores 4 U
-// Description: AXI-Stream DMA with two independent channels sharing one
-//   AXI4 master port. MM2S reads LEN bytes from memory and emits them on
-//   an AXI-Stream master (tlast on the last word). S2MM accepts an AXI-
-//   Stream slave and writes LEN bytes to memory. Both use burst engines
-//   limited to MAX_BURST beats and 4 KB boundaries, with FIFOs on the
-//   stream sides. AXI-Lite map - 0x00 CTRL [0]mm2s_start [1]s2mm_start
-//   (pulses) [2]irq_en, 0x04 MM2S_ADDR, 0x08 MM2S_LEN, 0x0C S2MM_ADDR,
-//   0x10 S2MM_LEN, 0x14 STATUS [0]mm2s_busy [1]s2mm_busy [8]mm2s_done
-//   [9]s2mm_done [10]mm2s_err [11]s2mm_err, done and error bits are W1C.
-//   Version 1.0.0. Clock - single clock aclk, every input is synchronous
-//   to it unless a two-flop synchronizer is mentioned. Reset - synchronous
-//   active low aresetn, registers take the documented reset values.
-//   Latency - AXI-Lite write response and read data follow the request by
-//   about 2 to 3 clocks (ip_axil_regs, registered read path). Timing -
-//   registered outputs, no combinational path from the bus to the pins.
-//   Errors - out of range AXI-Lite accesses return SLVERR; illegal
-//   parameter values stop elaboration with an $error. The AXI4 master
-//   follows the AXI4 rules of 4 KB burst boundaries; a bus error response
-//   stops the transfer and is reported in STATUS.
+// Description: AXI-Stream DMA with two independent channels sharing one AXI4
+//   master port. MM2S reads LEN bytes from memory and emits them on an
+//   AXI-Stream master (tlast on the last word). S2MM accepts an AXI-Stream
+//   slave and writes LEN bytes to memory. Both use burst engines limited to
+//   MAX_BURST beats and 4 KB boundaries, with FIFOs on the stream sides.
+//   AXI-Lite map - 0x00 CTRL [0]mm2s_start [1]s2mm_start (pulses) [2]irq_en,
+//   0x04 MM2S_ADDR, 0x08 MM2S_LEN, 0x0C S2MM_ADDR, 0x10 S2MM_LEN, 0x14 STATUS
+//   [0]mm2s_busy [1]s2mm_busy [8]mm2s_done [9]s2mm_done [10]mm2s_err
+//   [11]s2mm_err, done and error bits are W1C. Version 1.0.0. Clock - single
+//   clock aclk, every input is synchronous to it unless a two-flop
+//   synchronizer is mentioned. Reset - synchronous active low aresetn,
+//   registers take the documented reset values. Latency - AXI-Lite write
+//   response and read data follow the request by about 2 to 3 clocks
+//   (ip_axil_regs, registered read path). Timing - registered outputs, no
+//   combinational path from the bus to the pins. Errors - out of range
+//   AXI-Lite accesses return SLVERR; illegal parameter values stop
+//   elaboration with an $error. The AXI4 master follows the AXI4 rules of 4
+//   KB burst boundaries; a bus error response stops the transfer and is
+//   reported in STATUS.
 // Date: 2026-09-29
 module axis_dma #(
   parameter int MAX_BURST  = 16,

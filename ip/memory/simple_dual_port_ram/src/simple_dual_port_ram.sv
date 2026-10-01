@@ -3,14 +3,12 @@
 // Author: FPGA Cores 4 U
 // Description: Simple dual-port RAM with an independent write port and read
 //   port. Version 1.0.0. CLOCKING 0 uses wclk for both ports; a separate rclk
-//   is used when ASYNC=1 (unrelated clocks, read-during- write of the same
+//   is used when ASYNC=1 (unrelated clocks, read-during-write of the same
 //   address returns old or new data, undefined which). Optional byte enables.
 //   Inferred as block RAM. Reset - the read output register resets
 //   synchronously (active low, rclk domain). Latency - read data one rclk
 //   after raddr with re_i. Errors - DEPTH<2, WIDTH<1 or BYTE_EN with WIDTH
-//   not multiple of 8 rejected at elaboration. Clock - the clock of the
-//   parent block, all signals are synchronous to it.
-//   parent block, all signals are synchronous to it.
+//   not multiple of 8 rejected at elaboration.
 // Date: 2026-09-29
 module simple_dual_port_ram #(
   parameter int WIDTH   = 32,

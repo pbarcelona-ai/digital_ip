@@ -7,3 +7,7 @@
 Set `FLOATING_POINT=1` for IEEE-754 binary32 fused multiply-add. Floating-point operands and result must all be 32 bits. The fused result is rounded once to nearest-even and reports overflow, underflow, inexact, and invalid-operation flags. NaNs are returned as the canonical quiet NaN.
 
 Run `make test` from this directory to run both the SystemVerilog bench and the Python reference bench. Select the Python simulator with `make python-test PYTHON_SIM=verilator|iverilog|vcs|questa`; Verilator is the default, and `icarus` is also accepted as an alias for `iverilog`. VCS and Questa use Cocotb vendor runners and require those simulators and licenses; they are not tested locally. The self-checking benches cover signed and unsigned fixed point, fractional alignment, rounding, saturation, exact fused precision, subnormal results, overflow, and invalid operations.
+
+## Documentation
+
+Full datasheet, parameters and port list: https://pbarcelona-ai.github.io/ip/mac/

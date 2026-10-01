@@ -10,10 +10,7 @@
 //   built on async_fifo with the same crossing rules and latency (3 to 5
 //   destination clocks). Reset - synchronous active low per domain. Timing -
 //   see async_fifo. Errors - none at run time (full FIFO deasserts s_tready,
-//   nothing is dropped); illegal parameters stop elaboration. Clock - the
-//   clock of the parent block, all signals are synchronous to it. Latency -
-//   as documented in the parent block, fixed and independent of data.
-//   as documented in the parent block, fixed and independent of data.
+//   nothing is dropped); illegal parameters stop elaboration.
 // Date: 2026-09-29
 module axis_async_bridge #(
   parameter int DATA_W = 32,

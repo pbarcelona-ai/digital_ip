@@ -12,10 +12,6 @@
 //   block. Latency - as documented in the parent block, fixed and independent
 //   of data. Errors - none reported here, out-of-range parameters stop
 //   elaboration or are handled by the parent block.
-//   signals are synchronous to it. Reset - synchronous, driven by the parent
-//   block. Latency - as documented in the parent block, fixed and independent
-//   of data. Errors - none reported here, out-of-range parameters stop
-//   elaboration or are handled by the parent block.
 // Date: 2026-09-29
 module pcie_tl_dma #(
   parameter int MAX_PAYLOAD_DW = 32       // largest burst (DWs)

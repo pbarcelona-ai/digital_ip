@@ -1,6 +1,6 @@
 # SystemVerilog IP library
 
-Reusable, parameterized SystemVerilog IP by FPGA Cores 4 U. Developed for a 100 MHz clock but written to run at any clock (each IP documents its own limits). Registers use AXI4-Lite, data uses AXI4-Stream, every IP has a self-checking testbench, and every IP goes through the same Yosys Xilinx (7 series) synthesis flow with reports.
+Reusable, parameterized SystemVerilog IP by FPGA Cores 4 U. Browse the documented catalog at https://pbarcelona-ai.github.io/ip/. MIT licensed (see [LICENSE](../LICENSE)). Developed for a 100 MHz clock but written to run at any clock (each IP documents its own limits). Registers use AXI4-Lite, data uses AXI4-Stream, every IP has a self-checking testbench, and every IP goes through the same Yosys Xilinx (7 series) synthesis flow with reports.
 
 ## Layout
 

@@ -9,9 +9,7 @@
 //   one clock) reports it. Inferred as block RAM in a single-clock
 //   configuration. Reset - output registers reset synchronously to zero per
 //   port. Latency - 1 clock per port. Errors - DEPTH<2 or WIDTH<1 rejected at
-//   elaboration. Clock - the clock of the parent block, all signals are
-//   synchronous to it.
-//   synchronous to it.
+//   elaboration.
 // Date: 2026-09-29
 module true_dual_port_ram #(
   parameter int WIDTH = 32,

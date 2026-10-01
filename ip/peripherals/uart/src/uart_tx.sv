@@ -7,15 +7,8 @@
 //   comes from a 16x tick so each bit lasts 16 ticks. The tx line is
 //   registered to avoid glitches. Version 1.0.0. Helper block of its IP; see
 //   the top level description for clock, reset, latency and error behavior.
-//   Clock - the clock of the parent block, all signals are synchronous to it.
-//   Reset - synchronous, driven by the parent block. Latency - as documented
-//   in the parent block, fixed and independent of data. Errors - none
-//   reported here, out-of-range parameters stop elaboration or are handled by
-//   the parent block.
-//   Reset - synchronous, driven by the parent block. Latency - as documented
-//   in the parent block, fixed and independent of data. Errors - none
-//   reported here, out-of-range parameters stop elaboration or are handled by
-//   the parent block.
+//   Errors - none reported here, out-of-range parameters stop elaboration or
+//   are handled by the parent block.
 // Date: 2026-09-29
 module uart_tx (
   input  logic       clk,

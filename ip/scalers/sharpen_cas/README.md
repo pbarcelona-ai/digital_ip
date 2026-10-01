@@ -68,3 +68,7 @@ Icarus prints `sorry: constant selects in always_* processes ...` for some `alwa
 **Gate-level check.** `tools/gatesim.sh sharpen_cas` (from the repository root) synthesizes this IP at the testbench size with the same flow and runs the unchanged self-checking testbench on the mapped Xilinx netlist, including its block RAMs and DSP48s (using Xilinx's functional UNISIM models, downloaded on first use). Add `-p NAME=VALUE` / `-D<define>` for other builds, e.g. `-p LINE_BUF=1 -DTB_LINE_BUF=1`; `-vcd` dumps a gate-level VCD and opens it in Surfer.
 
 See the top-level `README.md` for the register maps and protocol-checker details.
+
+## Documentation
+
+Full datasheet, parameters and port list: https://pbarcelona-ai.github.io/ip/sharpen-cas/

@@ -9,9 +9,7 @@
 //   lost; use pulse_sync when spacing cannot be guaranteed. Clocks - src_clk
 //   and dst_clk are unrelated. Reset - synchronous per domain, active low.
 //   Latency - STAGES+1 dst clocks. Errors - none reported; STAGES<2 rejected
-//   at elaboration. Clock - the clock of the parent block, all signals are
-//   synchronous to it.
-//   synchronous to it.
+//   at elaboration.
 // Date: 2026-09-29
 module toggle_sync #(
   parameter int STAGES = 2

@@ -9,9 +9,7 @@
 //   - src_clk and dst_clk unrelated. Reset - synchronous per domain, active
 //   low. Latency - about STAGES+2 dst clocks to pulse_o; busy clears after
 //   ~2*STAGES+3 clocks of the slower domain. Errors - drop_o on overrun;
-//   STAGES<2 rejected at elaboration. Clock - the clock of the parent block,
-//   all signals are synchronous to it.
-//   all signals are synchronous to it.
+//   STAGES<2 rejected at elaboration.
 // Date: 2026-09-29
 module pulse_sync #(
   parameter int STAGES = 2

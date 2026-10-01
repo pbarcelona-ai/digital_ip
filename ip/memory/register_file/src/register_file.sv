@@ -8,9 +8,6 @@
 //   a read of the register being written in the same clock. Clock - clk.
 //   Reset - synchronous active low, all registers cleared. Errors - NREG<2
 //   rejected at elaboration; writes to register 0 with ZERO_REG0 are ignored.
-//   Latency - as documented in the parent block, fixed and independent of
-//   data.
-//   data.
 // Date: 2026-09-29
 module register_file #(
   parameter int WIDTH     = 32,

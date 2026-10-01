@@ -10,10 +10,6 @@
 //   block's control flow. Latency - as documented in the parent block, fixed
 //   and independent of data. Errors - none reported here, out-of-range
 //   parameters stop elaboration or are handled by the parent block.
-//   synchronous to it. Reset - none, the registers are cleared by the parent
-//   block's control flow. Latency - as documented in the parent block, fixed
-//   and independent of data. Errors - none reported here, out-of-range
-//   parameters stop elaboration or are handled by the parent block.
 // Date: 2026-09-29
 module cdc_sync_bit #(
   parameter int STAGES = 2

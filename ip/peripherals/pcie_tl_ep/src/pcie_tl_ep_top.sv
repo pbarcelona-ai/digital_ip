@@ -1,8 +1,8 @@
 // ***************
 // Filename: pcie_tl_ep_top.sv
 // Author: FPGA Cores 4 U
-// Description: PCIe transaction layer endpoint IP top level. 64 bit AXI-
-//   Stream TLP ports (rx from and tx to a PCIe link core such as a hard
+// Description: PCIe transaction layer endpoint IP top level. 64 bit
+//   AXI-Stream TLP ports (rx from and tx to a PCIe link core such as a hard
 //   block), Type 0 config space, BAR0 with block RAM and a stream window,
 //   plus AXI-Stream user ports - s_axis words are DMA written to host memory
 //   as Memory Write TLPs, m_axis carries payload written to the BAR0 stream

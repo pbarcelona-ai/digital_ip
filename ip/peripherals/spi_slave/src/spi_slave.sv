@@ -16,9 +16,7 @@
 //   buffer at the top level; no vendor primitive here). Reset - synchronous
 //   active low, idle. Latency - rx_valid_o about 3 system clocks after the
 //   sampling sclk edge. Errors - WORD_BITS outside 1..32 rejected at
-//   elaboration. Clock - the clock of the parent block, all signals are
-//   synchronous to it.
-//   synchronous to it.
+//   elaboration.
 // Date: 2026-09-29
 module spi_slave #(
   parameter int WORD_BITS = 8,

@@ -11,11 +11,6 @@
 //   in the parent block, fixed and independent of data. Errors - none
 //   reported here, out-of-range parameters stop elaboration or are handled by
 //   the parent block.
-//   Clock - the clock of the parent block, all signals are synchronous to it.
-//   Reset - synchronous, driven by the parent block. Latency - as documented
-//   in the parent block, fixed and independent of data. Errors - none
-//   reported here, out-of-range parameters stop elaboration or are handled by
-//   the parent block.
 // Date: 2026-09-29
 module usb_axis_fifo #(
   parameter int DATA_W = 8,     // tdata width

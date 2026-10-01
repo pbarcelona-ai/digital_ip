@@ -8,9 +8,7 @@
 //   word); otherwise the module is combinational with 0 latency and clk/rst_n
 //   unused. Clock - clk when registered. Timing - log2(WIDTH) XOR levels;
 //   register wide words at 100 MHz. Errors - WIDTH < 1 rejected at
-//   elaboration. Reset - synchronous, driven by the parent block. Latency -
-//   as documented in the parent block, fixed and independent of data.
-//   as documented in the parent block, fixed and independent of data.
+//   elaboration.
 // Date: 2026-09-29
 module parity_gen #(
   parameter int WIDTH      = 8,

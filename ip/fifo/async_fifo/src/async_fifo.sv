@@ -4,20 +4,17 @@
 // Description: Dual clock (asynchronous) FIFO. Gray coded read and write
 //   pointers cross domains through two flop synchronizers, full is generated
 //   in the write domain and empty in the read domain. Storage is a dual clock
-//   RAM (block RAM capable) with a registered read and a first-word-fall-
-//   through output register. DEPTH must be a power of two >= 4. Assert both
-//   resets together. Version 1.0.0. Clocks - wclk and rclk are unrelated
-//   (Gray-coded pointers, two-flop synchronizers), each with its own
-//   synchronous active low reset (reset both together). Latency - a written
-//   word is visible on the read side 3 to 5 read clocks later; full/empty
-//   flags are conservative, never optimistic. Timing - constrain the pointer
-//   crossings with set_max_delay -datapath_only (or false path with skew
-//   control); the memory read path is registered. Errors - writing when full
-//   or reading when empty is ignored (and asserted in simulation); illegal
-//   parameters stop elaboration. Clock - the clock of the parent block, all
-//   signals are synchronous to it. Reset - synchronous, driven by the parent
-//   block.
-//   block.
+//   RAM (block RAM capable) with a registered read and a
+//   first-word-fall-through output register. DEPTH must be a power of two >=
+//   4. Assert both resets together. Version 1.0.0. Clocks - wclk and rclk are
+//   unrelated (Gray-coded pointers, two-flop synchronizers), each with its
+//   own synchronous active low reset (reset both together). Latency - a
+//   written word is visible on the read side 3 to 5 read clocks later;
+//   full/empty flags are conservative, never optimistic. Timing - constrain
+//   the pointer crossings with set_max_delay -datapath_only (or false path
+//   with skew control); the memory read path is registered. Errors - writing
+//   when full or reading when empty is ignored (and asserted in simulation);
+//   illegal parameters stop elaboration.
 // Date: 2026-09-29
 module async_fifo #(
   parameter int DATA_W = 32,

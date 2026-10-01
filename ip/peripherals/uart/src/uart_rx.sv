@@ -7,14 +7,7 @@
 //   one clock word strobe with parity and framing error flags. Break and
 //   noise on the start bit are rejected. Version 1.0.0. Helper block of its
 //   IP; see the top level description for clock, reset, latency and error
-//   behavior. Clock - the clock of the parent block, all signals are
-//   synchronous to it. Reset - synchronous, driven by the parent block.
-//   Latency - as documented in the parent block, fixed and independent of
-//   data. Errors - none reported here, out-of-range parameters stop
-//   elaboration or are handled by the parent block.
-//   synchronous to it. Reset - synchronous, driven by the parent block.
-//   Latency - as documented in the parent block, fixed and independent of
-//   data. Errors - none reported here, out-of-range parameters stop
+//   behavior. Errors - none reported here, out-of-range parameters stop
 //   elaboration or are handled by the parent block.
 // Date: 2026-09-29
 module uart_rx (

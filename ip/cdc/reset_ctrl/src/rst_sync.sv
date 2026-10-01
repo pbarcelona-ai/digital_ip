@@ -11,9 +11,6 @@
 //   synchronous to it. Latency - as documented in the parent block, fixed and
 //   independent of data. Errors - none reported here, out-of-range parameters
 //   stop elaboration or are handled by the parent block.
-//   synchronous to it. Latency - as documented in the parent block, fixed and
-//   independent of data. Errors - none reported here, out-of-range parameters
-//   stop elaboration or are handled by the parent block.
 // Date: 2026-09-29
 module rst_sync #(
   parameter int STAGES         = 3,   // synchronizer flops (>=2)

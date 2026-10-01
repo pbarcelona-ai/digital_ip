@@ -1,8 +1,8 @@
 // ***************
 // Filename: clock_domain_bridge.sv
 // Author: FPGA Cores 4 U
-// Description: Generic clock-domain bridge for multi-bit words using a four-
-//   phase toggle handshake. Version 1.0.0. A word accepted on the source
+// Description: Generic clock-domain bridge for multi-bit words using a
+//   four-phase toggle handshake. Version 1.0.0. A word accepted on the source
 //   valid/ready interface is held in a source register while a request toggle
 //   crosses to the destination (bit_sync); the destination copies the word
 //   into its own output register (data is stable, so the multi-bit capture is
@@ -17,7 +17,6 @@
 //   Timing - the data register to destination register path is a false path
 //   or a max-delay constraint of one destination period; no combinational
 //   logic on it. Errors - STAGES < 2 or DATA_W < 1 rejected at elaboration.
-//   Clock - the clock of the parent block, all signals are synchronous to it.
 // Date: 2026-09-29
 module clock_domain_bridge #(
   parameter int DATA_W = 32,

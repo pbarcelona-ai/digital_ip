@@ -14,9 +14,7 @@
 //   transaction outstanding at a time. Timing - address/data registers cross
 //   under a max-delay constraint of one destination period. Errors - the
 //   master side response (including SLVERR) is passed back unchanged; illegal
-//   parameters stop elaboration. Clock - the clock of the parent block, all
-//   signals are synchronous to it.
-//   signals are synchronous to it.
+//   parameters stop elaboration.
 // Date: 2026-09-29
 module axi4_lite_cdc #(
   parameter int ADDR_W = 8

@@ -10,9 +10,7 @@
 //   latency, no storage). refill_period_i = 0 disables limiting. Clock - clk.
 //   Reset - synchronous active low, bucket full. Errors - none; a downstream
 //   stall (m_ready_i low) does not consume tokens. TOKEN_W < 2 rejected at
-//   elaboration. Latency - as documented in the parent block, fixed and
-//   independent of data.
-//   independent of data.
+//   elaboration.
 // Date: 2026-09-29
 module rate_limiter #(
   parameter int DATA_W  = 32,

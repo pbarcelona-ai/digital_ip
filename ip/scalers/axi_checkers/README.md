@@ -46,3 +46,7 @@ With Verilator 5, use `tools/run_sim.sh axi_checkers [options]` from the reposit
 Icarus prints `sorry: constant selects in always_* processes ...` for some `always_comb` blocks. This is an informational note about sensitivity lists, not an error, and it does not affect results.
 
 See the top-level `README.md` for the register maps and protocol-checker details.
+
+## Documentation
+
+Full datasheet, parameters and port list: https://pbarcelona-ai.github.io/ip/axi-checkers/

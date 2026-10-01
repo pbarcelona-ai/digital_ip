@@ -6,11 +6,11 @@
 //   TAPS set means state bit i is XORed into the feedback). Defaults
 //   implement PRBS7 (x^7+x^6+1, TAPS=0x60, period 127). STEPS shifts are
 //   computed per enabled clock (parallel PRBS, STEPS bits per clock,
-//   bit_o[STEPS-1:0] with bit 0 the oldest). load_i loads seed_i; an all-
-//   zero seed (the lock-up state) is replaced by SEED and flagged on
-//   lockup_o. Clock - clk. Reset - synchronous active low, state = SEED.
-//   Latency - state_o updates 1 clock after en_i. Errors - WIDTH < 2,
-//   STEPS < 1, TAPS = 0 or SEED = 0 rejected at elaboration.
+//   bit_o[STEPS-1:0] with bit 0 the oldest). load_i loads seed_i; an all-zero
+//   seed (the lock-up state) is replaced by SEED and flagged on lockup_o.
+//   Clock - clk. Reset - synchronous active low, state = SEED. Latency -
+//   state_o updates 1 clock after en_i. Errors - WIDTH < 2, STEPS < 1, TAPS =
+//   0 or SEED = 0 rejected at elaboration.
 // Date: 2026-09-29
 module lfsr #(
   parameter int WIDTH = 7,

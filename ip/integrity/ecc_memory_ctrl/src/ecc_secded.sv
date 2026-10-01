@@ -9,12 +9,11 @@
 //   purely combinational (latency 0) and reset-free. The decoder reports
 //   sec_o when one bit (data, check or overall parity) was wrong and
 //   corrected, ded_o when two bits were wrong (data_o is then the uncorrected
-//   data) and the syndrome for diagnostics. Three or more errors may be mis-
-//   corrected, as for any SECDED code. Timing - about log2(codeword) XOR
+//   data) and the syndrome for diagnostics. Three or more errors may be
+//   mis-corrected, as for any SECDED code. Timing - about log2(codeword) XOR
 //   levels plus the correction mux; register the result in the caller
 //   (ecc_memory_ctrl does). Errors - DATA_W < 4 rejected at elaboration.
 //   Clock - none, purely combinational. Reset - none, no state. Latency - 0
-//   clocks (combinational).
 //   clocks (combinational).
 // Date: 2026-09-29
 module ecc_encoder #(

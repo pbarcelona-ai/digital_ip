@@ -12,10 +12,6 @@
 //   parent block's control flow. Latency - as documented in the parent block,
 //   fixed and independent of data. Errors - none reported here, out-of-range
 //   parameters stop elaboration or are handled by the parent block.
-//   are synchronous to it. Reset - none, the registers are cleared by the
-//   parent block's control flow. Latency - as documented in the parent block,
-//   fixed and independent of data. Errors - none reported here, out-of-range
-//   parameters stop elaboration or are handled by the parent block.
 // Date: 2026-09-29
 module nco_sine_rom (
   input  logic        clk,

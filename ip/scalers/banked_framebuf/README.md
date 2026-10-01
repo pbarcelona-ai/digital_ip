@@ -60,3 +60,7 @@ Icarus prints `sorry: constant selects in always_* processes ...` for some `alwa
 `synth.sh` converts the sources listed in `src/build.f` with sv2v, runs the shared Yosys script `tools/yosys/synth_xilinx.tcl` (compile, DSP48 packing, optimisation, memory to block RAM / LUT RAM, LUT/carry/FF mapping) and writes everything to `yosys/`. The hierarchical utilization table is in `yosys/utilization_hier.rpt`, the raw per-module statistics in `yosys/utilization.rpt`, the log in `yosys/synth.log`, and the mapped netlist in `yosys/banked_framebuf_netlist.v` / `.edf`. Requires Yosys ≥ 0.33 and sv2v; see *Synthesis* in the top-level README for results and details.
 
 See the top-level `README.md` for the register map and `docs/coefficient_derivation.md` for programming values.
+
+## Documentation
+
+Full datasheet, parameters and port list: https://pbarcelona-ai.github.io/ip/banked-framebuf/

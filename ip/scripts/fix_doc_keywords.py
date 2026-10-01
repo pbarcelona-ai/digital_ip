@@ -20,7 +20,8 @@ for d, _, fs in os.walk(os.path.join(root, "rtl")):
         seq = re.search(r"always_ff|always @\(posedge", body) is not None
         rst = re.search(r"rst_n|aresetn", body) is not None
         add = []
-        def has(k): return re.search(k + r"\s*-", desc) or re.search(k + r"\b", desc)
+        # "Clocks -" counts as Clock; lower-case mentions ("latency 1", "reset to zero") count too
+        def has(k): return re.search(r"\b" + k + r"s?\b", desc, re.I)
         if not has("Clock"):
             add.append("Clock - none, purely combinational." if not seq else "Clock - the clock of the parent block, all signals are synchronous to it.")
         if not has("Reset"):
@@ -31,8 +32,9 @@ for d, _, fs in os.walk(os.path.join(root, "rtl")):
             add.append("Errors - none reported here, out-of-range parameters stop elaboration or are handled by the parent block.")
         if add:
             desc = desc.rstrip() + " " + " ".join(add)
-            hdr = textwrap.wrap("Description: " + desc, 75, subsequent_indent="  ")
-            L[a:b] = ["// " + h if i == 0 else "//   " + h.strip() if False else "// " + h for i, h in enumerate(hdr)]
-            L[a:b] = [("// " + h) if i == 0 else ("//   " + h.strip()) for i, h in enumerate(hdr)]
+            # break_on_hyphens=False keeps "out-of-range" whole; re-wrapping it as "out-of- range" broke later runs
+            hdr = textwrap.wrap("Description: " + desc, 75, subsequent_indent="  ",
+                                break_on_hyphens=False, break_long_words=False)
+            L[a:b] = ["// " + h for h in hdr]
             open(p, "w").write("\n".join(L)); n += 1
 print(f"fix_doc_keywords: updated {n} files")

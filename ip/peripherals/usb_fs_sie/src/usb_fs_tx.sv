@@ -15,10 +15,6 @@
 //   Latency - as documented in the parent block, fixed and independent of
 //   data. Errors - none reported here, out-of-range parameters stop
 //   elaboration or are handled by the parent block.
-//   synchronous to it. Reset - synchronous, driven by the parent block.
-//   Latency - as documented in the parent block, fixed and independent of
-//   data. Errors - none reported here, out-of-range parameters stop
-//   elaboration or are handled by the parent block.
 // Date: 2026-09-29
 module usb_fs_tx #(
   parameter int CLK_HZ = 100_000_000
