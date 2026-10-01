@@ -1,6 +1,6 @@
 // ***************
 // Filename: dma_rd_engine.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: AXI4 read burst engine for the DMA IPs. Reads NWORDS 32-bit
 //   words starting at a word-aligned address using INCR bursts of up to
 //   MAX_BURST beats that never cross a 4 KB boundary, and streams the data

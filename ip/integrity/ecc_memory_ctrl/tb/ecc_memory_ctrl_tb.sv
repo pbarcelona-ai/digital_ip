@@ -1,6 +1,6 @@
 // ***************
 // Filename: ecc_memory_ctrl_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for ecc_memory_ctrl and the
 //   ecc_encoder/ecc_decoder pair. Exhaustive single-bit error injection
 //   into every codeword bit position and random double-bit errors for 8,

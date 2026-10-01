@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ***************
 # Filename: run.sh
-# Author: Paul Barcelona
+# Author: FPGA Cores 4 U
 # Description: Builds and runs the pure-Verilog (no Python/cocotb)
 # self-checking top-level testbench under Icarus Verilog. Options via
 # environment: SMALL=1 uses small frames (fast, used by CI); VCD=1

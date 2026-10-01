@@ -1,6 +1,6 @@
 // ***************
 // Filename: tb_bounded_fisheye.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Large-frame scale-verification test. Configures the
 // DUT at true full 480x480 in MODEL_FISHEYE and verifies a
 // bounded partial capture bit-exact vs. the golden model, since

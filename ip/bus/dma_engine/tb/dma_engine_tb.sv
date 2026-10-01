@@ -1,6 +1,6 @@
 // ***************
 // Filename: dma_engine_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for the memory to memory DMA
 //   engine. An AXI4 memory model with random stalls serves as memory.
 //   Tests copies that cross 4 KB boundaries and are not multiples of the

@@ -1,6 +1,6 @@
 # ***************
 # Filename: yosys_common.ys
-# Author: Paul Barcelona
+# Author: FPGA Cores 4 U
 # Description: Common Yosys synthesis steps shared by every module's
 # run_yosys.sh. Assumes the RTL was already loaded with read_verilog
 # (file list comes from that module's build.f). Runs from the module

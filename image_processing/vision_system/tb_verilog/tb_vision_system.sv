@@ -1,6 +1,6 @@
 // ***************
 // Filename: tb_vision_system.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Pure-SystemVerilog top-level self-checking testbench.
 // Runs the 12-scenario barrel/pincushion matrix plus real
 // fisheye/panoramic/perspective correction tests, each

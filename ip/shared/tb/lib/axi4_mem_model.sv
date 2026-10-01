@@ -1,6 +1,6 @@
 // ***************
 // Filename: axi4_mem_model.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Behavioral AXI4 slave memory model for testbenches. 32 bit
 //   data, INCR bursts up to 256 beats, byte strobes, random ready/valid
 //   stalls (STALL percent), SLVERR for addresses beyond the memory size.

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ***************
 # Filename: est_timing.py
-# Author: Paul Barcelona
+# Author: FPGA Cores 4 U
 # Description: Estimates worst register-to-register path delay from a
 # Yosys-synthesized Xilinx netlist (synth_netlist.json). Yosys ships no
 # Xilinx cell-delay library, so this applies an explicit, editable

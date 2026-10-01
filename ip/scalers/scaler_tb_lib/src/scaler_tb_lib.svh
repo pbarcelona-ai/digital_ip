@@ -1,6 +1,6 @@
 // ***************
 // Filename: scaler_tb_lib.svh
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Shared self-checking testbench library.
 //   Include inside a testbench module after defining the localparams
 //   CHANNELS, COMP_W, PIX_W, MAX_W, MAX_H and ADDR_W; the testbench must

@@ -1,6 +1,6 @@
 // ***************
 // Filename: clock_domain_bridge_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for clock_domain_bridge. Random
 //   words cross between unrelated clock pairs (fast to slow, slow to fast,
 //   equal, odd ratio) with random source gaps and destination back-

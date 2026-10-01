@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ***************
 # Filename: make_block_diagrams.py
-# Author: Paul Barcelona
+# Author: FPGA Cores 4 U
 # Description: Generates the block diagram of every image IP as a Graphviz
 #   source (<ip>/docs/block_diagram.dot) and renders it to SVG
 #   (<ip>/docs/block_diagram.svg) with "dot". The stage names and counts come

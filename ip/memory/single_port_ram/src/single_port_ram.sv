@@ -1,6 +1,6 @@
 // ***************
 // Filename: single_port_ram.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Generic synchronous single-port RAM. Version 1.0.0. One
 //   clock, one address, optional byte write enables (BYTE_EN). Read
 //   behaviour on a write to the same address is selectable - MODE 0

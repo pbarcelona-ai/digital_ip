@@ -1,6 +1,6 @@
 // ***************
 // Filename: fir.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Streaming FIR filter (transposed form, run-time loadable
 //   coefficients). Version 1.0.0. TAPS coefficients of COEF_W bits
 //   (signed, load with coef_we_i / coef_idx_i / coef_i at any time; a

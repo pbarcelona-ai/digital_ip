@@ -1,6 +1,6 @@
 // ***************
 // Filename: sync_fifo_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for sync_fifo. Random simultaneous
 //   reads and writes checked against a reference queue including full,
 //   empty, level, almost flags, overflow and underflow sticky flags (with

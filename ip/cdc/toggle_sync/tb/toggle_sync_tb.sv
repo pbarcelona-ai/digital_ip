@@ -1,6 +1,6 @@
 // ***************
 // Filename: toggle_sync_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for toggle_sync. Sends spaced
 //   events from a 100 MHz domain to an unrelated 37 MHz domain (and the
 //   reverse ratio) and checks that every event produces exactly one

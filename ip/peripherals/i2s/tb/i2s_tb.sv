@@ -1,6 +1,6 @@
 // ***************
 // Filename: i2s_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for i2s. Loops the serial data
 //   output back to the input and checks that every stereo pair offered on
 //   the transmit port comes back unchanged on the receive port, in order,

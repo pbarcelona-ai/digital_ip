@@ -1,6 +1,6 @@
 // ***************
 // Filename: interval_timer_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for interval_timer. Measures the
 //   event spacing for auto-reload and one-shot operation with and without
 //   a prescaler, stop and restart, the remaining counter and the refusal

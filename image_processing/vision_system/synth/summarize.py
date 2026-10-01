@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ***************
 # Filename: summarize.py
-# Author: Paul Barcelona
+# Author: FPGA Cores 4 U
 # Description: Parses a Yosys utilization_hier.rpt and prints a compact
 # resource line (LUT, FF, DSP48, BRAM, SRL, CARRY4, total cells). Uses the
 # rolled-up "design hierarchy" block when present (multi-module designs),

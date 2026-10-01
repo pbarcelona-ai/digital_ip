@@ -1,6 +1,6 @@
 # ***************
 # Filename: ci.yml
-# Author: Paul Barcelona
+# Author: FPGA Cores 4 U
 # Description: Continuous integration for the scaler IP family. On every push
 #   to main (and on demand) it runs the simulation regression (Icarus Verilog,
 #   three frame-store modes), the Verilator regression with SVA assertions,

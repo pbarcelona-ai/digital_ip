@@ -1,6 +1,6 @@
 // ***************
 // Filename: parity_check.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Parity checker. Version 1.0.0. err_o goes high for a word
 //   whose received parity bit does not match (even parity, or odd with
 //   ODD=1); sticky_o remembers any error until clr_i, and err_count_o

@@ -1,6 +1,6 @@
 // ***************
 // Filename: usb_fs_sie_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for the USB full-speed SIE IP. A
 //   behavioral host drives real 12 Mbit/s D+/D- waveforms (NRZI, stuffing,
 //   SYNC, CRC5/CRC16, EOP) with real-time delays that are not aligned to

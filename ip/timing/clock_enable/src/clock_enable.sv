@@ -1,6 +1,6 @@
 // ***************
 // Filename: clock_enable.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Programmable clock-enable generator. Version 1.0.0.
 //   Produces a one-clock ce_o pulse every DIV clocks (DIV = div_i, values
 //   0 and 1 give a pulse every clock). The divide ratio may change at any

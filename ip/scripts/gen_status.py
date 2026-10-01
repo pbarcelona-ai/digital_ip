@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ***************
 # Filename: gen_status.py
-# Author: Paul Barcelona
+# Author: FPGA Cores 4 U
 # Description: Builds docs/STATUS.md from the last verification run - the
 #   simulation result log, the Yosys result log and the Yosys utilization
 #   and logic-depth reports of every IP under build/yosys. Logic depth is

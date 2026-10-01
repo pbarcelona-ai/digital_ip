@@ -1,6 +1,6 @@
 // ***************
 // Filename: pwm_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for the PWM IP. Measures duty cycle
 //   and period in edge aligned and center aligned modes, double-buffered
 //   duty update at the period boundary, prescaler, output inversion and

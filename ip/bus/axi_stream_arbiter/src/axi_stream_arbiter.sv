@@ -1,6 +1,6 @@
 // ***************
 // Filename: axi_stream_arbiter.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: AXI-Stream arbiter (N inputs to one output). Version 1.0.0.
 //   Packet-granular arbitration - once an input wins, it keeps the output
 //   until its tlast beat has been transferred, so packets from different

@@ -1,6 +1,6 @@
 // ***************
 // Filename: demo_regs_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for demo_regs, the register block
 //   produced by scripts/regmap_gen.py from examples/regmap/demo_regs.json.
 //   Verifies reset values, RW read/write with byte strobes, RO reads of

@@ -1,6 +1,6 @@
 // ***************
 // Filename: reset_sync_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for reset_sync. Checks asynchronous
 //   assertion (output active immediately), synchronous release exactly
 //   STAGES clocks after arst_i deasserts, the fully synchronous variant,

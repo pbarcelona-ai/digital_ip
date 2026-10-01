@@ -1,6 +1,6 @@
 // ***************
 // Filename: scaler_bilinear.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Bilinear (2x2) image scaler IP.
 //   The 16.16 source coordinate s is rounded to PB = PHASE_BITS bits:
 //     s_r = s + 2^(15-PB); i = s_r >>> 16; f = s_r[15 -: PB]

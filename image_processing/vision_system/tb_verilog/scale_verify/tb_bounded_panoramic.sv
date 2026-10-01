@@ -1,6 +1,6 @@
 // ***************
 // Filename: tb_bounded_panoramic.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Large-frame scale-verification test. Configures the
 // DUT at true full 480x720 in MODEL_PANORAMIC and verifies a
 // bounded partial capture bit-exact vs. the golden model, since

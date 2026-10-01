@@ -1,6 +1,6 @@
 // ***************
 // Filename: packet_fifo.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Packet-preserving FIFO (store and forward). Version 1.0.0.
 //   Words are written with s_last_i marking the final word of a packet. A
 //   packet becomes visible on the master side only when its last word has

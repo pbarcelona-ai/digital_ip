@@ -1,6 +1,6 @@
 // ***************
 // Filename: crc16.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: CRC-16/CCITT-FALSE (polynomial 0x1021, init 0xFFFF, no
 //   reflection). Version 1.0.0. Thin wrapper around crc_core with the
 //   standard CRC16 parameters as defaults (POLY, INIT, reflection and

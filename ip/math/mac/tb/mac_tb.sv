@@ -1,6 +1,6 @@
 // ***************
 // Filename: mac_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking tests for signed/unsigned fixed-point MAC,
 //   rounding, saturation, and IEEE-754 binary32 fused multiply-add behavior.
 // Date: 2026-09-30

@@ -1,6 +1,6 @@
 // ***************
 // Filename: spi_flash_ctrl.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: SPI NOR flash controller (single-bit SPI mode 0, 3-byte
 //   addressing, e.g. W25Qxx / S25FL / MX25). Version 1.0.0. AXI4-Lite
 //   registers issue generic commands - write CMD (0x00) with opcode[7:0],

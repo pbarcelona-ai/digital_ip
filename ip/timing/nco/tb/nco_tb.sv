@@ -1,6 +1,6 @@
 // ***************
 // Filename: nco_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for nco. Verifies the output
 //   frequency from the carry pulse count for several tuning words against
 //   f_out = tuning * f_clk / 2^W, the accumulator against a reference

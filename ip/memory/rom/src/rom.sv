@@ -1,6 +1,6 @@
 // ***************
 // Filename: rom.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Parameterized synchronous ROM. Version 1.0.0. Contents come
 //   from INIT_FILE (hex text read with $readmemh, one word per line) or,
 //   when INIT_FILE is empty, from a deterministic built-in pattern (word

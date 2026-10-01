@@ -1,6 +1,6 @@
 // ***************
 // Filename: spi_flash_ctrl_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for spi_flash_ctrl with a
 //   behavioral SPI NOR flash model (JEDEC ID, 03/0B read, 06/04 write
 //   enable, 02 page program with 256 byte page wrap and AND-only

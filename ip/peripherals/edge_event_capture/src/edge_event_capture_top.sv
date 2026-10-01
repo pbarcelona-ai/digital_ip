@@ -1,6 +1,6 @@
 // ***************
 // Filename: edge_event_capture_top.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Multi-channel edge detector IP. Each of WIDTH inputs goes
 //   through a synchronizer chain, an optional debounce filter (input must
 //   be stable for DEBOUNCE clocks), and rise/fall detection with enable

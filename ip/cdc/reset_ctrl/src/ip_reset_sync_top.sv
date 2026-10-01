@@ -1,6 +1,6 @@
 // ***************
 // Filename: ip_reset_sync_top.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Top level of the reset synchronizer IP. Synchronizes an
 //   asynchronous external reset for the AXI-Lite bus and for NUM_OUT
 //   replicated user resets (fan-out control). A software reset bit, hold-

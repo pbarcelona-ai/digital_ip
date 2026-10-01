@@ -1,6 +1,6 @@
 // ***************
 // Filename: tb_axil_split.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for axil_split.
 //   A randomised AXI-Lite master (scaler_tb_axil.svh BFM: random AW/W order,
 //   delayed BREADY/RREADY) accesses two register files, each behind an

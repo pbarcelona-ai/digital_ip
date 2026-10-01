@@ -1,6 +1,6 @@
 // ***************
 // Filename: axi4_lite_decoder.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: AXI4-Lite address decoder. Version 1.0.0. Purely combinational
 //   decode of an address into a one-hot slave select over NSLAVE regions.
 //   Region i matches when (addr & MASK[i]) == BASE[i] (MASK selects the

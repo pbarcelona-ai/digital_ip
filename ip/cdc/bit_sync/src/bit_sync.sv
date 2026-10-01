@@ -1,6 +1,6 @@
 // ***************
 // Filename: bit_sync.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Multi-flop synchronizer for a single-bit asynchronous
 //   signal entering the clk domain. Version 1.0.0. Clock domain - all
 //   state runs on clk, d_i may be fully asynchronous but must be glitch

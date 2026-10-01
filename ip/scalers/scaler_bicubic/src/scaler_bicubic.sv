@@ -1,6 +1,6 @@
 // ***************
 // Filename: scaler_bicubic.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Bicubic (4x4) image scaler IP.
 //   Thin wrapper around scaler_polyphase with TAPS = 4. The kernel is set
 //   by the programmed coefficient tables, so every Mitchell-Netravali

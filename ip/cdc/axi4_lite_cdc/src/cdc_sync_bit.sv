@@ -1,6 +1,6 @@
 // ***************
 // Filename: cdc_sync_bit.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Multi-stage flop synchronizer for a single bit crossing into
 //   the destination clock domain. Marked async_reg so tools place the flops
 //   together. Output is the synchronized level. Version 1.0.0. Helper block

@@ -1,6 +1,6 @@
 // ***************
 // Filename: packet_formatter.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: AXI-Stream packet formatter. Version 1.0.0. Builds outgoing
 //   packets from a payload stream - a header of HDR_BYTES (sampled from
 //   hdr_i when the first payload beat arrives, must be a multiple of the

@@ -1,6 +1,6 @@
 // ***************
 // Filename: mac.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: One-cycle-latency multiply-accumulate unit. Fixed-point mode
 //   supports independent operand widths/signs and Q-format binary points,
 //   optional round-to-nearest-even, output saturation, and overflow/inexact

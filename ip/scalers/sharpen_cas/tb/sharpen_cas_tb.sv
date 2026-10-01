@@ -1,6 +1,6 @@
 // ***************
 // Filename: tb_sharpen_cas.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for sharpen_cas.
 //   Runs the same-size filter suite from scaler_tb_lib (single pixel, single
 //   row/column, max size, junk before SOF, full rate, heavy back-pressure)

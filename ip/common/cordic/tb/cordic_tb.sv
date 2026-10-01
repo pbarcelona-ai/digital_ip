@@ -1,6 +1,6 @@
 // ***************
 // Filename: cordic_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for cordic. Rotation mode - random
 //   vectors and angles over the full circle (all four quadrants and the
 //   quadrant boundaries) are compared with double precision sin/cos; the

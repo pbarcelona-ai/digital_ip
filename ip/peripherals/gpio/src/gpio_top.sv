@@ -1,6 +1,6 @@
 // ***************
 // Filename: gpio_top.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: General purpose I/O IP with WIDTH pins. Per-pin direction,
 //   output register with atomic SET/CLEAR/TOGGLE registers, two flop input
 //   synchronizers, per-pin rising/falling edge interrupts with enable

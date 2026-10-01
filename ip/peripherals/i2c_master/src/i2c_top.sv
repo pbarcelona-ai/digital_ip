@@ -1,6 +1,6 @@
 // ***************
 // Filename: i2c_top.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: I2C master IP top level. AXI-Lite registers start and
 //   describe a transaction; write data is taken from an AXI-Stream slave
 //   port and read data is returned on an AXI-Stream master port (tlast

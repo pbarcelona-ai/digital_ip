@@ -1,6 +1,6 @@
 // ***************
 // Filename: usb_fs_tx.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: USB 1.1 full-speed transmitter. Takes a whole packet from a
 //   byte stream (first byte low nibble is the PID, the complement nibble is
 //   generated here) and sends SYNC, PID, payload, CRC and EOP with NRZI

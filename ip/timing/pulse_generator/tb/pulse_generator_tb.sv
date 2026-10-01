@@ -1,6 +1,6 @@
 // ***************
 // Filename: pulse_generator_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for pulse_generator. Measures
 //   period and width in continuous mode for several settings (including
 //   width equal to and larger than the period, width 0 and period 0), one-

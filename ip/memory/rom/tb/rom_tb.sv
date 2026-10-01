@@ -1,6 +1,6 @@
 // ***************
 // Filename: rom_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for rom. Reads every address of a
 //   non power-of-two ROM (built-in pattern), checks one clock latency,
 //   out-of-range handling and reset behaviour. Prints TEST PASSED on

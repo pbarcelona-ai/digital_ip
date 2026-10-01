@@ -1,6 +1,6 @@
 // ***************
 // Filename: pcie_axis_to_dw.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Converts a 64 bit AXI-Stream TLP interface (tkeep, tlast,
 //   first DW in bits 31:0) into a 32 bit double-word stream with a last flag.
 //   A single beat register keeps all outputs registered, and the next beat is

@@ -1,6 +1,6 @@
 // ***************
 // Filename: axi4_lite_cdc.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: AXI4-Lite clock domain bridge. An AXI-Lite slave in the source
 //   clock domain is connected to an AXI-Lite master in the destination domain
 //   using a toggle request / toggle acknowledge handshake with two flop

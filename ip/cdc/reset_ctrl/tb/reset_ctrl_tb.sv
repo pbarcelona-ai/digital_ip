@@ -1,6 +1,6 @@
 // ***************
 // Filename: reset_ctrl_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for the reset synchronizer IP.
 //   Checks asynchronous assertion, synchronous de-assertion, minimum pulse
 //   stretch on a sub-clock glitch, software reset through AXI-Lite, event

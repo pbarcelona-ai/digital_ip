@@ -1,6 +1,6 @@
 // ***************
 // Filename: simple_dual_port_ram.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Simple dual-port RAM with an independent write port and read
 //   port. Version 1.0.0. CLOCKING 0 uses wclk for both ports; a separate rclk
 //   is used when ASYNC=1 (unrelated clocks, read-during- write of the same

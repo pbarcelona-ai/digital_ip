@@ -1,6 +1,6 @@
 // ***************
 // Filename: golden_model_pkg.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Independent, from-scratch SystemVerilog golden-model
 // package: fixed-point radial/tangential/fisheye/panoramic/
 // perspective remap, bilinear/bicubic sampling, coefficient

@@ -1,6 +1,6 @@
 // ***************
 // Filename: priority_encoder.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Priority encoder. Version 1.0.0. Encodes the highest- priority
 //   asserted request: LSB_HIGH=1 gives bit 0 the highest priority, LSB_HIGH=0
 //   gives the MSB. Outputs the index, a one-hot vector and a valid flag.

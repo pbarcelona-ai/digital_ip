@@ -1,6 +1,6 @@
 // ***************
 // Filename: scaler_trilinear.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Trilinear (mip-map) image scaler IP.
 //   Wrapper around scaler_mip with ANISO_MAX_LOG2 = 0: a hardware mip
 //   pyramid (2x2 box) plus bilinear sampling of two adjacent levels

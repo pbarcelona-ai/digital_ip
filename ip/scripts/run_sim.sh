@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ***************
 # Filename: run_sim.sh
-# Author: Paul Barcelona
+# Author: FPGA Cores 4 U
 # Description: Compile and run the self-checking testbench of one IP with the
 #   selected simulator. Optional VCD dump and Surfer waveform viewer.
 # Date: 2026-09-29

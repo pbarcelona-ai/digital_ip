@@ -1,6 +1,6 @@
 // ***************
 // Filename: axi4_lite_regs_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for axi4_lite_regs. Eight registers
 //   with RW, RO, W1C and W1S access types: checks reset values, RW byte
 //   strobes, RO readback of hardware values and SLVERR on write, W1C set

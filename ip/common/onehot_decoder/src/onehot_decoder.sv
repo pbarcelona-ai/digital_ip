@@ -1,6 +1,6 @@
 // ***************
 // Filename: onehot_decoder.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Binary to one-hot decoder with enable. Version 1.0.0. Bit
 //   sel_i of onehot_o is set when en_i is high. A select value >= WIDTH sets
 //   err_o and produces an all-zero output. REGISTERED=1 adds one output

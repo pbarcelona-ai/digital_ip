@@ -1,6 +1,6 @@
 // ***************
 // Filename: nco_core.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Pipelined numerically controlled oscillator. A PHASE_W bit
 //   phase accumulator produces a carry tick (baud / sample strobe) and a
 //   square wave. The phase is offset, folded into a quarter wave ROM lookup

@@ -1,6 +1,6 @@
 // ***************
 // Filename: spi_master_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for the SPI master IP. A behavioral
 //   SPI slave model (all four modes, MSB/LSB first, variable word length)
 //   echoes bit-reversed data so both MOSI and MISO paths are verified.

@@ -1,6 +1,6 @@
 // ***************
 // Filename: baud_nco_top.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Baud rate generator and NCO IP. Phase accumulator NCO gives
 //   a baud tick strobe, square wave and, on an AXI-Stream master, 16 bit
 //   sine and cosine samples (tdata = {cos, sin}). AXI-Lite map - 0x00

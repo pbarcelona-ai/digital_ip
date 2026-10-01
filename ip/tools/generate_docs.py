@@ -122,15 +122,24 @@ def render_file_rows(files: list[tuple[str, str]], empty_text: str) -> str:
     ) + "</ul>"
 
 
-def module_page(module: Path, modules: list[Path]) -> str:
+def module_page(module: Path, modules: list[Path], root_docs_copy: bool = False) -> str:
     title, kind, description, dependency = read_metadata(module / "README.md")
-    source_files = file_links(module, "src", "..")
-    test_files = file_links(module, "tb", "..")
-    include_files = file_links(module, "include", "..")
-    scripts = file_links(module, "scripts", "..")
-    readme = '<a class="button secondary" href="../README.md">README</a>'
     module_name = module.name
-    back = "../../../tools/docs/index.html"
+    if root_docs_copy:
+        module_prefix = f"../../scalers/{module_name}"
+        stylesheet = "../../tools/docs/site.css"
+        back = "../../tools/docs/index.html"
+        readme_href = f"{module_prefix}/README.md"
+    else:
+        module_prefix = ".."
+        stylesheet = "../../../tools/docs/site.css"
+        back = "../../../tools/docs/index.html"
+        readme_href = "../README.md"
+    source_files = file_links(module, "src", module_prefix)
+    test_files = file_links(module, "tb", module_prefix)
+    include_files = file_links(module, "include", module_prefix)
+    scripts = file_links(module, "scripts", module_prefix)
+    readme = f'<a class="button secondary" href="{readme_href}">README</a>'
     depends = f'<p class="dependency"><strong>Depends on:</strong> {escape(dependency)}</p>' if dependency else ""
     make_targets = []
     if (module / "Makefile").is_file():
@@ -147,10 +156,10 @@ def module_page(module: Path, modules: list[Path]) -> str:
     <meta name="theme-color" content="#0a192f">
   <meta name="description" content="{escape(description, quote=True)}">
   <title>{escape(title)} | Scaler IP</title>
-    <link rel="stylesheet" href="../../../tools/docs/site.css">
+    <link rel="stylesheet" href="{stylesheet}">
 </head>
 <body>
-    <header class="topbar"><a class="brand" href="{back}"><span>BARCELONA ENTERPRISES / SCALER IP MODULE</span></a><a class="back-link" href="{back}">All modules <span aria-hidden="true">↗</span></a></header>
+    <header class="topbar"><a class="brand" href="{back}"><span>FPGA Cores 4 U / SCALER IP MODULE</span></a><a class="back-link" href="{back}">All modules <span aria-hidden="true">↗</span></a></header>
   <main class="page-shell">
     <section class="hero">
       <p class="eyebrow">{escape(kind)} / {escape(module_name)}</p>
@@ -186,7 +195,7 @@ def summary_page(modules: list[Path]) -> str:
     rows = []
     for module in modules:
         title, kind, _, _ = read_metadata(module / "README.md")
-        doc_href = f"../../scalers/{escape(module.name, quote=True)}/docs/index.html"
+        doc_href = f"../../docs/{escape(module.name, quote=True)}/index.html"
         has_synth = (module / "scripts" / "synth.sh").is_file()
         source_count = len(file_links(module, "src", ".."))
         test_count = len(file_links(module, "tb", ".."))
@@ -212,7 +221,7 @@ def summary_page(modules: list[Path]) -> str:
   <link rel="stylesheet" href="site.css">
 </head>
 <body>
-    <header class="topbar"><a class="brand" href="index.html"><span>BARCELONA ENTERPRISES / SCALER IP CATALOG</span></a><a class="back-link" href="../../SCALER_README.md">Project README <span aria-hidden="true">↗</span></a></header>
+    <header class="topbar"><a class="brand" href="index.html"><span>FPGA Cores 4 U / SCALER IP CATALOG</span></a><a class="back-link" href="../../SCALER_README.md">Project README <span aria-hidden="true">↗</span></a></header>
   <main class="page-shell">
     <section class="hero index-hero">
       <p class="eyebrow">Hardware library / SystemVerilog</p>
@@ -244,6 +253,10 @@ def main() -> None:
         docs = module / "docs"
         docs.mkdir(exist_ok=True)
         (docs / "index.html").write_text(module_page(module, modules), encoding="utf-8")
+        module_docs = ROOT / "docs" / module.name
+        module_docs.mkdir(parents=True, exist_ok=True)
+        (module_docs / "index.html").write_text(
+            module_page(module, modules, root_docs_copy=True), encoding="utf-8")
     (TOOLS_DOCS / "index.html").write_text(summary_page(modules), encoding="utf-8")
     print(f"Generated {len(modules)} module pages and {TOOLS_DOCS / 'index.html'}")
 

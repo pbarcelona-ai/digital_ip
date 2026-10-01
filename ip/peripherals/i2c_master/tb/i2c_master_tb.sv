@@ -1,6 +1,6 @@
 // ***************
 // Filename: i2c_master_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for the I2C master IP with a
 //   behavioral I2C slave memory model (address 0x50, pointer byte then
 //   sequential access, optional clock stretching). Tests multi-byte write,

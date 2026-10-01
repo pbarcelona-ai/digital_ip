@@ -1,6 +1,6 @@
 // ***************
 // Filename: fp32_fma.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Combinational IEEE-754 binary32 fused multiply-add. Uses an
 //   exact fixed-scale accumulator so the product and addend are rounded only
 //   once, to nearest with ties to even. Handles subnormals, infinities, NaNs,

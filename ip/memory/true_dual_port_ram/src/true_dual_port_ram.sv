@@ -1,6 +1,6 @@
 // ***************
 // Filename: true_dual_port_ram.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: True dual-port RAM. Version 1.0.0. Two fully independent ports
 //   A and B, each with its own clock, enable, write enable, address, data in
 //   and registered data out (read-first). Simultaneous writes to the same

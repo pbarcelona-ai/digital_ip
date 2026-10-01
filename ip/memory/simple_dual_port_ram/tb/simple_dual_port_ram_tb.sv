@@ -1,6 +1,6 @@
 // ***************
 // Filename: simple_dual_port_ram_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for simple_dual_port_ram. Fills the
 //   memory through the write port, reads it back through the read port
 //   (single clock and asynchronous clocks, with and without byte enables)

@@ -1,6 +1,6 @@
 // ***************
 // Filename: rate_limiter.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Token-bucket rate limiter for valid/ready streams or events.
 //   Version 1.0.0. One token is added every refill_period_i clocks up to a
 //   bucket size of burst_i; each transferred word (s_valid_i & s_ready_o)

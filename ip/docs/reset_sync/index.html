@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a192f">
+<meta name="description" content="Reset synchronizer. Version 1.0.0. Brings an asynchronous reset into the clk domain. ASYNC_ASSERT=1 (default) asserts the output immediately and releases it synchronously after STAGES clocks; ASYNC_ASSERT=0 samples the input with the clock so both edges are synchronous. Polarity of the input and output is selectable. Clock - clk; arst_i may be asynchronous. Reset state - output asserted. Latency - release takes STAGES clocks (assert is immediate for async type). Timing - the flops are marked async_reg. Errors - STAGES&lt;2 rejected at elaboration.">
+<title>Reset Sync | Digital IP</title><link rel="stylesheet" href="../site.css">
+</head><body>
+<header class="topbar"><a class="brand" href="../index.html">FPGA Cores 4 U / DIGITAL IP / CDC</a><a href="../../README.md">Repository README</a></header>
+<main class="shell">
+<section class="hero"><p class="eyebrow">cdc / reset_sync</p><h1>Reset Sync</h1><p class="lede">Reset synchronizer. Version 1.0.0. Brings an asynchronous reset into the clk domain. ASYNC_ASSERT=1 (default) asserts the output immediately and releases it synchronously after STAGES clocks; ASYNC_ASSERT=0 samples the input with the clock so both edges are synchronous. Polarity of the input and output is selectable. Clock - clk; arst_i may be asynchronous. Reset state - output asserted. Latency - release takes STAGES clocks (assert is immediate for async type). Timing - the flops are marked async_reg. Errors - STAGES&lt;2 rejected at elaboration.</p>
+<div class="actions"><code>make -C cdc/reset_sync test</code><code>make -C cdc/reset_sync diagrams</code></div></section>
+<section class="content"><article><p class="eyebrow">Implementation</p><h2>RTL sources</h2><ul class="file-list"><li><a href="../../cdc/reset_sync/src/reset_sync.sv">src/reset_sync.sv</a></li></ul>
+<h2>Verification</h2><ul class="file-list"><li><a href="../../cdc/reset_sync/tb/reset_sync_tb.sv">tb/reset_sync_tb.sv</a></li><li><a href="../../cdc/reset_sync/../../shared/tb/lib/axil_bfm.sv">../../shared/tb/lib/axil_bfm.sv</a></li><li><a href="../../cdc/reset_sync/../../shared/tb/lib/axi4_mem_model.sv">../../shared/tb/lib/axi4_mem_model.sv</a></li></ul></article>
+<aside><p class="eyebrow">Build surface</p><h2>Commands</h2><ul class="targets"><li><code>make test</code> simulation</li><li><code>make yosys</code> synthesis</li><li><code>make docs</code> HTML and Markdown</li><li><code>make diagrams</code> DOT and SVG</li></ul><h2>Diagram</h2><p><a href="../../cdc/reset_sync/docs/block_diagram.svg">SVG diagram</a> · <a href="../../cdc/reset_sync/docs/block_diagram.dot">DOT source</a></p><p><a href="../../cdc/reset_sync/scripts/build.f">RTL manifest</a> · <a href="../../cdc/reset_sync/tb/scripts/build.f">Testbench manifest</a></p></aside></section>
+<footer><a href="../index.html">All IP modules</a><span>Generated from the catalog and RTL headers.</span></footer>
+</main></body></html>

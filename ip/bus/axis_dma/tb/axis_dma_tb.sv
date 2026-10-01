@@ -1,6 +1,6 @@
 // ***************
 // Filename: axis_dma_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for the AXI-Stream DMA. MM2S
 //   streams memory contents (data and tlast checked), S2MM stores a random
 //   stream into memory (all words and surrounding memory checked), both

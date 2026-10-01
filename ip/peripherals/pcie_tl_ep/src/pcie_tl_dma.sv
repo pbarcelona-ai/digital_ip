@@ -1,6 +1,6 @@
 // ***************
 // Filename: pcie_tl_dma.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Device to host DMA write engine. When enabled, bus mastering
 //   is on and the source FIFO holds at least one burst, it emits a Memory
 //   Write TLP (3DW header, or 4DW when the address is above 4 GB) followed by

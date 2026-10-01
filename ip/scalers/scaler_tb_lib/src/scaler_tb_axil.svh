@@ -1,6 +1,6 @@
 // ***************
 // Filename: scaler_tb_axil.svh
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Testbench kit: clock, reset and AXI4-Lite BFM.
 //   Declares clk (100 MHz), rst_n, the AXI4-Lite master signals and the
 //   tasks axil_write, axil_read, axil_check and reset_dut, plus error /

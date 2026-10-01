@@ -1,6 +1,6 @@
 // ***************
 // Filename: pcie_tl_target.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: PCIe transaction layer target. Parses TLPs from a DW stream
 //   (3DW and 4DW headers), implements Type 0 configuration space (IDs,
 //   command, BAR0 with size probing, completer ID capture), a BAR0 lower half

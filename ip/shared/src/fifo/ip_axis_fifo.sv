@@ -1,6 +1,6 @@
 // ***************
 // Filename: ip_axis_fifo.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Single clock AXI-Stream FIFO with tlast and tuser sideband
 //   bits. Storage is a synchronous-read memory that maps to block RAM for
 //   deep configurations, followed by a two register output pipeline

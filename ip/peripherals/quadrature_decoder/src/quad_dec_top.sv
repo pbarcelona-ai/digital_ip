@@ -1,6 +1,6 @@
 // ***************
 // Filename: quad_dec_top.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Quadrature encoder decoder IP. A/B/index inputs pass two
 //   flop synchronizers and a programmable stability filter, then a x4
 //   decoder updates a 32 bit signed position counter, direction flag and

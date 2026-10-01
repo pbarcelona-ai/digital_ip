@@ -1,6 +1,6 @@
 // ***************
 // Filename: spi_slave.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: SPI slave (all four modes, 1..32 bit words, MSB or LSB first).
 //   Version 1.0.0. sclk, cs_n and mosi are asynchronous inputs, each passed
 //   through a 2-flop synchronizer and edge-detected in the system clock

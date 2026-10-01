@@ -1,6 +1,6 @@
 // ***************
 // Filename: register_file.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Multi-register file. Version 1.0.0. NREG registers of WIDTH
 //   bits with one write port and NRD combinational read ports (asynchronous
 //   read, so no read latency - LUT-RAM friendly). ZERO_REG0=1 hard-wires

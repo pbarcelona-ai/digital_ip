@@ -1,6 +1,6 @@
 // ***************
 // Filename: tb_scaler_anisotropic.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Testbench for scaler_anisotropic.
 //   Runs the standard suite from scaler_tb_lib (identity, non-integer
 //   up/down, mixed, 2x, 1x1 in/out, max size, junk before SOF, random

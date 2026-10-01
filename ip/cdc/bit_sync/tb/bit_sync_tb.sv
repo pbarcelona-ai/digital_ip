@@ -1,6 +1,6 @@
 // ***************
 // Filename: bit_sync_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for bit_sync. Checks reset value,
 //   latency of exactly STAGES destination clocks for both edges, and that
 //   a change occurring between clock edges never produces a glitch (output

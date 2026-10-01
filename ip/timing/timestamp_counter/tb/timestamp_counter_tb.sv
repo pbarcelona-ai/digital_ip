@@ -1,6 +1,6 @@
 // ***************
 // Filename: timestamp_counter_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for timestamp_counter. Checks free-
 //   running increment, tick gating, clear, load, coherent capture (value
 //   equals the count at the capture clock even while counting) and wrap

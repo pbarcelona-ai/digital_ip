@@ -1,6 +1,6 @@
 // ***************
 // Filename: fallthrough_fifo.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: First-word-fall-through FIFO with valid/ready handshakes.
 //   Version 1.0.0. The oldest word is presented on m_data_o as soon as the
 //   FIFO is not empty (m_valid_o), with no read latency; m_ready_i pops

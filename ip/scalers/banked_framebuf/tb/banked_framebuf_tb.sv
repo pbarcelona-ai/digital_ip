@@ -1,6 +1,6 @@
 // ***************
 // Filename: tb_banked_framebuf.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for banked_framebuf.
 //   fb_checker instances for TAPS = 1, 2, 3, 4, 6 and 8 each write random
 //   images of random size, then issue random window reads (including

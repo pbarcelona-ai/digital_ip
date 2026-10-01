@@ -1,6 +1,6 @@
 // ***************
 // Filename: ip_version_pkg.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Library-wide package. Holds the library version, small
 //   constant functions (safe clog2, power-of-two test) and common AXI
 //   response codes. Not required by any IP (each IP keeps its own

@@ -1,6 +1,6 @@
 // ***************
 // Filename: axi_stream_width_converter_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for axi_stream_width_converter.
 //   Random packets (random length, partial final tkeep) pass through 4->1,
 //   4->2, 1->4, 2->4 and 4->4 converters with random stalls; the byte

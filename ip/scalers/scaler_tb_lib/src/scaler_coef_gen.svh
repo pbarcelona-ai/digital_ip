@@ -1,6 +1,6 @@
 // ***************
 // Filename: scaler_coef_gen.svh
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Polyphase coefficient generator (testbench).
 //   SystemVerilog implementation of the coefficient derivation in
 //   docs/coefficient_derivation.md; bit-identical to tools/scaler_coefs.py

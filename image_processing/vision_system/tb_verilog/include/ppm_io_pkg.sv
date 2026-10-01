@@ -1,6 +1,6 @@
 // ***************
 // Filename: ppm_io_pkg.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Pure-SystemVerilog binary PPM (P6) reader/writer used by
 // the no-Python testbench, so it can load/save test images
 // without any external tooling dependency.

@@ -1,6 +1,6 @@
 // ***************
 // Filename: axis_protocol_checker.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Concurrent SVA protocol checker for AXI4-Stream. Passive
 //   monitor - bind it to any IP stream port. Checks that TVALID stays high
 //   until TREADY, that TDATA/TKEEP/TLAST/TUSER are stable while a beat is

@@ -1,6 +1,6 @@
 // ***************
 // Filename: axi_stream_arbiter_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for axi_stream_arbiter. Four
 //   sources send random-length packets with random gaps; the scoreboard
 //   verifies that packets are never interleaved, per-source order and

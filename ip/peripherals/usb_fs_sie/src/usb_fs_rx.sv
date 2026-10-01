@@ -1,6 +1,6 @@
 // ***************
 // Filename: usb_fs_rx.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: USB 1.1 full-speed receiver. Two flop synchronizers, J/K/SE0
 //   decode, and a fractional-N clock recovery loop that restarts its bit
 //   phase on every line transition and samples mid-bit, so it works at any

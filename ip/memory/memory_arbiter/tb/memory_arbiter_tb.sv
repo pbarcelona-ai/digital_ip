@@ -1,6 +1,6 @@
 // ***************
 // Filename: memory_arbiter_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for memory_arbiter. Four clients
 //   issue random reads and writes to a memory model with variable read
 //   latency and random ready stalls. Every read must return the value most

@@ -1,6 +1,6 @@
 // ***************
 // Filename: scaler_edge_directed.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Edge-directed (triangulation) scaler IP.
 //   For each output pixel the 2x2 source cell p00 p01 / p10 p11 gives
 //     d1 = sum_c |p00-p11|  (activity along the "\" diagonal)

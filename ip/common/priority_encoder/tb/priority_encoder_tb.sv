@@ -1,6 +1,6 @@
 // ***************
 // Filename: priority_encoder_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for priority_encoder. Exhaustively
 //   checks every 8 bit request pattern for both priority directions
 //   (combinational) and random 8 bit patterns against the registered

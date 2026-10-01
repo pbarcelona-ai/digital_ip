@@ -1,6 +1,6 @@
 // ***************
 // Filename: watchdog_top.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Watchdog timer IP. Prescaled up-counter with programmable
 //   timeout and pre-timeout interrupt, optional window mode (kicks before
 //   WINDOW_OPEN are violations), key-protected kick register, write-once

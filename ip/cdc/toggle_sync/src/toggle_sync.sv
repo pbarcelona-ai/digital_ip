@@ -1,6 +1,6 @@
 // ***************
 // Filename: toggle_sync.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Event transfer between clock domains using a toggle level.
 //   Version 1.0.0. Every one-clock event_i pulse in the source domain flips a
 //   toggle flop; the destination synchronizes the toggle and emits event_o

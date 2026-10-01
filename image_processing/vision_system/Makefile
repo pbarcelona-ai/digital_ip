@@ -1,6 +1,6 @@
 # ***************
 # Filename: Makefile
-# Author: Paul Barcelona
+# Author: FPGA Cores 4 U
 # Description: Single entry point for simulation and synthesis, used by
 # both developers and the GitHub Actions workflow. Every test target
 # fails on a bad result (see ci/run_checked.sh), not just a bad exit code.

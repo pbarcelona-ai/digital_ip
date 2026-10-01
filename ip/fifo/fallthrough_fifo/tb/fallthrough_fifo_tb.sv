@@ -1,6 +1,6 @@
 // ***************
 // Filename: fallthrough_fifo_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for fallthrough_fifo. Random
 //   valid/ready traffic checked against a scoreboard queue (order, data,
 //   no loss), verifies the first word appears on the output without a read

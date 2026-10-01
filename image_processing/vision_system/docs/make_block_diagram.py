@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ***************
 # Filename: make_block_diagram.py
-# Author: Paul Barcelona
+# Author: FPGA Cores 4 U
 # Description: Generates docs/block_diagram.svg (and .png if cairosvg-3.13 is
 # installed) showing the lens-distortion-correction core: interfaces,
 # config plane, frame buffer, coord_gen fast/slow paths, bilinear and

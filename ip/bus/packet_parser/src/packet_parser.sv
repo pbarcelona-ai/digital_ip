@@ -1,6 +1,6 @@
 // ***************
 // Filename: packet_parser.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: AXI-Stream packet parser and filter. Version 1.0.0.
 //   Captures the first HDR_BYTES of every packet (HDR_BYTES must be a
 //   multiple of the stream width so headers are beat aligned) into hdr_o

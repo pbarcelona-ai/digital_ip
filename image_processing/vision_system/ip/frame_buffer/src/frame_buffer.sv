@@ -1,6 +1,6 @@
 // ***************
 // Filename: frame_buffer.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Reusable IP. Full-frame pixel store, four-way
 // replicated so all four bilinear corner samples (or, in
 // bicubic/slow-path modes, one row of four taps at a time) can

@@ -1,6 +1,6 @@
 // ***************
 // Filename: watchdog_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for the watchdog IP. Tests timeout
 //   reset with stretched pulse, kicks restarting the counter, key
 //   protection, pre-timeout interrupt, window mode early kick violation,

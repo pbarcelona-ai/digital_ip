@@ -1,6 +1,6 @@
 // ***************
 // Filename: pcie_tl_ep_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for the PCIe transaction layer
 //   endpoint. The testbench acts as a root complex driving 64 bit TLP
 //   streams - configuration reads and writes (IDs, BAR0 sizing, completer

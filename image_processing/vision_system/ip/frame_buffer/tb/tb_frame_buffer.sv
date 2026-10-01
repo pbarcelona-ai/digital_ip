@@ -1,6 +1,6 @@
 // ***************
 // Filename: tb_frame_buffer.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking standalone testbench for frame_buffer.
 // Verifies write-then-readback, four-way port replication
 // consistency, one-cycle read latency, and concurrent

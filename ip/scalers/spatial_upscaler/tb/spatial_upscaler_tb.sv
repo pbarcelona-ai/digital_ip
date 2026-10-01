@@ -1,6 +1,6 @@
 // ***************
 // Filename: tb_spatial_upscaler.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for spatial_upscaler (Lanczos-3
 //   scaler followed by contrast-adaptive sharpening).
 //   For every test the reference model first computes the complete Lanczos

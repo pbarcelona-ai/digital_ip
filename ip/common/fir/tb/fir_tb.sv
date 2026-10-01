@@ -1,6 +1,6 @@
 // ***************
 // Filename: fir_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for fir. Loads random coefficients
 //   and checks the output against a direct-form convolution model bit for
 //   bit (including rounding and saturation) for random input with random

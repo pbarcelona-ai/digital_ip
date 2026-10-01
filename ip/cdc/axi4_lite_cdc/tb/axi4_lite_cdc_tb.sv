@@ -1,6 +1,6 @@
 // ***************
 // Filename: axi4_lite_cdc_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for the AXI-Lite clock domain
 //   bridge. A 100 MHz AXI-Lite master (BFM) accesses a register file that
 //   runs on an unrelated 37 MHz clock through the bridge. Tests

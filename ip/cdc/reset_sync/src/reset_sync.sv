@@ -1,6 +1,6 @@
 // ***************
 // Filename: reset_sync.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Reset synchronizer. Version 1.0.0. Brings an asynchronous
 //   reset into the clk domain. ASYNC_ASSERT=1 (default) asserts the output
 //   immediately and releases it synchronously after STAGES clocks;

@@ -1,6 +1,6 @@
 // ***************
 // Filename: axi4_lite_decoder_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for axi4_lite_decoder. Three
 //   regions of different sizes (4 KB, 64 KB and 256 B at scattered bases)
 //   are checked with directed boundary addresses and 20000 random

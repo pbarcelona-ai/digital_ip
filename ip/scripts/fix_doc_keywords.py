@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ***************
 # Filename: fix_doc_keywords.py
-# Author: Paul Barcelona
+# Author: FPGA Cores 4 U
 # Description: Documentation checker and fixer. Makes sure every RTL header
 #   states Clock, Reset, Latency and Errors behavior, appending a sentence
 #   for combinational or internal blocks that lack one, and re-wraps the

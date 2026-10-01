@@ -1,6 +1,6 @@
 // ***************
 // Filename: eth_mac_if.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Ethernet MAC interface (GMII, 8 bit, single clock). Version
 //   1.0.0. Transmit - takes an AXI-Stream frame (destination MAC onward,
 //   no preamble or FCS) and drives GMII with 7 preamble bytes and the

@@ -1,6 +1,6 @@
 // ***************
 // Filename: mulq_s.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Reusable IP. Timing-friendly signed 32x32 multiply with
 // the Q16.16 shift built in: s = (a*b) >>> 16 as an exact 48-bit
 // signed value, in 2 cycles. The multiply is split into four 16x16

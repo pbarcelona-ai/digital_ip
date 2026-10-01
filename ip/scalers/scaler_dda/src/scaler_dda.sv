@@ -1,6 +1,6 @@
 // ***************
 // Filename: scaler_dda.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Output raster scan / source coordinate generator.
 //   Scans the output image in raster order and produces, for every output
 //   pixel, the source coordinate in signed 16.16 fixed point:

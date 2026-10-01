@@ -1,6 +1,6 @@
 // ***************
 // Filename: baud_generator.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Programmable serial baud-rate tick generator. Version
 //   1.0.0. A fractional (NCO) divider produces tick_os_o at
 //   BAUD*OVERSAMPLE ticks per second and tick_baud_o once every OVERSAMPLE

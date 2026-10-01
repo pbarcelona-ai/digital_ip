@@ -1,6 +1,6 @@
 // ***************
 // Filename: distortion_model_pkg.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Defines distortion_model_e (the MODEL_SEL enum: radial,
 // fisheye, affine, perspective, scaling, panoramic) and
 // calib_params_t, the single packed struct bundling every

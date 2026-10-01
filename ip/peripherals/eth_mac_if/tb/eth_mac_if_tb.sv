@@ -1,6 +1,6 @@
 // ***************
 // Filename: eth_mac_if_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for eth_mac_if. Random frames (1 to
 //   200 bytes) are sent through the transmitter and looped back to the
 //   receiver; the GMII wire is checked for the 7 x 0x55 plus 0xD5

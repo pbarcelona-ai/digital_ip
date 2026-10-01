@@ -1,6 +1,6 @@
 // ***************
 // Filename: i2s.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: I2S master transmitter and receiver (Philips I2S format).
 //   Version 1.0.0. Generates BCLK and LRCK from the system clock (half
 //   period bclk_half_i system clocks, so BCLK = f_clk / (2*bclk_half))

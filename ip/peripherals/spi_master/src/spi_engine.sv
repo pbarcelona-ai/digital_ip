@@ -1,6 +1,6 @@
 // ***************
 // Filename: spi_engine.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: SPI master shift engine. Supports all four clock modes
 //   (cpol/cpha), MSB or LSB first, word length 1 to DATA_W bits and a
 //   programmable SCLK half period. A word is loaded, chip select is asserted,

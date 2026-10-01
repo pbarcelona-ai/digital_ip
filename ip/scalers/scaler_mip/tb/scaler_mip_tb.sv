@@ -1,6 +1,6 @@
 // ***************
 // Filename: tb_scaler_mip.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for scaler_mip.
 //   Runs the standard suite from scaler_tb_lib (identity, non-integer
 //   up/down, mixed, 2x, 1x1 in/out, max size, junk before SOF, random

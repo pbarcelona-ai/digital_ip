@@ -1,6 +1,6 @@
 # ***************
 # Filename: synth.ys
-# Author: Paul Barcelona
+# Author: FPGA Cores 4 U
 # Description: Common Yosys script for every IP. Reads the design
 #   (generated read_design.ys), elaborates, optimizes, infers memories
 #   into block RAM, packs multipliers into DSP48 and synthesizes to

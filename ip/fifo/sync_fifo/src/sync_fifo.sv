@@ -1,6 +1,6 @@
 // ***************
 // Filename: sync_fifo.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Synchronous FIFO with registered read (standard mode).
 //   Version 1.0.0. Write with wr_en_i, read with rd_en_i; read data is
 //   valid the clock after rd_en_i (rd_valid_o marks it). Full/empty flags,

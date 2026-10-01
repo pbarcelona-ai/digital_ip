@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ***************
 # Filename: add_headers.py
-# Author: Paul Barcelona
+# Author: FPGA Cores 4 U
 # Description: Converts a first-line //DESC: comment in every .sv file into
 #   the standard file header (Filename, Author, wrapped Description, Date).
 #   Usage - add_headers.py rootdir.
@@ -9,7 +9,7 @@
 import sys, os, re, textwrap, datetime
 DATE = "2026-09-29"
 def header(fname, desc):
-    out = ["// ***************", f"// Filename: {fname}", "// Author: Paul Barcelona"]
+    out = ["// ***************", f"// Filename: {fname}", "// Author: FPGA Cores 4 U"]
     lines = textwrap.wrap(desc, width=75, initial_indent="// Description: ",
                           subsequent_indent="//   ")
     out += lines + [f"// Date: {DATE}"]

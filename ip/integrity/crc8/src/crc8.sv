@@ -1,6 +1,6 @@
 // ***************
 // Filename: crc8.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: CRC-8 (polynomial 0x07, init 0, no reflection). Version
 //   1.0.0. Thin wrapper around crc_core with the standard CRC8 parameters
 //   as defaults (POLY, INIT, reflection and final XOR are overridable for

@@ -1,6 +1,6 @@
 // ***************
 // Filename: parity_check_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for parity_check. Feeds words with
 //   correct parity (must never flag) and with single bit flips in data or
 //   parity bit (must always flag), even and odd modes, checks that double

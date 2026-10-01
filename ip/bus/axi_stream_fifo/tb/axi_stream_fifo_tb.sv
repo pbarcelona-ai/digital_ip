@@ -1,6 +1,6 @@
 // ***************
 // Filename: axi_stream_fifo_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for axi_stream_fifo. Random packets
 //   with random tkeep/tuser and random stalls on both sides; every beat,
 //   packet boundary and sideband must arrive in order, the FIFO must reach

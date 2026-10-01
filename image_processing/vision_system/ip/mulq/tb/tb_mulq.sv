@@ -1,6 +1,6 @@
 // ***************
 // Filename: tb_mulq.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking standalone testbench for mulq_s. Compares
 // its 2-cycle output against an independent 64-bit multiply and
 // arithmetic shift for corner values and a large pseudo-random

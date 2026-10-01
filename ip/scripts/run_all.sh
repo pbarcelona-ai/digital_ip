@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ***************
 # Filename: run_all.sh
-# Author: Paul Barcelona
+# Author: FPGA Cores 4 U
 # Description: Run simulation and selected synthesis for every IP listed
 #   in scripts/ips.csv and print a pass/fail summary table.
 # Date: 2026-09-29

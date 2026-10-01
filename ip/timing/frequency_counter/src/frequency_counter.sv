@@ -1,6 +1,6 @@
 // ***************
 // Filename: frequency_counter.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Input frequency counter. Version 1.0.0. Counts rising edges
 //   of the (asynchronous) signal sig_i during a gate window of gate_clks_i
 //   system clocks and reports the edge count in count_o with a one-clock

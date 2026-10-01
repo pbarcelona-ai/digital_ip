@@ -1,6 +1,6 @@
 // ***************
 // Filename: axil_bfm.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: AXI4-Lite bus functional model (master) for testbenches.
 //   Port names match the s_axil_* ports of every IP so it connects with a
 //   .* port list. Provides blocking write() and read() tasks that are

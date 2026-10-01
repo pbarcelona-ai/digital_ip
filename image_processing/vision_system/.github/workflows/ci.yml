@@ -1,6 +1,6 @@
 # ***************
 # Filename: ci.yml
-# Author: Paul Barcelona
+# Author: FPGA Cores 4 U
 # Description: GitHub Actions workflow. On every push to main (and on
 # manual dispatch) it runs the simulation regressions (IP + smoke,
 # top-level SystemVerilog, top-level cocotb) and the Yosys synthesis +

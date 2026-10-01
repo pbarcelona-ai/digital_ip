@@ -1,6 +1,6 @@
 // ***************
 // Filename: cic.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: CIC decimation filter (cascaded integrator-comb). Version
 //   1.0.0. N integrators run at the input rate with wrap-around
 //   arithmetic, the stream is decimated by r_i (1..RMAX, run-time

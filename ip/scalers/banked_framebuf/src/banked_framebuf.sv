@@ -1,6 +1,6 @@
 // ***************
 // Filename: banked_framebuf.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Frame store with a TAPSxTAPS window read per clock.
 //   The image is split over B x B RAM banks (B = next power of two >=
 //   TAPS). Pixel (x,y) lives in bank (y mod B, x mod B) at address

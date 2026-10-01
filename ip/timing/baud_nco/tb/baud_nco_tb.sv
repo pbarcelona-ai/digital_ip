@@ -1,6 +1,6 @@
 // ***************
 // Filename: baud_nco_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for the baud generator / NCO IP.
 //   Verifies the default FCW register, baud tick frequency, tick counter
 //   register, and the sine/cosine AXI-Stream samples (phase, offset, gain)

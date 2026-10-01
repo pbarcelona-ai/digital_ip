@@ -1,6 +1,6 @@
 // ***************
 // Filename: axi_lite_regs.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: AXI4-Lite slave register file. Holds all configuration
 // registers (control/status, image size, radial/tangential
 // coefficients, camera-calibration intrinsics, interpolation

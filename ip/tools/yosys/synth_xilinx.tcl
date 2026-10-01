@@ -1,6 +1,6 @@
 # ***************
 # Filename: synth_xilinx.tcl
-# Author: Paul Barcelona
+# Author: FPGA Cores 4 U
 # Description: Common Yosys synthesis script for every module of the scaler IP
 #   family (run by <module>/synth.sh via  yosys -c synth_xilinx.tcl).
 #   Targets Xilinx 7-series (default) with hierarchy preserved, so the

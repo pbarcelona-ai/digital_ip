@@ -1,6 +1,6 @@
 // ***************
 // Filename: scaler_anisotropic.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Anisotropic (multi-probe mip-map) scaler IP.
 //   Wrapper around scaler_mip with ANISO_MAX_LOG2 = 4: up to 16 trilinear
 //   probes per output pixel, spread along the major axis of the pixel

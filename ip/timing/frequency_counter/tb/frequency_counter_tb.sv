@@ -1,6 +1,6 @@
 // ***************
 // Filename: frequency_counter_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for frequency_counter. Applies
 //   asynchronous square waves of known frequency (1 MHz, 7.3 MHz, 20 MHz)
 //   and checks the counted edges per gate window against the expected

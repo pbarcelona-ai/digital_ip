@@ -1,6 +1,6 @@
 // ***************
 // Filename: axi4_lite_mux_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for axi4_lite_mux. One BFM master
 //   accesses three ip_axil_regs slaves at 0x000, 0x100 and 0x200 (4
 //   registers each) through the mux. Checks isolation (each slave holds

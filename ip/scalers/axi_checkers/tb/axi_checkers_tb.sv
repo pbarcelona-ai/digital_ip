@@ -1,6 +1,6 @@
 // ***************
 // Filename: tb_axi_checkers.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for axis_checker and axil_checker.
 //   1. Legal traffic with random stalls must produce zero assertion errors
 //      and hit the coverage bins.

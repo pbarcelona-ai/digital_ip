@@ -1,6 +1,6 @@
 // ***************
 // Filename: uart_top.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: UART IP top level. Full duplex UART with a fractional baud
 //   generator, transmit and receive FIFOs (block RAM for deep FIFOs) and
 //   AXI-Stream data ports: s_axis carries bytes to transmit, m_axis

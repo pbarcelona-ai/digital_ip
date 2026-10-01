@@ -1,6 +1,6 @@
 // ***************
 // Filename: axi_stream_width_converter.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: AXI-Stream data width converter. Version 1.0.0. Converts
 //   between IN_BYTES and OUT_BYTES wide streams; one width must be an
 //   integer multiple of the other (or equal, giving a register slice).

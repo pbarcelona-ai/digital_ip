@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ***************
 # Filename: run_yosys.sh
-# Author: Paul Barcelona
+# Author: FPGA Cores 4 U
 # Description: Runs Yosys synthesis (Xilinx 7-series, BRAM + DSP mapping)
 # for this module. Reads the RTL list from scripts/build.f, then executes the
 # shared common script ../../synth/yosys_common.ys (path adjusted per

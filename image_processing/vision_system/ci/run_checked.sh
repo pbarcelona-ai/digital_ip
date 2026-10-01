@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ***************
 # Filename: run_checked.sh
-# Author: Paul Barcelona
+# Author: FPGA Cores 4 U
 # Description: Runs a command and decides pass/fail from its OUTPUT, not
 # just its exit status: the testbenches print PASS/FAIL markers but
 # vvp exits 0 either way. Passes only if the command exits 0, the PASS

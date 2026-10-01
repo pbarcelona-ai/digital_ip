@@ -1,6 +1,6 @@
 // ***************
 // Filename: clock_domain_bridge.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Generic clock-domain bridge for multi-bit words using a four-
 //   phase toggle handshake. Version 1.0.0. A word accepted on the source
 //   valid/ready interface is held in a source register while a request toggle

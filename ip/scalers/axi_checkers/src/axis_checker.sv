@@ -1,6 +1,6 @@
 // ***************
 // Filename: axis_checker.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Passive AXI4-Stream protocol checker with functional coverage, for video
 //   streams (tuser = start of frame, tlast = end of line).
 //

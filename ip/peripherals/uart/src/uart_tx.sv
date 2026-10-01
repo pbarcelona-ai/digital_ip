@@ -1,6 +1,6 @@
 // ***************
 // Filename: uart_tx.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: UART transmitter. Pulls bytes from an AXI-Stream style
 //   interface and shifts them out LSB first with a start bit, 5 to 8 data
 //   bits, optional even or odd parity and one or two stop bits. Bit timing

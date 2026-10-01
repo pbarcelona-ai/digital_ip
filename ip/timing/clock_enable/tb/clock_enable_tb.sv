@@ -1,6 +1,6 @@
 // ***************
 // Filename: clock_enable_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for clock_enable. Measures the
 //   pulse spacing for several divide ratios (including 0, 1 and a runtime
 //   change), the pulse width, and that disabling stops the pulses. Prints

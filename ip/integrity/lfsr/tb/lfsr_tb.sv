@@ -1,6 +1,6 @@
 // ***************
 // Filename: lfsr_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for lfsr. Verifies maximal-length
 //   periods (PRBS7 = 127, PRBS15 = 32767, PRBS9 = 511), that a parallel
 //   STEPS=8 instance equals eight serial steps, hold on disabled clocks,

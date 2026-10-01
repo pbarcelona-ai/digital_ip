@@ -1,6 +1,6 @@
 // ***************
 // Filename: true_dual_port_ram_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for true_dual_port_ram. Port A (100
 //   MHz) and port B (57 MHz) write disjoint address ranges concurrently,
 //   then each port reads back the whole memory including the other port's

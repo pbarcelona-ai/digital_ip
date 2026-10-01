@@ -1,6 +1,6 @@
 // ***************
 // Filename: axis_async_bridge_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for the AXI-Stream asynchronous
 //   bridge. Sends packets of random length with random tkeep, tlast and
 //   tuser from a 100 MHz domain to a 43 MHz domain with random stalls on

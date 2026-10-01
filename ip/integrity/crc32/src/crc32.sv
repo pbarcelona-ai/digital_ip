@@ -1,6 +1,6 @@
 // ***************
 // Filename: crc32.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: CRC-32 IEEE 802.3 (polynomial 0x04C11DB7, reflected, init
 //   and final XOR 0xFFFFFFFF). Version 1.0.0. Thin wrapper around crc_core
 //   with the standard CRC32 parameters as defaults (POLY, INIT, reflection

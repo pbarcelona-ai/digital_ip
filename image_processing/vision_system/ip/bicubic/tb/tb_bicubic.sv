@@ -1,6 +1,6 @@
 // ***************
 // Filename: tb_bicubic.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking standalone testbench for bicubic, using
 // Python-cross-checked Q16.16 test vectors. Covers a general
 // case, exact-center degenerate weighting, a high-contrast

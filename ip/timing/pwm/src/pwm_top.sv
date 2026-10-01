@@ -1,6 +1,6 @@
 // ***************
 // Filename: pwm_top.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Multi-channel PWM IP. Programmable prescaler and period,
 //   edge or center aligned counting, per-channel double-buffered duty
 //   (updated at the period boundary), optional complementary outputs with

@@ -1,6 +1,6 @@
 // ***************
 // Filename: axi4_lite_slave_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for axi4_lite_slave. A behavioral
 //   register array sits behind the user interface. Tests write/read with
 //   byte strobes, address-before-data and data-before-address ordering,

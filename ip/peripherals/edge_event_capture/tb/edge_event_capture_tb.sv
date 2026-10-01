@@ -1,6 +1,6 @@
 // ***************
 // Filename: edge_event_capture_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for the edge detector IP. Tests
 //   rising and falling edge detection with enable masks, debounce
 //   filtering of short glitches, pending flags with write-1-to-clear,

@@ -1,6 +1,6 @@
 // ***************
 // Filename: scaler_ctrl.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Common control block for all scaler IPs.
 //   * AXI4-Lite slave (axil_regbus) implementing the common registers
 //   * forwards addresses >= 0x040 to the IP-specific ext_* bus

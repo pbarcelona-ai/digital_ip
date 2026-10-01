@@ -1,6 +1,6 @@
 // ***************
 // Filename: dma_wr_engine.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: AXI4 write burst engine for the DMA IPs. Consumes an AXI-
 //   Stream of 32-bit words and writes NWORDS words to a word-aligned address
 //   using INCR bursts of up to MAX_BURST beats that never cross a 4 KB

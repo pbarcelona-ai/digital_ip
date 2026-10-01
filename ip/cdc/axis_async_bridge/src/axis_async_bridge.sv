@@ -1,6 +1,6 @@
 // ***************
 // Filename: axis_async_bridge.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: AXI-Stream asynchronous clock domain bridge. Carries tdata,
 //   tkeep, tlast and tuser from the slave clock domain to the master clock
 //   domain through a gray pointer dual clock FIFO. Each side has an

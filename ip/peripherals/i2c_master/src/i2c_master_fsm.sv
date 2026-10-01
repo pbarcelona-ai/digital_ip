@@ -1,6 +1,6 @@
 // ***************
 // Filename: i2c_master_fsm.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: I2C master transaction sequencer. One transaction is START,
 //   7-bit address plus R/W, ACK check, then LEN data bytes (fetched from or
 //   delivered to AXI-Stream) and an optional STOP (no-stop keeps the bus for

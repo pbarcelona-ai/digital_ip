@@ -1,6 +1,6 @@
 // ***************
 // Filename: single_port_ram_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for single_port_ram. Random reads
 //   and writes compared with a reference array for all three read-during-
 //   write modes, with and without byte enables. Prints TEST PASSED on

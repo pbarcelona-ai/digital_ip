@@ -1,6 +1,6 @@
 // ***************
 // Filename: error_status_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for error_status. Checks sticky
 //   set, W1C-style clear, error-wins-over-clear, clear-all, irq masking,
 //   first-error index capture and hold, saturating error counter and reset

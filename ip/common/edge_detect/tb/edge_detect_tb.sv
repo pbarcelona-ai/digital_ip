@@ -1,6 +1,6 @@
 // ***************
 // Filename: edge_detect_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for edge_detect. Instantiates
 //   rising, falling and both-edge detectors plus a synchronized variant,
 //   drives random input activity and compares each output with a cycle

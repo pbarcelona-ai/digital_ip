@@ -1,6 +1,6 @@
 // ***************
 // Filename: gpio_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for the GPIO IP. Tests direction
 //   and output registers, atomic set/clear/toggle, input synchronization,
 //   rising and falling edge interrupts with masks, write-1-to-clear and

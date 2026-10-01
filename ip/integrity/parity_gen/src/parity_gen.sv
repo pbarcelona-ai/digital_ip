@@ -1,6 +1,6 @@
 // ***************
 // Filename: parity_gen.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Parity generator. Version 1.0.0. parity_o is the XOR reduction
 //   of data_i (even parity - data plus parity bit contain an even number of
 //   ones) or its inverse for ODD=1. REGISTERED=1 adds one output register

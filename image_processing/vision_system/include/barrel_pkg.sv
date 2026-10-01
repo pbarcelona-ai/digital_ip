@@ -1,6 +1,6 @@
 // ***************
 // Filename: barrel_pkg.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Shared SystemVerilog package for the lens-distortion-
 // correction core. Defines the Q16.16 fixed-point format used by
 // every module in this design, the saturating qmul() multiply

@@ -1,6 +1,6 @@
 // ***************
 // Filename: register_file_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for register_file. Random writes
 //   and dual port reads against a reference model in plain, bypass and
 //   zero-register-0 configurations, plus reset clearing. Prints TEST

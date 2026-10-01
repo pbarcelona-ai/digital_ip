@@ -1,6 +1,6 @@
 // ***************
 // Filename: sharpen_cas.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Contrast-adaptive sharpening (CAS) filter for AXI4-Stream video, after
 //   AMD FidelityFX CAS. Same-size in / out; 3x3 neighbourhood; line-buffer
 //   architecture (about two lines of latency, no frame buffer).

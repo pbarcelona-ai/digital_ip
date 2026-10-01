@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ***************
 # Filename: run_sva.sh
-# Author: Paul Barcelona
+# Author: FPGA Cores 4 U
 # Description: Runs the concurrent SVA demonstration with Verilator
 #   (assertions enabled). Lints the checkers first. Concurrent SVA is not
 #   supported by iverilog 12 or Yosys 0.33, so this is the only place

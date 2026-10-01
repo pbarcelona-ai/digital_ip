@@ -1,6 +1,6 @@
 // ***************
 // Filename: tb_bounded_perspective.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Large-frame scale-verification test. Configures the
 // DUT at true full 720x480 in MODEL_PERSPECTIVE with a small,
 // pre-vetted (non-singular across the full frame width)

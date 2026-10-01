@@ -1,6 +1,6 @@
 // ***************
 // Filename: error_status.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Sticky hardware error/status register. Version 1.0.0. NERR
 //   error inputs (level or pulse) set sticky bits in status_o. Software
 //   clears bits with clr_mask_i (write-1-to-clear style, one clock, a

@@ -1,6 +1,6 @@
 // ***************
 // Filename: axi4_lite_slave.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Generic AXI4-Lite slave front end. Version 1.0.0. Converts
 //   AXI4-Lite transactions into a simple register-access interface for
 //   user logic: a write strobe (wr_en_o with addr, data, byte strobes) and

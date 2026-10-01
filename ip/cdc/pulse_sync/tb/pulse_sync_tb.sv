@@ -1,6 +1,6 @@
 // ***************
 // Filename: pulse_sync_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for pulse_sync. Random pulses
 //   across several clock ratios: every accepted pulse must appear exactly
 //   once in the destination, pulses issued while busy must raise drop_o

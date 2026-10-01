@@ -1,6 +1,6 @@
 // ***************
 // Filename: bicubic.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Reusable IP. Separable Catmull-Rom (a=-0.5) bicubic
 // RGB888 interpolator over a 4x4 tap footprint, in an 18-stage
 // pipeline (every multiply built on the mulq_s IP). Higher

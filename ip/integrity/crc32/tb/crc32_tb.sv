@@ -1,6 +1,6 @@
 // ***************
 // Filename: crc32_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for crc32. Checks the standard
 //   check value 0xCBF43926 for the string 123456789 fed byte by byte and
 //   as 32-bit words with a partial last word, and compares 300 random

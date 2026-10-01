@@ -1,6 +1,6 @@
 // ***************
 // Filename: tb_coord_gen.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking standalone testbench for coord_gen, with
 // its own inline golden reference. Covers identity, radial,
 // tangential, camera calibration, real fisheye/panoramic/

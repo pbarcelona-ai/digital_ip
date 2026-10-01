@@ -1,6 +1,6 @@
 // ***************
 // Filename: vision_system.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Top-level lens-distortion-correction core. Integrates
 // axis_in_ctrl, frame_buffer, axis_out_ctrl, and axi_lite_regs,
 // and sequences the load-then-output FSM (T_LOAD/T_OUTPUT) that

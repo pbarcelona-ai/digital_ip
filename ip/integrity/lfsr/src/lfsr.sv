@@ -1,6 +1,6 @@
 // ***************
 // Filename: lfsr.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Linear-feedback shift register / PRBS generator. Version
 //   1.0.0. Fibonacci LFSR of WIDTH bits with feedback taps TAPS (bit i of
 //   TAPS set means state bit i is XORed into the feedback). Defaults

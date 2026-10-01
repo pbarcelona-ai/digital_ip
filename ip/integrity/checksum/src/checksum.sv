@@ -1,6 +1,6 @@
 // ***************
 // Filename: checksum.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Configurable byte-stream checksum. Version 1.0.0. MODE 0 is
 //   an 8-bit two's-complement sum (the sum of all bytes plus the checksum
 //   is 0 mod 256), MODE 1 is the RFC 1071 Internet checksum (16-bit one's

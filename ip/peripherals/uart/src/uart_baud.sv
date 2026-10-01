@@ -1,6 +1,6 @@
 // ***************
 // Filename: uart_baud.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Fractional baud rate generator for the UART. A phase
 //   accumulator adds the tuning word every clock and its carry is the 16x
 //   oversampling tick, so any baud rate can be produced at any clock

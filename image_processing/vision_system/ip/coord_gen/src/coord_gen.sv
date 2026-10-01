@@ -1,6 +1,6 @@
 // ***************
 // Filename: coord_gen.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Reusable IP. Per-pixel source-address generator. Fast
 // 23-cycle path for radial/tangential distortion and the
 // affine/scaling hooks; a second "slow path" per-pixel divide

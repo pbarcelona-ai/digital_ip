@@ -1,6 +1,6 @@
 // ***************
 // Filename: axis_dma.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: AXI-Stream DMA with two independent channels sharing one
 //   AXI4 master port. MM2S reads LEN bytes from memory and emits them on
 //   an AXI-Stream master (tlast on the last word). S2MM accepts an AXI-

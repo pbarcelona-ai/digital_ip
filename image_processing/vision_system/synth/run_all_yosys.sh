@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ***************
 # Filename: run_all_yosys.sh
-# Author: Paul Barcelona
+# Author: FPGA Cores 4 U
 # Description: Runs Yosys synthesis for every module directory (each with
 # its own build.f + run_yosys.sh), estimates worst reg-to-reg timing for
 # each with est_timing.py, and writes a combined table to

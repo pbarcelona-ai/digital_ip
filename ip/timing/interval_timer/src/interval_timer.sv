@@ -1,6 +1,6 @@
 // ***************
 // Filename: interval_timer.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Programmable interval timer. Version 1.0.0. Counts
 //   prescaled ticks and raises a one-clock irq_o / tick_o every interval_i
 //   ticks. AUTO_RELOAD mode repeats forever; one-shot mode (auto_i=0)

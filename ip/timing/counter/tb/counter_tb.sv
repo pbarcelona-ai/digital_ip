@@ -1,6 +1,6 @@
 // ***************
 // Filename: counter_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for counter. Compares an up, a down
 //   and a runtime-direction instance against a reference model across
 //   random enable, load and direction changes, including wrap pulses, load

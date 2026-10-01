@@ -1,6 +1,6 @@
 // ***************
 // Filename: axis_in_ctrl.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: AXI4-Stream video slave. Writes incoming pixels into
 // the on-chip frame_buffer at a free-running raster address,
 // enforcing the line-then-idle-gap timing and detecting the

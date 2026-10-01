@@ -4,99 +4,99 @@ Generated from `scripts/ips.csv`, RTL headers, and scaler module READMEs.
 
 | IP | Category | Top module | Testbench |
 |---|---|---|---|
-| [reset_ctrl](../cdc/reset_ctrl/docs/index.html) | cdc | `ip_reset_sync_top` | [`reset_ctrl_tb.sv`](../cdc/reset_ctrl/tb/reset_ctrl_tb.sv) |
-| [baud_nco](../timing/baud_nco/docs/index.html) | timing | `baud_nco_top` | [`baud_nco_tb.sv`](../timing/baud_nco/tb/baud_nco_tb.sv) |
-| [uart](../peripherals/uart/docs/index.html) | peripherals | `uart_top` | [`uart_tb.sv`](../peripherals/uart/tb/uart_tb.sv) |
-| [i2c_master](../peripherals/i2c_master/docs/index.html) | peripherals | `i2c_top` | [`i2c_master_tb.sv`](../peripherals/i2c_master/tb/i2c_master_tb.sv) |
-| [spi_master](../peripherals/spi_master/docs/index.html) | peripherals | `spi_top` | [`spi_master_tb.sv`](../peripherals/spi_master/tb/spi_master_tb.sv) |
-| [gpio](../peripherals/gpio/docs/index.html) | peripherals | `gpio_top` | [`gpio_tb.sv`](../peripherals/gpio/tb/gpio_tb.sv) |
-| [intc](../peripherals/intc/docs/index.html) | peripherals | `intc_top` | [`intc_tb.sv`](../peripherals/intc/tb/intc_tb.sv) |
-| [pwm](../timing/pwm/docs/index.html) | timing | `pwm_top` | [`pwm_tb.sv`](../timing/pwm/tb/pwm_tb.sv) |
-| [quadrature_decoder](../peripherals/quadrature_decoder/docs/index.html) | peripherals | `quad_dec_top` | [`quadrature_decoder_tb.sv`](../peripherals/quadrature_decoder/tb/quadrature_decoder_tb.sv) |
-| [watchdog](../timing/watchdog/docs/index.html) | timing | `watchdog_top` | [`watchdog_tb.sv`](../timing/watchdog/tb/watchdog_tb.sv) |
-| [edge_event_capture](../peripherals/edge_event_capture/docs/index.html) | peripherals | `edge_event_capture_top` | [`edge_event_capture_tb.sv`](../peripherals/edge_event_capture/tb/edge_event_capture_tb.sv) |
-| [async_fifo](../fifo/async_fifo/docs/index.html) | fifo | `async_fifo` | [`async_fifo_tb.sv`](../fifo/async_fifo/tb/async_fifo_tb.sv) |
-| [axis_async_bridge](../cdc/axis_async_bridge/docs/index.html) | cdc | `axis_async_bridge` | [`axis_async_bridge_tb.sv`](../cdc/axis_async_bridge/tb/axis_async_bridge_tb.sv) |
-| [axi4_lite_cdc](../cdc/axi4_lite_cdc/docs/index.html) | cdc | `axi4_lite_cdc` | [`axi4_lite_cdc_tb.sv`](../cdc/axi4_lite_cdc/tb/axi4_lite_cdc_tb.sv) |
-| [dma_engine](../bus/dma_engine/docs/index.html) | bus | `dma_engine` | [`dma_engine_tb.sv`](../bus/dma_engine/tb/dma_engine_tb.sv) |
-| [axis_dma](../bus/axis_dma/docs/index.html) | bus | `axis_dma` | [`axis_dma_tb.sv`](../bus/axis_dma/tb/axis_dma_tb.sv) |
-| [bit_sync](../cdc/bit_sync/docs/index.html) | cdc | `bit_sync` | [`bit_sync_tb.sv`](../cdc/bit_sync/tb/bit_sync_tb.sv) |
-| [toggle_sync](../cdc/toggle_sync/docs/index.html) | cdc | `toggle_sync` | [`toggle_sync_tb.sv`](../cdc/toggle_sync/tb/toggle_sync_tb.sv) |
-| [pulse_sync](../cdc/pulse_sync/docs/index.html) | cdc | `pulse_sync` | [`pulse_sync_tb.sv`](../cdc/pulse_sync/tb/pulse_sync_tb.sv) |
-| [reset_sync](../cdc/reset_sync/docs/index.html) | cdc | `reset_sync` | [`reset_sync_tb.sv`](../cdc/reset_sync/tb/reset_sync_tb.sv) |
-| [edge_detect](../common/edge_detect/docs/index.html) | common | `edge_detect` | [`edge_detect_tb.sv`](../common/edge_detect/tb/edge_detect_tb.sv) |
-| [clock_enable](../timing/clock_enable/docs/index.html) | timing | `clock_enable` | [`clock_enable_tb.sv`](../timing/clock_enable/tb/clock_enable_tb.sv) |
-| [counter](../timing/counter/docs/index.html) | timing | `counter` | [`counter_tb.sv`](../timing/counter/tb/counter_tb.sv) |
-| [timeout_timer](../timing/timeout_timer/docs/index.html) | timing | `timeout_timer` | [`timeout_timer_tb.sv`](../timing/timeout_timer/tb/timeout_timer_tb.sv) |
-| [priority_encoder](../common/priority_encoder/docs/index.html) | common | `priority_encoder` | [`priority_encoder_tb.sv`](../common/priority_encoder/tb/priority_encoder_tb.sv) |
-| [onehot_decoder](../common/onehot_decoder/docs/index.html) | common | `onehot_decoder` | [`onehot_decoder_tb.sv`](../common/onehot_decoder/tb/onehot_decoder_tb.sv) |
-| [single_port_ram](../memory/single_port_ram/docs/index.html) | memory | `single_port_ram` | [`single_port_ram_tb.sv`](../memory/single_port_ram/tb/single_port_ram_tb.sv) |
-| [simple_dual_port_ram](../memory/simple_dual_port_ram/docs/index.html) | memory | `simple_dual_port_ram` | [`simple_dual_port_ram_tb.sv`](../memory/simple_dual_port_ram/tb/simple_dual_port_ram_tb.sv) |
-| [true_dual_port_ram](../memory/true_dual_port_ram/docs/index.html) | memory | `true_dual_port_ram` | [`true_dual_port_ram_tb.sv`](../memory/true_dual_port_ram/tb/true_dual_port_ram_tb.sv) |
-| [rom](../memory/rom/docs/index.html) | memory | `rom` | [`rom_tb.sv`](../memory/rom/tb/rom_tb.sv) |
-| [register_file](../memory/register_file/docs/index.html) | memory | `register_file` | [`register_file_tb.sv`](../memory/register_file/tb/register_file_tb.sv) |
-| [sync_fifo](../fifo/sync_fifo/docs/index.html) | fifo | `sync_fifo` | [`sync_fifo_tb.sv`](../fifo/sync_fifo/tb/sync_fifo_tb.sv) |
-| [fallthrough_fifo](../fifo/fallthrough_fifo/docs/index.html) | fifo | `fallthrough_fifo` | [`fallthrough_fifo_tb.sv`](../fifo/fallthrough_fifo/tb/fallthrough_fifo_tb.sv) |
-| [packet_fifo](../fifo/packet_fifo/docs/index.html) | fifo | `packet_fifo` | [`packet_fifo_tb.sv`](../fifo/packet_fifo/tb/packet_fifo_tb.sv) |
-| [memory_arbiter](../memory/memory_arbiter/docs/index.html) | memory | `memory_arbiter` | [`memory_arbiter_tb.sv`](../memory/memory_arbiter/tb/memory_arbiter_tb.sv) |
-| [nco](../timing/nco/docs/index.html) | timing | `nco` | [`nco_tb.sv`](../timing/nco/tb/nco_tb.sv) |
-| [baud_generator](../timing/baud_generator/docs/index.html) | timing | `baud_generator` | [`baud_generator_tb.sv`](../timing/baud_generator/tb/baud_generator_tb.sv) |
-| [pulse_generator](../timing/pulse_generator/docs/index.html) | timing | `pulse_generator` | [`pulse_generator_tb.sv`](../timing/pulse_generator/tb/pulse_generator_tb.sv) |
-| [frequency_counter](../timing/frequency_counter/docs/index.html) | timing | `frequency_counter` | [`frequency_counter_tb.sv`](../timing/frequency_counter/tb/frequency_counter_tb.sv) |
-| [timestamp_counter](../timing/timestamp_counter/docs/index.html) | timing | `timestamp_counter` | [`timestamp_counter_tb.sv`](../timing/timestamp_counter/tb/timestamp_counter_tb.sv) |
-| [rate_limiter](../timing/rate_limiter/docs/index.html) | timing | `rate_limiter` | [`rate_limiter_tb.sv`](../timing/rate_limiter/tb/rate_limiter_tb.sv) |
-| [interval_timer](../timing/interval_timer/docs/index.html) | timing | `interval_timer` | [`interval_timer_tb.sv`](../timing/interval_timer/tb/interval_timer_tb.sv) |
-| [axi4_lite_slave](../bus/axi4_lite_slave/docs/index.html) | bus | `axi4_lite_slave` | [`axi4_lite_slave_tb.sv`](../bus/axi4_lite_slave/tb/axi4_lite_slave_tb.sv) |
-| [axi4_lite_regs](../bus/axi4_lite_regs/docs/index.html) | bus | `axi4_lite_regs` | [`axi4_lite_regs_tb.sv`](../bus/axi4_lite_regs/tb/axi4_lite_regs_tb.sv) |
-| [axi4_lite_decoder](../bus/axi4_lite_decoder/docs/index.html) | bus | `axi4_lite_decoder` | [`axi4_lite_decoder_tb.sv`](../bus/axi4_lite_decoder/tb/axi4_lite_decoder_tb.sv) |
-| [axi4_lite_mux](../bus/axi4_lite_mux/docs/index.html) | bus | `axi4_lite_mux` | [`axi4_lite_mux_tb.sv`](../bus/axi4_lite_mux/tb/axi4_lite_mux_tb.sv) |
-| [axi_stream_fifo](../bus/axi_stream_fifo/docs/index.html) | bus | `axi_stream_fifo` | [`axi_stream_fifo_tb.sv`](../bus/axi_stream_fifo/tb/axi_stream_fifo_tb.sv) |
-| [axi_stream_width_converter](../bus/axi_stream_width_converter/docs/index.html) | bus | `axi_stream_width_converter` | [`axi_stream_width_converter_tb.sv`](../bus/axi_stream_width_converter/tb/axi_stream_width_converter_tb.sv) |
-| [axi_stream_arbiter](../bus/axi_stream_arbiter/docs/index.html) | bus | `axi_stream_arbiter` | [`axi_stream_arbiter_tb.sv`](../bus/axi_stream_arbiter/tb/axi_stream_arbiter_tb.sv) |
-| [parity_gen](../integrity/parity_gen/docs/index.html) | integrity | `parity_gen` | [`parity_gen_tb.sv`](../integrity/parity_gen/tb/parity_gen_tb.sv) |
-| [parity_check](../integrity/parity_check/docs/index.html) | integrity | `parity_check` | [`parity_check_tb.sv`](../integrity/parity_check/tb/parity_check_tb.sv) |
-| [crc8](../integrity/crc8/docs/index.html) | integrity | `crc8` | [`crc8_tb.sv`](../integrity/crc8/tb/crc8_tb.sv) |
-| [crc16](../integrity/crc16/docs/index.html) | integrity | `crc16` | [`crc16_tb.sv`](../integrity/crc16/tb/crc16_tb.sv) |
-| [crc32](../integrity/crc32/docs/index.html) | integrity | `crc32` | [`crc32_tb.sv`](../integrity/crc32/tb/crc32_tb.sv) |
-| [checksum](../integrity/checksum/docs/index.html) | integrity | `checksum` | [`checksum_tb.sv`](../integrity/checksum/tb/checksum_tb.sv) |
-| [lfsr](../integrity/lfsr/docs/index.html) | integrity | `lfsr` | [`lfsr_tb.sv`](../integrity/lfsr/tb/lfsr_tb.sv) |
-| [error_status](../integrity/error_status/docs/index.html) | integrity | `error_status` | [`error_status_tb.sv`](../integrity/error_status/tb/error_status_tb.sv) |
-| [spi_slave](../peripherals/spi_slave/docs/index.html) | peripherals | `spi_slave` | [`spi_slave_tb.sv`](../peripherals/spi_slave/tb/spi_slave_tb.sv) |
-| [clock_domain_bridge](../cdc/clock_domain_bridge/docs/index.html) | cdc | `clock_domain_bridge` | [`clock_domain_bridge_tb.sv`](../cdc/clock_domain_bridge/tb/clock_domain_bridge_tb.sv) |
-| [uart_tx](../peripherals/uart_tx/docs/index.html) | peripherals | `uart_tx` | [`uart_tx_tb.sv`](../peripherals/uart_tx/tb/uart_tx_tb.sv) |
-| [uart_rx](../peripherals/uart_rx/docs/index.html) | peripherals | `uart_rx` | [`uart_rx_tb.sv`](../peripherals/uart_rx/tb/uart_rx_tb.sv) |
-| [cordic](../common/cordic/docs/index.html) | common | `cordic` | [`cordic_tb.sv`](../common/cordic/tb/cordic_tb.sv) |
-| [dds](../common/dds/docs/index.html) | common | `dds` | [`dds_tb.sv`](../common/dds/tb/dds_tb.sv) |
-| [fir](../common/fir/docs/index.html) | common | `fir` | [`fir_tb.sv`](../common/fir/tb/fir_tb.sv) |
-| [cic](../common/cic/docs/index.html) | common | `cic` | [`cic_tb.sv`](../common/cic/tb/cic_tb.sv) |
-| [ecc_memory_ctrl](../integrity/ecc_memory_ctrl/docs/index.html) | integrity | `ecc_memory_ctrl` | [`ecc_memory_ctrl_tb.sv`](../integrity/ecc_memory_ctrl/tb/ecc_memory_ctrl_tb.sv) |
-| [packet_parser](../bus/packet_parser/docs/index.html) | bus | `packet_parser` | [`packet_parser_tb.sv`](../bus/packet_parser/tb/packet_parser_tb.sv) |
-| [packet_formatter](../bus/packet_formatter/docs/index.html) | bus | `packet_formatter` | [`packet_formatter_tb.sv`](../bus/packet_formatter/tb/packet_formatter_tb.sv) |
-| [i2s](../peripherals/i2s/docs/index.html) | peripherals | `i2s` | [`i2s_tb.sv`](../peripherals/i2s/tb/i2s_tb.sv) |
-| [eth_mac_if](../peripherals/eth_mac_if/docs/index.html) | peripherals | `eth_mac_if` | [`eth_mac_if_tb.sv`](../peripherals/eth_mac_if/tb/eth_mac_if_tb.sv) |
-| [spi_flash_ctrl](../peripherals/spi_flash_ctrl/docs/index.html) | peripherals | `spi_flash_ctrl` | [`spi_flash_ctrl_tb.sv`](../peripherals/spi_flash_ctrl/tb/spi_flash_ctrl_tb.sv) |
-| [sdio_host](../peripherals/sdio_host/docs/index.html) | peripherals | `sdio_host` | [`sdio_host_tb.sv`](../peripherals/sdio_host/tb/sdio_host_tb.sv) |
-| [demo_regs](../bus/demo_regs/docs/index.html) | bus | `demo_regs` | [`demo_regs_tb.sv`](../bus/demo_regs/tb/demo_regs_tb.sv) |
-| [pcie_tl_ep](../peripherals/pcie_tl_ep/docs/index.html) | peripherals | `pcie_tl_ep_top` | [`pcie_tl_ep_tb.sv`](../peripherals/pcie_tl_ep/tb/pcie_tl_ep_tb.sv) |
-| [usb_fs_sie](../peripherals/usb_fs_sie/docs/index.html) | peripherals | `usb_fs_sie_top` | [`usb_fs_sie_tb.sv`](../peripherals/usb_fs_sie/tb/usb_fs_sie_tb.sv) |
-| [axi_checkers](../scalers/axi_checkers/docs/index.html) | scalers | `axis_checker` | [`axi_checkers_tb.sv`](../scalers/axi_checkers/tb/axi_checkers_tb.sv) |
-| [axil_regbus](../scalers/axil_regbus/docs/index.html) | scalers | `axil_regbus` | [`axil_regbus_tb.sv`](../scalers/axil_regbus/tb/axil_regbus_tb.sv) |
-| [axil_split](../scalers/axil_split/docs/index.html) | scalers | `axil_split` | [`axil_split_tb.sv`](../scalers/axil_split/tb/axil_split_tb.sv) |
-| [banked_framebuf](../scalers/banked_framebuf/docs/index.html) | scalers | `banked_framebuf` | [`banked_framebuf_tb.sv`](../scalers/banked_framebuf/tb/banked_framebuf_tb.sv) |
-| [scaler_anisotropic](../scalers/scaler_anisotropic/docs/index.html) | scalers | `scaler_anisotropic` | [`scaler_anisotropic_tb.sv`](../scalers/scaler_anisotropic/tb/scaler_anisotropic_tb.sv) |
-| [scaler_bicubic](../scalers/scaler_bicubic/docs/index.html) | scalers | `scaler_bicubic` | [`scaler_bicubic_tb.sv`](../scalers/scaler_bicubic/tb/scaler_bicubic_tb.sv) |
-| [scaler_bilinear](../scalers/scaler_bilinear/docs/index.html) | scalers | `scaler_bilinear` | [`scaler_bilinear_tb.sv`](../scalers/scaler_bilinear/tb/scaler_bilinear_tb.sv) |
-| [scaler_ctrl](../scalers/scaler_ctrl/docs/index.html) | scalers | `scaler_ctrl` | [`scaler_ctrl_tb.sv`](../scalers/scaler_ctrl/tb/scaler_ctrl_tb.sv) |
-| [scaler_dda](../scalers/scaler_dda/docs/index.html) | scalers | `scaler_dda` | [`scaler_dda_tb.sv`](../scalers/scaler_dda/tb/scaler_dda_tb.sv) |
-| [scaler_edge_directed](../scalers/scaler_edge_directed/docs/index.html) | scalers | `scaler_edge_directed` | [`scaler_edge_directed_tb.sv`](../scalers/scaler_edge_directed/tb/scaler_edge_directed_tb.sv) |
-| [scaler_lanczos](../scalers/scaler_lanczos/docs/index.html) | scalers | `scaler_lanczos` | [`scaler_lanczos_tb.sv`](../scalers/scaler_lanczos/tb/scaler_lanczos_tb.sv) |
-| [scaler_mip](../scalers/scaler_mip/docs/index.html) | scalers | `scaler_mip` | [`scaler_mip_tb.sv`](../scalers/scaler_mip/tb/scaler_mip_tb.sv) |
-| [scaler_nearest](../scalers/scaler_nearest/docs/index.html) | scalers | `scaler_nearest` | [`scaler_nearest_tb.sv`](../scalers/scaler_nearest/tb/scaler_nearest_tb.sv) |
-| [scaler_polyphase](../scalers/scaler_polyphase/docs/index.html) | scalers | `scaler_polyphase` | [`scaler_polyphase_tb.sv`](../scalers/scaler_polyphase/tb/scaler_polyphase_tb.sv) |
-| [scaler_trilinear](../scalers/scaler_trilinear/docs/index.html) | scalers | `scaler_trilinear` | [`scaler_trilinear_tb.sv`](../scalers/scaler_trilinear/tb/scaler_trilinear_tb.sv) |
-| [sharpen_cas](../scalers/sharpen_cas/docs/index.html) | scalers | `sharpen_cas` | [`sharpen_cas_tb.sv`](../scalers/sharpen_cas/tb/sharpen_cas_tb.sv) |
-| [spatial_upscaler](../scalers/spatial_upscaler/docs/index.html) | scalers | `spatial_upscaler` | [`spatial_upscaler_tb.sv`](../scalers/spatial_upscaler/tb/spatial_upscaler_tb.sv) |
-| [mac](../math/mac/docs/index.html) | math | `mac` | [`mac_tb.sv`](../math/mac/tb/mac_tb.sv) |
+| [reset_ctrl](reset_ctrl/index.html) | cdc | `ip_reset_sync_top` | [`reset_ctrl_tb.sv`](../cdc/reset_ctrl/tb/reset_ctrl_tb.sv) |
+| [baud_nco](baud_nco/index.html) | timing | `baud_nco_top` | [`baud_nco_tb.sv`](../timing/baud_nco/tb/baud_nco_tb.sv) |
+| [uart](uart/index.html) | peripherals | `uart_top` | [`uart_tb.sv`](../peripherals/uart/tb/uart_tb.sv) |
+| [i2c_master](i2c_master/index.html) | peripherals | `i2c_top` | [`i2c_master_tb.sv`](../peripherals/i2c_master/tb/i2c_master_tb.sv) |
+| [spi_master](spi_master/index.html) | peripherals | `spi_top` | [`spi_master_tb.sv`](../peripherals/spi_master/tb/spi_master_tb.sv) |
+| [gpio](gpio/index.html) | peripherals | `gpio_top` | [`gpio_tb.sv`](../peripherals/gpio/tb/gpio_tb.sv) |
+| [intc](intc/index.html) | peripherals | `intc_top` | [`intc_tb.sv`](../peripherals/intc/tb/intc_tb.sv) |
+| [pwm](pwm/index.html) | timing | `pwm_top` | [`pwm_tb.sv`](../timing/pwm/tb/pwm_tb.sv) |
+| [quadrature_decoder](quadrature_decoder/index.html) | peripherals | `quad_dec_top` | [`quadrature_decoder_tb.sv`](../peripherals/quadrature_decoder/tb/quadrature_decoder_tb.sv) |
+| [watchdog](watchdog/index.html) | timing | `watchdog_top` | [`watchdog_tb.sv`](../timing/watchdog/tb/watchdog_tb.sv) |
+| [edge_event_capture](edge_event_capture/index.html) | peripherals | `edge_event_capture_top` | [`edge_event_capture_tb.sv`](../peripherals/edge_event_capture/tb/edge_event_capture_tb.sv) |
+| [async_fifo](async_fifo/index.html) | fifo | `async_fifo` | [`async_fifo_tb.sv`](../fifo/async_fifo/tb/async_fifo_tb.sv) |
+| [axis_async_bridge](axis_async_bridge/index.html) | cdc | `axis_async_bridge` | [`axis_async_bridge_tb.sv`](../cdc/axis_async_bridge/tb/axis_async_bridge_tb.sv) |
+| [axi4_lite_cdc](axi4_lite_cdc/index.html) | cdc | `axi4_lite_cdc` | [`axi4_lite_cdc_tb.sv`](../cdc/axi4_lite_cdc/tb/axi4_lite_cdc_tb.sv) |
+| [dma_engine](dma_engine/index.html) | bus | `dma_engine` | [`dma_engine_tb.sv`](../bus/dma_engine/tb/dma_engine_tb.sv) |
+| [axis_dma](axis_dma/index.html) | bus | `axis_dma` | [`axis_dma_tb.sv`](../bus/axis_dma/tb/axis_dma_tb.sv) |
+| [bit_sync](bit_sync/index.html) | cdc | `bit_sync` | [`bit_sync_tb.sv`](../cdc/bit_sync/tb/bit_sync_tb.sv) |
+| [toggle_sync](toggle_sync/index.html) | cdc | `toggle_sync` | [`toggle_sync_tb.sv`](../cdc/toggle_sync/tb/toggle_sync_tb.sv) |
+| [pulse_sync](pulse_sync/index.html) | cdc | `pulse_sync` | [`pulse_sync_tb.sv`](../cdc/pulse_sync/tb/pulse_sync_tb.sv) |
+| [reset_sync](reset_sync/index.html) | cdc | `reset_sync` | [`reset_sync_tb.sv`](../cdc/reset_sync/tb/reset_sync_tb.sv) |
+| [edge_detect](edge_detect/index.html) | common | `edge_detect` | [`edge_detect_tb.sv`](../common/edge_detect/tb/edge_detect_tb.sv) |
+| [clock_enable](clock_enable/index.html) | timing | `clock_enable` | [`clock_enable_tb.sv`](../timing/clock_enable/tb/clock_enable_tb.sv) |
+| [counter](counter/index.html) | timing | `counter` | [`counter_tb.sv`](../timing/counter/tb/counter_tb.sv) |
+| [timeout_timer](timeout_timer/index.html) | timing | `timeout_timer` | [`timeout_timer_tb.sv`](../timing/timeout_timer/tb/timeout_timer_tb.sv) |
+| [priority_encoder](priority_encoder/index.html) | common | `priority_encoder` | [`priority_encoder_tb.sv`](../common/priority_encoder/tb/priority_encoder_tb.sv) |
+| [onehot_decoder](onehot_decoder/index.html) | common | `onehot_decoder` | [`onehot_decoder_tb.sv`](../common/onehot_decoder/tb/onehot_decoder_tb.sv) |
+| [single_port_ram](single_port_ram/index.html) | memory | `single_port_ram` | [`single_port_ram_tb.sv`](../memory/single_port_ram/tb/single_port_ram_tb.sv) |
+| [simple_dual_port_ram](simple_dual_port_ram/index.html) | memory | `simple_dual_port_ram` | [`simple_dual_port_ram_tb.sv`](../memory/simple_dual_port_ram/tb/simple_dual_port_ram_tb.sv) |
+| [true_dual_port_ram](true_dual_port_ram/index.html) | memory | `true_dual_port_ram` | [`true_dual_port_ram_tb.sv`](../memory/true_dual_port_ram/tb/true_dual_port_ram_tb.sv) |
+| [rom](rom/index.html) | memory | `rom` | [`rom_tb.sv`](../memory/rom/tb/rom_tb.sv) |
+| [register_file](register_file/index.html) | memory | `register_file` | [`register_file_tb.sv`](../memory/register_file/tb/register_file_tb.sv) |
+| [sync_fifo](sync_fifo/index.html) | fifo | `sync_fifo` | [`sync_fifo_tb.sv`](../fifo/sync_fifo/tb/sync_fifo_tb.sv) |
+| [fallthrough_fifo](fallthrough_fifo/index.html) | fifo | `fallthrough_fifo` | [`fallthrough_fifo_tb.sv`](../fifo/fallthrough_fifo/tb/fallthrough_fifo_tb.sv) |
+| [packet_fifo](packet_fifo/index.html) | fifo | `packet_fifo` | [`packet_fifo_tb.sv`](../fifo/packet_fifo/tb/packet_fifo_tb.sv) |
+| [memory_arbiter](memory_arbiter/index.html) | memory | `memory_arbiter` | [`memory_arbiter_tb.sv`](../memory/memory_arbiter/tb/memory_arbiter_tb.sv) |
+| [nco](nco/index.html) | timing | `nco` | [`nco_tb.sv`](../timing/nco/tb/nco_tb.sv) |
+| [baud_generator](baud_generator/index.html) | timing | `baud_generator` | [`baud_generator_tb.sv`](../timing/baud_generator/tb/baud_generator_tb.sv) |
+| [pulse_generator](pulse_generator/index.html) | timing | `pulse_generator` | [`pulse_generator_tb.sv`](../timing/pulse_generator/tb/pulse_generator_tb.sv) |
+| [frequency_counter](frequency_counter/index.html) | timing | `frequency_counter` | [`frequency_counter_tb.sv`](../timing/frequency_counter/tb/frequency_counter_tb.sv) |
+| [timestamp_counter](timestamp_counter/index.html) | timing | `timestamp_counter` | [`timestamp_counter_tb.sv`](../timing/timestamp_counter/tb/timestamp_counter_tb.sv) |
+| [rate_limiter](rate_limiter/index.html) | timing | `rate_limiter` | [`rate_limiter_tb.sv`](../timing/rate_limiter/tb/rate_limiter_tb.sv) |
+| [interval_timer](interval_timer/index.html) | timing | `interval_timer` | [`interval_timer_tb.sv`](../timing/interval_timer/tb/interval_timer_tb.sv) |
+| [axi4_lite_slave](axi4_lite_slave/index.html) | bus | `axi4_lite_slave` | [`axi4_lite_slave_tb.sv`](../bus/axi4_lite_slave/tb/axi4_lite_slave_tb.sv) |
+| [axi4_lite_regs](axi4_lite_regs/index.html) | bus | `axi4_lite_regs` | [`axi4_lite_regs_tb.sv`](../bus/axi4_lite_regs/tb/axi4_lite_regs_tb.sv) |
+| [axi4_lite_decoder](axi4_lite_decoder/index.html) | bus | `axi4_lite_decoder` | [`axi4_lite_decoder_tb.sv`](../bus/axi4_lite_decoder/tb/axi4_lite_decoder_tb.sv) |
+| [axi4_lite_mux](axi4_lite_mux/index.html) | bus | `axi4_lite_mux` | [`axi4_lite_mux_tb.sv`](../bus/axi4_lite_mux/tb/axi4_lite_mux_tb.sv) |
+| [axi_stream_fifo](axi_stream_fifo/index.html) | bus | `axi_stream_fifo` | [`axi_stream_fifo_tb.sv`](../bus/axi_stream_fifo/tb/axi_stream_fifo_tb.sv) |
+| [axi_stream_width_converter](axi_stream_width_converter/index.html) | bus | `axi_stream_width_converter` | [`axi_stream_width_converter_tb.sv`](../bus/axi_stream_width_converter/tb/axi_stream_width_converter_tb.sv) |
+| [axi_stream_arbiter](axi_stream_arbiter/index.html) | bus | `axi_stream_arbiter` | [`axi_stream_arbiter_tb.sv`](../bus/axi_stream_arbiter/tb/axi_stream_arbiter_tb.sv) |
+| [parity_gen](parity_gen/index.html) | integrity | `parity_gen` | [`parity_gen_tb.sv`](../integrity/parity_gen/tb/parity_gen_tb.sv) |
+| [parity_check](parity_check/index.html) | integrity | `parity_check` | [`parity_check_tb.sv`](../integrity/parity_check/tb/parity_check_tb.sv) |
+| [crc8](crc8/index.html) | integrity | `crc8` | [`crc8_tb.sv`](../integrity/crc8/tb/crc8_tb.sv) |
+| [crc16](crc16/index.html) | integrity | `crc16` | [`crc16_tb.sv`](../integrity/crc16/tb/crc16_tb.sv) |
+| [crc32](crc32/index.html) | integrity | `crc32` | [`crc32_tb.sv`](../integrity/crc32/tb/crc32_tb.sv) |
+| [checksum](checksum/index.html) | integrity | `checksum` | [`checksum_tb.sv`](../integrity/checksum/tb/checksum_tb.sv) |
+| [lfsr](lfsr/index.html) | integrity | `lfsr` | [`lfsr_tb.sv`](../integrity/lfsr/tb/lfsr_tb.sv) |
+| [error_status](error_status/index.html) | integrity | `error_status` | [`error_status_tb.sv`](../integrity/error_status/tb/error_status_tb.sv) |
+| [spi_slave](spi_slave/index.html) | peripherals | `spi_slave` | [`spi_slave_tb.sv`](../peripherals/spi_slave/tb/spi_slave_tb.sv) |
+| [clock_domain_bridge](clock_domain_bridge/index.html) | cdc | `clock_domain_bridge` | [`clock_domain_bridge_tb.sv`](../cdc/clock_domain_bridge/tb/clock_domain_bridge_tb.sv) |
+| [uart_tx](uart_tx/index.html) | peripherals | `uart_tx` | [`uart_tx_tb.sv`](../peripherals/uart_tx/tb/uart_tx_tb.sv) |
+| [uart_rx](uart_rx/index.html) | peripherals | `uart_rx` | [`uart_rx_tb.sv`](../peripherals/uart_rx/tb/uart_rx_tb.sv) |
+| [cordic](cordic/index.html) | common | `cordic` | [`cordic_tb.sv`](../common/cordic/tb/cordic_tb.sv) |
+| [dds](dds/index.html) | common | `dds` | [`dds_tb.sv`](../common/dds/tb/dds_tb.sv) |
+| [fir](fir/index.html) | common | `fir` | [`fir_tb.sv`](../common/fir/tb/fir_tb.sv) |
+| [cic](cic/index.html) | common | `cic` | [`cic_tb.sv`](../common/cic/tb/cic_tb.sv) |
+| [ecc_memory_ctrl](ecc_memory_ctrl/index.html) | integrity | `ecc_memory_ctrl` | [`ecc_memory_ctrl_tb.sv`](../integrity/ecc_memory_ctrl/tb/ecc_memory_ctrl_tb.sv) |
+| [packet_parser](packet_parser/index.html) | bus | `packet_parser` | [`packet_parser_tb.sv`](../bus/packet_parser/tb/packet_parser_tb.sv) |
+| [packet_formatter](packet_formatter/index.html) | bus | `packet_formatter` | [`packet_formatter_tb.sv`](../bus/packet_formatter/tb/packet_formatter_tb.sv) |
+| [i2s](i2s/index.html) | peripherals | `i2s` | [`i2s_tb.sv`](../peripherals/i2s/tb/i2s_tb.sv) |
+| [eth_mac_if](eth_mac_if/index.html) | peripherals | `eth_mac_if` | [`eth_mac_if_tb.sv`](../peripherals/eth_mac_if/tb/eth_mac_if_tb.sv) |
+| [spi_flash_ctrl](spi_flash_ctrl/index.html) | peripherals | `spi_flash_ctrl` | [`spi_flash_ctrl_tb.sv`](../peripherals/spi_flash_ctrl/tb/spi_flash_ctrl_tb.sv) |
+| [sdio_host](sdio_host/index.html) | peripherals | `sdio_host` | [`sdio_host_tb.sv`](../peripherals/sdio_host/tb/sdio_host_tb.sv) |
+| [demo_regs](demo_regs/index.html) | bus | `demo_regs` | [`demo_regs_tb.sv`](../bus/demo_regs/tb/demo_regs_tb.sv) |
+| [pcie_tl_ep](pcie_tl_ep/index.html) | peripherals | `pcie_tl_ep_top` | [`pcie_tl_ep_tb.sv`](../peripherals/pcie_tl_ep/tb/pcie_tl_ep_tb.sv) |
+| [usb_fs_sie](usb_fs_sie/index.html) | peripherals | `usb_fs_sie_top` | [`usb_fs_sie_tb.sv`](../peripherals/usb_fs_sie/tb/usb_fs_sie_tb.sv) |
+| [axi_checkers](axi_checkers/index.html) | scalers | `axis_checker` | [`axi_checkers_tb.sv`](../scalers/axi_checkers/tb/axi_checkers_tb.sv) |
+| [axil_regbus](axil_regbus/index.html) | scalers | `axil_regbus` | [`axil_regbus_tb.sv`](../scalers/axil_regbus/tb/axil_regbus_tb.sv) |
+| [axil_split](axil_split/index.html) | scalers | `axil_split` | [`axil_split_tb.sv`](../scalers/axil_split/tb/axil_split_tb.sv) |
+| [banked_framebuf](banked_framebuf/index.html) | scalers | `banked_framebuf` | [`banked_framebuf_tb.sv`](../scalers/banked_framebuf/tb/banked_framebuf_tb.sv) |
+| [scaler_anisotropic](scaler_anisotropic/index.html) | scalers | `scaler_anisotropic` | [`scaler_anisotropic_tb.sv`](../scalers/scaler_anisotropic/tb/scaler_anisotropic_tb.sv) |
+| [scaler_bicubic](scaler_bicubic/index.html) | scalers | `scaler_bicubic` | [`scaler_bicubic_tb.sv`](../scalers/scaler_bicubic/tb/scaler_bicubic_tb.sv) |
+| [scaler_bilinear](scaler_bilinear/index.html) | scalers | `scaler_bilinear` | [`scaler_bilinear_tb.sv`](../scalers/scaler_bilinear/tb/scaler_bilinear_tb.sv) |
+| [scaler_ctrl](scaler_ctrl/index.html) | scalers | `scaler_ctrl` | [`scaler_ctrl_tb.sv`](../scalers/scaler_ctrl/tb/scaler_ctrl_tb.sv) |
+| [scaler_dda](scaler_dda/index.html) | scalers | `scaler_dda` | [`scaler_dda_tb.sv`](../scalers/scaler_dda/tb/scaler_dda_tb.sv) |
+| [scaler_edge_directed](scaler_edge_directed/index.html) | scalers | `scaler_edge_directed` | [`scaler_edge_directed_tb.sv`](../scalers/scaler_edge_directed/tb/scaler_edge_directed_tb.sv) |
+| [scaler_lanczos](scaler_lanczos/index.html) | scalers | `scaler_lanczos` | [`scaler_lanczos_tb.sv`](../scalers/scaler_lanczos/tb/scaler_lanczos_tb.sv) |
+| [scaler_mip](scaler_mip/index.html) | scalers | `scaler_mip` | [`scaler_mip_tb.sv`](../scalers/scaler_mip/tb/scaler_mip_tb.sv) |
+| [scaler_nearest](scaler_nearest/index.html) | scalers | `scaler_nearest` | [`scaler_nearest_tb.sv`](../scalers/scaler_nearest/tb/scaler_nearest_tb.sv) |
+| [scaler_polyphase](scaler_polyphase/index.html) | scalers | `scaler_polyphase` | [`scaler_polyphase_tb.sv`](../scalers/scaler_polyphase/tb/scaler_polyphase_tb.sv) |
+| [scaler_trilinear](scaler_trilinear/index.html) | scalers | `scaler_trilinear` | [`scaler_trilinear_tb.sv`](../scalers/scaler_trilinear/tb/scaler_trilinear_tb.sv) |
+| [sharpen_cas](sharpen_cas/index.html) | scalers | `sharpen_cas` | [`sharpen_cas_tb.sv`](../scalers/sharpen_cas/tb/sharpen_cas_tb.sv) |
+| [spatial_upscaler](spatial_upscaler/index.html) | scalers | `spatial_upscaler` | [`spatial_upscaler_tb.sv`](../scalers/spatial_upscaler/tb/spatial_upscaler_tb.sv) |
+| [mac](mac/index.html) | math | `mac` | [`mac_tb.sv`](../math/mac/tb/mac_tb.sv) |
 
 ## reset_ctrl
 
@@ -106,7 +106,7 @@ Top level of the reset synchronizer IP. Synchronizes an asynchronous external re
 
 Sources: `../../shared/src/common/ip_axil_regs.sv`, `src/rst_sync.sv`, `src/ip_reset_sync_top.sv`
 
-[HTML module page](../cdc/reset_ctrl/docs/index.html)
+[HTML module page](reset_ctrl/index.html)
 
 ## baud_nco
 
@@ -116,7 +116,7 @@ Baud rate generator and NCO IP. Phase accumulator NCO gives a baud tick strobe, 
 
 Sources: `../../shared/src/common/ip_axil_regs.sv`, `src/nco_sine_rom.sv`, `src/nco_core.sv`, `src/baud_nco_top.sv`
 
-[HTML module page](../timing/baud_nco/docs/index.html)
+[HTML module page](baud_nco/index.html)
 
 ## uart
 
@@ -126,7 +126,7 @@ UART IP top level. Full duplex UART with a fractional baud generator, transmit a
 
 Sources: `../../shared/src/common/ip_axil_regs.sv`, `../../shared/src/fifo/ip_axis_fifo.sv`, `src/uart_baud.sv`, `src/uart_tx.sv`, `src/uart_rx.sv`, `src/uart_top.sv`
 
-[HTML module page](../peripherals/uart/docs/index.html)
+[HTML module page](uart/index.html)
 
 ## i2c_master
 
@@ -136,7 +136,7 @@ I2C master IP top level. AXI-Lite registers start and describe a transaction; wr
 
 Sources: `../../shared/src/common/ip_axil_regs.sv`, `../../shared/src/fifo/ip_axis_fifo.sv`, `src/i2c_bit_ctrl.sv`, `src/i2c_master_fsm.sv`, `src/i2c_top.sv`
 
-[HTML module page](../peripherals/i2c_master/docs/index.html)
+[HTML module page](i2c_master/index.html)
 
 ## spi_master
 
@@ -146,7 +146,7 @@ SPI master IP top level. AXI-Stream slave carries words to transmit (tlast ends 
 
 Sources: `../../shared/src/common/ip_axil_regs.sv`, `../../shared/src/fifo/ip_axis_fifo.sv`, `src/spi_engine.sv`, `src/spi_top.sv`
 
-[HTML module page](../peripherals/spi_master/docs/index.html)
+[HTML module page](spi_master/index.html)
 
 ## gpio
 
@@ -156,7 +156,7 @@ General purpose I/O IP with WIDTH pins. Per-pin direction, output register with 
 
 Sources: `../../shared/src/common/ip_axil_regs.sv`, `src/gpio_top.sv`
 
-[HTML module page](../peripherals/gpio/docs/index.html)
+[HTML module page](gpio/index.html)
 
 ## intc
 
@@ -166,7 +166,7 @@ Interrupt controller IP with NUM_IRQ sources. Each source has enable, edge or le
 
 Sources: `../../shared/src/common/ip_axil_regs.sv`, `src/intc_top.sv`
 
-[HTML module page](../peripherals/intc/docs/index.html)
+[HTML module page](intc/index.html)
 
 ## pwm
 
@@ -176,7 +176,7 @@ Multi-channel PWM IP. Programmable prescaler and period, edge or center aligned 
 
 Sources: `../../shared/src/common/ip_axil_regs.sv`, `src/pwm_top.sv`
 
-[HTML module page](../timing/pwm/docs/index.html)
+[HTML module page](pwm/index.html)
 
 ## quadrature_decoder
 
@@ -186,7 +186,7 @@ Quadrature encoder decoder IP. A/B/index inputs pass two flop synchronizers and 
 
 Sources: `../../shared/src/common/ip_axil_regs.sv`, `src/quad_dec_top.sv`
 
-[HTML module page](../peripherals/quadrature_decoder/docs/index.html)
+[HTML module page](quadrature_decoder/index.html)
 
 ## watchdog
 
@@ -196,7 +196,7 @@ Watchdog timer IP. Prescaled up-counter with programmable timeout and pre-timeou
 
 Sources: `../../shared/src/common/ip_axil_regs.sv`, `src/watchdog_top.sv`
 
-[HTML module page](../timing/watchdog/docs/index.html)
+[HTML module page](watchdog/index.html)
 
 ## edge_event_capture
 
@@ -206,7 +206,7 @@ Multi-channel edge detector IP. Each of WIDTH inputs goes through a synchronizer
 
 Sources: `../../shared/src/common/ip_axil_regs.sv`, `../../shared/src/fifo/ip_axis_fifo.sv`, `src/edge_event_capture_top.sv`
 
-[HTML module page](../peripherals/edge_event_capture/docs/index.html)
+[HTML module page](edge_event_capture/index.html)
 
 ## async_fifo
 
@@ -216,7 +216,7 @@ Dual clock (asynchronous) FIFO. Gray coded read and write pointers cross domains
 
 Sources: `src/async_fifo.sv`
 
-[HTML module page](../fifo/async_fifo/docs/index.html)
+[HTML module page](async_fifo/index.html)
 
 ## axis_async_bridge
 
@@ -226,7 +226,7 @@ AXI-Stream asynchronous clock domain bridge. Carries tdata, tkeep, tlast and tus
 
 Sources: `../../fifo/async_fifo/src/async_fifo.sv`, `src/axis_async_bridge.sv`
 
-[HTML module page](../cdc/axis_async_bridge/docs/index.html)
+[HTML module page](axis_async_bridge/index.html)
 
 ## axi4_lite_cdc
 
@@ -236,7 +236,7 @@ AXI4-Lite clock domain bridge. An AXI-Lite slave in the source clock domain is c
 
 Sources: `src/cdc_sync_bit.sv`, `src/axi4_lite_cdc.sv`
 
-[HTML module page](../cdc/axi4_lite_cdc/docs/index.html)
+[HTML module page](axi4_lite_cdc/index.html)
 
 ## dma_engine
 
@@ -246,7 +246,7 @@ Memory to memory DMA engine. Copies LEN bytes from SRC to DST over one AXI4 mast
 
 Sources: `../../shared/src/common/ip_axil_regs.sv`, `../../shared/src/fifo/ip_axis_fifo.sv`, `../../shared/src/bus/dma_common/dma_rd_engine.sv`, `../../shared/src/bus/dma_common/dma_wr_engine.sv`, `src/dma_engine.sv`
 
-[HTML module page](../bus/dma_engine/docs/index.html)
+[HTML module page](dma_engine/index.html)
 
 ## axis_dma
 
@@ -256,7 +256,7 @@ AXI-Stream DMA with two independent channels sharing one AXI4 master port. MM2S 
 
 Sources: `../../shared/src/common/ip_axil_regs.sv`, `../../shared/src/fifo/ip_axis_fifo.sv`, `../../shared/src/bus/dma_common/dma_rd_engine.sv`, `../../shared/src/bus/dma_common/dma_wr_engine.sv`, `src/axis_dma.sv`
 
-[HTML module page](../bus/axis_dma/docs/index.html)
+[HTML module page](axis_dma/index.html)
 
 ## bit_sync
 
@@ -266,7 +266,7 @@ Multi-flop synchronizer for a single-bit asynchronous signal entering the clk do
 
 Sources: `src/bit_sync.sv`
 
-[HTML module page](../cdc/bit_sync/docs/index.html)
+[HTML module page](bit_sync/index.html)
 
 ## toggle_sync
 
@@ -276,7 +276,7 @@ Event transfer between clock domains using a toggle level. Version 1.0.0. Every 
 
 Sources: `../../cdc/bit_sync/src/bit_sync.sv`, `src/toggle_sync.sv`
 
-[HTML module page](../cdc/toggle_sync/docs/index.html)
+[HTML module page](toggle_sync/index.html)
 
 ## pulse_sync
 
@@ -286,7 +286,7 @@ Pulse transfer between clock domains with full handshake. Version 1.0.0. A toggl
 
 Sources: `../../cdc/bit_sync/src/bit_sync.sv`, `src/pulse_sync.sv`
 
-[HTML module page](../cdc/pulse_sync/docs/index.html)
+[HTML module page](pulse_sync/index.html)
 
 ## reset_sync
 
@@ -296,7 +296,7 @@ Reset synchronizer. Version 1.0.0. Brings an asynchronous reset into the clk dom
 
 Sources: `src/reset_sync.sv`
 
-[HTML module page](../cdc/reset_sync/docs/index.html)
+[HTML module page](reset_sync/index.html)
 
 ## edge_detect
 
@@ -306,7 +306,7 @@ Edge detector for WIDTH signals. Version 1.0.0. EDGE selects rising (0), falling
 
 Sources: `src/edge_detect.sv`
 
-[HTML module page](../common/edge_detect/docs/index.html)
+[HTML module page](edge_detect/index.html)
 
 ## clock_enable
 
@@ -316,7 +316,7 @@ Programmable clock-enable generator. Version 1.0.0. Produces a one-clock ce_o pu
 
 Sources: `src/clock_enable.sv`
 
-[HTML module page](../timing/clock_enable/docs/index.html)
+[HTML module page](clock_enable/index.html)
 
 ## counter
 
@@ -326,7 +326,7 @@ Generic programmable up/down counter. Version 1.0.0. DIRECTION 0 counts up from 
 
 Sources: `src/counter.sv`
 
-[HTML module page](../timing/counter/docs/index.html)
+[HTML module page](counter/index.html)
 
 ## timeout_timer
 
@@ -336,7 +336,7 @@ Inactivity timeout timer. Version 1.0.0. Counts clocks since the last activity_i
 
 Sources: `src/timeout_timer.sv`
 
-[HTML module page](../timing/timeout_timer/docs/index.html)
+[HTML module page](timeout_timer/index.html)
 
 ## priority_encoder
 
@@ -346,7 +346,7 @@ Priority encoder. Version 1.0.0. Encodes the highest- priority asserted request:
 
 Sources: `src/priority_encoder.sv`
 
-[HTML module page](../common/priority_encoder/docs/index.html)
+[HTML module page](priority_encoder/index.html)
 
 ## onehot_decoder
 
@@ -356,7 +356,7 @@ Binary to one-hot decoder with enable. Version 1.0.0. Bit sel_i of onehot_o is s
 
 Sources: `src/onehot_decoder.sv`
 
-[HTML module page](../common/onehot_decoder/docs/index.html)
+[HTML module page](onehot_decoder/index.html)
 
 ## single_port_ram
 
@@ -366,7 +366,7 @@ Generic synchronous single-port RAM. Version 1.0.0. One clock, one address, opti
 
 Sources: `src/single_port_ram.sv`
 
-[HTML module page](../memory/single_port_ram/docs/index.html)
+[HTML module page](single_port_ram/index.html)
 
 ## simple_dual_port_ram
 
@@ -376,7 +376,7 @@ Simple dual-port RAM with an independent write port and read port. Version 1.0.0
 
 Sources: `src/simple_dual_port_ram.sv`
 
-[HTML module page](../memory/simple_dual_port_ram/docs/index.html)
+[HTML module page](simple_dual_port_ram/index.html)
 
 ## true_dual_port_ram
 
@@ -386,7 +386,7 @@ True dual-port RAM. Version 1.0.0. Two fully independent ports A and B, each wit
 
 Sources: `src/true_dual_port_ram.sv`
 
-[HTML module page](../memory/true_dual_port_ram/docs/index.html)
+[HTML module page](true_dual_port_ram/index.html)
 
 ## rom
 
@@ -396,7 +396,7 @@ Parameterized synchronous ROM. Version 1.0.0. Contents come from INIT_FILE (hex 
 
 Sources: `src/rom.sv`
 
-[HTML module page](../memory/rom/docs/index.html)
+[HTML module page](rom/index.html)
 
 ## register_file
 
@@ -406,7 +406,7 @@ Multi-register file. Version 1.0.0. NREG registers of WIDTH bits with one write 
 
 Sources: `src/register_file.sv`
 
-[HTML module page](../memory/register_file/docs/index.html)
+[HTML module page](register_file/index.html)
 
 ## sync_fifo
 
@@ -416,7 +416,7 @@ Synchronous FIFO with registered read (standard mode). Version 1.0.0. Write with
 
 Sources: `src/sync_fifo.sv`
 
-[HTML module page](../fifo/sync_fifo/docs/index.html)
+[HTML module page](sync_fifo/index.html)
 
 ## fallthrough_fifo
 
@@ -426,7 +426,7 @@ First-word-fall-through FIFO with valid/ready handshakes. Version 1.0.0. The old
 
 Sources: `src/fallthrough_fifo.sv`
 
-[HTML module page](../fifo/fallthrough_fifo/docs/index.html)
+[HTML module page](fallthrough_fifo/index.html)
 
 ## packet_fifo
 
@@ -436,7 +436,7 @@ Packet-preserving FIFO (store and forward). Version 1.0.0. Words are written wit
 
 Sources: `src/packet_fifo.sv`
 
-[HTML module page](../fifo/packet_fifo/docs/index.html)
+[HTML module page](packet_fifo/index.html)
 
 ## memory_arbiter
 
@@ -446,7 +446,7 @@ Arbiter between CLIENTS memory clients and one memory port. Version 1.0.0. Each 
 
 Sources: `src/memory_arbiter.sv`
 
-[HTML module page](../memory/memory_arbiter/docs/index.html)
+[HTML module page](memory_arbiter/index.html)
 
 ## nco
 
@@ -456,7 +456,7 @@ Numerically controlled oscillator (phase accumulator). Version 1.0.0. phase_o ad
 
 Sources: `src/nco.sv`
 
-[HTML module page](../timing/nco/docs/index.html)
+[HTML module page](nco/index.html)
 
 ## baud_generator
 
@@ -466,7 +466,7 @@ Programmable serial baud-rate tick generator. Version 1.0.0. A fractional (NCO) 
 
 Sources: `src/baud_generator.sv`
 
-[HTML module page](../timing/baud_generator/docs/index.html)
+[HTML module page](baud_generator/index.html)
 
 ## pulse_generator
 
@@ -476,7 +476,7 @@ Periodic or one-shot pulse generator. Version 1.0.0. In continuous mode a pulse 
 
 Sources: `src/pulse_generator.sv`
 
-[HTML module page](../timing/pulse_generator/docs/index.html)
+[HTML module page](pulse_generator/index.html)
 
 ## frequency_counter
 
@@ -486,7 +486,7 @@ Input frequency counter. Version 1.0.0. Counts rising edges of the (asynchronous
 
 Sources: `../../cdc/bit_sync/src/bit_sync.sv`, `src/frequency_counter.sv`
 
-[HTML module page](../timing/frequency_counter/docs/index.html)
+[HTML module page](frequency_counter/index.html)
 
 ## timestamp_counter
 
@@ -496,7 +496,7 @@ Free-running system timestamp counter. Version 1.0.0. WIDTH-bit counter incremen
 
 Sources: `src/timestamp_counter.sv`
 
-[HTML module page](../timing/timestamp_counter/docs/index.html)
+[HTML module page](timestamp_counter/index.html)
 
 ## rate_limiter
 
@@ -506,7 +506,7 @@ Token-bucket rate limiter for valid/ready streams or events. Version 1.0.0. One 
 
 Sources: `src/rate_limiter.sv`
 
-[HTML module page](../timing/rate_limiter/docs/index.html)
+[HTML module page](rate_limiter/index.html)
 
 ## interval_timer
 
@@ -516,7 +516,7 @@ Programmable interval timer. Version 1.0.0. Counts prescaled ticks and raises a 
 
 Sources: `src/interval_timer.sv`
 
-[HTML module page](../timing/interval_timer/docs/index.html)
+[HTML module page](interval_timer/index.html)
 
 ## axi4_lite_slave
 
@@ -526,7 +526,7 @@ Generic AXI4-Lite slave front end. Version 1.0.0. Converts AXI4-Lite transaction
 
 Sources: `src/axi4_lite_slave.sv`
 
-[HTML module page](../bus/axi4_lite_slave/docs/index.html)
+[HTML module page](axi4_lite_slave/index.html)
 
 ## axi4_lite_regs
 
@@ -536,7 +536,7 @@ AXI4-Lite register bank with per-register access types. Version 1.0.0. NREG 32-b
 
 Sources: `../../bus/axi4_lite_slave/src/axi4_lite_slave.sv`, `src/axi4_lite_regs.sv`
 
-[HTML module page](../bus/axi4_lite_regs/docs/index.html)
+[HTML module page](axi4_lite_regs/index.html)
 
 ## axi4_lite_decoder
 
@@ -546,7 +546,7 @@ AXI4-Lite address decoder. Version 1.0.0. Purely combinational decode of an addr
 
 Sources: `src/axi4_lite_decoder.sv`
 
-[HTML module page](../bus/axi4_lite_decoder/docs/index.html)
+[HTML module page](axi4_lite_decoder/index.html)
 
 ## axi4_lite_mux
 
@@ -556,7 +556,7 @@ AXI4-Lite 1-to-N interconnect (address decoded mux). Version 1.0.0. One AXI-Lite
 
 Sources: `../../shared/src/common/ip_axil_regs.sv`, `../../bus/axi4_lite_decoder/src/axi4_lite_decoder.sv`, `src/axi4_lite_mux.sv`
 
-[HTML module page](../bus/axi4_lite_mux/docs/index.html)
+[HTML module page](axi4_lite_mux/index.html)
 
 ## axi_stream_fifo
 
@@ -566,7 +566,7 @@ AXI-Stream FIFO. Version 1.0.0. Buffers a full AXI-Stream (tdata, tkeep, tlast, 
 
 Sources: `../../shared/src/fifo/ip_axis_fifo.sv`, `src/axi_stream_fifo.sv`
 
-[HTML module page](../bus/axi_stream_fifo/docs/index.html)
+[HTML module page](axi_stream_fifo/index.html)
 
 ## axi_stream_width_converter
 
@@ -576,7 +576,7 @@ AXI-Stream data width converter. Version 1.0.0. Converts between IN_BYTES and OU
 
 Sources: `src/axi_stream_width_converter.sv`
 
-[HTML module page](../bus/axi_stream_width_converter/docs/index.html)
+[HTML module page](axi_stream_width_converter/index.html)
 
 ## axi_stream_arbiter
 
@@ -586,7 +586,7 @@ AXI-Stream arbiter (N inputs to one output). Version 1.0.0. Packet-granular arbi
 
 Sources: `src/axi_stream_arbiter.sv`
 
-[HTML module page](../bus/axi_stream_arbiter/docs/index.html)
+[HTML module page](axi_stream_arbiter/index.html)
 
 ## parity_gen
 
@@ -596,7 +596,7 @@ Parity generator. Version 1.0.0. parity_o is the XOR reduction of data_i (even p
 
 Sources: `src/parity_gen.sv`
 
-[HTML module page](../integrity/parity_gen/docs/index.html)
+[HTML module page](parity_gen/index.html)
 
 ## parity_check
 
@@ -606,7 +606,7 @@ Parity checker. Version 1.0.0. err_o goes high for a word whose received parity 
 
 Sources: `src/parity_check.sv`
 
-[HTML module page](../integrity/parity_check/docs/index.html)
+[HTML module page](parity_check/index.html)
 
 ## crc8
 
@@ -616,7 +616,7 @@ CRC-8 (polynomial 0x07, init 0, no reflection). Version 1.0.0. Thin wrapper arou
 
 Sources: `../../shared/src/integrity/crc_core/crc_core.sv`, `src/crc8.sv`
 
-[HTML module page](../integrity/crc8/docs/index.html)
+[HTML module page](crc8/index.html)
 
 ## crc16
 
@@ -626,7 +626,7 @@ CRC-16/CCITT-FALSE (polynomial 0x1021, init 0xFFFF, no reflection). Version 1.0.
 
 Sources: `../../shared/src/integrity/crc_core/crc_core.sv`, `src/crc16.sv`
 
-[HTML module page](../integrity/crc16/docs/index.html)
+[HTML module page](crc16/index.html)
 
 ## crc32
 
@@ -636,7 +636,7 @@ CRC-32 IEEE 802.3 (polynomial 0x04C11DB7, reflected, init and final XOR 0xFFFFFF
 
 Sources: `../../shared/src/integrity/crc_core/crc_core.sv`, `src/crc32.sv`
 
-[HTML module page](../integrity/crc32/docs/index.html)
+[HTML module page](crc32/index.html)
 
 ## checksum
 
@@ -646,7 +646,7 @@ Configurable byte-stream checksum. Version 1.0.0. MODE 0 is an 8-bit two's-compl
 
 Sources: `src/checksum.sv`
 
-[HTML module page](../integrity/checksum/docs/index.html)
+[HTML module page](checksum/index.html)
 
 ## lfsr
 
@@ -656,7 +656,7 @@ Linear-feedback shift register / PRBS generator. Version 1.0.0. Fibonacci LFSR o
 
 Sources: `src/lfsr.sv`
 
-[HTML module page](../integrity/lfsr/docs/index.html)
+[HTML module page](lfsr/index.html)
 
 ## error_status
 
@@ -666,7 +666,7 @@ Sticky hardware error/status register. Version 1.0.0. NERR error inputs (level o
 
 Sources: `src/error_status.sv`
 
-[HTML module page](../integrity/error_status/docs/index.html)
+[HTML module page](error_status/index.html)
 
 ## spi_slave
 
@@ -676,7 +676,7 @@ SPI slave (all four modes, 1..32 bit words, MSB or LSB first). Version 1.0.0. sc
 
 Sources: `../../cdc/bit_sync/src/bit_sync.sv`, `src/spi_slave.sv`
 
-[HTML module page](../peripherals/spi_slave/docs/index.html)
+[HTML module page](spi_slave/index.html)
 
 ## clock_domain_bridge
 
@@ -686,7 +686,7 @@ Generic clock-domain bridge for multi-bit words using a four- phase toggle hands
 
 Sources: `../../cdc/bit_sync/src/bit_sync.sv`, `src/clock_domain_bridge.sv`
 
-[HTML module page](../cdc/clock_domain_bridge/docs/index.html)
+[HTML module page](clock_domain_bridge/index.html)
 
 ## uart_tx
 
@@ -696,7 +696,7 @@ UART transmitter. Pulls bytes from an AXI-Stream style interface and shifts them
 
 Sources: `../../peripherals/uart/src/uart_tx.sv`, `../../timing/baud_generator/src/baud_generator.sv`
 
-[HTML module page](../peripherals/uart_tx/docs/index.html)
+[HTML module page](uart_tx/index.html)
 
 ## uart_rx
 
@@ -706,7 +706,7 @@ UART receiver. Two flop synchronizer, start bit qualification at mid bit, then s
 
 Sources: `../../peripherals/uart/src/uart_rx.sv`, `../../timing/baud_generator/src/baud_generator.sv`
 
-[HTML module page](../peripherals/uart_rx/docs/index.html)
+[HTML module page](uart_rx/index.html)
 
 ## cordic
 
@@ -716,7 +716,7 @@ Pipelined CORDIC. Version 1.0.0. MODE 0 (rotation) rotates the vector (x_i, y_i)
 
 Sources: `src/cordic.sv`
 
-[HTML module page](../common/cordic/docs/index.html)
+[HTML module page](cordic/index.html)
 
 ## dds
 
@@ -726,7 +726,7 @@ Direct digital synthesizer (sine/cosine generator). Version 1.0.0. A PHASE_W bit
 
 Sources: `../../common/cordic/src/cordic.sv`, `../../timing/nco/src/nco.sv`, `src/dds.sv`
 
-[HTML module page](../common/dds/docs/index.html)
+[HTML module page](dds/index.html)
 
 ## fir
 
@@ -736,7 +736,7 @@ Streaming FIR filter (transposed form, run-time loadable coefficients). Version 
 
 Sources: `src/fir.sv`
 
-[HTML module page](../common/fir/docs/index.html)
+[HTML module page](fir/index.html)
 
 ## cic
 
@@ -746,7 +746,7 @@ CIC decimation filter (cascaded integrator-comb). Version 1.0.0. N integrators r
 
 Sources: `src/cic.sv`
 
-[HTML module page](../common/cic/docs/index.html)
+[HTML module page](cic/index.html)
 
 ## ecc_memory_ctrl
 
@@ -756,7 +756,7 @@ ECC-protected memory controller. Version 1.0.0. A DEPTH x DATA_W word memory (in
 
 Sources: `src/ecc_secded.sv`, `src/ecc_memory_ctrl.sv`
 
-[HTML module page](../integrity/ecc_memory_ctrl/docs/index.html)
+[HTML module page](ecc_memory_ctrl/index.html)
 
 ## packet_parser
 
@@ -766,7 +766,7 @@ AXI-Stream packet parser and filter. Version 1.0.0. Captures the first HDR_BYTES
 
 Sources: `src/packet_parser.sv`
 
-[HTML module page](../bus/packet_parser/docs/index.html)
+[HTML module page](packet_parser/index.html)
 
 ## packet_formatter
 
@@ -776,7 +776,7 @@ AXI-Stream packet formatter. Version 1.0.0. Builds outgoing packets from a paylo
 
 Sources: `../../bus/packet_parser/src/packet_parser.sv`, `src/packet_formatter.sv`
 
-[HTML module page](../bus/packet_formatter/docs/index.html)
+[HTML module page](packet_formatter/index.html)
 
 ## i2s
 
@@ -786,7 +786,7 @@ I2S master transmitter and receiver (Philips I2S format). Version 1.0.0. Generat
 
 Sources: `src/i2s.sv`
 
-[HTML module page](../peripherals/i2s/docs/index.html)
+[HTML module page](i2s/index.html)
 
 ## eth_mac_if
 
@@ -796,7 +796,7 @@ Ethernet MAC interface (GMII, 8 bit, single clock). Version 1.0.0. Transmit - ta
 
 Sources: `../../shared/src/integrity/crc_core/crc_core.sv`, `../../integrity/crc32/src/crc32.sv`, `src/eth_mac_if.sv`
 
-[HTML module page](../peripherals/eth_mac_if/docs/index.html)
+[HTML module page](eth_mac_if/index.html)
 
 ## spi_flash_ctrl
 
@@ -806,7 +806,7 @@ SPI NOR flash controller (single-bit SPI mode 0, 3-byte addressing, e.g. W25Qxx 
 
 Sources: `../../shared/src/common/ip_axil_regs.sv`, `src/spi_flash_ctrl.sv`
 
-[HTML module page](../peripherals/spi_flash_ctrl/docs/index.html)
+[HTML module page](spi_flash_ctrl/index.html)
 
 ## sdio_host
 
@@ -816,7 +816,7 @@ SD / SDIO host controller (single-block transfers, 1-bit or 4-bit data bus, SD m
 
 Sources: `../../shared/src/common/ip_axil_regs.sv`, `src/sdio_host.sv`
 
-[HTML module page](../peripherals/sdio_host/docs/index.html)
+[HTML module page](sdio_host/index.html)
 
 ## demo_regs
 
@@ -826,7 +826,7 @@ Generated AXI4-Lite register block 'demo_regs' with 6 registers (regmap_gen.py, 
 
 Sources: `../../bus/axi4_lite_slave/src/axi4_lite_slave.sv`, `../../bus/axi4_lite_regs/src/axi4_lite_regs.sv`, `src/demo_regs.sv`
 
-[HTML module page](../bus/demo_regs/docs/index.html)
+[HTML module page](demo_regs/index.html)
 
 ## pcie_tl_ep
 
@@ -836,7 +836,7 @@ PCIe transaction layer endpoint IP top level. 64 bit AXI- Stream TLP ports (rx f
 
 Sources: `src/pcie_axis_to_dw.sv`, `src/pcie_dw_to_axis.sv`, `src/pcie_axis_fifo.sv`, `src/pcie_axil_regs.sv`, `src/pcie_tl_target.sv`, `src/pcie_tl_dma.sv`, `src/pcie_tl_ep_top.sv`
 
-[HTML module page](../peripherals/pcie_tl_ep/docs/index.html)
+[HTML module page](pcie_tl_ep/index.html)
 
 ## usb_fs_sie
 
@@ -846,7 +846,7 @@ USB 1.1 full-speed serial interface engine IP. Bit-level D+/D- interface (NRZI, 
 
 Sources: `src/usb_fs_rx.sv`, `src/usb_fs_tx.sv`, `src/usb_axis_fifo.sv`, `src/usb_axil_regs.sv`, `src/usb_fs_sie_top.sv`
 
-[HTML module page](../peripherals/usb_fs_sie/docs/index.html)
+[HTML module page](usb_fs_sie/index.html)
 
 ## axi_checkers
 
@@ -856,7 +856,7 @@ Passive protocol checkers with functional coverage. axis_checker covers AXI4-Str
 
 Sources: `src/axil_checker.sv`, `src/axis_checker.sv`
 
-[HTML module page](../scalers/axi_checkers/docs/index.html)
+[HTML module page](axi_checkers/index.html)
 
 ## axil_regbus
 
@@ -866,7 +866,7 @@ AXI4-Lite slave that converts AXI transactions into a one-cycle register bus (re
 
 Sources: `src/axil_regbus.sv`
 
-[HTML module page](../scalers/axil_regbus/docs/index.html)
+[HTML module page](axil_regbus/index.html)
 
 ## axil_split
 
@@ -876,7 +876,7 @@ AXI4-Lite 1-to-2 address decoder: routes each transaction to slave port 0 or 1 b
 
 Sources: `src/axil_split.sv`
 
-[HTML module page](../scalers/axil_split/docs/index.html)
+[HTML module page](axil_split/index.html)
 
 ## banked_framebuf
 
@@ -886,7 +886,7 @@ Frame store split over B×B RAM banks (B = next power of 2 ≥ TAPS) that return
 
 Sources: `src/banked_framebuf.sv`
 
-[HTML module page](../scalers/banked_framebuf/docs/index.html)
+[HTML module page](banked_framebuf/index.html)
 
 ## scaler_anisotropic
 
@@ -896,7 +896,7 @@ Anisotropic scaler: scaler_mip with up to 16 probes per pixel.
 
 Sources: `src/../../axil_regbus/src/axil_regbus.sv`, `src/../../scaler_ctrl/src/scaler_ctrl.sv`, `src/../../scaler_dda/src/scaler_dda.sv`, `src/../../banked_framebuf/src/banked_framebuf.sv`, `src/../../scaler_mip/src/scaler_mip.sv`, `src/scaler_anisotropic.sv`
 
-[HTML module page](../scalers/scaler_anisotropic/docs/index.html)
+[HTML module page](scaler_anisotropic/index.html)
 
 ## scaler_bicubic
 
@@ -906,7 +906,7 @@ Bicubic (4×4) scaler: scaler_polyphase with TAPS=4. Program any Mitchell-Netrav
 
 Sources: `src/../../axil_regbus/src/axil_regbus.sv`, `src/../../scaler_ctrl/src/scaler_ctrl.sv`, `src/../../scaler_dda/src/scaler_dda.sv`, `src/../../banked_framebuf/src/banked_framebuf.sv`, `src/../../scaler_polyphase/src/scaler_polyphase.sv`, `src/scaler_bicubic.sv`
 
-[HTML module page](../scalers/scaler_bicubic/docs/index.html)
+[HTML module page](scaler_bicubic/index.html)
 
 ## scaler_bilinear
 
@@ -916,7 +916,7 @@ Bilinear scaler, 8-bit phase, weights computed in hardware.
 
 Sources: `src/../../axil_regbus/src/axil_regbus.sv`, `src/../../scaler_ctrl/src/scaler_ctrl.sv`, `src/../../scaler_dda/src/scaler_dda.sv`, `src/../../banked_framebuf/src/banked_framebuf.sv`, `src/scaler_bilinear.sv`
 
-[HTML module page](../scalers/scaler_bilinear/docs/index.html)
+[HTML module page](scaler_bilinear/index.html)
 
 ## scaler_ctrl
 
@@ -926,7 +926,7 @@ Common scaler control: register map 0x000–0x02F, forwarding of 0x040+ to the I
 
 Sources: `src/../../axil_regbus/src/axil_regbus.sv`, `src/scaler_ctrl.sv`
 
-[HTML module page](../scalers/scaler_ctrl/docs/index.html)
+[HTML module page](scaler_ctrl/index.html)
 
 ## scaler_dda
 
@@ -936,7 +936,7 @@ Raster scan of the output image producing 16.16 source coordinates OFFS + o·STE
 
 Sources: `src/scaler_dda.sv`
 
-[HTML module page](../scalers/scaler_dda/docs/index.html)
+[HTML module page](scaler_dda/index.html)
 
 ## scaler_edge_directed
 
@@ -946,7 +946,7 @@ Edge-directed (data-dependent triangulation) scaler. Registers: 0x040 THRESH, 0x
 
 Sources: `src/../../axil_regbus/src/axil_regbus.sv`, `src/../../scaler_ctrl/src/scaler_ctrl.sv`, `src/../../scaler_dda/src/scaler_dda.sv`, `src/../../banked_framebuf/src/banked_framebuf.sv`, `src/scaler_edge_directed.sv`
 
-[HTML module page](../scalers/scaler_edge_directed/docs/index.html)
+[HTML module page](scaler_edge_directed/index.html)
 
 ## scaler_lanczos
 
@@ -956,7 +956,7 @@ Lanczos-3 (6×6) scaler: scaler_polyphase with TAPS=6.
 
 Sources: `src/../../axil_regbus/src/axil_regbus.sv`, `src/../../scaler_ctrl/src/scaler_ctrl.sv`, `src/../../scaler_dda/src/scaler_dda.sv`, `src/../../banked_framebuf/src/banked_framebuf.sv`, `src/../../scaler_polyphase/src/scaler_polyphase.sv`, `src/scaler_lanczos.sv`
 
-[HTML module page](../scalers/scaler_lanczos/docs/index.html)
+[HTML module page](scaler_lanczos/index.html)
 
 ## scaler_mip
 
@@ -966,7 +966,7 @@ Mip-map scaler engine: hardware 2×2 box pyramid, trilinear sampling, optional a
 
 Sources: `src/../../axil_regbus/src/axil_regbus.sv`, `src/../../scaler_ctrl/src/scaler_ctrl.sv`, `src/../../scaler_dda/src/scaler_dda.sv`, `src/../../banked_framebuf/src/banked_framebuf.sv`, `src/scaler_mip.sv`
 
-[HTML module page](../scalers/scaler_mip/docs/index.html)
+[HTML module page](scaler_mip/index.html)
 
 ## scaler_nearest
 
@@ -976,7 +976,7 @@ Nearest-neighbour scaler.
 
 Sources: `src/../../axil_regbus/src/axil_regbus.sv`, `src/../../scaler_ctrl/src/scaler_ctrl.sv`, `src/../../scaler_dda/src/scaler_dda.sv`, `src/../../banked_framebuf/src/banked_framebuf.sv`, `src/scaler_nearest.sv`
 
-[HTML module page](../scalers/scaler_nearest/docs/index.html)
+[HTML module page](scaler_nearest/index.html)
 
 ## scaler_polyphase
 
@@ -986,7 +986,7 @@ Generic separable polyphase scaler, even TAPS 2–16, programmable H/V coefficie
 
 Sources: `src/../../axil_regbus/src/axil_regbus.sv`, `src/../../scaler_ctrl/src/scaler_ctrl.sv`, `src/../../scaler_dda/src/scaler_dda.sv`, `src/../../banked_framebuf/src/banked_framebuf.sv`, `src/scaler_polyphase.sv`
 
-[HTML module page](../scalers/scaler_polyphase/docs/index.html)
+[HTML module page](scaler_polyphase/index.html)
 
 ## scaler_trilinear
 
@@ -996,7 +996,7 @@ Trilinear scaler: scaler_mip with ANISO_MAX_LOG2=0.
 
 Sources: `src/../../axil_regbus/src/axil_regbus.sv`, `src/../../scaler_ctrl/src/scaler_ctrl.sv`, `src/../../scaler_dda/src/scaler_dda.sv`, `src/../../banked_framebuf/src/banked_framebuf.sv`, `src/../../scaler_mip/src/scaler_mip.sv`, `src/scaler_trilinear.sv`
 
-[HTML module page](../scalers/scaler_trilinear/docs/index.html)
+[HTML module page](scaler_trilinear/index.html)
 
 ## sharpen_cas
 
@@ -1006,7 +1006,7 @@ Contrast-adaptive sharpening (CAS) filter after AMD FidelityFX CAS: a 3×3 same-
 
 Sources: `src/../../axil_regbus/src/axil_regbus.sv`, `src/sharpen_cas.sv`
 
-[HTML module page](../scalers/sharpen_cas/docs/index.html)
+[HTML module page](sharpen_cas/index.html)
 
 ## spatial_upscaler
 
@@ -1016,7 +1016,7 @@ FSR 1-style spatial upscaler: scaler_lanczos resampling followed by sharpen_cas,
 
 Sources: `src/../../axil_split/src/axil_split.sv`, `src/../../axil_regbus/src/axil_regbus.sv`, `src/../../scaler_ctrl/src/scaler_ctrl.sv`, `src/../../scaler_dda/src/scaler_dda.sv`, `src/../../banked_framebuf/src/banked_framebuf.sv`, `src/../../scaler_polyphase/src/scaler_polyphase.sv`, `src/../../scaler_lanczos/src/scaler_lanczos.sv`, `src/../../sharpen_cas/src/sharpen_cas.sv`, `src/spatial_upscaler.sv`
 
-[HTML module page](../scalers/spatial_upscaler/docs/index.html)
+[HTML module page](spatial_upscaler/index.html)
 
 ## mac
 
@@ -1026,4 +1026,4 @@ One-cycle-latency multiply-accumulate unit. Fixed-point mode supports independen
 
 Sources: `src/mac.sv`, `src/fp32_fma.sv`
 
-[HTML module page](../math/mac/docs/index.html)
+[HTML module page](mac/index.html)

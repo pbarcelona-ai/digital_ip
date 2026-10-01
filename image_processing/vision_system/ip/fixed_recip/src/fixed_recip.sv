@@ -1,6 +1,6 @@
 // ***************
 // Filename: fixed_recip.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Reusable IP. Iterative shift/subtract unsigned Q16.16
 // reciprocal divider (33 cycles). Used in the config plane (once
 // per register write, not per pixel) and, since this project

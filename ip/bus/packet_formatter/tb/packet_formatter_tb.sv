@@ -1,6 +1,6 @@
 // ***************
 // Filename: packet_formatter_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for packet_formatter, including a
 //   formatter-to-parser round trip. Payload packets of random whole-beat
 //   length go through the formatter in two configurations (header only,

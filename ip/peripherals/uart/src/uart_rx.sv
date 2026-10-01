@@ -1,6 +1,6 @@
 // ***************
 // Filename: uart_rx.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: UART receiver. Two flop synchronizer, start bit qualification
 //   at mid bit, then sampling every 16 ticks in the middle of each bit.
 //   Supports 5 to 8 data bits, optional parity and stop bit check. Produces a

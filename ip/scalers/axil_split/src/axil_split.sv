@@ -1,6 +1,6 @@
 // ***************
 // Filename: axil_split.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: AXI4-Lite 1-to-2 address decoder (interconnect).
 //   Routes each transaction from one master port to one of two slave ports
 //   by address bit SEL_BIT: bit = 0 -> port m0, bit = 1 -> port m1. The

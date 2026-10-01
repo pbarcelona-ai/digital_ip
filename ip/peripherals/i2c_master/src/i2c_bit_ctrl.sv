@@ -1,6 +1,6 @@
 // ***************
 // Filename: i2c_bit_ctrl.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: I2C bit level engine. Executes one command at a time - START
 //   (also repeated START), STOP, write bit, read bit - split into four phases
 //   of div_i+1 clocks each, so SCL period is 4*(div_i+1) clocks at any clock

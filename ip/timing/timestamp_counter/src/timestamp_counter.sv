@@ -1,6 +1,6 @@
 // ***************
 // Filename: timestamp_counter.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Free-running system timestamp counter. Version 1.0.0.
 //   WIDTH-bit counter incrementing on every tick_i (tie to 1 for clk
 //   resolution, or use clock_enable for microseconds). clear_i zeroes it

@@ -1,6 +1,6 @@
 // ***************
 // Filename: packet_parser_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for packet_parser. Random packets
 //   (1..8 beats of 32 bits, random partial tkeep on the last beat, some
 //   runts shorter than the 8 byte header) with random input valid and

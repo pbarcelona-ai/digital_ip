@@ -1,6 +1,6 @@
 // ***************
 // Filename: rate_limiter_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for rate_limiter. Saturates the
 //   input and measures the output rate for several refill periods (average
 //   within 1 percent), checks the initial burst equals the bucket size,

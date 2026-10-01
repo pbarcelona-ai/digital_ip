@@ -1,6 +1,6 @@
 // ***************
 // Filename: usb_fs_sie_top.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: USB 1.1 full-speed serial interface engine IP. Bit-level D+/D-
 //   interface (NRZI, bit stuffing, SYNC, EOP, CRC5/CRC16, PID check, bus
 //   reset detect) with AXI-Stream packet ports. m_axis delivers each received

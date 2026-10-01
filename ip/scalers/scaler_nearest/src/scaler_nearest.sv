@@ -1,6 +1,6 @@
 // ***************
 // Filename: scaler_nearest.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Nearest-neighbour (point sampling) scaler IP.
 //   out(ox,oy) = in(round(src_x), round(src_y)), round(v) = floor(v+0.5),
 //   with src = OFFS + o*STEP from scaler_dda and clamp-to-edge addressing.

@@ -1,6 +1,6 @@
 // ***************
 // Filename: pulse_generator.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Periodic or one-shot pulse generator. Version 1.0.0. In
 //   continuous mode a pulse of width_i clocks is produced every period_i
 //   clocks; in one-shot mode (oneshot_i=1) each trigger_i pulse produces

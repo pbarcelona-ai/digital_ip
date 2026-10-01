@@ -1,6 +1,6 @@
 // ***************
 // Filename: memory_arbiter.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Arbiter between CLIENTS memory clients and one memory port.
 //   Version 1.0.0. Each client presents req/we/addr/wdata with a ready
 //   handshake (a request is accepted when c_req and c_ready are both

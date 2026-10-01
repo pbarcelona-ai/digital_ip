@@ -1,6 +1,6 @@
 // ***************
 // Filename: ecc_memory_ctrl.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: ECC-protected memory controller. Version 1.0.0. A DEPTH x
 //   DATA_W word memory (inferred RAM, stored as SECDED codewords) behind a
 //   simple request interface. Writes store the encoded word; reads fetch

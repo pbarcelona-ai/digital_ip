@@ -1,6 +1,6 @@
 // ***************
 // Filename: uart_tx_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for the uart_tx transmitter block.
 //   A 1 Mbaud x16 tick generator feeds the transmitter at 100 MHz; the
 //   serial line is sampled at bit centres for 8N1, 7E1, 8O2 and 5N1 frames

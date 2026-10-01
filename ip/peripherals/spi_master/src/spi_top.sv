@@ -1,6 +1,6 @@
 // ***************
 // Filename: spi_top.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: SPI master IP top level. AXI-Stream slave carries words to
 //   transmit (tlast ends a chip select burst), AXI-Stream master returns
 //   the words captured from MISO. AXI-Lite map - 0x00 CTRL [0]en [1]cpol

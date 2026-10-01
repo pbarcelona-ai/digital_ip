@@ -1,6 +1,6 @@
 // ***************
 // Filename: edge_detect.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Edge detector for WIDTH signals. Version 1.0.0. EDGE
 //   selects rising (0), falling (1) or both (2). Optional two-flop input
 //   synchronizer (SYNC_INPUT=1) for asynchronous inputs. Clock - clk;

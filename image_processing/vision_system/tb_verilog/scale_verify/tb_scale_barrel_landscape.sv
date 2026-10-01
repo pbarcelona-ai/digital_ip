@@ -1,6 +1,6 @@
 // ***************
 // Filename: tb_scale_barrel_landscape.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Large-frame scale-verification test. Runs the barrel
 // (bilinear+radial) correction scenario at true full 720x480
 // through the complete end-to-end pipeline to 100% completion,

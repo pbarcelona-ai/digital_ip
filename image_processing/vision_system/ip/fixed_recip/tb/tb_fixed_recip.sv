@@ -1,6 +1,6 @@
 // ***************
 // Filename: tb_fixed_recip.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking standalone testbench for fixed_recip.
 // Checks its output against an independent 64-bit integer
 // division for powers of two, non-powers-of-two, the smallest

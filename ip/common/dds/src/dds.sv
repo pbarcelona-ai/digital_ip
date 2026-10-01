@@ -1,6 +1,6 @@
 // ***************
 // Filename: dds.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Direct digital synthesizer (sine/cosine generator). Version
 //   1.0.0. A PHASE_W bit phase accumulator (nco) steps by tuning_i on
 //   every enabled clock (f_out = tuning * f_clk / 2^PHASE_W, so 1 MHz at

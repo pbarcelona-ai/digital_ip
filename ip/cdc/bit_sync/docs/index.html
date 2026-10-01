@@ -4,7 +4,7 @@
 <meta name="description" content="Multi-flop synchronizer for a single-bit asynchronous signal entering the clk domain. Version 1.0.0. Clock domain - all state runs on clk, d_i may be fully asynchronous but must be glitch free and held for at least one clk period (use pulse_sync for pulses). Reset - synchronous, active low; flops load RESET_VAL. Latency - STAGES clock cycles. Timing - the flops carry async_reg so tools keep them together; no logic between stages. Errors - STAGES &lt; 2 is rejected at elaboration.">
 <title>Bit Sync | Digital IP</title><link rel="stylesheet" href="../../../docs/site.css">
 </head><body>
-<header class="topbar"><a class="brand" href="../../../docs/index.html">BARCELONA ENTERPRISES / DIGITAL IP / CDC</a><a href="../../../README.md">Repository README</a></header>
+<header class="topbar"><a class="brand" href="../../../docs/index.html">FPGA Cores 4 U / DIGITAL IP / CDC</a><a href="../../../README.md">Repository README</a></header>
 <main class="shell">
 <section class="hero"><p class="eyebrow">cdc / bit_sync</p><h1>Bit Sync</h1><p class="lede">Multi-flop synchronizer for a single-bit asynchronous signal entering the clk domain. Version 1.0.0. Clock domain - all state runs on clk, d_i may be fully asynchronous but must be glitch free and held for at least one clk period (use pulse_sync for pulses). Reset - synchronous, active low; flops load RESET_VAL. Latency - STAGES clock cycles. Timing - the flops carry async_reg so tools keep them together; no logic between stages. Errors - STAGES &lt; 2 is rejected at elaboration.</p>
 <div class="actions"><code>make -C cdc/bit_sync test</code><code>make -C cdc/bit_sync diagrams</code></div></section>

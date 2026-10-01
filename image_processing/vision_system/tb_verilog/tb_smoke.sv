@@ -1,6 +1,6 @@
 // ***************
 // Filename: tb_smoke.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Fast SystemVerilog smoke test driving coord_gen directly
 // (no frame streaming). Covers identity, radial, tangential,
 // camera calibration, real fisheye/panoramic/perspective math,

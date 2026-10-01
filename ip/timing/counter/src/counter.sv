@@ -1,6 +1,6 @@
 // ***************
 // Filename: counter.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Generic programmable up/down counter. Version 1.0.0.
 //   DIRECTION 0 counts up from 0 to top_i then wraps to 0, 1 counts down
 //   from top_i to 0 then reloads top_i, 2 selects up or down at run time

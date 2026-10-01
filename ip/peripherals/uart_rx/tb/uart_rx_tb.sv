@@ -1,6 +1,6 @@
 // ***************
 // Filename: uart_rx_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for the uart_rx receiver block. A
 //   serial driver sends frames in 8N1, 7E1, 8O1 and 5N1 format at 1 Mbaud
 //   (x16 oversampling, 100 MHz), including back-to-back frames, a data

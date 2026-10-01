@@ -1,6 +1,6 @@
 // ***************
 // Filename: scaler_lanczos.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Lanczos-3 (6x6) image scaler IP.
 //   Thin wrapper around scaler_polyphase with TAPS = 6. Coefficients are
 //   L(x) = sinc(x)*sinc(x/3), |x| < 3, sampled per phase, normalised to

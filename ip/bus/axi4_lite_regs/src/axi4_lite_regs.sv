@@ -1,6 +1,6 @@
 // ***************
 // Filename: axi4_lite_regs.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: AXI4-Lite register bank with per-register access types.
 //   Version 1.0.0. NREG 32-bit registers, each RW (0, software read/write
 //   with byte strobes), RO (1, reads hw_i, writes rejected with SLVERR),

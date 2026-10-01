@@ -1,6 +1,6 @@
 // ***************
 // Filename: axil_checker.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Passive AXI4-Lite protocol checker with functional coverage. Checks both
 //   the master and the slave side of one AXI4-Lite link.
 //

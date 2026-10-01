@@ -1,6 +1,6 @@
 // ***************
 // Filename: baud_generator_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for baud_generator. Counts
 //   oversample and baud ticks over a long window at 100 MHz (115200 baud
 //   x16, 921600 x8, 3 Mbaud x4) and at a 27 MHz clock, and checks the rate

@@ -1,6 +1,6 @@
 // ***************
 // Filename: axi_stream_fifo.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: AXI-Stream FIFO. Version 1.0.0. Buffers a full AXI-Stream
 //   (tdata, tkeep, tlast, tuser) in a block-RAM FIFO of DEPTH beats with
 //   standard valid/ready handshakes and a fill level. Built on

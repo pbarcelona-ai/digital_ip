@@ -1,6 +1,6 @@
 // ***************
 // Filename: rst_sync.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Reset synchronizer with asynchronous assertion and synchronous
 //   de-assertion. Parameterized number of flop stages, input and output
 //   polarity, and a minimum reset pulse stretch counter so short glitches

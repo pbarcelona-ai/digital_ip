@@ -1,6 +1,6 @@
 // ***************
 // Filename: pulse_sync.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Pulse transfer between clock domains with full handshake.
 //   Version 1.0.0. A toggle crosses to the destination and an acknowledge
 //   toggle crosses back, so a new pulse is accepted only when the previous

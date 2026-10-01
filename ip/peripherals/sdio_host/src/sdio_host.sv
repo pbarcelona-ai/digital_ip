@@ -1,6 +1,6 @@
 // ***************
 // Filename: sdio_host.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: SD / SDIO host controller (single-block transfers, 1-bit or
 //   4-bit data bus, SD mode). Version 1.0.0. AXI4-Lite registers issue one
 //   command at a time - 0x00 CMD (write starts it): index[5:0],

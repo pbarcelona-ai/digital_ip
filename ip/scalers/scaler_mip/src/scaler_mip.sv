@@ -1,6 +1,6 @@
 // ***************
 // Filename: scaler_mip.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Mip-map scaler engine (trilinear/anisotropic).
 //   Engine of scaler_trilinear (ANISO_MAX_LOG2 = 0) and
 //   scaler_anisotropic (ANISO_MAX_LOG2 > 0). Frame flow:

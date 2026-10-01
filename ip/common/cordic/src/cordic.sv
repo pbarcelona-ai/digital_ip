@@ -1,6 +1,6 @@
 // ***************
 // Filename: cordic.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Pipelined CORDIC. Version 1.0.0. MODE 0 (rotation) rotates
 //   the vector (x_i, y_i) by the angle z_i, giving x*cos-y*sin and
 //   x*sin+y*cos (with x_i=A, y_i=0 it is a sine/cosine generator of

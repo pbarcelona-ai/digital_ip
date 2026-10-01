@@ -1,6 +1,6 @@
 // ***************
 // Filename: dds_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for dds. Generates 1 MHz, 7.3 MHz
 //   and 24.9 MHz tones at 100 MHz and compares every sin/cos sample with
 //   double precision references computed from an independent model of the

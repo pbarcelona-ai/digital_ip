@@ -1,6 +1,6 @@
 // ***************
 // Filename: axis_out_ctrl.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Generates the output raster and AXI4-Stream video
 // master. Drives coord_gen for each pixel's source address,
 // expands it for bilinear or bicubic sampling, muxes between

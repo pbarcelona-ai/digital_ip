@@ -1,6 +1,6 @@
 // ***************
 // Filename: tb_bounded_bicubic_radial.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Large-frame scale-verification test. Configures the
 // DUT at true full 480x480 in bicubic+radial mode and verifies
 // a bounded partial capture (tens of thousands of pixels, many

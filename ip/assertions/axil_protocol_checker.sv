@@ -1,6 +1,6 @@
 // ***************
 // Filename: axil_protocol_checker.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Concurrent SVA protocol checker for AXI4-Lite slave ports.
 //   Passive monitor - bind it to any IP's s_axil_* ports. Checks that
 //   VALID signals stay asserted until READY, that address, data and

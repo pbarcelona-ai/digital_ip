@@ -1,6 +1,6 @@
 // ***************
 // Filename: sva_demo_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Demonstration of the concurrent SVA checkers. Instantiates
 //   axi_stream_fifo and axi4_lite_regs with random traffic and binds
 //   axis_protocol_checker and axil_protocol_checker to their ports. Run

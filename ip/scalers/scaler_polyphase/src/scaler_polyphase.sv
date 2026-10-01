@@ -1,6 +1,6 @@
 // ***************
 // Filename: scaler_polyphase.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Generic separable polyphase FIR scaler.
 //   TAPS x TAPS kernel (even TAPS, 2..16) with programmable coefficient
 //   tables. Engine of scaler_bicubic (4 taps) and scaler_lanczos (6 taps);

@@ -1,6 +1,6 @@
 // ***************
 // Filename: quadrature_decoder_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for the quadrature decoder IP. An
 //   encoder model drives A/B/index. Tests forward and reverse counting
 //   (x4), glitch rejection by the filter, illegal double transition error

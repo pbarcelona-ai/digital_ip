@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ***************
 # Filename: view_waves.sh
-# Author: Paul Barcelona
+# Author: FPGA Cores 4 U
 # Description: Opens a VCD waveform file in the Surfer waveform viewer.
 # Used by the run scripts when VCD=1 SURFER=1 are set, or directly.
 # Falls back to printing install instructions if Surfer is missing.

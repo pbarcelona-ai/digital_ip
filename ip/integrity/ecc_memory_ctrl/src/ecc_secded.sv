@@ -1,6 +1,6 @@
 // ***************
 // Filename: ecc_secded.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: SECDED (single error correct, double error detect) Hamming
 //   code encoder and decoder for any data width. Version 1.0.0. The codeword
 //   has DATA_W + R + 1 bits where R is the number of Hamming check bits (R=7

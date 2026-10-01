@@ -1,6 +1,6 @@
 // ***************
 // Filename: tb_scaler_dda.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for scaler_dda.
 //   Runs 42 configurations: random output sizes, steps and (negative)
 //   offsets with random pipeline stalls. Each emitted coordinate and flag

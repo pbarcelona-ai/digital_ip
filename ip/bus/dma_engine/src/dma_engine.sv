@@ -1,6 +1,6 @@
 // ***************
 // Filename: dma_engine.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Memory to memory DMA engine. Copies LEN bytes from SRC to
 //   DST over one AXI4 master port using burst read and write engines
 //   decoupled by a stream FIFO (bursts limited to MAX_BURST beats and

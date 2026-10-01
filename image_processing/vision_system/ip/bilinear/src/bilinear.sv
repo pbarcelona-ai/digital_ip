@@ -1,6 +1,6 @@
 // ***************
 // Filename: bilinear.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Reusable IP. Standard 2x2 bilinear RGB888 interpolator
 // using 8-bit fractional weights, in a 3-stage pipeline
 // (3-cycle latency: weights, products, sum) sustaining one

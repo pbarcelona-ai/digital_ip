@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ***************
 # Filename: regmap_gen.py
-# Author: Paul Barcelona
+# Author: FPGA Cores 4 U
 # Description: Register map generator. Reads a JSON register description and
 #   writes a synthesizable AXI4-Lite register block (SystemVerilog wrapper
 #   around axi4_lite_regs with named ports), a C header with offsets and
@@ -14,7 +14,7 @@ ACC = {"RW": 0, "RO": 1, "W1C": 2, "W1S": 3}
 DATE = datetime.date.today().isoformat()
 
 def header(fname, desc, comment="//"):
-    out = [f"{comment} ***************", f"{comment} Filename: {fname}", f"{comment} Author: Paul Barcelona"]
+    out = [f"{comment} ***************", f"{comment} Filename: {fname}", f"{comment} Author: FPGA Cores 4 U"]
     lines = textwrap.wrap("Description: " + desc, 75, subsequent_indent="  ")
     out += [f"{comment} {l}" for l in lines]
     out.append(f"{comment} Date: {DATE}")

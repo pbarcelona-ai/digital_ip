@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ***************
 # Filename: run_yosys.sh
-# Author: Paul Barcelona
+# Author: FPGA Cores 4 U
 # Description: Run the common Yosys Xilinx 7-series flow on one IP.
 #   Sources come from <ip>/scripts/build.f, the flow is in
 #   scripts/synth.ys and all results go to build/yosys/<ip>.

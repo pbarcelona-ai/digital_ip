@@ -1,6 +1,6 @@
 // ***************
 // Filename: intc_top.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Interrupt controller IP with NUM_IRQ sources. Each source
 //   has enable, edge or level type, polarity, and software set. Edge
 //   sources latch into a pending register cleared by write-1-to-clear,

@@ -1,6 +1,6 @@
 // ***************
 // Filename: nco.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Numerically controlled oscillator (phase accumulator).
 //   Version 1.0.0. phase_o advances by tuning_i each ce_i clock, so f_out
 //   = tuning_i * f_clk / 2^PHASE_W. Optional phase offset (phase_off_i) is

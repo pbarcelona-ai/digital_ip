@@ -1,6 +1,6 @@
 // ***************
 // Filename: sdio_host_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for sdio_host with a behavioral SD
 //   card model (CMD0, CMD2 long response, CMD8, CMD13, CMD17 block read,
 //   CMD24 block write, R3 response, four 512 byte blocks, 1-bit and 4-bit

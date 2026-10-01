@@ -1,6 +1,6 @@
 // ***************
 // Filename: axi4_lite_mux.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: AXI4-Lite 1-to-N interconnect (address decoded mux).
 //   Version 1.0.0. One AXI-Lite slave port is routed to NSLAVE master
 //   ports selected by axi4_lite_decoder (BASE/MASK regions). Addresses are

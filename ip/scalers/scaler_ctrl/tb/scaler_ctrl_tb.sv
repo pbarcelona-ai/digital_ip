@@ -1,6 +1,6 @@
 // ***************
 // Filename: tb_scaler_ctrl.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for scaler_ctrl.
 //   Checks common register reset values, read/write and RO ID registers;
 //   frame capture (every pixel written once to the right x,y, gen_start

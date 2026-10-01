@@ -1,6 +1,6 @@
 // ***************
 // Filename: packet_fifo_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for packet_fifo. Sends random-
 //   length packets (some too long for the FIFO, some flagged bad) with
 //   random read back pressure; the scoreboard verifies that only complete

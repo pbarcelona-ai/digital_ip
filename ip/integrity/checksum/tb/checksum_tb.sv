@@ -1,6 +1,6 @@
 // ***************
 // Filename: checksum_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for checksum. Verifies the RFC 1071
 //   example (sum 0xddf2, checksum 0x220d), an odd-length Internet
 //   checksum, Fletcher-16 of abcde (0xC8F0) and abcdef (0x2057), the 8-bit

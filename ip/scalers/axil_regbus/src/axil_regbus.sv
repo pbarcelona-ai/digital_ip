@@ -1,6 +1,6 @@
 // ***************
 // Filename: axil_regbus.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: AXI4-Lite slave to register bus bridge.
 //   Converts AXI4-Lite transactions into a simple one-cycle register bus.
 //   Write: reg_wr pulses for one clock with reg_waddr/reg_wdata/reg_wstrb

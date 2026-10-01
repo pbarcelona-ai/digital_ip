@@ -1,6 +1,6 @@
 // ***************
 // Filename: cic_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for cic. A bit-exact behavioral
 //   model (wrapping integrators, decimation, combs, rounding, saturation)
 //   is compared with the DUT for random input at several decimation ratios

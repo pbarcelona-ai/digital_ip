@@ -1,6 +1,6 @@
 // ***************
 // Filename: demo_regs.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Generated AXI4-Lite register block 'demo_regs' with 6
 //   registers (regmap_gen.py, do not edit by hand; regenerate from the JSON
 //   description). Version 1.0.0. Built on axi4_lite_regs, so the timing is

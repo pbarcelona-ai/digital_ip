@@ -1,6 +1,6 @@
 // ***************
 // Filename: onehot_decoder_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for onehot_decoder. Checks every
 //   select value with enable on and off for a non power-of-two width (6,
 //   so selects 6 and 7 are out of range) in combinational and registered

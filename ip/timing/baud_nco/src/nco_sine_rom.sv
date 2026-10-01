@@ -1,6 +1,6 @@
 // ***************
 // Filename: nco_sine_rom.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Quarter wave sine ROM with two independent registered read
 //   ports (sine and cosine lookup). 256 entries of 15-bit unsigned magnitude
 //   sampled at bin centers, so the table is exactly symmetric and the caller

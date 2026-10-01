@@ -1,6 +1,6 @@
 // ***************
 // Filename: pcie_axil_regs.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Generic AXI4-Lite slave register file. Provides NREG 32-bit
 //   read/write registers with byte strobes, one-cycle write pulses, the last
 //   written word, and a registered read-data path for timing closure. Read

@@ -1,6 +1,6 @@
 // ***************
 // Filename: spatial_upscaler.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: FSR 1-style spatial upscaler: Lanczos resampling followed by
 //   contrast-adaptive sharpening, behind one AXI4-Lite port.
 //     s_axis -> scaler_lanczos (any size change) -> sharpen_cas -> m_axis

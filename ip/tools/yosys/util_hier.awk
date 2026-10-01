@@ -1,6 +1,6 @@
 # ***************
 # Filename: util_hier.awk
-# Author: Paul Barcelona
+# Author: FPGA Cores 4 U
 # Description: Converts the output of Yosys "stat -tech xilinx -top <top>"
 #   (utilization.rpt) into a hierarchical utilization table: one row per
 #   instance of the design tree with totals that include everything below it,

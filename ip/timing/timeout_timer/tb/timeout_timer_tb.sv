@@ -1,6 +1,6 @@
 // ***************
 // Filename: timeout_timer_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for timeout_timer. Checks the exact
 //   expiry latency, that activity restarts the count and clears expired,
 //   that timeout 0 disables the timer, the single-clock timeout pulse and

@@ -1,6 +1,6 @@
 // ***************
 // Filename: spi_slave_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for spi_slave. A behavioral SPI
 //   master exercises all four modes (CPOL/CPHA) with 8-bit MSB-first
 //   words, a 12-bit LSB-first configuration and a 16-bit word, with two or

@@ -1,6 +1,6 @@
 // ***************
 // Filename: async_fifo.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Dual clock (asynchronous) FIFO. Gray coded read and write
 //   pointers cross domains through two flop synchronizers, full is generated
 //   in the write domain and empty in the read domain. Storage is a dual clock

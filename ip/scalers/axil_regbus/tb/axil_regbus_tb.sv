@@ -1,6 +1,6 @@
 // ***************
 // Filename: tb_axil_regbus.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for axil_regbus.
 //   A 64-entry register file with byte strobes sits on the register bus.
 //   2000+ random writes and reads use random AW/W ordering, random valid

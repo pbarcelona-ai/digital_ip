@@ -1,6 +1,6 @@
 // ***************
 // Filename: uart_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for the UART IP. Tests transmit
 //   (AXI-Stream in, serial monitor checks framing and parity), receive
 //   (serial driver, AXI-Stream out), internal loopback, parity/framing

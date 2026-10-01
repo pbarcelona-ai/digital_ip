@@ -1,6 +1,6 @@
 // ***************
 // Filename: crc_core.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Generic parameterized CRC engine (shared by crc8, crc16,
 //   crc32). Version 1.0.0. Bytes are processed in little-endian order
 //   (data_i[7:0] first) DATA_W bits per clock; keep_i marks valid low

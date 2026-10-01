@@ -1,6 +1,6 @@
 // ***************
 // Filename: async_fifo_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for the asynchronous FIFO. Two
 //   instances with unrelated clock ratios (fast write to slow read and
 //   slow write to fast read) are fed random data with random valid and

@@ -1,6 +1,6 @@
 // ***************
 // Filename: tb_bilinear.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking standalone testbench for bilinear.
 // Verifies the 4 corner cases, exact center, general non-
 // degenerate cases, 3-cycle pipeline latency, and correct

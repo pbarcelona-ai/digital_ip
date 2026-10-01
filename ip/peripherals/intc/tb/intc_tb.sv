@@ -1,6 +1,6 @@
 // ***************
 // Filename: intc_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for the interrupt controller IP.
 //   Tests level sources, edge sources with write-1-to-clear, active-low
 //   polarity, enable masking, software interrupt set and lowest-index

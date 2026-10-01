@@ -1,6 +1,6 @@
 // ***************
 // Filename: parity_gen_tb.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Self-checking testbench for parity_gen. Exhaustive check of
 //   all 10-bit words for even and odd parity, combinational and registered
 //   (one clock latency, reset value). Prints TEST PASSED on success.

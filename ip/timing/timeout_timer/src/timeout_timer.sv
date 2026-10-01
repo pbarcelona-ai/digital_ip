@@ -1,6 +1,6 @@
 // ***************
 // Filename: timeout_timer.sv
-// Author: Paul Barcelona
+// Author: FPGA Cores 4 U
 // Description: Inactivity timeout timer. Version 1.0.0. Counts clocks
 //   since the last activity_i pulse; when the count reaches timeout_i,
 //   expired_o goes high (level, registered) and timeout_pulse_o pulses

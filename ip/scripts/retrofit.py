@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ***************
 # Filename: retrofit.py
-# Author: Paul Barcelona
+# Author: FPGA Cores 4 U
 # Description: One-off retrofit script used to add IP_VERSION, parameter
 #   validation, immediate assertions and documentation text to the first-
 #   generation IPs and to regenerate standard file headers. Kept for
@@ -80,7 +80,7 @@ def parse_header(txt):
         i += 1
     return " ".join(desc), "\n".join(lines[i+1:])
 def header(fname, desc):
-    out = ["// ***************", f"// Filename: {fname}", "// Author: Paul Barcelona"]
+    out = ["// ***************", f"// Filename: {fname}", "// Author: FPGA Cores 4 U"]
     out += textwrap.wrap(desc, width=75, initial_indent="// Description: ", subsequent_indent="//   ")
     out += [f"// Date: {DATE}"]
     assert all(len(l) <= 75 for l in out), out

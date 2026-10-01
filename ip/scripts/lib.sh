@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ***************
 # Filename: lib.sh
-# Author: Paul Barcelona
+# Author: FPGA Cores 4 U
 # Description: Shared shell helpers - resolve an IP name from ips.csv
 #   and expand its build.f into a file list.
 # Date: 2026-09-29
