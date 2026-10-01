@@ -126,15 +126,23 @@ def module_page(module: Path, modules: list[Path], root_docs_copy: bool = False)
     title, kind, description, dependency = read_metadata(module / "README.md")
     module_name = module.name
     if root_docs_copy:
-        module_prefix = f"../../scalers/{module_name}"
-        stylesheet = "../../tools/docs/site.css"
-        back = "../../tools/docs/index.html"
-        readme_href = f"{module_prefix}/README.md"
+        module_prefix = f"https://github.com/pbarcelona-ai/digital_ip/tree/main/ip/scalers/{module_name}"
+        stylesheet = "../site.css"
+        back = "../digital_ip_catalog.html"
+        readme_href = f"https://github.com/pbarcelona-ai/digital_ip/blob/main/ip/scalers/{module_name}/README.md"
+        download_script = "../download.js"
+        download_manifest = "../download-manifest.json"
     else:
         module_prefix = ".."
         stylesheet = "../../../tools/docs/site.css"
         back = "../../../tools/docs/index.html"
         readme_href = "../README.md"
+        download_script = "../../../docs/download.js"
+        download_manifest = "../../../docs/download-manifest.json"
+    downloader = (
+        f'<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>'
+        f'<script src="{download_script}" data-download-manifest="{download_manifest}" defer></script>'
+    )
     source_files = file_links(module, "src", module_prefix)
     test_files = file_links(module, "tb", module_prefix)
     include_files = file_links(module, "include", module_prefix)
@@ -147,6 +155,10 @@ def module_page(module: Path, modules: list[Path], root_docs_copy: bool = False)
         if (module / "scripts" / "synth.sh").is_file():
             make_targets.append(f"make -C scalers/{module_name} synth")
     target_text = " · ".join(make_targets) if make_targets else "Shared verification support"
+    download = (
+        f'<button class="button" type="button" data-download-ip="{escape(module_name, quote=True)}" disabled>Download {escape(module_name)}</button>'
+        if (module / "Makefile").is_file() else ""
+    )
 
     return f'''<!doctype html>
 <html lang="en">
@@ -155,8 +167,9 @@ def module_page(module: Path, modules: list[Path], root_docs_copy: bool = False)
   <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#0a192f">
   <meta name="description" content="{escape(description, quote=True)}">
-  <title>{escape(title)} | Scaler IP</title>
-    <link rel="stylesheet" href="{stylesheet}">
+    <title>{escape(title)} | Scaler IP</title>
+        <link rel="stylesheet" href="{stylesheet}">
+        {downloader}
 </head>
 <body>
     <header class="topbar"><a class="brand" href="{back}"><span>FPGA Cores 4 U / SCALER IP MODULE</span></a><a class="back-link" href="{back}">All modules <span aria-hidden="true">↗</span></a></header>
@@ -165,7 +178,7 @@ def module_page(module: Path, modules: list[Path], root_docs_copy: bool = False)
       <p class="eyebrow">{escape(kind)} / {escape(module_name)}</p>
       <h1>{escape(title)}</h1>
       <p class="lede">{escape(description)}</p>
-    <div class="actions">{readme}<span class="command">{escape(target_text)}</span></div>
+    <div class="actions">{readme}{download}<span class="command">{escape(target_text)}</span></div><p class="quiet download-status" data-download-status role="status" aria-live="polite"></p>
     </section>
     <section class="content-grid">
       <article class="panel main-panel">

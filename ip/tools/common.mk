@@ -35,6 +35,7 @@ list:
 
 docs:
 	@python3 "$(SCALER_ROOT)/tools/generate_docs.py"
+	@python3 "$(SCALER_ROOT)/scripts/package_ips.py"
 
 diagrams:
 	@python3 "$(SCALER_ROOT)/tools/docs/make_block_diagrams.py" $(DIAGRAM_IPS) $(DIAGRAM_ARGS)

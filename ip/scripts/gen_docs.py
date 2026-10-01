@@ -135,15 +135,23 @@ def render_module(name: str, category: str, top: str, root_docs_copy: bool = Fal
     tests = manifest_files(module, "tb/scripts/build.f")
     source_files = [path for path in sources if path.suffix in ACCEPTED]
     if root_docs_copy:
-        module_prefix = f"../../{category}/{name}"
+        module_prefix = f"https://github.com/pbarcelona-ai/digital_ip/tree/main/ip/{category}/{name}"
         stylesheet = "../site.css"
-        catalog = "../index.html"
-        readme = "../../README.md"
+        catalog = "../digital_ip_catalog.html"
+        readme = "https://github.com/pbarcelona-ai/digital_ip/blob/main/ip/README.md"
+        download_script = "../download.js"
+        download_manifest = "../download-manifest.json"
     else:
         module_prefix = ".."
         stylesheet = "../../../docs/site.css"
         catalog = "../../../docs/index.html"
         readme = "../../../README.md"
+        download_script = "../../../docs/download.js"
+        download_manifest = "../../../docs/download-manifest.json"
+    downloader = (
+        f'<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>'
+        f'<script src="{download_script}" data-download-manifest="{download_manifest}" defer></script>'
+    )
     diagram_prefix = f"{module_prefix}/docs/" if root_docs_copy else ""
     if (module / "docs/block_diagram.svg").is_file():
         diagram = f'<a href="{diagram_prefix}block_diagram.svg">SVG diagram</a> · <a href="{diagram_prefix}block_diagram.dot">DOT source</a>'
@@ -155,12 +163,12 @@ def render_module(name: str, category: str, top: str, root_docs_copy: bool = Fal
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a192f">
 <meta name="description" content="{escape(description, quote=True)}">
-<title>{escape(title)} | Digital IP</title><link rel="stylesheet" href="{stylesheet}">
+<title>{escape(title)} | Digital IP</title><link rel="stylesheet" href="{stylesheet}">{downloader}
 </head><body>
 <header class="topbar"><a class="brand" href="{catalog}">FPGA Cores 4 U / DIGITAL IP / {escape(category.upper())}</a><a href="{readme}">Repository README</a></header>
 <main class="shell">
 <section class="hero"><p class="eyebrow">{escape(category)} / {escape(name)}</p><h1>{escape(title)}</h1><p class="lede">{escape(description)}</p>
-<div class="actions"><code>make -C {escape(category)}/{escape(name)} test</code><code>make -C {escape(category)}/{escape(name)} diagrams</code></div></section>
+<div class="actions"><button class="button" type="button" data-download-ip="{escape(name, quote=True)}" disabled>Download {escape(name)}</button><code>make -C {escape(category)}/{escape(name)} test</code><code>make -C {escape(category)}/{escape(name)} diagrams</code></div><p class="quiet download-status" data-download-status role="status" aria-live="polite"></p></section>
 <section class="content"><article><p class="eyebrow">Implementation</p><h2>RTL sources</h2>{file_rows(module, source_files, module_prefix)}
 <h2>Verification</h2>{file_rows(module, tests, module_prefix)}</article>
 <aside><p class="eyebrow">Build surface</p><h2>Commands</h2><ul class="targets"><li><code>make test</code> simulation</li><li><code>make yosys</code> synthesis</li><li><code>make docs</code> HTML and Markdown</li><li><code>make diagrams</code> DOT and SVG</li></ul><h2>Diagram</h2><p>{diagram}</p><p><a href="{module_prefix}/scripts/build.f">RTL manifest</a> · <a href="{module_prefix}/tb/scripts/build.f">Testbench manifest</a></p></aside></section>
@@ -169,7 +177,7 @@ def render_module(name: str, category: str, top: str, root_docs_copy: bool = Fal
 '''
 
 
-def render_index(rows: list[tuple[str, str, str]]) -> str:
+def render_index(rows: list[tuple[str, str, str]], hosted_copy: bool = False) -> str:
     groups: dict[str, list[tuple[str, str, str]]] = {}
     for row in rows:
         groups.setdefault(row[1], []).append(row)
@@ -200,14 +208,32 @@ def render_index(rows: list[tuple[str, str, str]]) -> str:
             content_text = " + ".join(contents[:2])
             if len(contents) > 2:
                 content_text += " · " + " · ".join(contents[2:])
-            items.append(f'<tr><td><a href="{escape(name, quote=True)}/index.html">{escape(title)}</a><small>{escape(name)}</small></td><td>{escape(kind)}</td><td><code>{escape(top)}</code></td><td>{escape(content_text)}</td></tr>')
-        sections.append(f'<section class="category-group"><div class="section-head"><h2>{escape(display_category)}</h2><span>{len(groups[category])} IPs</span></div><div class="table-wrap"><table><thead><tr><th>IP</th><th>Kind</th><th>Top module</th><th>Contents</th></tr></thead><tbody>{"".join(items)}</tbody></table></div></section>')
+            items.append(f'<tr><td><input type="checkbox" data-ip-select value="{escape(name, quote=True)}" aria-label="Select {escape(name, quote=True)}"></td><td><a href="{escape(name, quote=True)}/index.html">{escape(title)}</a><small>{escape(name)}</small></td><td>{escape(kind)}</td><td><code>{escape(top)}</code></td><td>{escape(content_text)}</td></tr>')
+        sections.append(f'<section class="category-group"><div class="section-head"><h2>{escape(display_category)}</h2><span>{len(groups[category])} IPs</span></div><div class="table-wrap"><table><thead><tr><th>Select</th><th>IP</th><th>Kind</th><th>Top module</th><th>Contents</th></tr></thead><tbody>{"".join(items)}</tbody></table></div></section>')
+    brand_href = "digital_ip_catalog.html" if hosted_copy else "index.html"
+    library_href = (
+        "https://github.com/pbarcelona-ai/digital_ip/blob/main/ip/README.md"
+        if hosted_copy else "../README.md"
+    )
+    scaler_href = (
+        "https://github.com/pbarcelona-ai/digital_ip/blob/main/ip/SCALER_README.md"
+        if hosted_copy else "../SCALER_README.md"
+    )
+    build_href = (
+        "https://github.com/pbarcelona-ai/digital_ip/blob/main/ip/Makefile"
+        if hosted_copy else "../Makefile"
+    )
+    scaler_link = "" if hosted_copy else '<a href="../tools/docs/index.html">Scaler IP catalog</a>'
+    downloader = (
+        '<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>'
+        '<script src="download.js" data-download-manifest="download-manifest.json" defer></script>'
+    )
     return f'''<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a192f"><meta name="description" content="SystemVerilog IP catalog with source, simulation, diagrams, and generated documentation."><title>Digital IP Catalog | FPGA Cores 4 U</title><link rel="stylesheet" href="site.css"></head>
-<body><header class="topbar"><a class="brand" href="index.html">FPGA Cores 4 U / DIGITAL IP CATALOG</a><a href="../README.md">Library guide</a></header><main class="shell">
-<section class="hero"><p class="eyebrow">SystemVerilog library · {len(rows)} modules</p><h1>Digital IP</h1><p class="lede">Independent modules, each with local RTL, simulation, build scripts, and generated documentation. The scaler family shares tools and regression support at the library root.</p><div class="actions"><a href="../tools/docs/index.html">Scaler IP catalog</a><a href="../SCALER_README.md">Scaler project README</a></div></section>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0a192f"><meta name="description" content="SystemVerilog IP catalog with source, simulation, diagrams, and generated documentation."><title>Digital IP Catalog | FPGA Cores 4 U</title><link rel="stylesheet" href="site.css">{downloader}</head>
+<body><header class="topbar"><a class="brand" href="{brand_href}">FPGA Cores 4 U / DIGITAL IP CATALOG</a><a href="{library_href}">Library guide</a></header><main class="shell">
+<section class="hero"><p class="eyebrow">SystemVerilog library · {len(rows)} modules</p><h1>Digital IP</h1><p class="lede">Independent modules, each with local RTL, simulation, build scripts, and generated documentation. The scaler family shares tools and regression support at the library root.</p><div class="actions">{scaler_link}<a href="{scaler_href}">Scaler project README</a><label class="select-all-control"><input type="checkbox" data-select-all> Select all IPs</label><button class="button" type="button" data-download-selected disabled>Download selected (0)</button></div><p class="quiet download-status" data-download-status role="status" aria-live="polite"></p></section>
 <section class="directory"><div class="section-head"><h2>Module directory</h2><span>{len(rows)} IPs</span></div>{''.join(sections)}</section>
-<footer><span>Generated by <code>scripts/gen_docs.py</code>.</span><a href="../Makefile">Build targets</a></footer></main></body></html>
+<footer><span>Generated by <code>scripts/gen_docs.py</code>.</span><a href="{build_href}">Build targets</a></footer></main></body></html>
 '''
 
 
@@ -238,7 +264,9 @@ def main() -> None:
             (module_docs / "index.html").write_text(
                 render_module(name, category, top, root_docs_copy=True), encoding="utf-8")
     (DOCS / "IP_CATALOG.md").write_text("\n".join(markdown), encoding="utf-8")
-    (DOCS / "index.html").write_text(render_index(rows), encoding="utf-8")
+    index_html = render_index(rows)
+    (DOCS / "index.html").write_text(index_html, encoding="utf-8")
+    (DOCS / "digital_ip_catalog.html").write_text(render_index(rows, hosted_copy=True), encoding="utf-8")
     general_pages = sum(category != "scalers" for _, category, _ in rows)
     print(f"gen_docs: {len(rows)} catalog entries, {general_pages} general-IP pages, HTML index, and Markdown catalog generated")
 

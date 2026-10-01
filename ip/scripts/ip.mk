@@ -29,6 +29,7 @@ synplify:
 
 docs:
 	@python3 "$(IP_ROOT)/scripts/gen_docs.py"
+	@python3 "$(IP_ROOT)/scripts/package_ips.py"
 
 diagrams:
 	@python3 "$(IP_ROOT)/scripts/make_block_diagrams.py" "$(IP)"

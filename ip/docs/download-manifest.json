@@ -1,0 +1,4653 @@
+{
+  "base_url": "../",
+  "common_files": [
+    {
+      "path": ".tools",
+      "executable": false
+    },
+    {
+      "path": "Makefile",
+      "executable": false
+    },
+    {
+      "path": "README.md",
+      "executable": false
+    },
+    {
+      "path": "SCALER_README.md",
+      "executable": false
+    },
+    {
+      "path": "assertions/axil_protocol_checker.sv",
+      "executable": false
+    },
+    {
+      "path": "assertions/axis_protocol_checker.sv",
+      "executable": false
+    },
+    {
+      "path": "assertions/sva_demo_tb.sv",
+      "executable": false
+    },
+    {
+      "path": "docs/site.css",
+      "executable": false
+    },
+    {
+      "path": "include/ip_version_pkg.sv",
+      "executable": false
+    },
+    {
+      "path": "requirements-python-test.txt",
+      "executable": false
+    },
+    {
+      "path": "scalers/scaler_tb_lib/README.md",
+      "executable": false
+    },
+    {
+      "path": "scalers/scaler_tb_lib/docs/index.html",
+      "executable": false
+    },
+    {
+      "path": "scalers/scaler_tb_lib/src/scaler_coef_gen.svh",
+      "executable": false
+    },
+    {
+      "path": "scalers/scaler_tb_lib/src/scaler_tb_axil.svh",
+      "executable": false
+    },
+    {
+      "path": "scalers/scaler_tb_lib/src/scaler_tb_lib.svh",
+      "executable": false
+    },
+    {
+      "path": "scripts/add_headers.py",
+      "executable": false
+    },
+    {
+      "path": "scripts/fix_doc_keywords.py",
+      "executable": false
+    },
+    {
+      "path": "scripts/gen_docs.py",
+      "executable": false
+    },
+    {
+      "path": "scripts/gen_module_support.py",
+      "executable": false
+    },
+    {
+      "path": "scripts/gen_status.py",
+      "executable": false
+    },
+    {
+      "path": "scripts/ip.mk",
+      "executable": false
+    },
+    {
+      "path": "scripts/ips.csv",
+      "executable": false
+    },
+    {
+      "path": "scripts/lib.sh",
+      "executable": true
+    },
+    {
+      "path": "scripts/make_block_diagrams.py",
+      "executable": false
+    },
+    {
+      "path": "scripts/package_ips.py",
+      "executable": false
+    },
+    {
+      "path": "scripts/regmap_gen.py",
+      "executable": false
+    },
+    {
+      "path": "scripts/retrofit.py",
+      "executable": false
+    },
+    {
+      "path": "scripts/run_all.sh",
+      "executable": true
+    },
+    {
+      "path": "scripts/run_sim.sh",
+      "executable": true
+    },
+    {
+      "path": "scripts/run_sva.sh",
+      "executable": true
+    },
+    {
+      "path": "scripts/run_synplify.sh",
+      "executable": true
+    },
+    {
+      "path": "scripts/run_vendor_sim.sh",
+      "executable": true
+    },
+    {
+      "path": "scripts/run_vivado.sh",
+      "executable": true
+    },
+    {
+      "path": "scripts/run_yosys.sh",
+      "executable": true
+    },
+    {
+      "path": "scripts/synth.ys",
+      "executable": false
+    },
+    {
+      "path": "shared/src/bus/dma_common/dma_rd_engine.sv",
+      "executable": false
+    },
+    {
+      "path": "shared/src/bus/dma_common/dma_wr_engine.sv",
+      "executable": false
+    },
+    {
+      "path": "shared/src/common/ip_axil_regs.sv",
+      "executable": false
+    },
+    {
+      "path": "shared/src/fifo/ip_axis_fifo.sv",
+      "executable": false
+    },
+    {
+      "path": "shared/src/integrity/crc_core/crc_core.sv",
+      "executable": false
+    },
+    {
+      "path": "shared/tb/lib/axi4_mem_model.sv",
+      "executable": false
+    },
+    {
+      "path": "shared/tb/lib/axil_bfm.sv",
+      "executable": false
+    },
+    {
+      "path": "tools/ci/install_tools.sh",
+      "executable": true
+    },
+    {
+      "path": "tools/common.mk",
+      "executable": false
+    },
+    {
+      "path": "tools/docs/index.html",
+      "executable": false
+    },
+    {
+      "path": "tools/docs/make_block_diagrams.py",
+      "executable": true
+    },
+    {
+      "path": "tools/docs/site.css",
+      "executable": false
+    },
+    {
+      "path": "tools/gatesim.sh",
+      "executable": true
+    },
+    {
+      "path": "tools/generate_docs.py",
+      "executable": false
+    },
+    {
+      "path": "tools/run_all.sh",
+      "executable": true
+    },
+    {
+      "path": "tools/run_iverilog.sh",
+      "executable": true
+    },
+    {
+      "path": "tools/run_sim.sh",
+      "executable": true
+    },
+    {
+      "path": "tools/run_vendor_sim.sh",
+      "executable": true
+    },
+    {
+      "path": "tools/scaler_coefs.py",
+      "executable": false
+    },
+    {
+      "path": "tools/synth_all.sh",
+      "executable": true
+    },
+    {
+      "path": "tools/tb_args.sh",
+      "executable": false
+    }
+  ],
+  "modules": {
+    "reset_ctrl": {
+      "category": "cdc",
+      "top": "ip_reset_sync_top",
+      "files": [
+        {
+          "path": "cdc/reset_ctrl/Makefile",
+          "executable": false
+        },
+        {
+          "path": "cdc/reset_ctrl/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "cdc/reset_ctrl/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "cdc/reset_ctrl/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "cdc/reset_ctrl/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "cdc/reset_ctrl/src/ip_reset_sync_top.sv",
+          "executable": false
+        },
+        {
+          "path": "cdc/reset_ctrl/src/rst_sync.sv",
+          "executable": false
+        },
+        {
+          "path": "cdc/reset_ctrl/tb/reset_ctrl_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "cdc/reset_ctrl/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "baud_nco": {
+      "category": "timing",
+      "top": "baud_nco_top",
+      "files": [
+        {
+          "path": "timing/baud_nco/Makefile",
+          "executable": false
+        },
+        {
+          "path": "timing/baud_nco/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "timing/baud_nco/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/baud_nco/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "timing/baud_nco/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "timing/baud_nco/src/baud_nco_top.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/baud_nco/src/nco_core.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/baud_nco/src/nco_sine_rom.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/baud_nco/tb/baud_nco_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/baud_nco/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "uart": {
+      "category": "peripherals",
+      "top": "uart_top",
+      "files": [
+        {
+          "path": "peripherals/uart/Makefile",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart/src/uart_baud.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart/src/uart_rx.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart/src/uart_top.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart/src/uart_tx.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart/tb/uart_tb.sv",
+          "executable": false
+        }
+      ]
+    },
+    "i2c_master": {
+      "category": "peripherals",
+      "top": "i2c_top",
+      "files": [
+        {
+          "path": "peripherals/i2c_master/Makefile",
+          "executable": false
+        },
+        {
+          "path": "peripherals/i2c_master/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/i2c_master/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/i2c_master/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "peripherals/i2c_master/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/i2c_master/src/i2c_bit_ctrl.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/i2c_master/src/i2c_master_fsm.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/i2c_master/src/i2c_top.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/i2c_master/tb/i2c_master_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/i2c_master/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "spi_master": {
+      "category": "peripherals",
+      "top": "spi_top",
+      "files": [
+        {
+          "path": "peripherals/spi_master/Makefile",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_master/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_master/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_master/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_master/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_master/src/spi_engine.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_master/src/spi_top.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_master/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_master/tb/spi_master_tb.sv",
+          "executable": false
+        }
+      ]
+    },
+    "gpio": {
+      "category": "peripherals",
+      "top": "gpio_top",
+      "files": [
+        {
+          "path": "peripherals/gpio/Makefile",
+          "executable": false
+        },
+        {
+          "path": "peripherals/gpio/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/gpio/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/gpio/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "peripherals/gpio/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/gpio/src/gpio_top.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/gpio/tb/gpio_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/gpio/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "intc": {
+      "category": "peripherals",
+      "top": "intc_top",
+      "files": [
+        {
+          "path": "peripherals/intc/Makefile",
+          "executable": false
+        },
+        {
+          "path": "peripherals/intc/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/intc/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/intc/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "peripherals/intc/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/intc/src/intc_top.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/intc/tb/intc_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/intc/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "pwm": {
+      "category": "timing",
+      "top": "pwm_top",
+      "files": [
+        {
+          "path": "timing/pwm/Makefile",
+          "executable": false
+        },
+        {
+          "path": "timing/pwm/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "timing/pwm/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/pwm/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "timing/pwm/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "timing/pwm/src/pwm_top.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/pwm/tb/pwm_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/pwm/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "quadrature_decoder": {
+      "category": "peripherals",
+      "top": "quad_dec_top",
+      "files": [
+        {
+          "path": "peripherals/quadrature_decoder/Makefile",
+          "executable": false
+        },
+        {
+          "path": "peripherals/quadrature_decoder/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/quadrature_decoder/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/quadrature_decoder/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "peripherals/quadrature_decoder/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/quadrature_decoder/src/quad_dec_top.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/quadrature_decoder/tb/quadrature_decoder_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/quadrature_decoder/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "watchdog": {
+      "category": "timing",
+      "top": "watchdog_top",
+      "files": [
+        {
+          "path": "timing/watchdog/Makefile",
+          "executable": false
+        },
+        {
+          "path": "timing/watchdog/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "timing/watchdog/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/watchdog/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "timing/watchdog/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "timing/watchdog/src/watchdog_top.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/watchdog/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "timing/watchdog/tb/watchdog_tb.sv",
+          "executable": false
+        }
+      ]
+    },
+    "edge_event_capture": {
+      "category": "peripherals",
+      "top": "edge_event_capture_top",
+      "files": [
+        {
+          "path": "peripherals/edge_event_capture/Makefile",
+          "executable": false
+        },
+        {
+          "path": "peripherals/edge_event_capture/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/edge_event_capture/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/edge_event_capture/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "peripherals/edge_event_capture/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/edge_event_capture/src/edge_event_capture_top.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/edge_event_capture/tb/edge_event_capture_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/edge_event_capture/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "async_fifo": {
+      "category": "fifo",
+      "top": "async_fifo",
+      "files": [
+        {
+          "path": "fifo/async_fifo/Makefile",
+          "executable": false
+        },
+        {
+          "path": "fifo/async_fifo/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "fifo/async_fifo/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "fifo/async_fifo/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "fifo/async_fifo/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "fifo/async_fifo/src/async_fifo.sv",
+          "executable": false
+        },
+        {
+          "path": "fifo/async_fifo/tb/async_fifo_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "fifo/async_fifo/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "axis_async_bridge": {
+      "category": "cdc",
+      "top": "axis_async_bridge",
+      "files": [
+        {
+          "path": "cdc/axis_async_bridge/Makefile",
+          "executable": false
+        },
+        {
+          "path": "cdc/axis_async_bridge/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "cdc/axis_async_bridge/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "cdc/axis_async_bridge/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "cdc/axis_async_bridge/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "cdc/axis_async_bridge/src/axis_async_bridge.sv",
+          "executable": false
+        },
+        {
+          "path": "cdc/axis_async_bridge/tb/axis_async_bridge_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "cdc/axis_async_bridge/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "fifo/async_fifo/src/async_fifo.sv",
+          "executable": false
+        }
+      ]
+    },
+    "axi4_lite_cdc": {
+      "category": "cdc",
+      "top": "axi4_lite_cdc",
+      "files": [
+        {
+          "path": "cdc/axi4_lite_cdc/Makefile",
+          "executable": false
+        },
+        {
+          "path": "cdc/axi4_lite_cdc/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "cdc/axi4_lite_cdc/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "cdc/axi4_lite_cdc/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "cdc/axi4_lite_cdc/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "cdc/axi4_lite_cdc/src/axi4_lite_cdc.sv",
+          "executable": false
+        },
+        {
+          "path": "cdc/axi4_lite_cdc/src/cdc_sync_bit.sv",
+          "executable": false
+        },
+        {
+          "path": "cdc/axi4_lite_cdc/tb/axi4_lite_cdc_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "cdc/axi4_lite_cdc/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "dma_engine": {
+      "category": "bus",
+      "top": "dma_engine",
+      "files": [
+        {
+          "path": "bus/dma_engine/Makefile",
+          "executable": false
+        },
+        {
+          "path": "bus/dma_engine/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "bus/dma_engine/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "bus/dma_engine/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "bus/dma_engine/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "bus/dma_engine/src/dma_engine.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/dma_engine/tb/dma_engine_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/dma_engine/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "axis_dma": {
+      "category": "bus",
+      "top": "axis_dma",
+      "files": [
+        {
+          "path": "bus/axis_dma/Makefile",
+          "executable": false
+        },
+        {
+          "path": "bus/axis_dma/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "bus/axis_dma/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "bus/axis_dma/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "bus/axis_dma/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "bus/axis_dma/src/axis_dma.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/axis_dma/tb/axis_dma_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/axis_dma/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "bit_sync": {
+      "category": "cdc",
+      "top": "bit_sync",
+      "files": [
+        {
+          "path": "cdc/bit_sync/Makefile",
+          "executable": false
+        },
+        {
+          "path": "cdc/bit_sync/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "cdc/bit_sync/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "cdc/bit_sync/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "cdc/bit_sync/scripts/build.f",
+          "executable": true
+        },
+        {
+          "path": "cdc/bit_sync/src/bit_sync.sv",
+          "executable": false
+        },
+        {
+          "path": "cdc/bit_sync/tb/bit_sync_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "cdc/bit_sync/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "toggle_sync": {
+      "category": "cdc",
+      "top": "toggle_sync",
+      "files": [
+        {
+          "path": "cdc/bit_sync/src/bit_sync.sv",
+          "executable": false
+        },
+        {
+          "path": "cdc/toggle_sync/Makefile",
+          "executable": false
+        },
+        {
+          "path": "cdc/toggle_sync/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "cdc/toggle_sync/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "cdc/toggle_sync/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "cdc/toggle_sync/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "cdc/toggle_sync/src/toggle_sync.sv",
+          "executable": false
+        },
+        {
+          "path": "cdc/toggle_sync/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "cdc/toggle_sync/tb/toggle_sync_tb.sv",
+          "executable": false
+        }
+      ]
+    },
+    "pulse_sync": {
+      "category": "cdc",
+      "top": "pulse_sync",
+      "files": [
+        {
+          "path": "cdc/bit_sync/src/bit_sync.sv",
+          "executable": false
+        },
+        {
+          "path": "cdc/pulse_sync/Makefile",
+          "executable": false
+        },
+        {
+          "path": "cdc/pulse_sync/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "cdc/pulse_sync/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "cdc/pulse_sync/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "cdc/pulse_sync/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "cdc/pulse_sync/src/pulse_sync.sv",
+          "executable": false
+        },
+        {
+          "path": "cdc/pulse_sync/tb/pulse_sync_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "cdc/pulse_sync/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "reset_sync": {
+      "category": "cdc",
+      "top": "reset_sync",
+      "files": [
+        {
+          "path": "cdc/reset_sync/Makefile",
+          "executable": false
+        },
+        {
+          "path": "cdc/reset_sync/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "cdc/reset_sync/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "cdc/reset_sync/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "cdc/reset_sync/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "cdc/reset_sync/src/reset_sync.sv",
+          "executable": false
+        },
+        {
+          "path": "cdc/reset_sync/tb/reset_sync_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "cdc/reset_sync/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "edge_detect": {
+      "category": "common",
+      "top": "edge_detect",
+      "files": [
+        {
+          "path": "common/edge_detect/Makefile",
+          "executable": false
+        },
+        {
+          "path": "common/edge_detect/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "common/edge_detect/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "common/edge_detect/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "common/edge_detect/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "common/edge_detect/src/edge_detect.sv",
+          "executable": false
+        },
+        {
+          "path": "common/edge_detect/tb/edge_detect_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "common/edge_detect/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "clock_enable": {
+      "category": "timing",
+      "top": "clock_enable",
+      "files": [
+        {
+          "path": "timing/clock_enable/Makefile",
+          "executable": false
+        },
+        {
+          "path": "timing/clock_enable/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "timing/clock_enable/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/clock_enable/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "timing/clock_enable/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "timing/clock_enable/src/clock_enable.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/clock_enable/tb/clock_enable_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/clock_enable/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "counter": {
+      "category": "timing",
+      "top": "counter",
+      "files": [
+        {
+          "path": "timing/counter/Makefile",
+          "executable": false
+        },
+        {
+          "path": "timing/counter/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "timing/counter/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/counter/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "timing/counter/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "timing/counter/src/counter.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/counter/tb/counter_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/counter/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "timeout_timer": {
+      "category": "timing",
+      "top": "timeout_timer",
+      "files": [
+        {
+          "path": "timing/timeout_timer/Makefile",
+          "executable": false
+        },
+        {
+          "path": "timing/timeout_timer/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "timing/timeout_timer/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/timeout_timer/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "timing/timeout_timer/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "timing/timeout_timer/src/timeout_timer.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/timeout_timer/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "timing/timeout_timer/tb/timeout_timer_tb.sv",
+          "executable": false
+        }
+      ]
+    },
+    "priority_encoder": {
+      "category": "common",
+      "top": "priority_encoder",
+      "files": [
+        {
+          "path": "common/priority_encoder/Makefile",
+          "executable": false
+        },
+        {
+          "path": "common/priority_encoder/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "common/priority_encoder/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "common/priority_encoder/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "common/priority_encoder/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "common/priority_encoder/src/priority_encoder.sv",
+          "executable": false
+        },
+        {
+          "path": "common/priority_encoder/tb/priority_encoder_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "common/priority_encoder/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "onehot_decoder": {
+      "category": "common",
+      "top": "onehot_decoder",
+      "files": [
+        {
+          "path": "common/onehot_decoder/Makefile",
+          "executable": false
+        },
+        {
+          "path": "common/onehot_decoder/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "common/onehot_decoder/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "common/onehot_decoder/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "common/onehot_decoder/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "common/onehot_decoder/src/onehot_decoder.sv",
+          "executable": false
+        },
+        {
+          "path": "common/onehot_decoder/tb/onehot_decoder_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "common/onehot_decoder/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "single_port_ram": {
+      "category": "memory",
+      "top": "single_port_ram",
+      "files": [
+        {
+          "path": "memory/single_port_ram/Makefile",
+          "executable": false
+        },
+        {
+          "path": "memory/single_port_ram/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "memory/single_port_ram/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "memory/single_port_ram/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "memory/single_port_ram/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "memory/single_port_ram/src/single_port_ram.sv",
+          "executable": false
+        },
+        {
+          "path": "memory/single_port_ram/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "memory/single_port_ram/tb/single_port_ram_tb.sv",
+          "executable": false
+        }
+      ]
+    },
+    "simple_dual_port_ram": {
+      "category": "memory",
+      "top": "simple_dual_port_ram",
+      "files": [
+        {
+          "path": "memory/simple_dual_port_ram/Makefile",
+          "executable": false
+        },
+        {
+          "path": "memory/simple_dual_port_ram/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "memory/simple_dual_port_ram/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "memory/simple_dual_port_ram/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "memory/simple_dual_port_ram/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "memory/simple_dual_port_ram/src/simple_dual_port_ram.sv",
+          "executable": false
+        },
+        {
+          "path": "memory/simple_dual_port_ram/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "memory/simple_dual_port_ram/tb/simple_dual_port_ram_tb.sv",
+          "executable": false
+        }
+      ]
+    },
+    "true_dual_port_ram": {
+      "category": "memory",
+      "top": "true_dual_port_ram",
+      "files": [
+        {
+          "path": "memory/true_dual_port_ram/Makefile",
+          "executable": false
+        },
+        {
+          "path": "memory/true_dual_port_ram/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "memory/true_dual_port_ram/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "memory/true_dual_port_ram/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "memory/true_dual_port_ram/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "memory/true_dual_port_ram/src/true_dual_port_ram.sv",
+          "executable": false
+        },
+        {
+          "path": "memory/true_dual_port_ram/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "memory/true_dual_port_ram/tb/true_dual_port_ram_tb.sv",
+          "executable": false
+        }
+      ]
+    },
+    "rom": {
+      "category": "memory",
+      "top": "rom",
+      "files": [
+        {
+          "path": "memory/rom/Makefile",
+          "executable": false
+        },
+        {
+          "path": "memory/rom/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "memory/rom/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "memory/rom/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "memory/rom/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "memory/rom/src/rom.sv",
+          "executable": false
+        },
+        {
+          "path": "memory/rom/tb/rom_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "memory/rom/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "register_file": {
+      "category": "memory",
+      "top": "register_file",
+      "files": [
+        {
+          "path": "memory/register_file/Makefile",
+          "executable": false
+        },
+        {
+          "path": "memory/register_file/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "memory/register_file/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "memory/register_file/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "memory/register_file/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "memory/register_file/src/register_file.sv",
+          "executable": false
+        },
+        {
+          "path": "memory/register_file/tb/register_file_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "memory/register_file/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "sync_fifo": {
+      "category": "fifo",
+      "top": "sync_fifo",
+      "files": [
+        {
+          "path": "fifo/sync_fifo/Makefile",
+          "executable": false
+        },
+        {
+          "path": "fifo/sync_fifo/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "fifo/sync_fifo/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "fifo/sync_fifo/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "fifo/sync_fifo/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "fifo/sync_fifo/src/sync_fifo.sv",
+          "executable": false
+        },
+        {
+          "path": "fifo/sync_fifo/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "fifo/sync_fifo/tb/sync_fifo_tb.sv",
+          "executable": false
+        }
+      ]
+    },
+    "fallthrough_fifo": {
+      "category": "fifo",
+      "top": "fallthrough_fifo",
+      "files": [
+        {
+          "path": "fifo/fallthrough_fifo/Makefile",
+          "executable": false
+        },
+        {
+          "path": "fifo/fallthrough_fifo/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "fifo/fallthrough_fifo/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "fifo/fallthrough_fifo/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "fifo/fallthrough_fifo/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "fifo/fallthrough_fifo/src/fallthrough_fifo.sv",
+          "executable": false
+        },
+        {
+          "path": "fifo/fallthrough_fifo/tb/fallthrough_fifo_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "fifo/fallthrough_fifo/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "packet_fifo": {
+      "category": "fifo",
+      "top": "packet_fifo",
+      "files": [
+        {
+          "path": "fifo/packet_fifo/Makefile",
+          "executable": false
+        },
+        {
+          "path": "fifo/packet_fifo/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "fifo/packet_fifo/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "fifo/packet_fifo/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "fifo/packet_fifo/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "fifo/packet_fifo/src/packet_fifo.sv",
+          "executable": false
+        },
+        {
+          "path": "fifo/packet_fifo/tb/packet_fifo_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "fifo/packet_fifo/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "memory_arbiter": {
+      "category": "memory",
+      "top": "memory_arbiter",
+      "files": [
+        {
+          "path": "memory/memory_arbiter/Makefile",
+          "executable": false
+        },
+        {
+          "path": "memory/memory_arbiter/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "memory/memory_arbiter/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "memory/memory_arbiter/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "memory/memory_arbiter/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "memory/memory_arbiter/src/memory_arbiter.sv",
+          "executable": false
+        },
+        {
+          "path": "memory/memory_arbiter/tb/memory_arbiter_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "memory/memory_arbiter/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "nco": {
+      "category": "timing",
+      "top": "nco",
+      "files": [
+        {
+          "path": "timing/nco/Makefile",
+          "executable": false
+        },
+        {
+          "path": "timing/nco/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "timing/nco/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/nco/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "timing/nco/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "timing/nco/src/nco.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/nco/tb/nco_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/nco/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "baud_generator": {
+      "category": "timing",
+      "top": "baud_generator",
+      "files": [
+        {
+          "path": "timing/baud_generator/Makefile",
+          "executable": false
+        },
+        {
+          "path": "timing/baud_generator/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "timing/baud_generator/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/baud_generator/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "timing/baud_generator/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "timing/baud_generator/src/baud_generator.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/baud_generator/tb/baud_generator_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/baud_generator/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "pulse_generator": {
+      "category": "timing",
+      "top": "pulse_generator",
+      "files": [
+        {
+          "path": "timing/pulse_generator/Makefile",
+          "executable": false
+        },
+        {
+          "path": "timing/pulse_generator/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "timing/pulse_generator/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/pulse_generator/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "timing/pulse_generator/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "timing/pulse_generator/src/pulse_generator.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/pulse_generator/tb/pulse_generator_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/pulse_generator/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "frequency_counter": {
+      "category": "timing",
+      "top": "frequency_counter",
+      "files": [
+        {
+          "path": "cdc/bit_sync/src/bit_sync.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/frequency_counter/Makefile",
+          "executable": false
+        },
+        {
+          "path": "timing/frequency_counter/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "timing/frequency_counter/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/frequency_counter/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "timing/frequency_counter/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "timing/frequency_counter/src/frequency_counter.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/frequency_counter/tb/frequency_counter_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/frequency_counter/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "timestamp_counter": {
+      "category": "timing",
+      "top": "timestamp_counter",
+      "files": [
+        {
+          "path": "timing/timestamp_counter/Makefile",
+          "executable": false
+        },
+        {
+          "path": "timing/timestamp_counter/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "timing/timestamp_counter/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/timestamp_counter/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "timing/timestamp_counter/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "timing/timestamp_counter/src/timestamp_counter.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/timestamp_counter/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "timing/timestamp_counter/tb/timestamp_counter_tb.sv",
+          "executable": false
+        }
+      ]
+    },
+    "rate_limiter": {
+      "category": "timing",
+      "top": "rate_limiter",
+      "files": [
+        {
+          "path": "timing/rate_limiter/Makefile",
+          "executable": false
+        },
+        {
+          "path": "timing/rate_limiter/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "timing/rate_limiter/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/rate_limiter/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "timing/rate_limiter/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "timing/rate_limiter/src/rate_limiter.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/rate_limiter/tb/rate_limiter_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/rate_limiter/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "interval_timer": {
+      "category": "timing",
+      "top": "interval_timer",
+      "files": [
+        {
+          "path": "timing/interval_timer/Makefile",
+          "executable": false
+        },
+        {
+          "path": "timing/interval_timer/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "timing/interval_timer/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/interval_timer/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "timing/interval_timer/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "timing/interval_timer/src/interval_timer.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/interval_timer/tb/interval_timer_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/interval_timer/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "axi4_lite_slave": {
+      "category": "bus",
+      "top": "axi4_lite_slave",
+      "files": [
+        {
+          "path": "bus/axi4_lite_slave/Makefile",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_slave/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_slave/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_slave/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_slave/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_slave/src/axi4_lite_slave.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_slave/tb/axi4_lite_slave_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_slave/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "axi4_lite_regs": {
+      "category": "bus",
+      "top": "axi4_lite_regs",
+      "files": [
+        {
+          "path": "bus/axi4_lite_regs/Makefile",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_regs/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_regs/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_regs/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_regs/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_regs/src/axi4_lite_regs.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_regs/tb/axi4_lite_regs_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_regs/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_slave/src/axi4_lite_slave.sv",
+          "executable": false
+        }
+      ]
+    },
+    "axi4_lite_decoder": {
+      "category": "bus",
+      "top": "axi4_lite_decoder",
+      "files": [
+        {
+          "path": "bus/axi4_lite_decoder/Makefile",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_decoder/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_decoder/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_decoder/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_decoder/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_decoder/src/axi4_lite_decoder.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_decoder/tb/axi4_lite_decoder_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_decoder/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "axi4_lite_mux": {
+      "category": "bus",
+      "top": "axi4_lite_mux",
+      "files": [
+        {
+          "path": "bus/axi4_lite_decoder/src/axi4_lite_decoder.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_mux/Makefile",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_mux/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_mux/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_mux/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_mux/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_mux/src/axi4_lite_mux.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_mux/tb/axi4_lite_mux_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_mux/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "axi_stream_fifo": {
+      "category": "bus",
+      "top": "axi_stream_fifo",
+      "files": [
+        {
+          "path": "bus/axi_stream_fifo/Makefile",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_fifo/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_fifo/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_fifo/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_fifo/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_fifo/src/axi_stream_fifo.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_fifo/tb/axi_stream_fifo_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_fifo/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "axi_stream_width_converter": {
+      "category": "bus",
+      "top": "axi_stream_width_converter",
+      "files": [
+        {
+          "path": "bus/axi_stream_width_converter/Makefile",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_width_converter/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_width_converter/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_width_converter/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_width_converter/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_width_converter/src/axi_stream_width_converter.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_width_converter/tb/axi_stream_width_converter_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_width_converter/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "axi_stream_arbiter": {
+      "category": "bus",
+      "top": "axi_stream_arbiter",
+      "files": [
+        {
+          "path": "bus/axi_stream_arbiter/Makefile",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_arbiter/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_arbiter/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_arbiter/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_arbiter/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_arbiter/src/axi_stream_arbiter.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_arbiter/tb/axi_stream_arbiter_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_arbiter/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "parity_gen": {
+      "category": "integrity",
+      "top": "parity_gen",
+      "files": [
+        {
+          "path": "integrity/parity_gen/Makefile",
+          "executable": false
+        },
+        {
+          "path": "integrity/parity_gen/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "integrity/parity_gen/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "integrity/parity_gen/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "integrity/parity_gen/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "integrity/parity_gen/src/parity_gen.sv",
+          "executable": false
+        },
+        {
+          "path": "integrity/parity_gen/tb/parity_gen_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "integrity/parity_gen/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "parity_check": {
+      "category": "integrity",
+      "top": "parity_check",
+      "files": [
+        {
+          "path": "integrity/parity_check/Makefile",
+          "executable": false
+        },
+        {
+          "path": "integrity/parity_check/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "integrity/parity_check/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "integrity/parity_check/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "integrity/parity_check/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "integrity/parity_check/src/parity_check.sv",
+          "executable": false
+        },
+        {
+          "path": "integrity/parity_check/tb/parity_check_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "integrity/parity_check/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "crc8": {
+      "category": "integrity",
+      "top": "crc8",
+      "files": [
+        {
+          "path": "integrity/crc8/Makefile",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc8/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc8/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc8/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc8/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc8/src/crc8.sv",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc8/tb/crc8_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc8/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "crc16": {
+      "category": "integrity",
+      "top": "crc16",
+      "files": [
+        {
+          "path": "integrity/crc16/Makefile",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc16/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc16/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc16/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc16/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc16/src/crc16.sv",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc16/tb/crc16_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc16/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "crc32": {
+      "category": "integrity",
+      "top": "crc32",
+      "files": [
+        {
+          "path": "integrity/crc32/Makefile",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc32/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc32/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc32/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc32/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc32/src/crc32.sv",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc32/tb/crc32_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc32/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "checksum": {
+      "category": "integrity",
+      "top": "checksum",
+      "files": [
+        {
+          "path": "integrity/checksum/Makefile",
+          "executable": false
+        },
+        {
+          "path": "integrity/checksum/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "integrity/checksum/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "integrity/checksum/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "integrity/checksum/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "integrity/checksum/src/checksum.sv",
+          "executable": false
+        },
+        {
+          "path": "integrity/checksum/tb/checksum_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "integrity/checksum/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "lfsr": {
+      "category": "integrity",
+      "top": "lfsr",
+      "files": [
+        {
+          "path": "integrity/lfsr/Makefile",
+          "executable": false
+        },
+        {
+          "path": "integrity/lfsr/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "integrity/lfsr/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "integrity/lfsr/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "integrity/lfsr/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "integrity/lfsr/src/lfsr.sv",
+          "executable": false
+        },
+        {
+          "path": "integrity/lfsr/tb/lfsr_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "integrity/lfsr/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "error_status": {
+      "category": "integrity",
+      "top": "error_status",
+      "files": [
+        {
+          "path": "integrity/error_status/Makefile",
+          "executable": false
+        },
+        {
+          "path": "integrity/error_status/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "integrity/error_status/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "integrity/error_status/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "integrity/error_status/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "integrity/error_status/src/error_status.sv",
+          "executable": false
+        },
+        {
+          "path": "integrity/error_status/tb/error_status_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "integrity/error_status/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "spi_slave": {
+      "category": "peripherals",
+      "top": "spi_slave",
+      "files": [
+        {
+          "path": "cdc/bit_sync/src/bit_sync.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_slave/Makefile",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_slave/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_slave/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_slave/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_slave/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_slave/src/spi_slave.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_slave/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_slave/tb/spi_slave_tb.sv",
+          "executable": false
+        }
+      ]
+    },
+    "clock_domain_bridge": {
+      "category": "cdc",
+      "top": "clock_domain_bridge",
+      "files": [
+        {
+          "path": "cdc/bit_sync/src/bit_sync.sv",
+          "executable": false
+        },
+        {
+          "path": "cdc/clock_domain_bridge/Makefile",
+          "executable": false
+        },
+        {
+          "path": "cdc/clock_domain_bridge/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "cdc/clock_domain_bridge/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "cdc/clock_domain_bridge/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "cdc/clock_domain_bridge/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "cdc/clock_domain_bridge/src/clock_domain_bridge.sv",
+          "executable": false
+        },
+        {
+          "path": "cdc/clock_domain_bridge/tb/clock_domain_bridge_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "cdc/clock_domain_bridge/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "uart_tx": {
+      "category": "peripherals",
+      "top": "uart_tx",
+      "files": [
+        {
+          "path": "peripherals/uart/src/uart_tx.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart_tx/Makefile",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart_tx/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart_tx/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart_tx/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart_tx/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart_tx/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart_tx/tb/uart_tx_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/baud_generator/src/baud_generator.sv",
+          "executable": false
+        }
+      ]
+    },
+    "uart_rx": {
+      "category": "peripherals",
+      "top": "uart_rx",
+      "files": [
+        {
+          "path": "peripherals/uart/src/uart_rx.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart_rx/Makefile",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart_rx/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart_rx/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart_rx/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart_rx/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart_rx/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart_rx/tb/uart_rx_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/baud_generator/src/baud_generator.sv",
+          "executable": false
+        }
+      ]
+    },
+    "cordic": {
+      "category": "common",
+      "top": "cordic",
+      "files": [
+        {
+          "path": "common/cordic/Makefile",
+          "executable": false
+        },
+        {
+          "path": "common/cordic/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "common/cordic/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "common/cordic/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "common/cordic/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "common/cordic/src/cordic.sv",
+          "executable": false
+        },
+        {
+          "path": "common/cordic/tb/cordic_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "common/cordic/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "dds": {
+      "category": "common",
+      "top": "dds",
+      "files": [
+        {
+          "path": "common/cordic/src/cordic.sv",
+          "executable": false
+        },
+        {
+          "path": "common/dds/Makefile",
+          "executable": false
+        },
+        {
+          "path": "common/dds/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "common/dds/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "common/dds/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "common/dds/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "common/dds/src/dds.sv",
+          "executable": false
+        },
+        {
+          "path": "common/dds/tb/dds_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "common/dds/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "timing/nco/src/nco.sv",
+          "executable": false
+        }
+      ]
+    },
+    "fir": {
+      "category": "common",
+      "top": "fir",
+      "files": [
+        {
+          "path": "common/fir/Makefile",
+          "executable": false
+        },
+        {
+          "path": "common/fir/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "common/fir/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "common/fir/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "common/fir/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "common/fir/src/fir.sv",
+          "executable": false
+        },
+        {
+          "path": "common/fir/tb/fir_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "common/fir/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "cic": {
+      "category": "common",
+      "top": "cic",
+      "files": [
+        {
+          "path": "common/cic/Makefile",
+          "executable": false
+        },
+        {
+          "path": "common/cic/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "common/cic/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "common/cic/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "common/cic/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "common/cic/src/cic.sv",
+          "executable": false
+        },
+        {
+          "path": "common/cic/tb/cic_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "common/cic/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "ecc_memory_ctrl": {
+      "category": "integrity",
+      "top": "ecc_memory_ctrl",
+      "files": [
+        {
+          "path": "integrity/ecc_memory_ctrl/Makefile",
+          "executable": false
+        },
+        {
+          "path": "integrity/ecc_memory_ctrl/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "integrity/ecc_memory_ctrl/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "integrity/ecc_memory_ctrl/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "integrity/ecc_memory_ctrl/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "integrity/ecc_memory_ctrl/src/ecc_memory_ctrl.sv",
+          "executable": false
+        },
+        {
+          "path": "integrity/ecc_memory_ctrl/src/ecc_secded.sv",
+          "executable": false
+        },
+        {
+          "path": "integrity/ecc_memory_ctrl/tb/ecc_memory_ctrl_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "integrity/ecc_memory_ctrl/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "packet_parser": {
+      "category": "bus",
+      "top": "packet_parser",
+      "files": [
+        {
+          "path": "bus/packet_parser/Makefile",
+          "executable": false
+        },
+        {
+          "path": "bus/packet_parser/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "bus/packet_parser/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "bus/packet_parser/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "bus/packet_parser/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "bus/packet_parser/src/packet_parser.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/packet_parser/tb/packet_parser_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/packet_parser/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "packet_formatter": {
+      "category": "bus",
+      "top": "packet_formatter",
+      "files": [
+        {
+          "path": "bus/packet_formatter/Makefile",
+          "executable": false
+        },
+        {
+          "path": "bus/packet_formatter/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "bus/packet_formatter/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "bus/packet_formatter/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "bus/packet_formatter/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "bus/packet_formatter/src/packet_formatter.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/packet_formatter/tb/packet_formatter_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/packet_formatter/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "bus/packet_parser/src/packet_parser.sv",
+          "executable": false
+        }
+      ]
+    },
+    "i2s": {
+      "category": "peripherals",
+      "top": "i2s",
+      "files": [
+        {
+          "path": "peripherals/i2s/Makefile",
+          "executable": false
+        },
+        {
+          "path": "peripherals/i2s/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/i2s/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/i2s/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "peripherals/i2s/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/i2s/src/i2s.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/i2s/tb/i2s_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/i2s/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "eth_mac_if": {
+      "category": "peripherals",
+      "top": "eth_mac_if",
+      "files": [
+        {
+          "path": "integrity/crc32/src/crc32.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/eth_mac_if/Makefile",
+          "executable": false
+        },
+        {
+          "path": "peripherals/eth_mac_if/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/eth_mac_if/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/eth_mac_if/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "peripherals/eth_mac_if/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/eth_mac_if/src/eth_mac_if.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/eth_mac_if/tb/eth_mac_if_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/eth_mac_if/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "spi_flash_ctrl": {
+      "category": "peripherals",
+      "top": "spi_flash_ctrl",
+      "files": [
+        {
+          "path": "peripherals/spi_flash_ctrl/Makefile",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_flash_ctrl/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_flash_ctrl/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_flash_ctrl/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_flash_ctrl/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_flash_ctrl/src/spi_flash_ctrl.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_flash_ctrl/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_flash_ctrl/tb/spi_flash_ctrl_tb.sv",
+          "executable": false
+        }
+      ]
+    },
+    "sdio_host": {
+      "category": "peripherals",
+      "top": "sdio_host",
+      "files": [
+        {
+          "path": "peripherals/sdio_host/Makefile",
+          "executable": false
+        },
+        {
+          "path": "peripherals/sdio_host/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/sdio_host/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/sdio_host/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "peripherals/sdio_host/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/sdio_host/src/sdio_host.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/sdio_host/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/sdio_host/tb/sdio_host_tb.sv",
+          "executable": false
+        }
+      ]
+    },
+    "demo_regs": {
+      "category": "bus",
+      "top": "demo_regs",
+      "files": [
+        {
+          "path": "bus/axi4_lite_regs/src/axi4_lite_regs.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_slave/src/axi4_lite_slave.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/demo_regs/Makefile",
+          "executable": false
+        },
+        {
+          "path": "bus/demo_regs/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "bus/demo_regs/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "bus/demo_regs/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "bus/demo_regs/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "bus/demo_regs/src/demo_regs.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/demo_regs/tb/demo_regs_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/demo_regs/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "pcie_tl_ep": {
+      "category": "peripherals",
+      "top": "pcie_tl_ep_top",
+      "files": [
+        {
+          "path": "peripherals/pcie_tl_ep/Makefile",
+          "executable": false
+        },
+        {
+          "path": "peripherals/pcie_tl_ep/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/pcie_tl_ep/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/pcie_tl_ep/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "peripherals/pcie_tl_ep/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/pcie_tl_ep/src/pcie_axil_regs.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/pcie_tl_ep/src/pcie_axis_fifo.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/pcie_tl_ep/src/pcie_axis_to_dw.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/pcie_tl_ep/src/pcie_dw_to_axis.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/pcie_tl_ep/src/pcie_tl_dma.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/pcie_tl_ep/src/pcie_tl_ep_top.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/pcie_tl_ep/src/pcie_tl_target.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/pcie_tl_ep/tb/pcie_tl_ep_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/pcie_tl_ep/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "usb_fs_sie": {
+      "category": "peripherals",
+      "top": "usb_fs_sie_top",
+      "files": [
+        {
+          "path": "peripherals/usb_fs_sie/Makefile",
+          "executable": false
+        },
+        {
+          "path": "peripherals/usb_fs_sie/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/usb_fs_sie/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/usb_fs_sie/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "peripherals/usb_fs_sie/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/usb_fs_sie/src/usb_axil_regs.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/usb_fs_sie/src/usb_axis_fifo.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/usb_fs_sie/src/usb_fs_rx.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/usb_fs_sie/src/usb_fs_sie_top.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/usb_fs_sie/src/usb_fs_tx.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/usb_fs_sie/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/usb_fs_sie/tb/usb_fs_sie_tb.sv",
+          "executable": false
+        }
+      ]
+    },
+    "axi_checkers": {
+      "category": "scalers",
+      "top": "axis_checker",
+      "files": [
+        {
+          "path": "scalers/axi_checkers/Makefile",
+          "executable": false
+        },
+        {
+          "path": "scalers/axi_checkers/README.md",
+          "executable": false
+        },
+        {
+          "path": "scalers/axi_checkers/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "scalers/axi_checkers/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/axi_checkers/scripts/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/axi_checkers/src/axil_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axi_checkers/src/axis_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axi_checkers/tb/axi_checkers_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axi_checkers/tb/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/axi_checkers/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "axil_regbus": {
+      "category": "scalers",
+      "top": "axil_regbus",
+      "files": [
+        {
+          "path": "scalers/axi_checkers/src/axil_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/Makefile",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/README.md",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/axil_regbus/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/scripts/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/axil_regbus/scripts/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/axil_regbus/src/axil_regbus.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/src/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/axil_regbus/tb/axil_regbus_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/tb/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "axil_split": {
+      "category": "scalers",
+      "top": "axil_split",
+      "files": [
+        {
+          "path": "scalers/axi_checkers/src/axil_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/src/axil_regbus.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_split/Makefile",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_split/README.md",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_split/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_split/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/axil_split/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_split/scripts/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/axil_split/scripts/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/axil_split/src/axil_split.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_split/src/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_split/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/axil_split/tb/axil_split_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_split/tb/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_split/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "banked_framebuf": {
+      "category": "scalers",
+      "top": "banked_framebuf",
+      "files": [
+        {
+          "path": "scalers/banked_framebuf/Makefile",
+          "executable": false
+        },
+        {
+          "path": "scalers/banked_framebuf/README.md",
+          "executable": false
+        },
+        {
+          "path": "scalers/banked_framebuf/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "scalers/banked_framebuf/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/banked_framebuf/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/banked_framebuf/scripts/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/banked_framebuf/scripts/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/banked_framebuf/src/banked_framebuf.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/banked_framebuf/src/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/banked_framebuf/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/banked_framebuf/tb/banked_framebuf_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/banked_framebuf/tb/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/banked_framebuf/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "scaler_anisotropic": {
+      "category": "scalers",
+      "top": "scaler_anisotropic",
+      "files": [
+        {
+          "path": "scalers/axi_checkers/src/axil_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axi_checkers/src/axis_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/src/axil_regbus.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/banked_framebuf/src/banked_framebuf.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_anisotropic/Makefile",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_anisotropic/README.md",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_anisotropic/docs/block_diagram.dot",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_anisotropic/docs/block_diagram.svg",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_anisotropic/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_anisotropic/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_anisotropic/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_anisotropic/scripts/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_anisotropic/scripts/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_anisotropic/src/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_anisotropic/src/scaler_anisotropic.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_anisotropic/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_anisotropic/tb/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_anisotropic/tb/scaler_anisotropic_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_anisotropic/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_ctrl/src/scaler_ctrl.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_dda/src/scaler_dda.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_mip/src/scaler_mip.sv",
+          "executable": false
+        }
+      ]
+    },
+    "scaler_bicubic": {
+      "category": "scalers",
+      "top": "scaler_bicubic",
+      "files": [
+        {
+          "path": "scalers/axi_checkers/src/axil_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axi_checkers/src/axis_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/src/axil_regbus.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/banked_framebuf/src/banked_framebuf.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_bicubic/Makefile",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_bicubic/README.md",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_bicubic/docs/block_diagram.dot",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_bicubic/docs/block_diagram.svg",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_bicubic/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_bicubic/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_bicubic/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_bicubic/scripts/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_bicubic/scripts/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_bicubic/src/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_bicubic/src/scaler_bicubic.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_bicubic/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_bicubic/tb/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_bicubic/tb/scaler_bicubic_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_bicubic/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_ctrl/src/scaler_ctrl.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_dda/src/scaler_dda.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_polyphase/src/scaler_polyphase.sv",
+          "executable": false
+        }
+      ]
+    },
+    "scaler_bilinear": {
+      "category": "scalers",
+      "top": "scaler_bilinear",
+      "files": [
+        {
+          "path": "scalers/axi_checkers/src/axil_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axi_checkers/src/axis_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/src/axil_regbus.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/banked_framebuf/src/banked_framebuf.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_bilinear/Makefile",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_bilinear/README.md",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_bilinear/docs/block_diagram.dot",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_bilinear/docs/block_diagram.svg",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_bilinear/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_bilinear/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_bilinear/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_bilinear/scripts/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_bilinear/scripts/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_bilinear/src/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_bilinear/src/scaler_bilinear.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_bilinear/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_bilinear/tb/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_bilinear/tb/scaler_bilinear_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_bilinear/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_ctrl/src/scaler_ctrl.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_dda/src/scaler_dda.sv",
+          "executable": false
+        }
+      ]
+    },
+    "scaler_ctrl": {
+      "category": "scalers",
+      "top": "scaler_ctrl",
+      "files": [
+        {
+          "path": "scalers/axi_checkers/src/axil_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/src/axil_regbus.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_ctrl/Makefile",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_ctrl/README.md",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_ctrl/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_ctrl/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_ctrl/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_ctrl/scripts/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_ctrl/scripts/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_ctrl/src/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_ctrl/src/scaler_ctrl.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_ctrl/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_ctrl/tb/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_ctrl/tb/scaler_ctrl_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_ctrl/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "scaler_dda": {
+      "category": "scalers",
+      "top": "scaler_dda",
+      "files": [
+        {
+          "path": "scalers/scaler_dda/Makefile",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_dda/README.md",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_dda/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_dda/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_dda/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_dda/scripts/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_dda/scripts/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_dda/src/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_dda/src/scaler_dda.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_dda/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_dda/tb/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_dda/tb/scaler_dda_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_dda/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "scaler_edge_directed": {
+      "category": "scalers",
+      "top": "scaler_edge_directed",
+      "files": [
+        {
+          "path": "scalers/axi_checkers/src/axil_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axi_checkers/src/axis_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/src/axil_regbus.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/banked_framebuf/src/banked_framebuf.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_ctrl/src/scaler_ctrl.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_dda/src/scaler_dda.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_edge_directed/Makefile",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_edge_directed/README.md",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_edge_directed/docs/block_diagram.dot",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_edge_directed/docs/block_diagram.svg",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_edge_directed/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_edge_directed/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_edge_directed/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_edge_directed/scripts/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_edge_directed/scripts/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_edge_directed/src/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_edge_directed/src/scaler_edge_directed.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_edge_directed/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_edge_directed/tb/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_edge_directed/tb/scaler_edge_directed_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_edge_directed/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "scaler_lanczos": {
+      "category": "scalers",
+      "top": "scaler_lanczos",
+      "files": [
+        {
+          "path": "scalers/axi_checkers/src/axil_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axi_checkers/src/axis_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/src/axil_regbus.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/banked_framebuf/src/banked_framebuf.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_ctrl/src/scaler_ctrl.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_dda/src/scaler_dda.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_lanczos/Makefile",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_lanczos/README.md",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_lanczos/docs/block_diagram.dot",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_lanczos/docs/block_diagram.svg",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_lanczos/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_lanczos/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_lanczos/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_lanczos/scripts/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_lanczos/scripts/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_lanczos/src/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_lanczos/src/scaler_lanczos.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_lanczos/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_lanczos/tb/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_lanczos/tb/scaler_lanczos_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_lanczos/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_polyphase/src/scaler_polyphase.sv",
+          "executable": false
+        }
+      ]
+    },
+    "scaler_mip": {
+      "category": "scalers",
+      "top": "scaler_mip",
+      "files": [
+        {
+          "path": "scalers/axi_checkers/src/axil_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axi_checkers/src/axis_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/src/axil_regbus.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/banked_framebuf/src/banked_framebuf.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_ctrl/src/scaler_ctrl.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_dda/src/scaler_dda.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_mip/Makefile",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_mip/README.md",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_mip/docs/block_diagram.dot",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_mip/docs/block_diagram.svg",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_mip/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_mip/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_mip/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_mip/scripts/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_mip/scripts/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_mip/src/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_mip/src/scaler_mip.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_mip/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_mip/tb/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_mip/tb/scaler_mip_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_mip/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "scaler_nearest": {
+      "category": "scalers",
+      "top": "scaler_nearest",
+      "files": [
+        {
+          "path": "scalers/axi_checkers/src/axil_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axi_checkers/src/axis_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/src/axil_regbus.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/banked_framebuf/src/banked_framebuf.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_ctrl/src/scaler_ctrl.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_dda/src/scaler_dda.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_nearest/Makefile",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_nearest/README.md",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_nearest/docs/block_diagram.dot",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_nearest/docs/block_diagram.svg",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_nearest/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_nearest/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_nearest/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_nearest/scripts/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_nearest/scripts/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_nearest/src/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_nearest/src/scaler_nearest.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_nearest/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_nearest/tb/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_nearest/tb/scaler_nearest_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_nearest/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "scaler_polyphase": {
+      "category": "scalers",
+      "top": "scaler_polyphase",
+      "files": [
+        {
+          "path": "scalers/axi_checkers/src/axil_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axi_checkers/src/axis_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/src/axil_regbus.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/banked_framebuf/src/banked_framebuf.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_ctrl/src/scaler_ctrl.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_dda/src/scaler_dda.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_polyphase/Makefile",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_polyphase/README.md",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_polyphase/docs/block_diagram.dot",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_polyphase/docs/block_diagram.svg",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_polyphase/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_polyphase/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_polyphase/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_polyphase/scripts/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_polyphase/scripts/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_polyphase/src/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_polyphase/src/scaler_polyphase.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_polyphase/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_polyphase/tb/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_polyphase/tb/scaler_polyphase_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_polyphase/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "scaler_trilinear": {
+      "category": "scalers",
+      "top": "scaler_trilinear",
+      "files": [
+        {
+          "path": "scalers/axi_checkers/src/axil_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axi_checkers/src/axis_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/src/axil_regbus.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/banked_framebuf/src/banked_framebuf.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_ctrl/src/scaler_ctrl.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_dda/src/scaler_dda.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_mip/src/scaler_mip.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_trilinear/Makefile",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_trilinear/README.md",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_trilinear/docs/block_diagram.dot",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_trilinear/docs/block_diagram.svg",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_trilinear/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_trilinear/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_trilinear/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_trilinear/scripts/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_trilinear/scripts/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_trilinear/src/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_trilinear/src/scaler_trilinear.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_trilinear/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/scaler_trilinear/tb/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_trilinear/tb/scaler_trilinear_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_trilinear/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    },
+    "sharpen_cas": {
+      "category": "scalers",
+      "top": "sharpen_cas",
+      "files": [
+        {
+          "path": "scalers/axi_checkers/src/axil_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axi_checkers/src/axis_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/src/axil_regbus.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/sharpen_cas/Makefile",
+          "executable": false
+        },
+        {
+          "path": "scalers/sharpen_cas/README.md",
+          "executable": false
+        },
+        {
+          "path": "scalers/sharpen_cas/docs/block_diagram.dot",
+          "executable": true
+        },
+        {
+          "path": "scalers/sharpen_cas/docs/block_diagram.svg",
+          "executable": true
+        },
+        {
+          "path": "scalers/sharpen_cas/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "scalers/sharpen_cas/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/sharpen_cas/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/sharpen_cas/scripts/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/sharpen_cas/scripts/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/sharpen_cas/src/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/sharpen_cas/src/sharpen_cas.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/sharpen_cas/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/sharpen_cas/tb/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/sharpen_cas/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/sharpen_cas/tb/sharpen_cas_tb.sv",
+          "executable": false
+        }
+      ]
+    },
+    "spatial_upscaler": {
+      "category": "scalers",
+      "top": "spatial_upscaler",
+      "files": [
+        {
+          "path": "scalers/axi_checkers/src/axil_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axi_checkers/src/axis_checker.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/src/axil_regbus.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_split/src/axil_split.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/banked_framebuf/src/banked_framebuf.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_ctrl/src/scaler_ctrl.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_dda/src/scaler_dda.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_lanczos/src/scaler_lanczos.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_polyphase/src/scaler_polyphase.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/sharpen_cas/src/sharpen_cas.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/spatial_upscaler/Makefile",
+          "executable": false
+        },
+        {
+          "path": "scalers/spatial_upscaler/README.md",
+          "executable": false
+        },
+        {
+          "path": "scalers/spatial_upscaler/docs/block_diagram.dot",
+          "executable": true
+        },
+        {
+          "path": "scalers/spatial_upscaler/docs/block_diagram.svg",
+          "executable": true
+        },
+        {
+          "path": "scalers/spatial_upscaler/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "scalers/spatial_upscaler/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/spatial_upscaler/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/spatial_upscaler/scripts/run.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/spatial_upscaler/scripts/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/spatial_upscaler/src/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/spatial_upscaler/src/spatial_upscaler.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/spatial_upscaler/synth.sh",
+          "executable": true
+        },
+        {
+          "path": "scalers/spatial_upscaler/tb/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/spatial_upscaler/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/spatial_upscaler/tb/spatial_upscaler_tb.sv",
+          "executable": false
+        }
+      ]
+    },
+    "mac": {
+      "category": "math",
+      "top": "mac",
+      "files": [
+        {
+          "path": "math/mac/Makefile",
+          "executable": false
+        },
+        {
+          "path": "math/mac/README.md",
+          "executable": false
+        },
+        {
+          "path": "math/mac/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "math/mac/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "math/mac/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "math/mac/src/fp32_fma.sv",
+          "executable": false
+        },
+        {
+          "path": "math/mac/src/mac.sv",
+          "executable": false
+        },
+        {
+          "path": "math/mac/tb/mac_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "math/mac/tb/python/mac_cocotb_top.sv",
+          "executable": false
+        },
+        {
+          "path": "math/mac/tb/python/mac_tb.py",
+          "executable": false
+        },
+        {
+          "path": "math/mac/tb/python/results.xml",
+          "executable": false
+        },
+        {
+          "path": "math/mac/tb/python/run_python.py",
+          "executable": false
+        },
+        {
+          "path": "math/mac/tb/scripts/build.f",
+          "executable": false
+        }
+      ]
+    }
+  }
+}

@@ -123,6 +123,7 @@ endif
 docs:
 	@python3 ./scripts/gen_docs.py
 	@python3 ./tools/generate_docs.py
+	@python3 ./scripts/package_ips.py
 
 module-support:
 	@python3 ./scripts/gen_module_support.py
@@ -132,6 +133,7 @@ scaler-test:
 
 scaler-docs:
 	@python3 ./tools/generate_docs.py
+	@python3 ./scripts/package_ips.py
 
 scaler-diagrams:
 	@python3 ./tools/docs/make_block_diagrams.py
