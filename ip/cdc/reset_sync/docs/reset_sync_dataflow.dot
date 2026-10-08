@@ -1,0 +1,23 @@
+digraph "reset_sync_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>reset_sync</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/cdc/reset_sync/src/reset_sync.sv<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:arst_i" "in:clk" }
+    "in:arst_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="arst_i"];
+    "in:clk" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="clk"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:rst_o" }
+    "out:rst_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="rst_o"];
+  }
+  subgraph cluster_b0 { label="always_ff @ line 31"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:sr" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="sr\n[STAGES-1:0]"];
+  }
+  "sig:asserted" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="asserted"];
+  "in:arst_i" -> "sig:asserted";
+  "in:clk" -> "sig:sr";
+  "sig:asserted" -> "sig:sr";
+  "sig:sr" -> "out:rst_o";
+  "sig:sr" -> "sig:sr";
+}

@@ -1,0 +1,45 @@
+digraph "vision_system_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.3, ranksep=1.1, fontname="Helvetica", labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>vision_system</B> data flow</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from image_processing/vision_system/src/vision_system.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=10];
+  edge [fontname="Courier", fontsize=9, color="#374151", fontcolor="#1f2937", arrowsize=0.7];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    "in:s_axil_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_axil_*\n17 signals"];
+    "in:s_axis_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_axis_*\n5 signals"];
+    "in:sdram_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="sdram_*\n10 signals"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    "out:m_axis_*" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="m_axis_*\n5 signals"];
+    "out:sdram_*" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="sdram_*\n10 signals"];
+  }
+  "inst:u_regs" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>axi_lite_regs</B><BR/><FONT COLOR="#4b5563">u_regs</FONT>>];
+  "inst:u_fb" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>frame_buffer</B><BR/><FONT COLOR="#4b5563">u_fb</FONT>>];
+  "inst:u_in" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>axis_in_ctrl</B><BR/><FONT COLOR="#4b5563">u_in</FONT>>];
+  "inst:u_out" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>axis_out_ctrl</B><BR/><FONT COLOR="#4b5563">u_out</FONT>>];
+  "logic" [shape=box, style="rounded,filled", fillcolor="#ede9fe", color="#7c3aed", label=<<B>vision_system logic</B><BR/><FONT POINT-SIZE="9" COLOR="#4b5563">registers: tstate, start_output, fb_rd_valid</FONT>>];
+  "in:sdram_*" -> "inst:u_fb" [label="sdram_*"];
+  "in:sdram_*" -> "logic" [label="sdram_*"];
+  "in:sdram_*" -> "out:sdram_*" [label="sdram_*"];
+  "inst:u_fb" -> "inst:u_in" [label="fb_wr_ready"];
+  "inst:u_fb" -> "inst:u_out" [label="fb_rd_data0\nfb_rd_data1\nfb_rd_data2\nfb_rd_data3\nfb_rd_ready\nfb_rd_valid"];
+  "inst:u_fb" -> "logic" [label="sdram_*\nfb_rd_ready\nfb_rd_valid\nfb_wr_idle\nfb_wr_ready"];
+  "inst:u_fb" -> "out:sdram_*" [label="sdram_*"];
+  "inst:u_in" -> "inst:u_fb" [label="fb_wr_addr\nfb_wr_data\nfb_wr_en"];
+  "inst:u_in" -> "logic" [label="frame_done_in"];
+  "inst:u_out" -> "inst:u_fb" [label="fb_rd_addr0\nfb_rd_addr1\nfb_rd_addr2\nfb_rd_addr3\nfb_rd_en"];
+  "inst:u_out" -> "inst:u_regs" [label="frame_out_done"];
+  "inst:u_out" -> "logic" [label="fb_rd_en\nframe_out_done"];
+  "inst:u_regs" -> "inst:u_in" [label="img_height\nimg_width"];
+  "inst:u_regs" -> "inst:u_out" [label="cfg\nimg_height\nimg_width\ninterp_mode"];
+  "inst:u_regs" -> "logic" [label="cfg\ncfg_recip_busy"];
+  "logic" -> "inst:u_fb" [label="sdram_*"];
+  "logic" -> "inst:u_in" [label="capture_en\nfb_wr_ready"];
+  "logic" -> "inst:u_out" [label="fb_rd_ready\nfb_rd_valid\nstart_output"];
+  "logic" -> "inst:u_regs" [label="top_busy"];
+  "logic" -> "out:sdram_*" [label="sdram_*"];
+  "inst:u_out" -> "out:m_axis_*" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Stream
+m_axis_t* (5)"];
+  "in:s_axis_*" -> "inst:u_in" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Stream
+s_axis_t* (5)"];
+  "in:s_axil_*" -> "inst:u_regs" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Lite
+s_axil_* (17)"];
+}

@@ -1,0 +1,101 @@
+digraph "packet_fifo_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>packet_fifo</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/fifo/packet_fifo/src/packet_fifo.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:m_ready_i" "in:s_bad_i" "in:s_data_i" "in:s_last_i" "in:s_valid_i" }
+    "in:m_ready_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="m_ready_i"];
+    "in:s_bad_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_bad_i"];
+    "in:s_data_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_data_i\n[WIDTH-1:0]"];
+    "in:s_last_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_last_i"];
+    "in:s_valid_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_valid_i"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:drop_o" "out:m_data_o" "out:m_last_o" "out:m_valid_o" "out:pkt_count_o" "out:s_ready_o" }
+    "out:drop_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="drop_o"];
+    "out:m_data_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="m_data_o\n[WIDTH-1:0]"];
+    "out:m_last_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="m_last_o"];
+    "out:m_valid_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="m_valid_o"];
+    "out:pkt_count_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="pkt_count_o\n[$clog2(DEPTH):0]"];
+    "out:s_ready_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="s_ready_o"];
+  }
+  subgraph cluster_b0 { label="always_ff @ line 47"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:mem" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="mem\n[WIDTH:0] x [0:DEPTH-1]"];
+  }
+  subgraph cluster_b1 { label="always_ff @ line 51"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:cptr" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="cptr\n[AW:0]"];
+    "sig:discard" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="discard"];
+    "sig:pcnt" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="pcnt\n[AW:0]"];
+    "sig:wptr" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="wptr\n[AW:0]"];
+  }
+  subgraph cluster_b2 { label="always_ff @ line 79"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:q" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="q\n[WIDTH:0]"];
+    "sig:q_v" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="q_v"];
+    "sig:rptr" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="rptr\n[AW:0]"];
+  }
+  "sig:do_wr" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="do_wr"];
+  "sig:out_take" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="out_take"];
+  "sig:pop_pkt" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="pop_pkt"];
+  "sig:rd_en" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="rd_en"];
+  "sig:space" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="space"];
+  "const:s_ready_o" [shape=plaintext, fontcolor="#6b7280", fontsize=8, label="constant"];
+  "const:s_ready_o" -> "out:s_ready_o";
+  "in:m_ready_i" -> "sig:out_take";
+  "in:s_bad_i" -> "out:drop_o";
+  "in:s_bad_i" -> "sig:cptr";
+  "in:s_bad_i" -> "sig:pcnt";
+  "in:s_bad_i" -> "sig:wptr";
+  "in:s_data_i" -> "sig:mem";
+  "in:s_last_i" -> "out:drop_o";
+  "in:s_last_i" -> "sig:cptr";
+  "in:s_last_i" -> "sig:discard";
+  "in:s_last_i" -> "sig:mem";
+  "in:s_last_i" -> "sig:pcnt";
+  "in:s_last_i" -> "sig:wptr";
+  "in:s_valid_i" -> "out:drop_o";
+  "in:s_valid_i" -> "sig:cptr";
+  "in:s_valid_i" -> "sig:discard";
+  "in:s_valid_i" -> "sig:do_wr";
+  "in:s_valid_i" -> "sig:pcnt";
+  "in:s_valid_i" -> "sig:wptr";
+  "sig:cptr" -> "sig:rd_en";
+  "sig:cptr" -> "sig:wptr";
+  "sig:discard" -> "out:drop_o";
+  "sig:discard" -> "sig:cptr";
+  "sig:discard" -> "sig:discard";
+  "sig:discard" -> "sig:do_wr";
+  "sig:discard" -> "sig:pcnt";
+  "sig:discard" -> "sig:wptr";
+  "sig:do_wr" -> "sig:mem";
+  "sig:mem" -> "sig:q";
+  "sig:out_take" -> "sig:pop_pkt";
+  "sig:out_take" -> "sig:q_v";
+  "sig:out_take" -> "sig:rd_en";
+  "sig:pcnt" -> "out:pkt_count_o";
+  "sig:pcnt" -> "sig:pcnt";
+  "sig:pop_pkt" -> "sig:pcnt";
+  "sig:q" -> "out:m_data_o";
+  "sig:q" -> "out:m_last_o";
+  "sig:q" -> "sig:pop_pkt";
+  "sig:q_v" -> "out:m_valid_o";
+  "sig:q_v" -> "sig:out_take";
+  "sig:q_v" -> "sig:q_v";
+  "sig:q_v" -> "sig:rd_en";
+  "sig:rd_en" -> "sig:q";
+  "sig:rd_en" -> "sig:q_v";
+  "sig:rd_en" -> "sig:rptr";
+  "sig:rptr" -> "sig:q";
+  "sig:rptr" -> "sig:rd_en";
+  "sig:rptr" -> "sig:rptr";
+  "sig:rptr" -> "sig:space";
+  "sig:space" -> "out:drop_o";
+  "sig:space" -> "sig:cptr";
+  "sig:space" -> "sig:discard";
+  "sig:space" -> "sig:do_wr";
+  "sig:space" -> "sig:pcnt";
+  "sig:space" -> "sig:wptr";
+  "sig:wptr" -> "sig:cptr";
+  "sig:wptr" -> "sig:mem";
+  "sig:wptr" -> "sig:space";
+  "sig:wptr" -> "sig:wptr";
+}

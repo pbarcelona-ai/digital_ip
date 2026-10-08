@@ -1,0 +1,41 @@
+digraph "lvds_serializer_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>lvds_serializer</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/video/lvds_serializer/src/lvds_serializer.sv; clocks / resets (not drawn): pix_clk, pix_rst_n, ser_clk, ser_rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:stb_i" "in:words_i" }
+    "in:stb_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="stb_i"];
+    "in:words_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="words_i\n[NL*7-1:0]"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:serial_o" }
+    "out:serial_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="serial_o\n[NL-1:0]"];
+  }
+  subgraph cluster_b0 { label="always_ff @ line 30"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:tog" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="tog"];
+    "sig:w_q" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="w_q\n[NL*7-1:0]"];
+  }
+  subgraph cluster_b1 { label="always_ff @ line 37"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:dly" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="dly\n[1:0]"];
+    "sig:sh" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="sh\n[6:0] x [NL]"];
+    "sig:t1" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="t1"];
+    "sig:t2" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="t2"];
+    "sig:t3" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="t3"];
+  }
+  "in:stb_i" -> "sig:tog";
+  "in:stb_i" -> "sig:w_q";
+  "in:words_i" -> "sig:w_q";
+  "sig:dly" -> "out:serial_o";
+  "sig:dly" -> "sig:dly";
+  "sig:dly" -> "sig:sh";
+  "sig:sh" -> "out:serial_o";
+  "sig:sh" -> "sig:sh";
+  "sig:t1" -> "sig:t2";
+  "sig:t2" -> "sig:dly";
+  "sig:t2" -> "sig:t3";
+  "sig:t3" -> "sig:dly";
+  "sig:tog" -> "sig:t1";
+  "sig:tog" -> "sig:tog";
+  "sig:w_q" -> "out:serial_o";
+  "sig:w_q" -> "sig:sh";
+}

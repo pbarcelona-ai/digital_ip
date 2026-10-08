@@ -1,0 +1,60 @@
+digraph "frequency_counter_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>frequency_counter</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/timing/frequency_counter/src/frequency_counter.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:en_i" "in:gate_clks_i" "in:sig_i" }
+    "in:en_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="en_i"];
+    "in:gate_clks_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="gate_clks_i\n[GATE_W-1:0]"];
+    "in:sig_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="sig_i"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:count_o" "out:over_o" "out:valid_o" }
+    "out:count_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="count_o\n[COUNT_W-1:0]"];
+    "out:over_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="over_o"];
+    "out:valid_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="valid_o"];
+  }
+  subgraph cluster_b0 { label="always_ff @ line 32"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:rise" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="rise"];
+    "sig:s_prev" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="s_prev"];
+  }
+  subgraph cluster_b1 { label="always_ff @ line 37"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:ecnt" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="ecnt\n[COUNT_W-1:0]"];
+    "sig:gcnt" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="gcnt\n[GATE_W-1:0]"];
+    "sig:sat" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="sat"];
+  }
+  "sig:s_sync" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="s_sync"];
+  "inst:u_sync" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>bit_sync</B><BR/><FONT COLOR="#4b5563">u_sync</FONT>>];
+  "in:en_i" -> "out:count_o";
+  "in:en_i" -> "out:over_o";
+  "in:en_i" -> "out:valid_o";
+  "in:en_i" -> "sig:ecnt";
+  "in:en_i" -> "sig:gcnt";
+  "in:en_i" -> "sig:sat";
+  "in:gate_clks_i" -> "out:count_o";
+  "in:gate_clks_i" -> "out:over_o";
+  "in:gate_clks_i" -> "out:valid_o";
+  "in:gate_clks_i" -> "sig:ecnt";
+  "in:gate_clks_i" -> "sig:gcnt";
+  "in:gate_clks_i" -> "sig:sat";
+  "in:sig_i" -> "inst:u_sync";
+  "inst:u_sync" -> "sig:s_sync";
+  "sig:ecnt" -> "out:count_o";
+  "sig:ecnt" -> "out:over_o";
+  "sig:ecnt" -> "sig:ecnt";
+  "sig:ecnt" -> "sig:sat";
+  "sig:gcnt" -> "out:count_o";
+  "sig:gcnt" -> "out:over_o";
+  "sig:gcnt" -> "out:valid_o";
+  "sig:gcnt" -> "sig:ecnt";
+  "sig:gcnt" -> "sig:gcnt";
+  "sig:gcnt" -> "sig:sat";
+  "sig:rise" -> "out:count_o";
+  "sig:rise" -> "out:over_o";
+  "sig:rise" -> "sig:ecnt";
+  "sig:rise" -> "sig:sat";
+  "sig:s_prev" -> "sig:rise";
+  "sig:s_sync" -> "sig:rise";
+  "sig:s_sync" -> "sig:s_prev";
+  "sig:sat" -> "out:over_o";
+}

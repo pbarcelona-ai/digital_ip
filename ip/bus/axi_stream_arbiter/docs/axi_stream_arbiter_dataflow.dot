@@ -1,0 +1,95 @@
+digraph "axi_stream_arbiter_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>axi_stream_arbiter</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/bus/axi_stream_arbiter/src/axi_stream_arbiter.sv; clocks / resets (not drawn): aclk, aresetn<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:m_axis_*" "in:s_axis_*" }
+    "in:m_axis_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="m_axis_tready"];
+    "in:s_axis_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_axis_*\ns_axis_tdata\ns_axis_tkeep\ns_axis_tlast\ns_axis_tuser\ns_axis_tvalid"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:hog_o" "out:m_axis_*" "out:s_axis_*" }
+    "out:hog_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="hog_o"];
+    "out:m_axis_*" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="m_axis_*\nm_axis_tdata\nm_axis_tkeep\nm_axis_tlast\nm_axis_tuser\nm_axis_tid\nm_axis_tvalid"];
+    "out:s_axis_*" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="s_axis_tready\n[NIN-1:0]"];
+  }
+  subgraph cluster_b0 { label="always_comb @ line 48"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:pick" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="pick\n[IW-1:0]"];
+    "sig:pick_v" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="pick_v"];
+  }
+  subgraph cluster_b1 { label="always_ff @ line 68"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:beats" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="beats\n[$clog2(TIMEOUT>1?TIMEOUT+1:2)-1:0]"];
+    "sig:busy" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="busy"];
+    "sig:last" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="last\n[IW-1:0]"];
+    "sig:od" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="od\n[DATA_W-1:0]"];
+    "sig:oi" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="oi\n[IW-1:0]"];
+    "sig:ok" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="ok\n[DATA_W/8-1:0]"];
+    "sig:ol" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="ol"];
+    "sig:ou" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="ou\n[USER_W-1:0]"];
+    "sig:ov" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="ov"];
+    "sig:owner" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="owner\n[IW-1:0]"];
+  }
+  "sig:o_can" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="o_can"];
+  "sig:xfer" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="xfer"];
+  "in:m_axis_*" -> "sig:o_can";
+  "in:m_axis_*" -> "sig:ov";
+  "in:s_axis_*" -> "out:hog_o";
+  "in:s_axis_*" -> "sig:busy";
+  "in:s_axis_*" -> "sig:last";
+  "in:s_axis_*" -> "sig:od";
+  "in:s_axis_*" -> "sig:ok";
+  "in:s_axis_*" -> "sig:ol";
+  "in:s_axis_*" -> "sig:ou";
+  "in:s_axis_*" -> "sig:pick";
+  "in:s_axis_*" -> "sig:pick_v";
+  "in:s_axis_*" -> "sig:xfer";
+  "sig:beats" -> "out:hog_o";
+  "sig:beats" -> "sig:beats";
+  "sig:beats" -> "sig:busy";
+  "sig:beats" -> "sig:last";
+  "sig:busy" -> "out:hog_o";
+  "sig:busy" -> "out:s_axis_*";
+  "sig:busy" -> "sig:beats";
+  "sig:busy" -> "sig:busy";
+  "sig:busy" -> "sig:last";
+  "sig:busy" -> "sig:od";
+  "sig:busy" -> "sig:oi";
+  "sig:busy" -> "sig:ok";
+  "sig:busy" -> "sig:ol";
+  "sig:busy" -> "sig:ou";
+  "sig:busy" -> "sig:ov";
+  "sig:busy" -> "sig:owner";
+  "sig:busy" -> "sig:xfer";
+  "sig:o_can" -> "out:s_axis_*";
+  "sig:o_can" -> "sig:xfer";
+  "sig:od" -> "out:m_axis_*";
+  "sig:oi" -> "out:m_axis_*";
+  "sig:ok" -> "out:m_axis_*";
+  "sig:ol" -> "out:m_axis_*";
+  "sig:ou" -> "out:m_axis_*";
+  "sig:ov" -> "out:m_axis_*";
+  "sig:ov" -> "sig:o_can";
+  "sig:owner" -> "out:hog_o";
+  "sig:owner" -> "out:s_axis_*";
+  "sig:owner" -> "sig:busy";
+  "sig:owner" -> "sig:last";
+  "sig:owner" -> "sig:od";
+  "sig:owner" -> "sig:oi";
+  "sig:owner" -> "sig:ok";
+  "sig:owner" -> "sig:ol";
+  "sig:owner" -> "sig:ou";
+  "sig:owner" -> "sig:xfer";
+  "sig:pick" -> "sig:owner";
+  "sig:pick_v" -> "sig:busy";
+  "sig:pick_v" -> "sig:owner";
+  "sig:xfer" -> "out:hog_o";
+  "sig:xfer" -> "sig:beats";
+  "sig:xfer" -> "sig:busy";
+  "sig:xfer" -> "sig:last";
+  "sig:xfer" -> "sig:od";
+  "sig:xfer" -> "sig:oi";
+  "sig:xfer" -> "sig:ok";
+  "sig:xfer" -> "sig:ol";
+  "sig:xfer" -> "sig:ou";
+  "sig:xfer" -> "sig:ov";
+}

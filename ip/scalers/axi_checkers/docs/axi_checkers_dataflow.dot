@@ -1,0 +1,56 @@
+digraph "axi_checkers_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>axis_checker</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/scalers/axi_checkers/src/axis_checker.sv<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:clk" "in:frame_h" "in:frame_w" "in:rst_n" "in:tdata" "in:tlast" "in:tready" "in:tuser" "in:tvalid" }
+    "in:clk" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="clk"];
+    "in:frame_h" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="frame_h"];
+    "in:frame_w" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="frame_w"];
+    "in:rst_n" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="rst_n"];
+    "in:tdata" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="tdata\n[DATA_W-1:0]"];
+    "in:tlast" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="tlast"];
+    "in:tready" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="tready"];
+    "in:tuser" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="tuser"];
+    "in:tvalid" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="tvalid"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max;  }
+  }
+  subgraph cluster_b0 { label="always @ line 75"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:in_frame" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="in_frame"];
+    "sig:p_data" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="p_data\n[DATA_W-1:0]"];
+    "sig:p_hs" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="p_hs"];
+    "sig:p_last" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="p_last"];
+    "sig:p_ready" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="p_ready"];
+    "sig:p_user" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="p_user"];
+    "sig:p_valid" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="p_valid"];
+  }
+  "sig:hs" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="hs"];
+  "in:clk" -> "sig:in_frame";
+  "in:clk" -> "sig:p_data";
+  "in:clk" -> "sig:p_hs";
+  "in:clk" -> "sig:p_last";
+  "in:clk" -> "sig:p_ready";
+  "in:clk" -> "sig:p_user";
+  "in:clk" -> "sig:p_valid";
+  "in:frame_h" -> "sig:in_frame";
+  "in:frame_w" -> "sig:in_frame";
+  "in:rst_n" -> "sig:in_frame";
+  "in:rst_n" -> "sig:p_data";
+  "in:rst_n" -> "sig:p_hs";
+  "in:rst_n" -> "sig:p_last";
+  "in:rst_n" -> "sig:p_ready";
+  "in:rst_n" -> "sig:p_user";
+  "in:rst_n" -> "sig:p_valid";
+  "in:tdata" -> "sig:p_data";
+  "in:tlast" -> "sig:p_last";
+  "in:tready" -> "sig:hs";
+  "in:tready" -> "sig:p_ready";
+  "in:tuser" -> "sig:in_frame";
+  "in:tuser" -> "sig:p_user";
+  "in:tvalid" -> "sig:hs";
+  "in:tvalid" -> "sig:p_valid";
+  "sig:hs" -> "sig:in_frame";
+  "sig:hs" -> "sig:p_hs";
+}

@@ -1,0 +1,100 @@
+digraph "cordic_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>cordic</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/common/cordic/src/cordic.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:valid_i" "in:x_i" "in:y_i" "in:z_i" }
+    "in:valid_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="valid_i"];
+    "in:x_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="x_i\n[WIDTH-1:0]"];
+    "in:y_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="y_i\n[WIDTH-1:0]"];
+    "in:z_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="z_i\n[ZW-1:0]"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:mag_o" "out:valid_o" "out:x_o" "out:y_o" "out:z_o" }
+    "out:mag_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="mag_o\n[WIDTH:0]"];
+    "out:valid_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="valid_o"];
+    "out:x_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="x_o\n[WIDTH-1:0]"];
+    "out:y_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="y_o\n[WIDTH-1:0]"];
+    "out:z_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="z_o\n[ZW-1:0]"];
+  }
+  subgraph cluster_b0 { label="always_comb @ line 136"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:mm" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="mm\n[IW+17:0]"];
+    "sig:xr" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="xr\n[IW-1:0]"];
+    "sig:yr" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="yr\n[IW-1:0]"];
+  }
+  subgraph cluster_b1 { label="always_comb @ line 141"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:mmr" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="mmr\n[IW+17:0]"];
+  }
+  subgraph cluster_b2 { label="always_comb @ line 96"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:xe" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="xe\n[IW-1:0]"];
+    "sig:xf" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="xf\n[IW-1:0]"];
+    "sig:xm" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="xm\n[IW+17:0]"];
+    "sig:ye" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="ye\n[IW-1:0]"];
+    "sig:yf" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="yf\n[IW-1:0]"];
+    "sig:ym" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="ym\n[IW+17:0]"];
+    "sig:zf" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="zf\n[ZA-1:0]"];
+  }
+  subgraph cluster_b3 { label="always_ff @ line 112"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:vs" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="vs\n x [0:ITER]"];
+    "sig:xs" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="xs\n[IW-1:0] x [0:ITER]"];
+    "sig:ys" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="ys\n[IW-1:0] x [0:ITER]"];
+    "sig:zs" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="zs\n[ZA-1:0] x [0:ITER]"];
+  }
+  "sig:at" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="at\n[ZA-1:0]"];
+  "sig:dpos" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="dpos"];
+  "sig:maxv" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="maxv\n[WIDTH-1:0]"];
+  "sig:minv" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="minv\n[WIDTH-1:0]"];
+  "sig:xsh" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="xsh\n[IW-1:0]"];
+  "sig:ysh" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="ysh\n[IW-1:0]"];
+  "const:at" [shape=plaintext, fontcolor="#6b7280", fontsize=8, label="constant"];
+  "const:maxv" [shape=plaintext, fontcolor="#6b7280", fontsize=8, label="constant"];
+  "const:minv" [shape=plaintext, fontcolor="#6b7280", fontsize=8, label="constant"];
+  "const:at" -> "sig:at";
+  "const:maxv" -> "sig:maxv";
+  "const:minv" -> "sig:minv";
+  "in:valid_i" -> "sig:vs";
+  "in:x_i" -> "sig:xe";
+  "in:y_i" -> "sig:ye";
+  "in:z_i" -> "sig:xf";
+  "in:z_i" -> "sig:yf";
+  "in:z_i" -> "sig:zf";
+  "sig:at" -> "sig:zs";
+  "sig:dpos" -> "sig:xs";
+  "sig:dpos" -> "sig:ys";
+  "sig:dpos" -> "sig:zs";
+  "sig:maxv" -> "out:x_o";
+  "sig:maxv" -> "out:y_o";
+  "sig:minv" -> "out:x_o";
+  "sig:minv" -> "out:y_o";
+  "sig:mm" -> "sig:mmr";
+  "sig:mmr" -> "out:mag_o";
+  "sig:vs" -> "out:valid_o";
+  "sig:vs" -> "sig:vs";
+  "sig:xe" -> "sig:xf";
+  "sig:xe" -> "sig:yf";
+  "sig:xe" -> "sig:zf";
+  "sig:xf" -> "sig:xm";
+  "sig:xf" -> "sig:xs";
+  "sig:xm" -> "sig:xs";
+  "sig:xr" -> "out:x_o";
+  "sig:xs" -> "sig:mm";
+  "sig:xs" -> "sig:xr";
+  "sig:xs" -> "sig:xs";
+  "sig:xs" -> "sig:xsh";
+  "sig:xsh" -> "sig:ys";
+  "sig:ye" -> "sig:xf";
+  "sig:ye" -> "sig:yf";
+  "sig:yf" -> "sig:ym";
+  "sig:yf" -> "sig:ys";
+  "sig:ym" -> "sig:ys";
+  "sig:yr" -> "out:y_o";
+  "sig:ys" -> "sig:dpos";
+  "sig:ys" -> "sig:yr";
+  "sig:ys" -> "sig:ys";
+  "sig:ys" -> "sig:ysh";
+  "sig:ysh" -> "sig:xs";
+  "sig:zf" -> "sig:zs";
+  "sig:zs" -> "out:z_o";
+  "sig:zs" -> "sig:dpos";
+  "sig:zs" -> "sig:zs";
+}

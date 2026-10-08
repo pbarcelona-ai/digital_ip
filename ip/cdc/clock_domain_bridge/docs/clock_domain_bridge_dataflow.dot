@@ -1,0 +1,51 @@
+digraph "clock_domain_bridge_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>clock_domain_bridge</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/cdc/clock_domain_bridge/src/clock_domain_bridge.sv; clocks / resets (not drawn): m_clk, m_rst_n, s_clk, s_rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:m_ready_i" "in:s_data_i" "in:s_valid_i" }
+    "in:m_ready_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="m_ready_i"];
+    "in:s_data_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_data_i\n[DATA_W-1:0]"];
+    "in:s_valid_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_valid_i"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:m_data_o" "out:m_valid_o" "out:s_ready_o" }
+    "out:m_data_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="m_data_o\n[DATA_W-1:0]"];
+    "out:m_valid_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="m_valid_o"];
+    "out:s_ready_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="s_ready_o"];
+  }
+  subgraph cluster_b0 { label="always_ff @ line 42"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:hold" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="hold\n[DATA_W-1:0]"];
+    "sig:req_tog" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="req_tog"];
+  }
+  subgraph cluster_b1 { label="always_ff @ line 47"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:ack_tog" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="ack_tog"];
+  }
+  "sig:ack_s" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="ack_s"];
+  "sig:req_s" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="req_s"];
+  "inst:u_ack" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>bit_sync</B><BR/><FONT COLOR="#4b5563">u_ack</FONT>>];
+  "inst:u_req" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>bit_sync</B><BR/><FONT COLOR="#4b5563">u_req</FONT>>];
+  "in:m_ready_i" -> "out:m_valid_o";
+  "in:m_ready_i" -> "sig:ack_tog";
+  "in:s_data_i" -> "sig:hold";
+  "in:s_valid_i" -> "sig:hold";
+  "in:s_valid_i" -> "sig:req_tog";
+  "inst:u_ack" -> "sig:ack_s";
+  "inst:u_req" -> "sig:req_s";
+  "out:m_valid_o" -> "out:m_data_o";
+  "out:m_valid_o" -> "out:m_valid_o";
+  "out:m_valid_o" -> "sig:ack_tog";
+  "out:s_ready_o" -> "sig:hold";
+  "out:s_ready_o" -> "sig:req_tog";
+  "sig:ack_s" -> "out:s_ready_o";
+  "sig:ack_tog" -> "inst:u_ack";
+  "sig:ack_tog" -> "out:m_data_o";
+  "sig:ack_tog" -> "out:m_valid_o";
+  "sig:ack_tog" -> "sig:ack_tog";
+  "sig:hold" -> "out:m_data_o";
+  "sig:req_s" -> "out:m_data_o";
+  "sig:req_s" -> "out:m_valid_o";
+  "sig:req_tog" -> "inst:u_req";
+  "sig:req_tog" -> "out:s_ready_o";
+  "sig:req_tog" -> "sig:req_tog";
+}

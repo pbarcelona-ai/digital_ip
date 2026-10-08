@@ -1,0 +1,47 @@
+digraph "tmds_encoder_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>tmds_encoder</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/video/tmds_encoder/src/tmds_encoder.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:c_i" "in:d_i" "in:g_i" "in:mode_i" "in:t_i" }
+    "in:c_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="c_i\n[1:0]"];
+    "in:d_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="d_i\n[7:0]"];
+    "in:g_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="g_i\n[9:0]"];
+    "in:mode_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="mode_i\n[1:0]"];
+    "in:t_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="t_i\n[3:0]"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:q_o" }
+    "out:q_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="q_o\n[9:0]"];
+  }
+  subgraph cluster_b0 { label="always_comb @ line 31"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:cnt_n" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="cnt_n\n[5:0]"];
+    "sig:n1d" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="n1d\n[3:0]"];
+    "sig:n1q" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="n1q\n[3:0]"];
+    "sig:qm" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="qm\n[8:0]"];
+    "sig:qv" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="qv\n[9:0]"];
+    "sig:t" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="t\n[8:0]"];
+  }
+  subgraph cluster_b1 { label="always_ff @ line 78"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:cnt" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="cnt\n[5:0]"];
+  }
+  "in:c_i" -> "out:q_o";
+  "in:d_i" -> "sig:n1d";
+  "in:d_i" -> "sig:t";
+  "in:g_i" -> "out:q_o";
+  "in:mode_i" -> "out:q_o";
+  "in:mode_i" -> "sig:cnt";
+  "in:t_i" -> "out:q_o";
+  "sig:cnt" -> "sig:cnt_n";
+  "sig:cnt" -> "sig:qv";
+  "sig:cnt_n" -> "sig:cnt";
+  "sig:n1d" -> "sig:t";
+  "sig:n1q" -> "sig:cnt_n";
+  "sig:n1q" -> "sig:qv";
+  "sig:qm" -> "sig:cnt_n";
+  "sig:qm" -> "sig:n1q";
+  "sig:qm" -> "sig:qv";
+  "sig:qv" -> "out:q_o";
+  "sig:t" -> "sig:qm";
+  "sig:t" -> "sig:t";
+}

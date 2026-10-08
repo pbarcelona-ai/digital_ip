@@ -1,0 +1,41 @@
+digraph "pulse_sync_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>pulse_sync</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/cdc/pulse_sync/src/pulse_sync.sv; clocks / resets (not drawn): dst_clk, dst_rst_n, src_clk, src_rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:pulse_i" }
+    "in:pulse_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="pulse_i"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:busy_o" "out:drop_o" "out:pulse_o" }
+    "out:busy_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="busy_o"];
+    "out:drop_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="drop_o"];
+    "out:pulse_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="pulse_o"];
+  }
+  subgraph cluster_b0 { label="always_ff @ line 31"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:req_tog" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="req_tog"];
+  }
+  subgraph cluster_b1 { label="always_ff @ line 43"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:ack_tog" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="ack_tog"];
+    "sig:req_d" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="req_d"];
+  }
+  "sig:ack_s" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="ack_s"];
+  "sig:req_s" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="req_s"];
+  "inst:u_ack" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>bit_sync</B><BR/><FONT COLOR="#4b5563">u_ack</FONT>>];
+  "inst:u_req" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>bit_sync</B><BR/><FONT COLOR="#4b5563">u_req</FONT>>];
+  "in:pulse_i" -> "out:drop_o";
+  "in:pulse_i" -> "sig:req_tog";
+  "inst:u_ack" -> "sig:ack_s";
+  "inst:u_req" -> "sig:req_s";
+  "out:busy_o" -> "out:drop_o";
+  "out:busy_o" -> "sig:req_tog";
+  "sig:ack_s" -> "out:busy_o";
+  "sig:ack_tog" -> "inst:u_ack";
+  "sig:req_d" -> "out:pulse_o";
+  "sig:req_s" -> "out:pulse_o";
+  "sig:req_s" -> "sig:ack_tog";
+  "sig:req_s" -> "sig:req_d";
+  "sig:req_tog" -> "inst:u_req";
+  "sig:req_tog" -> "out:busy_o";
+  "sig:req_tog" -> "sig:req_tog";
+}

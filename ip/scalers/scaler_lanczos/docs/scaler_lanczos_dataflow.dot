@@ -1,0 +1,21 @@
+digraph "scaler_lanczos_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>scaler_lanczos</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/scalers/scaler_lanczos/src/scaler_lanczos.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:s_axil_*" "in:s_axis_*" }
+    "in:s_axil_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_axil_*\ns_axil_awaddr\ns_axil_awvalid\ns_axil_wdata\ns_axil_wstrb\ns_axil_wvalid\ns_axil_bready\ns_axil_araddr\ns_axil_arvalid\ns_axil_rready"];
+    "in:s_axis_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_axis_*\ns_axis_tdata\ns_axis_tvalid\ns_axis_tuser\ns_axis_tlast"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:m_axis_*" }
+    "out:m_axis_*" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="m_axis_*\nm_axis_tdata\nm_axis_tvalid\nm_axis_tuser\nm_axis_tlast"];
+  }
+  "inst:u_core" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>scaler_polyphase</B><BR/><FONT COLOR="#4b5563">u_core</FONT>>];
+  "inst:u_core" -> "out:m_axis_*" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Stream
+m_axis_t* (5)"];
+  "in:s_axil_*" -> "inst:u_core" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Lite
+s_axil_* (17)"];
+  "in:s_axis_*" -> "inst:u_core" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Stream
+s_axis_t* (5)"];
+}

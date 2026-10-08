@@ -1,0 +1,35 @@
+digraph "error_status_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>error_status</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/integrity/error_status/src/error_status.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:clr_all_i" "in:clr_mask_i" "in:err_i" "in:irq_mask_i" }
+    "in:clr_all_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="clr_all_i"];
+    "in:clr_mask_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="clr_mask_i\n[NERR-1:0]"];
+    "in:err_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="err_i\n[NERR-1:0]"];
+    "in:irq_mask_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="irq_mask_i\n[NERR-1:0]"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:count_o" "out:first_idx_o" "out:first_valid_o" "out:irq_o" "out:status_o" }
+    "out:count_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="count_o\n[CNT_W-1:0]"];
+    "out:first_idx_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="first_idx_o\n[$clog2(NERR > 1 ? NERR : 2)-1:0]"];
+    "out:first_valid_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="first_valid_o"];
+    "out:irq_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="irq_o"];
+    "out:status_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="status_o\n[NERR-1:0]"];
+  }
+  "in:clr_all_i" -> "out:count_o";
+  "in:clr_all_i" -> "out:first_idx_o";
+  "in:clr_all_i" -> "out:first_valid_o";
+  "in:clr_all_i" -> "out:status_o";
+  "in:clr_mask_i" -> "out:status_o";
+  "in:err_i" -> "out:count_o";
+  "in:err_i" -> "out:first_idx_o";
+  "in:err_i" -> "out:first_valid_o";
+  "in:err_i" -> "out:status_o";
+  "in:irq_mask_i" -> "out:irq_o";
+  "out:count_o" -> "out:count_o";
+  "out:first_valid_o" -> "out:first_idx_o";
+  "out:first_valid_o" -> "out:first_valid_o";
+  "out:status_o" -> "out:irq_o";
+  "out:status_o" -> "out:status_o";
+}

@@ -1,0 +1,103 @@
+digraph "banked_framebuf_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>banked_framebuf</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/scalers/banked_framebuf/src/banked_framebuf.sv; clocks / resets (not drawn): clk<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:img_h" "in:img_w" "in:rd_adv" "in:rd_buf" "in:rd_x0" "in:rd_y0" "in:wr_buf" "in:wr_data" "in:wr_en" "in:wr_x" "in:wr_y" }
+    "in:img_h" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="img_h\n[15:0]"];
+    "in:img_w" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="img_w\n[15:0]"];
+    "in:rd_adv" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="rd_adv"];
+    "in:rd_buf" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="rd_buf"];
+    "in:rd_x0" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="rd_x0\n[17:0]"];
+    "in:rd_y0" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="rd_y0\n[17:0]"];
+    "in:wr_buf" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="wr_buf"];
+    "in:wr_data" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="wr_data\n[PIX_W-1:0]"];
+    "in:wr_en" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="wr_en"];
+    "in:wr_x" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="wr_x\n[15:0]"];
+    "in:wr_y" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="wr_y\n[15:0]"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:rd_win" }
+    "out:rd_win" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="rd_win\n[TAPS*TAPS*PIX_W-1:0]"];
+  }
+  subgraph cluster_b0 { label="always_comb @ line 130"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:bcx" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="bcx\n[15:0] x [B]"];
+    "sig:bcy" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="bcy\n[15:0] x [B]"];
+    "sig:c" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="c\n[15:0]"];
+    "sig:hi_x" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="hi_x\n[15:0]"];
+    "sig:hi_y" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="hi_y\n[15:0]"];
+    "sig:lo_x" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="lo_x\n[15:0]"];
+    "sig:lo_y" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="lo_y\n[15:0]"];
+    "sig:tsx" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="tsx\n[SELW-1:0] x [TAPS]"];
+    "sig:tsy" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="tsy\n[SELW-1:0] x [TAPS]"];
+  }
+  subgraph cluster_b1 { label="always_ff @ line 108"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:waddr" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="waddr\n[AW-1:0]"];
+    "sig:wbx" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="wbx\n[SELW-1:0]"];
+    "sig:wby" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="wby\n[SELW-1:0]"];
+    "sig:wdat" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="wdat\n[PIX_W-1:0]"];
+    "sig:wen" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="wen"];
+  }
+  subgraph cluster_b2 { label="always_ff @ line 156"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:colpart_q" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="colpart_q\n[AW-1:0] x [B]"];
+    "sig:rowpart_q" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="rowpart_q\n[AW-1:0] x [B]"];
+    "sig:tsx_q" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="tsx_q\n[SELW-1:0] x [TAPS]"];
+    "sig:tsx_qq" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="tsx_qq\n[SELW-1:0] x [TAPS]"];
+    "sig:tsy_q" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="tsy_q\n[SELW-1:0] x [TAPS]"];
+    "sig:tsy_qq" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="tsy_qq\n[SELW-1:0] x [TAPS]"];
+  }
+  subgraph cluster_b3 { label="always_ff @ line 180"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:bank_q" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="bank_q\n[PIX_W-1:0] x [B][B]"];
+    "sig:mem" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="mem\n[PIX_W-1:0] x [DALL]"];
+  }
+  "in:img_h" -> "sig:hi_y";
+  "in:img_h" -> "sig:lo_y";
+  "in:img_h" -> "sig:tsy";
+  "in:img_w" -> "sig:hi_x";
+  "in:img_w" -> "sig:lo_x";
+  "in:img_w" -> "sig:tsx";
+  "in:rd_adv" -> "sig:bank_q";
+  "in:rd_adv" -> "sig:colpart_q";
+  "in:rd_adv" -> "sig:rowpart_q";
+  "in:rd_adv" -> "sig:tsx_q";
+  "in:rd_adv" -> "sig:tsx_qq";
+  "in:rd_adv" -> "sig:tsy_q";
+  "in:rd_adv" -> "sig:tsy_qq";
+  "in:rd_buf" -> "sig:rowpart_q";
+  "in:rd_x0" -> "sig:hi_x";
+  "in:rd_x0" -> "sig:lo_x";
+  "in:rd_x0" -> "sig:tsx";
+  "in:rd_y0" -> "sig:hi_y";
+  "in:rd_y0" -> "sig:lo_y";
+  "in:rd_y0" -> "sig:tsy";
+  "in:wr_buf" -> "sig:waddr";
+  "in:wr_data" -> "sig:wdat";
+  "in:wr_en" -> "sig:wen";
+  "in:wr_x" -> "sig:waddr";
+  "in:wr_x" -> "sig:wbx";
+  "in:wr_y" -> "sig:waddr";
+  "in:wr_y" -> "sig:wby";
+  "sig:bank_q" -> "out:rd_win";
+  "sig:bcx" -> "sig:colpart_q";
+  "sig:bcy" -> "sig:rowpart_q";
+  "sig:c" -> "sig:bcx";
+  "sig:c" -> "sig:bcy";
+  "sig:colpart_q" -> "sig:bank_q";
+  "sig:hi_x" -> "sig:bcx";
+  "sig:hi_y" -> "sig:bcy";
+  "sig:lo_x" -> "sig:c";
+  "sig:lo_y" -> "sig:c";
+  "sig:mem" -> "sig:bank_q";
+  "sig:rowpart_q" -> "sig:bank_q";
+  "sig:tsx" -> "sig:tsx_q";
+  "sig:tsx_q" -> "sig:tsx_qq";
+  "sig:tsx_qq" -> "out:rd_win";
+  "sig:tsy" -> "sig:tsy_q";
+  "sig:tsy_q" -> "sig:tsy_qq";
+  "sig:tsy_qq" -> "out:rd_win";
+  "sig:waddr" -> "sig:mem";
+  "sig:wbx" -> "sig:mem";
+  "sig:wby" -> "sig:mem";
+  "sig:wdat" -> "sig:mem";
+  "sig:wen" -> "sig:mem";
+}

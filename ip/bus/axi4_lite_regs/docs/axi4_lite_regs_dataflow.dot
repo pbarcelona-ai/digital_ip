@@ -1,0 +1,60 @@
+digraph "axi4_lite_regs_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>axi4_lite_regs</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/bus/axi4_lite_regs/src/axi4_lite_regs.sv; clocks / resets (not drawn): aclk, aresetn<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:hw_i" "in:hw_set_i" "in:s_axil_*" }
+    "in:hw_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="hw_i\n[32*NREG-1:0]"];
+    "in:hw_set_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="hw_set_i\n[32*NREG-1:0]"];
+    "in:s_axil_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_axil_*\ns_axil_awaddr\ns_axil_awvalid\ns_axil_wdata\ns_axil_wstrb\ns_axil_wvalid\ns_axil_bready\ns_axil_araddr\ns_axil_arvalid\ns_axil_rready"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:reg_o" "out:wr_pulse_o" }
+    "out:reg_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="reg_o\n[32*NREG-1:0]"];
+    "out:wr_pulse_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="wr_pulse_o\n[NREG-1:0]"];
+  }
+  subgraph cluster_b0 { label="always_comb @ line 59"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:bmask" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="bmask\n[31:0]"];
+  }
+  subgraph cluster_b1 { label="always_comb @ line 84"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:rdd" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="rdd\n[31:0]"];
+  }
+  subgraph cluster_b2 { label="always_ff @ line 61"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:wr_err" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="wr_err"];
+  }
+  "sig:ra" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="ra\n[ADDR_W-1:0]"];
+  "sig:rd_en" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="rd_en"];
+  "sig:ridx" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="ridx\n[$clog2(NREG>1?NREG:2)-1:0]"];
+  "sig:wa" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="wa\n[ADDR_W-1:0]"];
+  "sig:wd" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="wd\n[31:0]"];
+  "sig:widx" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="widx\n[$clog2(NREG>1?NREG:2)-1:0]"];
+  "sig:wr_en" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="wr_en"];
+  "sig:ws" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="ws\n[3:0]"];
+  "inst:u_slave" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>axi4_lite_slave</B><BR/><FONT COLOR="#4b5563">u_slave</FONT>>];
+  "in:hw_i" -> "sig:rdd";
+  "in:hw_set_i" -> "out:reg_o";
+  "inst:u_slave" -> "sig:ra";
+  "inst:u_slave" -> "sig:rd_en";
+  "inst:u_slave" -> "sig:wa";
+  "inst:u_slave" -> "sig:wd";
+  "inst:u_slave" -> "sig:wr_en";
+  "inst:u_slave" -> "sig:ws";
+  "out:reg_o" -> "out:reg_o";
+  "out:reg_o" -> "sig:rdd";
+  "sig:bmask" -> "out:reg_o";
+  "sig:ra" -> "sig:ridx";
+  "sig:rdd" -> "inst:u_slave";
+  "sig:ridx" -> "sig:rdd";
+  "sig:wa" -> "sig:widx";
+  "sig:wd" -> "out:reg_o";
+  "sig:widx" -> "out:reg_o";
+  "sig:widx" -> "out:wr_pulse_o";
+  "sig:widx" -> "sig:wr_err";
+  "sig:wr_en" -> "out:reg_o";
+  "sig:wr_en" -> "out:wr_pulse_o";
+  "sig:wr_en" -> "sig:wr_err";
+  "sig:wr_err" -> "inst:u_slave";
+  "sig:ws" -> "sig:bmask";
+  "in:s_axil_*" -> "inst:u_slave" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Lite
+s_axil_* (17)"];
+}

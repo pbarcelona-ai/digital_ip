@@ -1,0 +1,40 @@
+digraph "fallthrough_fifo_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>fallthrough_fifo</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/fifo/fallthrough_fifo/src/fallthrough_fifo.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:m_ready_i" "in:s_data_i" "in:s_valid_i" }
+    "in:m_ready_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="m_ready_i"];
+    "in:s_data_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_data_i\n[WIDTH-1:0]"];
+    "in:s_valid_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_valid_i"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:level_o" "out:m_data_o" "out:m_valid_o" "out:s_ready_o" }
+    "out:level_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="level_o\n[$clog2(DEPTH):0]"];
+    "out:m_data_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="m_data_o\n[WIDTH-1:0]"];
+    "out:m_valid_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="m_valid_o"];
+    "out:s_ready_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="s_ready_o"];
+  }
+  subgraph cluster_b0 { label="always_ff @ line 38"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:mem" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="mem\n[WIDTH-1:0] x [0:DEPTH-1]"];
+    "sig:rptr" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="rptr\n[AW:0]"];
+    "sig:wptr" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="wptr\n[AW:0]"];
+  }
+  "in:m_ready_i" -> "sig:rptr";
+  "in:s_data_i" -> "sig:mem";
+  "in:s_valid_i" -> "sig:mem";
+  "in:s_valid_i" -> "sig:wptr";
+  "out:level_o" -> "out:s_ready_o";
+  "out:m_valid_o" -> "sig:rptr";
+  "out:s_ready_o" -> "sig:mem";
+  "out:s_ready_o" -> "sig:wptr";
+  "sig:mem" -> "out:m_data_o";
+  "sig:rptr" -> "out:level_o";
+  "sig:rptr" -> "out:m_data_o";
+  "sig:rptr" -> "out:m_valid_o";
+  "sig:rptr" -> "sig:rptr";
+  "sig:wptr" -> "out:level_o";
+  "sig:wptr" -> "out:m_valid_o";
+  "sig:wptr" -> "sig:mem";
+  "sig:wptr" -> "sig:wptr";
+}

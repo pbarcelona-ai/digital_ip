@@ -1,0 +1,57 @@
+digraph "lvds_tx_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>lvds_tx</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/video/lvds_tx/src/lvds_tx.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:bpp18_i" "in:de_i" "in:dual_i" "in:hs_i" "in:jeida_i" "in:rgb_i" "in:vs_i" }
+    "in:bpp18_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="bpp18_i"];
+    "in:de_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="de_i"];
+    "in:dual_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="dual_i"];
+    "in:hs_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="hs_i"];
+    "in:jeida_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="jeida_i"];
+    "in:rgb_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="rgb_i\n[23:0]"];
+    "in:vs_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="vs_i"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:clk_word_o" "out:link_a_o" "out:link_b_o" "out:stb_o" }
+    "out:clk_word_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="clk_word_o\n[6:0]"];
+    "out:link_a_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="link_a_o\n[27:0]"];
+    "out:link_b_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="link_b_o\n[27:0]"];
+    "out:stb_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="stb_o"];
+  }
+  subgraph cluster_b0 { label="always_ff @ line 62"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:first_de" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="first_de"];
+    "sig:first_px" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="first_px\n[23:0]"];
+    "sig:ph" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="ph"];
+  }
+  "const:clk_word_o" [shape=plaintext, fontcolor="#6b7280", fontsize=8, label="constant"];
+  "const:clk_word_o" -> "out:clk_word_o";
+  "in:bpp18_i" -> "out:link_a_o";
+  "in:bpp18_i" -> "out:link_b_o";
+  "in:de_i" -> "out:link_a_o";
+  "in:de_i" -> "out:link_b_o";
+  "in:de_i" -> "sig:first_de";
+  "in:dual_i" -> "out:link_a_o";
+  "in:dual_i" -> "out:link_b_o";
+  "in:dual_i" -> "out:stb_o";
+  "in:dual_i" -> "sig:first_de";
+  "in:dual_i" -> "sig:first_px";
+  "in:dual_i" -> "sig:ph";
+  "in:hs_i" -> "out:link_a_o";
+  "in:hs_i" -> "out:link_b_o";
+  "in:jeida_i" -> "out:link_a_o";
+  "in:jeida_i" -> "out:link_b_o";
+  "in:rgb_i" -> "out:link_a_o";
+  "in:rgb_i" -> "out:link_b_o";
+  "in:rgb_i" -> "sig:first_px";
+  "in:vs_i" -> "out:link_a_o";
+  "in:vs_i" -> "out:link_b_o";
+  "sig:first_de" -> "out:link_a_o";
+  "sig:first_px" -> "out:link_a_o";
+  "sig:ph" -> "out:link_a_o";
+  "sig:ph" -> "out:link_b_o";
+  "sig:ph" -> "out:stb_o";
+  "sig:ph" -> "sig:first_de";
+  "sig:ph" -> "sig:first_px";
+  "sig:ph" -> "sig:ph";
+}

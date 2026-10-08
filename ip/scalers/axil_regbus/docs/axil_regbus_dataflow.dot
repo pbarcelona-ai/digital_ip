@@ -1,0 +1,75 @@
+digraph "axil_regbus_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>axil_regbus</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/scalers/axil_regbus/src/axil_regbus.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:reg_rdata" "in:s_axil_*" }
+    "in:reg_rdata" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="reg_rdata\n[DATA_W-1:0]"];
+    "in:s_axil_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_axil_*\ns_axil_awaddr\ns_axil_awvalid\ns_axil_wdata\ns_axil_wstrb\ns_axil_wvalid\ns_axil_bready\ns_axil_araddr\ns_axil_arvalid\ns_axil_rready"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:reg_raddr" "out:reg_rd" "out:reg_waddr" "out:reg_wdata" "out:reg_wr" "out:reg_wstrb" "out:s_axil_*" }
+    "out:reg_raddr" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="reg_raddr\n[ADDR_W-1:0]"];
+    "out:reg_rd" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="reg_rd"];
+    "out:reg_waddr" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="reg_waddr\n[ADDR_W-1:0]"];
+    "out:reg_wdata" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="reg_wdata\n[DATA_W-1:0]"];
+    "out:reg_wr" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="reg_wr"];
+    "out:reg_wstrb" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="reg_wstrb\n[DATA_W/8-1:0]"];
+    "out:s_axil_*" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="s_axil_*\ns_axil_awready\ns_axil_wready\ns_axil_bresp\ns_axil_bvalid\ns_axil_arready\ns_axil_rdata\ns_axil_rresp\ns_axil_rvalid"];
+  }
+  subgraph cluster_b0 { label="always_ff @ line 117"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:rd_d" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="rd_d"];
+    "sig:rd_pend" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="rd_pend"];
+  }
+  subgraph cluster_b1 { label="always_ff @ line 66"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:aw_held" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="aw_held"];
+    "sig:awaddr_q" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="awaddr_q\n[ADDR_W-1:0]"];
+    "sig:w_held" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="w_held"];
+    "sig:wdata_q" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="wdata_q\n[DATA_W-1:0]"];
+    "sig:wstrb_q" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="wstrb_q\n[DATA_W/8-1:0]"];
+  }
+  "in:reg_rdata" -> "out:s_axil_*";
+  "in:s_axil_*" -> "out:reg_raddr";
+  "in:s_axil_*" -> "out:reg_rd";
+  "in:s_axil_*" -> "out:s_axil_*";
+  "in:s_axil_*" -> "sig:aw_held";
+  "in:s_axil_*" -> "sig:awaddr_q";
+  "in:s_axil_*" -> "sig:rd_pend";
+  "in:s_axil_*" -> "sig:w_held";
+  "in:s_axil_*" -> "sig:wdata_q";
+  "in:s_axil_*" -> "sig:wstrb_q";
+  "out:reg_rd" -> "sig:rd_d";
+  "out:s_axil_*" -> "out:reg_raddr";
+  "out:s_axil_*" -> "out:reg_rd";
+  "out:s_axil_*" -> "out:reg_waddr";
+  "out:s_axil_*" -> "out:reg_wdata";
+  "out:s_axil_*" -> "out:reg_wr";
+  "out:s_axil_*" -> "out:reg_wstrb";
+  "out:s_axil_*" -> "out:s_axil_*";
+  "out:s_axil_*" -> "sig:aw_held";
+  "out:s_axil_*" -> "sig:awaddr_q";
+  "out:s_axil_*" -> "sig:rd_pend";
+  "out:s_axil_*" -> "sig:w_held";
+  "out:s_axil_*" -> "sig:wdata_q";
+  "out:s_axil_*" -> "sig:wstrb_q";
+  "sig:aw_held" -> "out:reg_waddr";
+  "sig:aw_held" -> "out:reg_wdata";
+  "sig:aw_held" -> "out:reg_wr";
+  "sig:aw_held" -> "out:reg_wstrb";
+  "sig:aw_held" -> "out:s_axil_*";
+  "sig:aw_held" -> "sig:aw_held";
+  "sig:aw_held" -> "sig:w_held";
+  "sig:awaddr_q" -> "out:reg_waddr";
+  "sig:rd_d" -> "out:s_axil_*";
+  "sig:rd_d" -> "sig:rd_pend";
+  "sig:rd_pend" -> "out:s_axil_*";
+  "sig:w_held" -> "out:reg_waddr";
+  "sig:w_held" -> "out:reg_wdata";
+  "sig:w_held" -> "out:reg_wr";
+  "sig:w_held" -> "out:reg_wstrb";
+  "sig:w_held" -> "out:s_axil_*";
+  "sig:w_held" -> "sig:aw_held";
+  "sig:w_held" -> "sig:w_held";
+  "sig:wdata_q" -> "out:reg_wdata";
+  "sig:wstrb_q" -> "out:reg_wstrb";
+}

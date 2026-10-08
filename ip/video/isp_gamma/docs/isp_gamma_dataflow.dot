@@ -1,0 +1,61 @@
+digraph "isp_gamma_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>isp_gamma</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/video/isp_gamma/src/isp_gamma.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:bypass_i" "in:lut_addr_i" "in:lut_data_i" "in:lut_we_i" "in:m_axis_*" "in:s_axis_*" }
+    "in:bypass_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="bypass_i"];
+    "in:lut_addr_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="lut_addr_i\n[IN_W-1:0]"];
+    "in:lut_data_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="lut_data_i\n[OUT_W-1:0]"];
+    "in:lut_we_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="lut_we_i"];
+    "in:m_axis_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="m_axis_tready"];
+    "in:s_axis_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_axis_*\ns_axis_tdata\ns_axis_tlast\ns_axis_tuser\ns_axis_tvalid"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:m_axis_*" "out:s_axis_*" }
+    "out:m_axis_*" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="m_axis_*\nm_axis_tdata\nm_axis_tlast\nm_axis_tuser\nm_axis_tvalid"];
+    "out:s_axis_*" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="s_axis_tready"];
+  }
+  subgraph cluster_b0 { label="always_ff @ line 48"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:lut_q" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="lut_q\n[3*OUT_W-1:0]"];
+  }
+  subgraph cluster_b1 { label="always_ff @ line 54"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:by_f" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="by_f"];
+    "sig:by_q" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="by_q"];
+    "sig:lin_q" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="lin_q\n[3*OUT_W-1:0]"];
+  }
+  subgraph cluster_b2 { label="initial @ line 47"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:mem" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="mem\n[OUT_W-1:0] x [2**IN_W]"];
+  }
+  "sig:acc" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="acc"];
+  "sig:by" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="by"];
+  "sig:en" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="en"];
+  "in:bypass_i" -> "sig:by";
+  "in:bypass_i" -> "sig:by_f";
+  "in:lut_addr_i" -> "sig:mem";
+  "in:lut_data_i" -> "sig:mem";
+  "in:lut_we_i" -> "sig:mem";
+  "in:m_axis_*" -> "sig:en";
+  "in:s_axis_*" -> "out:m_axis_*";
+  "in:s_axis_*" -> "sig:acc";
+  "in:s_axis_*" -> "sig:by";
+  "in:s_axis_*" -> "sig:by_f";
+  "in:s_axis_*" -> "sig:lin_q";
+  "in:s_axis_*" -> "sig:lut_q";
+  "out:m_axis_*" -> "sig:en";
+  "sig:acc" -> "out:m_axis_*";
+  "sig:acc" -> "sig:by_f";
+  "sig:by" -> "sig:by_q";
+  "sig:by_f" -> "sig:by";
+  "sig:by_q" -> "out:m_axis_*";
+  "sig:en" -> "out:m_axis_*";
+  "sig:en" -> "out:s_axis_*";
+  "sig:en" -> "sig:acc";
+  "sig:en" -> "sig:by_f";
+  "sig:en" -> "sig:by_q";
+  "sig:en" -> "sig:lin_q";
+  "sig:en" -> "sig:lut_q";
+  "sig:lin_q" -> "out:m_axis_*";
+  "sig:lut_q" -> "out:m_axis_*";
+  "sig:mem" -> "sig:lut_q";
+}

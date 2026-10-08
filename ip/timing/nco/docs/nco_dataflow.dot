@@ -1,0 +1,40 @@
+digraph "nco_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>nco</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/timing/nco/src/nco.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:ce_i" "in:phase_load_i" "in:phase_off_i" "in:sync_load_i" "in:tuning_i" }
+    "in:ce_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="ce_i"];
+    "in:phase_load_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="phase_load_i\n[PHASE_W-1:0]"];
+    "in:phase_off_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="phase_off_i\n[PHASE_W-1:0]"];
+    "in:sync_load_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="sync_load_i"];
+    "in:tuning_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="tuning_i\n[PHASE_W-1:0]"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:carry_o" "out:msb_o" "out:nyquist_o" "out:phase_o" }
+    "out:carry_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="carry_o"];
+    "out:msb_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="msb_o"];
+    "out:nyquist_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="nyquist_o"];
+    "out:phase_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="phase_o\n[PHASE_W-1:0]"];
+  }
+  subgraph cluster_b0 { label="always_ff @ line 38"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:acc" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="acc\n[PHASE_W-1:0]"];
+  }
+  "sig:sum" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="sum\n[PHASE_W:0]"];
+  "in:ce_i" -> "out:carry_o";
+  "in:ce_i" -> "out:phase_o";
+  "in:ce_i" -> "sig:acc";
+  "in:phase_load_i" -> "out:phase_o";
+  "in:phase_load_i" -> "sig:acc";
+  "in:phase_off_i" -> "out:phase_o";
+  "in:sync_load_i" -> "out:carry_o";
+  "in:sync_load_i" -> "out:phase_o";
+  "in:sync_load_i" -> "sig:acc";
+  "in:tuning_i" -> "out:nyquist_o";
+  "in:tuning_i" -> "sig:sum";
+  "sig:acc" -> "out:msb_o";
+  "sig:acc" -> "sig:sum";
+  "sig:sum" -> "out:carry_o";
+  "sig:sum" -> "out:phase_o";
+  "sig:sum" -> "sig:acc";
+}

@@ -1,0 +1,50 @@
+digraph "rate_limiter_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>rate_limiter</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/timing/rate_limiter/src/rate_limiter.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:burst_i" "in:m_ready_i" "in:refill_period_i" "in:s_data_i" "in:s_valid_i" }
+    "in:burst_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="burst_i\n[TOKEN_W-1:0]"];
+    "in:m_ready_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="m_ready_i"];
+    "in:refill_period_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="refill_period_i\n[PERIOD_W-1:0]"];
+    "in:s_data_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_data_i\n[DATA_W-1:0]"];
+    "in:s_valid_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_valid_i"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:m_data_o" "out:m_valid_o" "out:s_ready_o" "out:tokens_o" }
+    "out:m_data_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="m_data_o\n[DATA_W-1:0]"];
+    "out:m_valid_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="m_valid_o"];
+    "out:s_ready_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="s_ready_o"];
+    "out:tokens_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="tokens_o\n[TOKEN_W-1:0]"];
+  }
+  subgraph cluster_b0 { label="always_ff @ line 42"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:pc" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="pc\n[PERIOD_W-1:0]"];
+    "sig:tok" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="tok\n[TOKEN_W-1:0]"];
+  }
+  "sig:have_tok" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="have_tok"];
+  "sig:refill" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="refill"];
+  "sig:unlimited" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="unlimited"];
+  "sig:xfer" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="xfer"];
+  "in:burst_i" -> "sig:tok";
+  "in:m_ready_i" -> "out:s_ready_o";
+  "in:refill_period_i" -> "sig:refill";
+  "in:refill_period_i" -> "sig:unlimited";
+  "in:s_data_i" -> "out:m_data_o";
+  "in:s_valid_i" -> "out:m_valid_o";
+  "in:s_valid_i" -> "sig:xfer";
+  "out:s_ready_o" -> "sig:xfer";
+  "sig:have_tok" -> "out:m_valid_o";
+  "sig:have_tok" -> "out:s_ready_o";
+  "sig:pc" -> "sig:pc";
+  "sig:pc" -> "sig:refill";
+  "sig:refill" -> "sig:pc";
+  "sig:refill" -> "sig:tok";
+  "sig:tok" -> "out:tokens_o";
+  "sig:tok" -> "sig:have_tok";
+  "sig:tok" -> "sig:tok";
+  "sig:unlimited" -> "sig:have_tok";
+  "sig:unlimited" -> "sig:pc";
+  "sig:unlimited" -> "sig:refill";
+  "sig:unlimited" -> "sig:tok";
+  "sig:xfer" -> "sig:tok";
+}

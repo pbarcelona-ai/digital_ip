@@ -1,0 +1,69 @@
+digraph "checksum_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>checksum</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/integrity/checksum/src/checksum.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:byte_i" "in:init_i" "in:valid_i" }
+    "in:byte_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="byte_i\n[7:0]"];
+    "in:init_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="init_i"];
+    "in:valid_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="valid_i"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:checksum_o" "out:ok_o" }
+    "out:checksum_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="checksum_o\n[15:0]"];
+    "out:ok_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="ok_o"];
+  }
+  subgraph cluster_b0 { label="always_ff @ line 42"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:f1" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="f1\n[7:0]"];
+    "sig:f2" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="f2\n[7:0]"];
+    "sig:hold" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="hold\n[7:0]"];
+    "sig:odd" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="odd"];
+    "sig:s16" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="s16\n[16:0]"];
+    "sig:s8" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="s8\n[7:0]"];
+  }
+  "sig:n1" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="n1\n[8:0]"];
+  "sig:n1_raw" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="n1_raw\n[8:0]"];
+  "sig:n2" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="n2\n[9:0]"];
+  "sig:n2_raw" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="n2_raw\n[9:0]"];
+  "sig:ones_sum" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="ones_sum\n[15:0]"];
+  "in:byte_i" -> "sig:hold";
+  "in:byte_i" -> "sig:n1_raw";
+  "in:byte_i" -> "sig:s16";
+  "in:byte_i" -> "sig:s8";
+  "in:init_i" -> "sig:f1";
+  "in:init_i" -> "sig:f2";
+  "in:init_i" -> "sig:hold";
+  "in:init_i" -> "sig:odd";
+  "in:init_i" -> "sig:s16";
+  "in:init_i" -> "sig:s8";
+  "in:valid_i" -> "sig:f1";
+  "in:valid_i" -> "sig:f2";
+  "in:valid_i" -> "sig:hold";
+  "in:valid_i" -> "sig:odd";
+  "in:valid_i" -> "sig:s16";
+  "in:valid_i" -> "sig:s8";
+  "sig:f1" -> "out:checksum_o";
+  "sig:f1" -> "out:ok_o";
+  "sig:f1" -> "sig:n1_raw";
+  "sig:f2" -> "out:checksum_o";
+  "sig:f2" -> "out:ok_o";
+  "sig:f2" -> "sig:n2_raw";
+  "sig:hold" -> "sig:ones_sum";
+  "sig:hold" -> "sig:s16";
+  "sig:n1" -> "sig:f1";
+  "sig:n1" -> "sig:n2_raw";
+  "sig:n1_raw" -> "sig:n1";
+  "sig:n2" -> "sig:f2";
+  "sig:n2_raw" -> "sig:n2";
+  "sig:odd" -> "sig:hold";
+  "sig:odd" -> "sig:odd";
+  "sig:odd" -> "sig:ones_sum";
+  "sig:odd" -> "sig:s16";
+  "sig:ones_sum" -> "out:checksum_o";
+  "sig:ones_sum" -> "out:ok_o";
+  "sig:s16" -> "sig:ones_sum";
+  "sig:s16" -> "sig:s16";
+  "sig:s8" -> "out:checksum_o";
+  "sig:s8" -> "out:ok_o";
+  "sig:s8" -> "sig:s8";
+}

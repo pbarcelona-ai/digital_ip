@@ -1,0 +1,65 @@
+digraph "true_dual_port_ram_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>true_dual_port_ram</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/memory/true_dual_port_ram/src/true_dual_port_ram.sv; clocks / resets (not drawn): clk_a, clk_b<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:addr_a_i" "in:addr_b_i" "in:en_a_i" "in:en_b_i" "in:rst_a_n" "in:rst_b_n" "in:wdata_a_i" "in:wdata_b_i" "in:we_a_i" "in:we_b_i" }
+    "in:addr_a_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="addr_a_i\n[$clog2(DEPTH)-1:0]"];
+    "in:addr_b_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="addr_b_i\n[$clog2(DEPTH)-1:0]"];
+    "in:en_a_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="en_a_i"];
+    "in:en_b_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="en_b_i"];
+    "in:rst_a_n" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="rst_a_n"];
+    "in:rst_b_n" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="rst_b_n"];
+    "in:wdata_a_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="wdata_a_i\n[WIDTH-1:0]"];
+    "in:wdata_b_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="wdata_b_i\n[WIDTH-1:0]"];
+    "in:we_a_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="we_a_i"];
+    "in:we_b_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="we_b_i"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:rdata_a_o" "out:rdata_b_o" "out:wr_conflict_o" }
+    "out:rdata_a_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="rdata_a_o\n[WIDTH-1:0]"];
+    "out:rdata_b_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="rdata_b_o\n[WIDTH-1:0]"];
+    "out:wr_conflict_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="wr_conflict_o"];
+  }
+  subgraph cluster_b0 { label="always_ff @ line 41"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:mem" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="mem\n[WIDTH-1:0] x [0:DEPTH-1]"];
+    "sig:qa" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="qa\n[WIDTH-1:0]"];
+  }
+  subgraph cluster_b1 { label="always_ff @ line 46"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:qb" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="qb\n[WIDTH-1:0]"];
+  }
+  subgraph cluster_b2 { label="always_ff @ line 50"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:va" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="va"];
+  }
+  subgraph cluster_b3 { label="always_ff @ line 51"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:vb" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="vb"];
+  }
+  "in:addr_a_i" -> "out:wr_conflict_o";
+  "in:addr_a_i" -> "sig:mem";
+  "in:addr_a_i" -> "sig:qa";
+  "in:addr_b_i" -> "out:wr_conflict_o";
+  "in:addr_b_i" -> "sig:mem";
+  "in:addr_b_i" -> "sig:qb";
+  "in:en_a_i" -> "out:wr_conflict_o";
+  "in:en_a_i" -> "sig:mem";
+  "in:en_a_i" -> "sig:qa";
+  "in:en_a_i" -> "sig:va";
+  "in:en_b_i" -> "out:wr_conflict_o";
+  "in:en_b_i" -> "sig:mem";
+  "in:en_b_i" -> "sig:qb";
+  "in:en_b_i" -> "sig:vb";
+  "in:rst_a_n" -> "sig:va";
+  "in:rst_b_n" -> "sig:vb";
+  "in:wdata_a_i" -> "sig:mem";
+  "in:wdata_b_i" -> "sig:mem";
+  "in:we_a_i" -> "out:wr_conflict_o";
+  "in:we_a_i" -> "sig:mem";
+  "in:we_b_i" -> "out:wr_conflict_o";
+  "in:we_b_i" -> "sig:mem";
+  "sig:mem" -> "sig:qa";
+  "sig:mem" -> "sig:qb";
+  "sig:qa" -> "out:rdata_a_o";
+  "sig:qb" -> "out:rdata_b_o";
+  "sig:va" -> "out:rdata_a_o";
+  "sig:vb" -> "out:rdata_b_o";
+}

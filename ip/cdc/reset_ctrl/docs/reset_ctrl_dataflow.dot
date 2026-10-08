@@ -1,0 +1,71 @@
+digraph "reset_ctrl_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>ip_reset_sync_top</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/cdc/reset_ctrl/src/ip_reset_sync_top.sv; clocks / resets (not drawn): aclk<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:arst_i" "in:s_axil_*" }
+    "in:arst_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="arst_i"];
+    "in:s_axil_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_axil_*\ns_axil_awaddr\ns_axil_awvalid\ns_axil_wdata\ns_axil_wstrb\ns_axil_wvalid\ns_axil_bready\ns_axil_araddr\ns_axil_arvalid\ns_axil_rready"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:bus_rst_n_o" "out:rst_o" }
+    "out:bus_rst_n_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="bus_rst_n_o"];
+    "out:rst_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="rst_o\n[NUM_OUT-1:0]"];
+  }
+  subgraph cluster_b0 { label="always_ff @ line 103"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:act_d" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="act_d"];
+    "sig:evt_cnt" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="evt_cnt\n[31:0]"];
+    "sig:seen" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="seen"];
+  }
+  subgraph cluster_b1 { label="always_ff @ line 77"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:soft_req" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="soft_req"];
+  }
+  "sig:act" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="act\n[NUM_OUT-1:0]"];
+  "sig:bus_active" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="bus_active"];
+  "sig:comb_req" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="comb_req"];
+  "sig:ext_req" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="ext_req"];
+  "sig:main_active" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="main_active"];
+  "sig:rd" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="rd\n[4*32-1:0]"];
+  "sig:regs" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="regs\n[4*32-1:0]"];
+  "sig:wr_data" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="wr_data\n[31:0]"];
+  "sig:wr_pulse" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="wr_pulse\n[3:0]"];
+  "inst:u_bus_sync" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>rst_sync</B><BR/><FONT COLOR="#4b5563">u_bus_sync</FONT>>];
+  "inst:u_regs" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>ip_axil_regs</B><BR/><FONT COLOR="#4b5563">u_regs</FONT>>];
+  "inst:u_s" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>rst_sync</B><BR/><FONT COLOR="#4b5563">u_s</FONT>>];
+  "in:arst_i" -> "inst:u_bus_sync";
+  "in:arst_i" -> "sig:ext_req";
+  "inst:u_bus_sync" -> "out:bus_rst_n_o";
+  "inst:u_bus_sync" -> "sig:bus_active";
+  "inst:u_regs" -> "sig:regs";
+  "inst:u_regs" -> "sig:wr_data";
+  "inst:u_regs" -> "sig:wr_pulse";
+  "inst:u_s" -> "out:rst_o";
+  "inst:u_s" -> "sig:act";
+  "out:bus_rst_n_o" -> "inst:u_regs";
+  "out:bus_rst_n_o" -> "sig:act_d";
+  "out:bus_rst_n_o" -> "sig:evt_cnt";
+  "out:bus_rst_n_o" -> "sig:seen";
+  "out:bus_rst_n_o" -> "sig:soft_req";
+  "sig:act" -> "sig:main_active";
+  "sig:act_d" -> "sig:evt_cnt";
+  "sig:act_d" -> "sig:seen";
+  "sig:comb_req" -> "inst:u_s";
+  "sig:evt_cnt" -> "sig:evt_cnt";
+  "sig:evt_cnt" -> "sig:rd";
+  "sig:ext_req" -> "sig:comb_req";
+  "sig:main_active" -> "sig:act_d";
+  "sig:main_active" -> "sig:evt_cnt";
+  "sig:main_active" -> "sig:rd";
+  "sig:main_active" -> "sig:seen";
+  "sig:rd" -> "inst:u_regs";
+  "sig:regs" -> "inst:u_s";
+  "sig:regs" -> "sig:rd";
+  "sig:seen" -> "sig:rd";
+  "sig:soft_req" -> "sig:comb_req";
+  "sig:wr_data" -> "sig:seen";
+  "sig:wr_data" -> "sig:soft_req";
+  "sig:wr_pulse" -> "sig:seen";
+  "sig:wr_pulse" -> "sig:soft_req";
+  "in:s_axil_*" -> "inst:u_regs" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Lite
+s_axil_* (17)"];
+}

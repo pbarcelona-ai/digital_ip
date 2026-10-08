@@ -1,0 +1,111 @@
+digraph "async_fifo_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>async_fifo</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/fifo/async_fifo/src/async_fifo.sv; clocks / resets (not drawn): rclk, wclk<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:rready" "in:rrst_n" "in:wdata" "in:wrst_n" "in:wvalid" }
+    "in:rready" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="rready"];
+    "in:rrst_n" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="rrst_n"];
+    "in:wdata" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="wdata\n[DATA_W-1:0]"];
+    "in:wrst_n" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="wrst_n"];
+    "in:wvalid" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="wvalid"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:rdata" "out:rvalid" "out:wlevel_o" "out:wready" }
+    "out:rdata" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="rdata\n[DATA_W-1:0]"];
+    "out:rvalid" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="rvalid"];
+    "out:wlevel_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="wlevel_o\n[$clog2(DEPTH):0]"];
+    "out:wready" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="wready"];
+  }
+  subgraph cluster_b0 { label="always_ff @ line 52"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:wbin" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="wbin\n[AW:0]"];
+    "sig:wfull" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="wfull"];
+    "sig:wgray" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="wgray\n[AW:0]"];
+  }
+  subgraph cluster_b1 { label="always_ff @ line 60"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:mem" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="mem\n[DATA_W-1:0] x [0:DEPTH-1]"];
+  }
+  subgraph cluster_b2 { label="always_ff @ line 61"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:rgray_s1" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="rgray_s1\n[AW:0]"];
+    "sig:rgray_s2" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="rgray_s2\n[AW:0]"];
+  }
+  subgraph cluster_b3 { label="always_ff @ line 75"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:mem_q_vld" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="mem_q_vld"];
+    "sig:o_vld" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="o_vld"];
+    "sig:rbin" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="rbin\n[AW:0]"];
+    "sig:rempty" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="rempty"];
+    "sig:rgray" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="rgray\n[AW:0]"];
+    "sig:wgray_s1" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="wgray_s1\n[AW:0]"];
+    "sig:wgray_s2" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="wgray_s2\n[AW:0]"];
+  }
+  subgraph cluster_b4 { label="always_ff @ line 87"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:mem_q" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="mem_q\n[DATA_W-1:0]"];
+  }
+  subgraph cluster_b5 { label="always_ff @ line 88"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:o_q" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="o_q\n[DATA_W-1:0]"];
+  }
+  "sig:move" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="move"];
+  "sig:rbin_n" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="rbin_n\n[AW:0]"];
+  "sig:rd_en" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="rd_en"];
+  "sig:rgray_n" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="rgray_n\n[AW:0]"];
+  "sig:wbin_n" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="wbin_n\n[AW:0]"];
+  "sig:wen" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="wen"];
+  "sig:wgray_n" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="wgray_n\n[AW:0]"];
+  "in:rready" -> "sig:move";
+  "in:rready" -> "sig:o_vld";
+  "in:rrst_n" -> "sig:mem_q_vld";
+  "in:rrst_n" -> "sig:o_vld";
+  "in:rrst_n" -> "sig:rbin";
+  "in:rrst_n" -> "sig:rempty";
+  "in:rrst_n" -> "sig:rgray";
+  "in:rrst_n" -> "sig:wgray_s1";
+  "in:rrst_n" -> "sig:wgray_s2";
+  "in:wdata" -> "sig:mem";
+  "in:wrst_n" -> "sig:rgray_s1";
+  "in:wrst_n" -> "sig:rgray_s2";
+  "in:wrst_n" -> "sig:wbin";
+  "in:wrst_n" -> "sig:wfull";
+  "in:wrst_n" -> "sig:wgray";
+  "in:wvalid" -> "sig:wen";
+  "sig:mem" -> "sig:mem_q";
+  "sig:mem_q" -> "sig:o_q";
+  "sig:mem_q_vld" -> "sig:mem_q_vld";
+  "sig:mem_q_vld" -> "sig:move";
+  "sig:mem_q_vld" -> "sig:rd_en";
+  "sig:move" -> "sig:mem_q_vld";
+  "sig:move" -> "sig:o_q";
+  "sig:move" -> "sig:o_vld";
+  "sig:move" -> "sig:rd_en";
+  "sig:o_q" -> "out:rdata";
+  "sig:o_vld" -> "out:rvalid";
+  "sig:o_vld" -> "sig:move";
+  "sig:o_vld" -> "sig:o_vld";
+  "sig:rbin" -> "sig:mem_q";
+  "sig:rbin" -> "sig:rbin_n";
+  "sig:rbin_n" -> "sig:rbin";
+  "sig:rbin_n" -> "sig:rgray_n";
+  "sig:rd_en" -> "sig:mem_q";
+  "sig:rd_en" -> "sig:mem_q_vld";
+  "sig:rd_en" -> "sig:rbin_n";
+  "sig:rempty" -> "sig:rd_en";
+  "sig:rgray" -> "sig:rgray_s1";
+  "sig:rgray_n" -> "sig:rempty";
+  "sig:rgray_n" -> "sig:rgray";
+  "sig:rgray_s1" -> "sig:rgray_s2";
+  "sig:rgray_s2" -> "out:wlevel_o";
+  "sig:rgray_s2" -> "sig:wfull";
+  "sig:wbin" -> "out:wlevel_o";
+  "sig:wbin" -> "sig:mem";
+  "sig:wbin" -> "sig:wbin_n";
+  "sig:wbin_n" -> "sig:wbin";
+  "sig:wbin_n" -> "sig:wgray_n";
+  "sig:wen" -> "sig:mem";
+  "sig:wen" -> "sig:wbin_n";
+  "sig:wfull" -> "out:wready";
+  "sig:wfull" -> "sig:wen";
+  "sig:wgray" -> "sig:wgray_s1";
+  "sig:wgray_n" -> "sig:wfull";
+  "sig:wgray_n" -> "sig:wgray";
+  "sig:wgray_s1" -> "sig:wgray_s2";
+  "sig:wgray_s2" -> "sig:rempty";
+}

@@ -1,0 +1,39 @@
+digraph "baud_generator_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>baud_generator</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/timing/baud_generator/src/baud_generator.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:en_i" "in:inc_i" "in:sync_i" "in:use_reg_i" }
+    "in:en_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="en_i"];
+    "in:inc_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="inc_i\n[ACC_W-1:0]"];
+    "in:sync_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="sync_i"];
+    "in:use_reg_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="use_reg_i"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:tick_baud_o" "out:tick_os_o" }
+    "out:tick_baud_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="tick_baud_o"];
+    "out:tick_os_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="tick_os_o"];
+  }
+  subgraph cluster_b0 { label="always_ff @ line 43"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:acc" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="acc\n[ACC_W-1:0]"];
+    "sig:osc" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="osc\n[$clog2(OVERSAMPLE>1?OVERSAMPLE:2)-1:0]"];
+  }
+  "sig:sum" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="sum\n[ACC_W:0]"];
+  "in:en_i" -> "out:tick_baud_o";
+  "in:en_i" -> "out:tick_os_o";
+  "in:en_i" -> "sig:acc";
+  "in:en_i" -> "sig:osc";
+  "in:inc_i" -> "sig:sum";
+  "in:sync_i" -> "out:tick_baud_o";
+  "in:sync_i" -> "out:tick_os_o";
+  "in:sync_i" -> "sig:acc";
+  "in:sync_i" -> "sig:osc";
+  "in:use_reg_i" -> "sig:sum";
+  "sig:acc" -> "sig:sum";
+  "sig:osc" -> "out:tick_baud_o";
+  "sig:osc" -> "sig:osc";
+  "sig:sum" -> "out:tick_baud_o";
+  "sig:sum" -> "out:tick_os_o";
+  "sig:sum" -> "sig:acc";
+  "sig:sum" -> "sig:osc";
+}

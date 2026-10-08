@@ -86,8 +86,8 @@ class ModuleDecl:
     ports: list[Port] = field(default_factory=list)
 
 
-def parse_module(src: Path, top: str) -> ModuleDecl:
-    text = src.read_text(encoding="utf-8", errors="replace").splitlines()
+def parse_module(src: Path, top: str, text: str | None = None) -> ModuleDecl:
+    text = (text if text is not None else src.read_text(encoding="utf-8", errors="replace")).splitlines()
     decl = ModuleDecl()
     start = next((i for i, l in enumerate(text) if re.match(rf"\s*module\s+{re.escape(top)}\b", l)), None)
     if start is None:

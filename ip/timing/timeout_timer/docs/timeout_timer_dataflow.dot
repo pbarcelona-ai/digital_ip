@@ -1,0 +1,34 @@
+digraph "timeout_timer_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>timeout_timer</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/timing/timeout_timer/src/timeout_timer.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:activity_i" "in:ce_i" "in:timeout_i" }
+    "in:activity_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="activity_i"];
+    "in:ce_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="ce_i"];
+    "in:timeout_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="timeout_i\n[WIDTH-1:0]"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:expired_o" "out:timeout_pulse_o" }
+    "out:expired_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="expired_o"];
+    "out:timeout_pulse_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="timeout_pulse_o"];
+  }
+  subgraph cluster_b0 { label="always_ff @ line 28"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:cnt" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="cnt\n[WIDTH-1:0]"];
+  }
+  "in:activity_i" -> "out:expired_o";
+  "in:activity_i" -> "out:timeout_pulse_o";
+  "in:activity_i" -> "sig:cnt";
+  "in:ce_i" -> "out:expired_o";
+  "in:ce_i" -> "out:timeout_pulse_o";
+  "in:ce_i" -> "sig:cnt";
+  "in:timeout_i" -> "out:expired_o";
+  "in:timeout_i" -> "out:timeout_pulse_o";
+  "in:timeout_i" -> "sig:cnt";
+  "out:expired_o" -> "out:expired_o";
+  "out:expired_o" -> "out:timeout_pulse_o";
+  "out:expired_o" -> "sig:cnt";
+  "sig:cnt" -> "out:expired_o";
+  "sig:cnt" -> "out:timeout_pulse_o";
+  "sig:cnt" -> "sig:cnt";
+}

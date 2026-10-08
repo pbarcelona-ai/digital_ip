@@ -1,0 +1,46 @@
+digraph "mulq_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>mulq_s</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from image_processing/vision_system/ip/mulq/src/mulq_s.sv; clocks / resets (not drawn): clk<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:a" "in:b" }
+    "in:a" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="a\n[31:0]"];
+    "in:b" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="b\n[31:0]"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:s" }
+    "out:s" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="s\n[47:0]"];
+  }
+  subgraph cluster_b0 { label="always_ff @ line 50"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:p_hh" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="p_hh\n[31:0]"];
+    "sig:p_hl" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="p_hl\n[32:0]"];
+    "sig:p_lh" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="p_lh\n[32:0]"];
+    "sig:p_ll" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="p_ll\n[33:0]"];
+  }
+  "sig:ah" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="ah\n[15:0]"];
+  "sig:al" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="al\n[16:0]"];
+  "sig:bh" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="bh\n[15:0]"];
+  "sig:bl" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="bl\n[16:0]"];
+  "sig:hh_sh" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="hh_sh\n[47:0]"];
+  "sig:ll_sh" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="ll_sh\n[47:0]"];
+  "sig:mid" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="mid\n[47:0]"];
+  "in:a" -> "sig:ah";
+  "in:a" -> "sig:al";
+  "in:b" -> "sig:bh";
+  "in:b" -> "sig:bl";
+  "sig:ah" -> "sig:p_hh";
+  "sig:ah" -> "sig:p_hl";
+  "sig:al" -> "sig:p_lh";
+  "sig:al" -> "sig:p_ll";
+  "sig:bh" -> "sig:p_hh";
+  "sig:bh" -> "sig:p_lh";
+  "sig:bl" -> "sig:p_hl";
+  "sig:bl" -> "sig:p_ll";
+  "sig:hh_sh" -> "out:s";
+  "sig:ll_sh" -> "out:s";
+  "sig:mid" -> "out:s";
+  "sig:p_hh" -> "sig:hh_sh";
+  "sig:p_hl" -> "sig:mid";
+  "sig:p_lh" -> "sig:mid";
+  "sig:p_ll" -> "sig:ll_sh";
+}

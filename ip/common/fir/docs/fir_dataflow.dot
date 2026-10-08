@@ -1,0 +1,46 @@
+digraph "fir_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>fir</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/common/fir/src/fir.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:coef_i" "in:coef_idx_i" "in:coef_we_i" "in:data_i" "in:valid_i" }
+    "in:coef_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="coef_i\n[COEF_W-1:0]"];
+    "in:coef_idx_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="coef_idx_i\n[$clog2(TAPS)-1:0]"];
+    "in:coef_we_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="coef_we_i"];
+    "in:data_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="data_i\n[DATA_W-1:0]"];
+    "in:valid_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="valid_i"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:data_o" "out:sat_o" "out:valid_o" }
+    "out:data_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="data_o\n[OUT_W-1:0]"];
+    "out:sat_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="sat_o"];
+    "out:valid_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="valid_o"];
+  }
+  subgraph cluster_b0 { label="always_comb @ line 48"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:prod" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="prod\n[ACC_W-1:0] x [0:TAPS-1]"];
+    "sig:y_full" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="y_full\n[ACC_W-1:0]"];
+    "sig:y_rnd" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="y_rnd\n[ACC_W-1:0]"];
+    "sig:y_sh" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="y_sh\n[ACC_W-1:0]"];
+  }
+  subgraph cluster_b1 { label="always_ff @ line 56"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:coef" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="coef\n[COEF_W-1:0] x [0:TAPS-1]"];
+    "sig:z" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="z\n[ACC_W-1:0] x [0:TAPS-2]"];
+  }
+  "in:coef_i" -> "sig:coef";
+  "in:coef_idx_i" -> "sig:coef";
+  "in:coef_we_i" -> "sig:coef";
+  "in:data_i" -> "sig:prod";
+  "in:valid_i" -> "out:data_o";
+  "in:valid_i" -> "out:sat_o";
+  "in:valid_i" -> "out:valid_o";
+  "in:valid_i" -> "sig:z";
+  "sig:coef" -> "sig:prod";
+  "sig:prod" -> "sig:y_full";
+  "sig:prod" -> "sig:z";
+  "sig:y_full" -> "sig:y_rnd";
+  "sig:y_rnd" -> "sig:y_sh";
+  "sig:y_sh" -> "out:data_o";
+  "sig:y_sh" -> "out:sat_o";
+  "sig:z" -> "sig:y_full";
+  "sig:z" -> "sig:z";
+}

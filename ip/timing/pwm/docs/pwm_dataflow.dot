@@ -1,0 +1,116 @@
+digraph "pwm_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>pwm_top</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/timing/pwm/src/pwm_top.sv; clocks / resets (not drawn): aclk, aresetn<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:s_axil_*" }
+    "in:s_axil_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_axil_*\ns_axil_awaddr\ns_axil_awvalid\ns_axil_wdata\ns_axil_wstrb\ns_axil_wvalid\ns_axil_bready\ns_axil_araddr\ns_axil_arvalid\ns_axil_rready"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:period_pulse_o" "out:pwm_n_o" "out:pwm_o" "out:s_axil_*" }
+    "out:period_pulse_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="period_pulse_o"];
+    "out:pwm_n_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="pwm_n_o\n[CHANNELS-1:0]"];
+    "out:pwm_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="pwm_o\n[CHANNELS-1:0]"];
+    "out:s_axil_*" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="s_axil_*\ns_axil_awready\ns_axil_wready\ns_axil_bresp\ns_axil_bvalid\ns_axil_arready\ns_axil_rdata\ns_axil_rresp\ns_axil_rvalid"];
+  }
+  subgraph cluster_b0 { label="always @ line 53"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:ip_chk_b_q" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="ip_chk_b_q"];
+    "sig:ip_chk_r_q" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="ip_chk_r_q"];
+  }
+  subgraph cluster_b1 { label="always_ff @ line 119"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:dt_cnt" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="dt_cnt\n[15:0]"];
+    "sig:duty_act" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="duty_act\n[15:0]"];
+    "sig:hi" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="hi"];
+    "sig:lo" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="lo"];
+    "sig:raw" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="raw"];
+    "sig:raw_d" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="raw_d"];
+  }
+  subgraph cluster_b2 { label="always_ff @ line 83"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:pcnt" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="pcnt\n[15:0]"];
+    "sig:tick" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="tick"];
+  }
+  subgraph cluster_b3 { label="always_ff @ line 91"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:boundary" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="boundary"];
+    "sig:cnt" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="cnt\n[15:0]"];
+    "sig:dir_dn" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="dir_dn"];
+  }
+  "sig:center" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="center"];
+  "sig:comp" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="comp"];
+  "sig:dtime" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="dtime\n[15:0]"];
+  "sig:en" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="en"];
+  "sig:period" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="period\n[15:0]"];
+  "sig:presc" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="presc\n[15:0]"];
+  "sig:regs" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="regs\n[NREG*32-1:0]"];
+  "sig:wr_data" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="wr_data\n[31:0]"];
+  "sig:wr_pulse" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="wr_pulse\n[NREG-1:0]"];
+  "inst:u_regs" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>ip_axil_regs</B><BR/><FONT COLOR="#4b5563">u_regs</FONT>>];
+  "in:s_axil_*" -> "sig:ip_chk_b_q";
+  "in:s_axil_*" -> "sig:ip_chk_r_q";
+  "inst:u_regs" -> "out:s_axil_*";
+  "inst:u_regs" -> "sig:regs";
+  "inst:u_regs" -> "sig:wr_data";
+  "inst:u_regs" -> "sig:wr_pulse";
+  "out:s_axil_*" -> "sig:ip_chk_b_q";
+  "out:s_axil_*" -> "sig:ip_chk_r_q";
+  "sig:boundary" -> "out:period_pulse_o";
+  "sig:boundary" -> "sig:duty_act";
+  "sig:center" -> "sig:boundary";
+  "sig:center" -> "sig:cnt";
+  "sig:center" -> "sig:dir_dn";
+  "sig:cnt" -> "sig:boundary";
+  "sig:cnt" -> "sig:cnt";
+  "sig:cnt" -> "sig:dir_dn";
+  "sig:cnt" -> "sig:raw";
+  "sig:comp" -> "sig:hi";
+  "sig:comp" -> "sig:lo";
+  "sig:dir_dn" -> "sig:boundary";
+  "sig:dir_dn" -> "sig:cnt";
+  "sig:dir_dn" -> "sig:dir_dn";
+  "sig:dt_cnt" -> "sig:dt_cnt";
+  "sig:dt_cnt" -> "sig:hi";
+  "sig:dt_cnt" -> "sig:lo";
+  "sig:dtime" -> "sig:dt_cnt";
+  "sig:duty_act" -> "sig:raw";
+  "sig:en" -> "sig:boundary";
+  "sig:en" -> "sig:cnt";
+  "sig:en" -> "sig:dir_dn";
+  "sig:en" -> "sig:dt_cnt";
+  "sig:en" -> "sig:duty_act";
+  "sig:en" -> "sig:hi";
+  "sig:en" -> "sig:lo";
+  "sig:en" -> "sig:pcnt";
+  "sig:en" -> "sig:raw";
+  "sig:en" -> "sig:raw_d";
+  "sig:en" -> "sig:tick";
+  "sig:hi" -> "out:pwm_o";
+  "sig:lo" -> "out:pwm_n_o";
+  "sig:pcnt" -> "sig:pcnt";
+  "sig:pcnt" -> "sig:tick";
+  "sig:period" -> "sig:boundary";
+  "sig:period" -> "sig:cnt";
+  "sig:period" -> "sig:dir_dn";
+  "sig:presc" -> "sig:pcnt";
+  "sig:presc" -> "sig:tick";
+  "sig:raw" -> "sig:dt_cnt";
+  "sig:raw" -> "sig:hi";
+  "sig:raw" -> "sig:lo";
+  "sig:raw" -> "sig:raw_d";
+  "sig:raw_d" -> "sig:dt_cnt";
+  "sig:raw_d" -> "sig:hi";
+  "sig:raw_d" -> "sig:lo";
+  "sig:regs" -> "inst:u_regs";
+  "sig:regs" -> "out:pwm_n_o";
+  "sig:regs" -> "out:pwm_o";
+  "sig:regs" -> "sig:center";
+  "sig:regs" -> "sig:comp";
+  "sig:regs" -> "sig:dtime";
+  "sig:regs" -> "sig:duty_act";
+  "sig:regs" -> "sig:en";
+  "sig:regs" -> "sig:period";
+  "sig:regs" -> "sig:presc";
+  "sig:tick" -> "sig:boundary";
+  "sig:tick" -> "sig:cnt";
+  "sig:tick" -> "sig:dir_dn";
+  "in:s_axil_*" -> "inst:u_regs" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Lite
+s_axil_* (17)"];
+}

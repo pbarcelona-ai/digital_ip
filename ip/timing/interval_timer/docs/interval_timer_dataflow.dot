@@ -1,0 +1,54 @@
+digraph "interval_timer_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>interval_timer</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/timing/interval_timer/src/interval_timer.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:auto_i" "in:interval_i" "in:prescale_i" "in:start_i" "in:stop_i" }
+    "in:auto_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="auto_i"];
+    "in:interval_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="interval_i\n[WIDTH-1:0]"];
+    "in:prescale_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="prescale_i\n[PRES_W-1:0]"];
+    "in:start_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="start_i"];
+    "in:stop_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="stop_i"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:err_o" "out:remaining_o" "out:running_o" "out:tick_o" }
+    "out:err_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="err_o"];
+    "out:remaining_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="remaining_o\n[WIDTH-1:0]"];
+    "out:running_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="running_o"];
+    "out:tick_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="tick_o"];
+  }
+  subgraph cluster_b0 { label="always_ff @ line 34"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:pc" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="pc\n[PRES_W-1:0]"];
+  }
+  "sig:ptick" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="ptick"];
+  "in:auto_i" -> "out:remaining_o";
+  "in:auto_i" -> "out:running_o";
+  "in:interval_i" -> "out:err_o";
+  "in:interval_i" -> "out:remaining_o";
+  "in:interval_i" -> "out:running_o";
+  "in:interval_i" -> "sig:pc";
+  "in:prescale_i" -> "sig:ptick";
+  "in:start_i" -> "out:err_o";
+  "in:start_i" -> "out:remaining_o";
+  "in:start_i" -> "out:running_o";
+  "in:start_i" -> "out:tick_o";
+  "in:start_i" -> "sig:pc";
+  "in:stop_i" -> "out:err_o";
+  "in:stop_i" -> "out:remaining_o";
+  "in:stop_i" -> "out:running_o";
+  "in:stop_i" -> "out:tick_o";
+  "in:stop_i" -> "sig:pc";
+  "out:remaining_o" -> "out:remaining_o";
+  "out:remaining_o" -> "out:running_o";
+  "out:remaining_o" -> "out:tick_o";
+  "out:running_o" -> "out:remaining_o";
+  "out:running_o" -> "out:running_o";
+  "out:running_o" -> "out:tick_o";
+  "out:running_o" -> "sig:pc";
+  "sig:pc" -> "sig:pc";
+  "sig:pc" -> "sig:ptick";
+  "sig:ptick" -> "out:remaining_o";
+  "sig:ptick" -> "out:running_o";
+  "sig:ptick" -> "out:tick_o";
+  "sig:ptick" -> "sig:pc";
+}

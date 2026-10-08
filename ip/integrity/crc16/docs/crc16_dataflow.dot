@@ -1,0 +1,22 @@
+digraph "crc16_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>crc16</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/integrity/crc16/src/crc16.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:data_i" "in:init_i" "in:keep_i" "in:valid_i" }
+    "in:data_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="data_i\n[DATA_W-1:0]"];
+    "in:init_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="init_i"];
+    "in:keep_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="keep_i\n[DATA_W/8-1:0]"];
+    "in:valid_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="valid_i"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:crc_o" }
+    "out:crc_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="crc_o\n[15:0]"];
+  }
+  "inst:u_core" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>crc_core</B><BR/><FONT COLOR="#4b5563">u_core</FONT>>];
+  "in:data_i" -> "inst:u_core";
+  "in:init_i" -> "inst:u_core";
+  "in:keep_i" -> "inst:u_core";
+  "in:valid_i" -> "inst:u_core";
+  "inst:u_core" -> "out:crc_o";
+}

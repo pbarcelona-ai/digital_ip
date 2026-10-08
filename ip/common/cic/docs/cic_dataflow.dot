@@ -1,0 +1,65 @@
+digraph "cic_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>cic</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/common/cic/src/cic.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:data_i" "in:r_i" "in:shift_i" "in:valid_i" }
+    "in:data_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="data_i\n[DATA_W-1:0]"];
+    "in:r_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="r_i\n[$clog2(RMAX+1)-1:0]"];
+    "in:shift_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="shift_i\n[7:0]"];
+    "in:valid_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="valid_i"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:data_o" "out:r_err_o" "out:sat_o" "out:valid_o" }
+    "out:data_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="data_o\n[OUT_W-1:0]"];
+    "out:r_err_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="r_err_o"];
+    "out:sat_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="sat_o"];
+    "out:valid_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="valid_o"];
+  }
+  subgraph cluster_b0 { label="always_comb @ line 49"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:comb_v" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="comb_v\n[BW-1:0] x [0:N]"];
+    "sig:rnd" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="rnd\n[BW-1:0]"];
+    "sig:sh_res" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="sh_res\n[BW-1:0]"];
+  }
+  subgraph cluster_b1 { label="always_ff @ line 57"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:cnt" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="cnt\n[RB-1:0]"];
+    "sig:comb_d" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="comb_d\n[BW-1:0] x [0:N-1]"];
+    "sig:integ" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="integ\n[BW-1:0] x [0:N-1]"];
+    "sig:r_lat" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="r_lat\n[RB-1:0]"];
+  }
+  "sig:last" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="last"];
+  "sig:r_use" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="r_use\n[RB-1:0]"];
+  "in:data_i" -> "sig:integ";
+  "in:r_i" -> "out:r_err_o";
+  "in:r_i" -> "sig:r_use";
+  "in:shift_i" -> "sig:rnd";
+  "in:shift_i" -> "sig:sh_res";
+  "in:valid_i" -> "out:data_o";
+  "in:valid_i" -> "out:r_err_o";
+  "in:valid_i" -> "out:sat_o";
+  "in:valid_i" -> "out:valid_o";
+  "in:valid_i" -> "sig:cnt";
+  "in:valid_i" -> "sig:comb_d";
+  "in:valid_i" -> "sig:integ";
+  "in:valid_i" -> "sig:r_lat";
+  "sig:cnt" -> "out:r_err_o";
+  "sig:cnt" -> "sig:cnt";
+  "sig:cnt" -> "sig:last";
+  "sig:comb_d" -> "sig:comb_v";
+  "sig:comb_v" -> "sig:comb_d";
+  "sig:comb_v" -> "sig:comb_v";
+  "sig:comb_v" -> "sig:rnd";
+  "sig:integ" -> "sig:comb_v";
+  "sig:integ" -> "sig:integ";
+  "sig:last" -> "out:data_o";
+  "sig:last" -> "out:sat_o";
+  "sig:last" -> "out:valid_o";
+  "sig:last" -> "sig:cnt";
+  "sig:last" -> "sig:comb_d";
+  "sig:last" -> "sig:r_lat";
+  "sig:r_lat" -> "sig:last";
+  "sig:r_use" -> "sig:r_lat";
+  "sig:rnd" -> "sig:sh_res";
+  "sig:sh_res" -> "out:data_o";
+  "sig:sh_res" -> "out:sat_o";
+}

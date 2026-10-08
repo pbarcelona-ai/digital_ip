@@ -1,0 +1,71 @@
+digraph "bilinear_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>bilinear</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from image_processing/vision_system/ip/bilinear/src/bilinear.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:bl" "in:br" "in:fx" "in:fy" "in:tl" "in:tr" "in:valid_in" }
+    "in:bl" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="bl\n[barrel_pkg::PIX_W-1:0]"];
+    "in:br" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="br\n[barrel_pkg::PIX_W-1:0]"];
+    "in:fx" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="fx\n[7:0]"];
+    "in:fy" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="fy\n[7:0]"];
+    "in:tl" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="tl\n[barrel_pkg::PIX_W-1:0]"];
+    "in:tr" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="tr\n[barrel_pkg::PIX_W-1:0]"];
+    "in:valid_in" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="valid_in"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:pixel_out" "out:valid_out" }
+    "out:pixel_out" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="pixel_out\n[barrel_pkg::PIX_W-1:0]"];
+    "out:valid_out" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="valid_out"];
+  }
+  subgraph cluster_b0 { label="always_ff @ line 46"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:vA" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="vA"];
+  }
+  subgraph cluster_b1 { label="always_ff @ line 50"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:blA" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="blA\n[barrel_pkg::PIX_W-1:0]"];
+    "sig:brA" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="brA\n[barrel_pkg::PIX_W-1:0]"];
+    "sig:tlA" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="tlA\n[barrel_pkg::PIX_W-1:0]"];
+    "sig:trA" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="trA\n[barrel_pkg::PIX_W-1:0]"];
+    "sig:w00A" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="w00A\n[16:0]"];
+    "sig:w01A" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="w01A\n[16:0]"];
+    "sig:w10A" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="w10A\n[16:0]"];
+    "sig:w11A" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="w11A\n[16:0]"];
+  }
+  subgraph cluster_b2 { label="always_ff @ line 62"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:vB1" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="vB1"];
+  }
+  subgraph cluster_b3 { label="always_ff @ line 66"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:prB1" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="prB1\n[24:0] x [0:2][0:3]"];
+  }
+  subgraph cluster_b4 { label="always_ff @ line 90"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:vB" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="vB"];
+  }
+  subgraph cluster_b5 { label="always_ff @ line 94"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:pixB" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="pixB\n[barrel_pkg::PIX_W-1:0]"];
+  }
+  "in:bl" -> "sig:blA";
+  "in:br" -> "sig:brA";
+  "in:fx" -> "sig:w00A";
+  "in:fx" -> "sig:w01A";
+  "in:fx" -> "sig:w10A";
+  "in:fx" -> "sig:w11A";
+  "in:fy" -> "sig:w00A";
+  "in:fy" -> "sig:w01A";
+  "in:fy" -> "sig:w10A";
+  "in:fy" -> "sig:w11A";
+  "in:tl" -> "sig:tlA";
+  "in:tr" -> "sig:trA";
+  "in:valid_in" -> "sig:vA";
+  "sig:blA" -> "sig:prB1";
+  "sig:brA" -> "sig:prB1";
+  "sig:pixB" -> "out:pixel_out";
+  "sig:prB1" -> "sig:pixB";
+  "sig:tlA" -> "sig:prB1";
+  "sig:trA" -> "sig:prB1";
+  "sig:vA" -> "sig:vB1";
+  "sig:vB" -> "out:valid_out";
+  "sig:vB1" -> "sig:vB";
+  "sig:w00A" -> "sig:prB1";
+  "sig:w01A" -> "sig:prB1";
+  "sig:w10A" -> "sig:prB1";
+  "sig:w11A" -> "sig:prB1";
+}

@@ -1,0 +1,81 @@
+digraph "isp_ccm_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>isp_ccm</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/video/isp_ccm/src/isp_ccm.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:bypass_i" "in:coef_i" "in:m_axis_*" "in:off_i" "in:s_axis_*" }
+    "in:bypass_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="bypass_i"];
+    "in:coef_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="coef_i\n[9*16-1:0]"];
+    "in:m_axis_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="m_axis_tready"];
+    "in:off_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="off_i\n[3*16-1:0]"];
+    "in:s_axis_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_axis_*\ns_axis_tdata\ns_axis_tlast\ns_axis_tuser\ns_axis_tvalid"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:m_axis_*" "out:s_axis_*" }
+    "out:m_axis_*" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="m_axis_*\nm_axis_tdata\nm_axis_tlast\nm_axis_tuser\nm_axis_tvalid"];
+    "out:s_axis_*" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="s_axis_tready"];
+  }
+  subgraph cluster_b0 { label="always_ff @ line 57"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:b1" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="b1"];
+    "sig:b2" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="b2"];
+    "sig:by_f" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="by_f"];
+    "sig:d1" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="d1\n[3*PW-1:0]"];
+    "sig:d2" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="d2\n[3*PW-1:0]"];
+    "sig:l1" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="l1"];
+    "sig:l2" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="l2"];
+    "sig:p" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="p\n[MW-1:0] x [3][3]"];
+    "sig:sum" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="sum\n[SW-1:0] x [3]"];
+    "sig:u1" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="u1"];
+    "sig:u2" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="u2"];
+    "sig:v1" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="v1"];
+    "sig:v2" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="v2"];
+  }
+  "sig:acc" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="acc"];
+  "sig:by" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="by"];
+  "sig:en" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="en"];
+  "in:bypass_i" -> "sig:by";
+  "in:bypass_i" -> "sig:by_f";
+  "in:coef_i" -> "sig:p";
+  "in:m_axis_*" -> "sig:en";
+  "in:off_i" -> "sig:sum";
+  "in:s_axis_*" -> "sig:acc";
+  "in:s_axis_*" -> "sig:by";
+  "in:s_axis_*" -> "sig:by_f";
+  "in:s_axis_*" -> "sig:d1";
+  "in:s_axis_*" -> "sig:l1";
+  "in:s_axis_*" -> "sig:p";
+  "in:s_axis_*" -> "sig:u1";
+  "out:m_axis_*" -> "sig:en";
+  "sig:acc" -> "sig:by_f";
+  "sig:acc" -> "sig:v1";
+  "sig:b1" -> "sig:b2";
+  "sig:b2" -> "out:m_axis_*";
+  "sig:by" -> "sig:b1";
+  "sig:by_f" -> "sig:by";
+  "sig:d1" -> "sig:d2";
+  "sig:d2" -> "out:m_axis_*";
+  "sig:en" -> "out:m_axis_*";
+  "sig:en" -> "out:s_axis_*";
+  "sig:en" -> "sig:acc";
+  "sig:en" -> "sig:b1";
+  "sig:en" -> "sig:b2";
+  "sig:en" -> "sig:by_f";
+  "sig:en" -> "sig:d1";
+  "sig:en" -> "sig:d2";
+  "sig:en" -> "sig:l1";
+  "sig:en" -> "sig:l2";
+  "sig:en" -> "sig:p";
+  "sig:en" -> "sig:sum";
+  "sig:en" -> "sig:u1";
+  "sig:en" -> "sig:u2";
+  "sig:en" -> "sig:v1";
+  "sig:en" -> "sig:v2";
+  "sig:l1" -> "sig:l2";
+  "sig:l2" -> "out:m_axis_*";
+  "sig:p" -> "sig:sum";
+  "sig:sum" -> "out:m_axis_*";
+  "sig:u1" -> "sig:u2";
+  "sig:u2" -> "out:m_axis_*";
+  "sig:v1" -> "sig:v2";
+  "sig:v2" -> "out:m_axis_*";
+}

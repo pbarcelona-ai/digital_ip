@@ -1,0 +1,53 @@
+digraph "demo_regs_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>demo_regs</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/examples/regmap/demo_regs.sv; clocks / resets (not drawn): aclk, aresetn<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:count_i" "in:id_i" "in:s_axil_*" "in:status_set_i" "in:trig_clr_i" }
+    "in:count_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="count_i\n[31:0]"];
+    "in:id_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="id_i\n[31:0]"];
+    "in:s_axil_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_axil_*\ns_axil_awaddr\ns_axil_awvalid\ns_axil_wdata\ns_axil_wstrb\ns_axil_wvalid\ns_axil_bready\ns_axil_araddr\ns_axil_arvalid\ns_axil_rready"];
+    "in:status_set_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="status_set_i\n[31:0]"];
+    "in:trig_clr_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="trig_clr_i\n[31:0]"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:count_wr_o" "out:ctrl_o" "out:ctrl_wr_o" "out:id_wr_o" "out:status_o" "out:status_wr_o" "out:thresh_o" "out:thresh_wr_o" "out:trig_o" "out:trig_wr_o" }
+    "out:count_wr_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="count_wr_o"];
+    "out:ctrl_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="ctrl_o\n[31:0]"];
+    "out:ctrl_wr_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="ctrl_wr_o"];
+    "out:id_wr_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="id_wr_o"];
+    "out:status_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="status_o\n[31:0]"];
+    "out:status_wr_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="status_wr_o"];
+    "out:thresh_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="thresh_o\n[31:0]"];
+    "out:thresh_wr_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="thresh_wr_o"];
+    "out:trig_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="trig_o\n[31:0]"];
+    "out:trig_wr_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="trig_wr_o"];
+  }
+  subgraph cluster_b0 { label="always_comb @ line 54"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:hw" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="hw\n[32*NREG-1:0]"];
+    "sig:hwset" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="hwset\n[32*NREG-1:0]"];
+  }
+  "sig:regv" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="regv\n[32*NREG-1:0]"];
+  "sig:wrp" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="wrp\n[NREG-1:0]"];
+  "inst:u_regs" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>axi4_lite_regs</B><BR/><FONT COLOR="#4b5563">u_regs</FONT>>];
+  "in:count_i" -> "sig:hw";
+  "in:id_i" -> "sig:hw";
+  "in:status_set_i" -> "sig:hwset";
+  "in:trig_clr_i" -> "sig:hwset";
+  "inst:u_regs" -> "sig:regv";
+  "inst:u_regs" -> "sig:wrp";
+  "sig:hw" -> "inst:u_regs";
+  "sig:hwset" -> "inst:u_regs";
+  "sig:regv" -> "out:ctrl_o";
+  "sig:regv" -> "out:status_o";
+  "sig:regv" -> "out:thresh_o";
+  "sig:regv" -> "out:trig_o";
+  "sig:wrp" -> "out:count_wr_o";
+  "sig:wrp" -> "out:ctrl_wr_o";
+  "sig:wrp" -> "out:id_wr_o";
+  "sig:wrp" -> "out:status_wr_o";
+  "sig:wrp" -> "out:thresh_wr_o";
+  "sig:wrp" -> "out:trig_wr_o";
+  "in:s_axil_*" -> "inst:u_regs" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Lite
+s_axil_* (17)"];
+}

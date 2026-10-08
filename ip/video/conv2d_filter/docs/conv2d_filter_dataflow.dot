@@ -1,0 +1,63 @@
+digraph "conv2d_filter_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>conv2d_filter</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/video/conv2d_filter/src/conv2d_filter.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:s_axil_*" "in:s_axis_*" }
+    "in:s_axil_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_axil_*\ns_axil_awaddr\ns_axil_awvalid\ns_axil_wdata\ns_axil_wstrb\ns_axil_wvalid\ns_axil_bready\ns_axil_araddr\ns_axil_arvalid\ns_axil_rready"];
+    "in:s_axis_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_axis_*\ns_axis_tdata\ns_axis_tlast\ns_axis_tuser\ns_axis_tvalid"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:m_axis_*" "out:s_axis_*" }
+    "out:m_axis_*" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="m_axis_*\nm_axis_tdata\nm_axis_tlast\nm_axis_tuser\nm_axis_tvalid"];
+    "out:s_axis_*" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="s_axis_tready"];
+  }
+  subgraph cluster_b0 { label="always_comb @ line 106"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:rd" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="rd\n[NREG*32-1:0]"];
+  }
+  subgraph cluster_b1 { label="always_ff @ line 104"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:frames" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="frames\n[15:0]"];
+  }
+  subgraph cluster_b2 { label="always_ff @ line 91"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:coef_f" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="coef_f\n[NN*COEF_W-1:0]"];
+    "sig:shift_f" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="shift_f\n[4:0]"];
+    "sig:size_f" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="size_f\n[31:0]"];
+  }
+  "sig:frame" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="frame"];
+  "sig:regs" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="regs\n[NREG*32-1:0]"];
+  "sig:size" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="size\n[31:0]"];
+  "sig:sof_in" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="sof_in"];
+  "sig:sof_wait" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="sof_wait"];
+  "inst:u_regs" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>ip_axil_regs</B><BR/><FONT COLOR="#4b5563">u_regs</FONT>>];
+  "inst:u_core" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>conv2d_core</B><BR/><FONT COLOR="#4b5563">u_core</FONT>>];
+  "in:s_axis_*" -> "sig:size";
+  "in:s_axis_*" -> "sig:sof_in";
+  "inst:u_core" -> "out:s_axis_*";
+  "inst:u_core" -> "sig:frame";
+  "inst:u_core" -> "sig:sof_wait";
+  "inst:u_regs" -> "sig:regs";
+  "out:s_axis_*" -> "sig:sof_in";
+  "sig:coef_f" -> "inst:u_core";
+  "sig:frame" -> "sig:frames";
+  "sig:frames" -> "sig:frames";
+  "sig:frames" -> "sig:rd";
+  "sig:rd" -> "inst:u_regs";
+  "sig:regs" -> "sig:coef_f";
+  "sig:regs" -> "sig:rd";
+  "sig:regs" -> "sig:shift_f";
+  "sig:regs" -> "sig:size";
+  "sig:regs" -> "sig:size_f";
+  "sig:shift_f" -> "inst:u_core";
+  "sig:size" -> "inst:u_core";
+  "sig:size_f" -> "sig:size";
+  "sig:sof_in" -> "sig:coef_f";
+  "sig:sof_in" -> "sig:shift_f";
+  "sig:sof_in" -> "sig:size_f";
+  "sig:sof_wait" -> "sig:size";
+  "inst:u_core" -> "out:m_axis_*" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Stream
+m_axis_t* (5)"];
+  "in:s_axil_*" -> "inst:u_regs" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Lite
+s_axil_* (17)"];
+  "in:s_axis_*" -> "inst:u_core" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Stream
+s_axis_t* (5)"];
+}

@@ -1,0 +1,126 @@
+digraph "video_processor_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.3, ranksep=1.1, fontname="Helvetica", labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>video_processor</B> data flow</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from image_processing/video_processor/src/video_processor.sv; clocks / resets (not drawn): arst_n, byte_clk, cpu_clk, lvds_ser_clk, pix_clk, tmds_ser_clk, tx_byte_clk<BR ALIGN="LEFT"/>clock / reset only (not drawn): reset_sync u_rst_cpu, reset_sync u_rst_pix, reset_sync u_rst_byte, reset_sync u_rst_tx_byte, reset_sync u_rst_tmds, reset_sync u_rst_lvds<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=10];
+  edge [fontname="Courier", fontsize=9, color="#374151", fontcolor="#1f2937", arrowsize=0.7];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    "in:cam_lane_data_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="cam_lane_data_i\n[NLANES*8-1:0]"];
+    "in:cam_lane_valid_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="cam_lane_valid_i\n[NLANES-1:0]"];
+    "in:csitx_tx_ready_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="csitx_tx_ready_i"];
+    "in:dsi_tx_ready_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="dsi_tx_ready_i"];
+    "in:ext_irq_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="ext_irq_i\n[2:0]"];
+    "in:flash_miso_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="flash_miso_i"];
+    "in:gpio_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="gpio_i\n[95:0]"];
+    "in:i2c_scl_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="i2c_scl_i\n[1:0]"];
+    "in:i2c_sda_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="i2c_sda_i\n[1:0]"];
+    "in:sdram_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="sdram_*\n10 signals"];
+    "in:spi_miso_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="spi_miso_i\n[1:0]"];
+    "in:uart_rxd_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="uart_rxd_i\n[1:0]"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    "out:boot_done_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="boot_done_o"];
+    "out:boot_err_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="boot_err_o"];
+    "out:cpu_trap_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="cpu_trap_o"];
+    "out:csitx_hs_req_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="csitx_hs_req_o"];
+    "out:csitx_lane_data_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="csitx_lane_data_o\n[CSITX_LANES*8-1:0]"];
+    "out:csitx_lane_valid_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="csitx_lane_valid_o\n[CSITX_LANES-1:0]"];
+    "out:dsi_hs_req_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="dsi_hs_req_o"];
+    "out:dsi_lane_data_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="dsi_lane_data_o\n[DSI_LANES*8-1:0]"];
+    "out:dsi_lane_valid_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="dsi_lane_valid_o\n[DSI_LANES-1:0]"];
+    "out:flash_cs_n_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="flash_cs_n_o"];
+    "out:flash_mosi_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="flash_mosi_o"];
+    "out:flash_sclk_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="flash_sclk_o"];
+    "out:gpio_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="gpio_o\n[95:0]"];
+    "out:gpio_t" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="gpio_t\n[95:0]"];
+    "out:i2c_scl_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="i2c_scl_o\n[1:0]"];
+    "out:i2c_scl_t" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="i2c_scl_t\n[1:0]"];
+    "out:i2c_sda_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="i2c_sda_o\n[1:0]"];
+    "out:i2c_sda_t" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="i2c_sda_t\n[1:0]"];
+    "out:lvds_a_serial_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="lvds_a_serial_o\n[4:0]"];
+    "out:lvds_b_serial_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="lvds_b_serial_o\n[4:0]"];
+    "out:sdram_*" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="sdram_*\n10 signals"];
+    "out:spi_cs_n_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="spi_cs_n_o\n[3:0]"];
+    "out:spi_mosi_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="spi_mosi_o\n[1:0]"];
+    "out:spi_sclk_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="spi_sclk_o\n[1:0]"];
+    "out:stats_done_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="stats_done_o"];
+    "out:tmds_serial_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="tmds_serial_o\n[3:0]"];
+    "out:uart_txd_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="uart_txd_o\n[1:0]"];
+    "out:wdt_reset_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="wdt_reset_o"];
+  }
+  "inst:u_cpu" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>py_soc</B><BR/><FONT COLOR="#4b5563">u_cpu</FONT>>];
+  "inst:u_irq_stats" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>pulse_sync</B><BR/><FONT COLOR="#4b5563">u_irq_stats</FONT>>];
+  "inst:u_axil_cdc" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>axi4_lite_cdc</B><BR/><FONT COLOR="#4b5563">u_axil_cdc</FONT>>];
+  "inst:u_vbus" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>py_axil_xbar</B><BR/><FONT COLOR="#4b5563">u_vbus</FONT>>];
+  "inst:u_pipe" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>video_pipeline</B><BR/><FONT COLOR="#4b5563">u_pipe</FONT>>];
+  "inst:u_vs_adapt" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>vs_stream_adapter</B><BR/><FONT COLOR="#4b5563">u_vs_adapt</FONT>>];
+  "inst:u_vision" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>vision_system</B><BR/><FONT COLOR="#4b5563">u_vision</FONT>>];
+  "inst:u_filter" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>blur_sharpen</B><BR/><FONT COLOR="#4b5563">u_filter</FONT>>];
+  "inst:u_tmds_ser" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>tmds_serializer</B><BR/><FONT COLOR="#4b5563">u_tmds_ser</FONT>>];
+  "inst:u_lvds_ser_a" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>lvds_serializer</B><BR/><FONT COLOR="#4b5563">u_lvds_ser_a</FONT>>];
+  "inst:u_lvds_ser_b" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>lvds_serializer</B><BR/><FONT COLOR="#4b5563">u_lvds_ser_b</FONT>>];
+  "in:cam_lane_data_i" -> "inst:u_pipe" [label="cam_lane_data_i"];
+  "in:cam_lane_valid_i" -> "inst:u_pipe" [label="cam_lane_valid_i"];
+  "in:csitx_tx_ready_i" -> "inst:u_pipe" [label="csitx_tx_ready_i"];
+  "in:dsi_tx_ready_i" -> "inst:u_pipe" [label="dsi_tx_ready_i"];
+  "in:ext_irq_i" -> "inst:u_cpu" [label="ext_irq_i"];
+  "in:flash_miso_i" -> "inst:u_cpu" [label="flash_miso_i"];
+  "in:gpio_i" -> "inst:u_cpu" [label="gpio_i"];
+  "in:i2c_scl_i" -> "inst:u_cpu" [label="i2c_scl_i"];
+  "in:i2c_sda_i" -> "inst:u_cpu" [label="i2c_sda_i"];
+  "in:sdram_*" -> "inst:u_vision" [label="sdram_*"];
+  "in:sdram_*" -> "out:sdram_*" [label="sdram_*"];
+  "in:spi_miso_i" -> "inst:u_cpu" [label="spi_miso_i"];
+  "in:uart_rxd_i" -> "inst:u_cpu" [label="uart_rxd_i"];
+  "inst:u_cpu" -> "out:boot_done_o" [label="boot_done_o"];
+  "inst:u_cpu" -> "out:boot_err_o" [label="boot_err_o"];
+  "inst:u_cpu" -> "out:cpu_trap_o" [label="cpu_trap_o"];
+  "inst:u_cpu" -> "out:flash_cs_n_o" [label="flash_cs_n_o"];
+  "inst:u_cpu" -> "out:flash_mosi_o" [label="flash_mosi_o"];
+  "inst:u_cpu" -> "out:flash_sclk_o" [label="flash_sclk_o"];
+  "inst:u_cpu" -> "out:gpio_o" [label="gpio_o"];
+  "inst:u_cpu" -> "out:gpio_t" [label="gpio_t"];
+  "inst:u_cpu" -> "out:i2c_scl_o" [label="i2c_scl_o"];
+  "inst:u_cpu" -> "out:i2c_scl_t" [label="i2c_scl_t"];
+  "inst:u_cpu" -> "out:i2c_sda_o" [label="i2c_sda_o"];
+  "inst:u_cpu" -> "out:i2c_sda_t" [label="i2c_sda_t"];
+  "inst:u_cpu" -> "out:spi_cs_n_o" [label="spi_cs_n_o"];
+  "inst:u_cpu" -> "out:spi_mosi_o" [label="spi_mosi_o"];
+  "inst:u_cpu" -> "out:spi_sclk_o" [label="spi_sclk_o"];
+  "inst:u_cpu" -> "out:uart_txd_o" [label="uart_txd_o"];
+  "inst:u_cpu" -> "out:wdt_reset_o" [label="wdt_reset_o"];
+  "inst:u_irq_stats" -> "inst:u_cpu" [label="irq_stats"];
+  "inst:u_lvds_ser_a" -> "out:lvds_a_serial_o" [label="lvds_a_serial_o"];
+  "inst:u_lvds_ser_b" -> "out:lvds_b_serial_o" [label="lvds_b_serial_o"];
+  "inst:u_pipe" -> "inst:u_irq_stats" [label="stats_done_o"];
+  "inst:u_pipe" -> "inst:u_lvds_ser_a" [label="lvds_a\nlvds_stb"];
+  "inst:u_pipe" -> "inst:u_lvds_ser_b" [label="lvds_b\nlvds_stb"];
+  "inst:u_pipe" -> "inst:u_tmds_ser" [label="tmds0\ntmds1\ntmds2"];
+  "inst:u_pipe" -> "out:csitx_hs_req_o" [label="csitx_hs_req_o"];
+  "inst:u_pipe" -> "out:csitx_lane_data_o" [label="csitx_lane_data_o"];
+  "inst:u_pipe" -> "out:csitx_lane_valid_o" [label="csitx_lane_valid_o"];
+  "inst:u_pipe" -> "out:dsi_hs_req_o" [label="dsi_hs_req_o"];
+  "inst:u_pipe" -> "out:dsi_lane_data_o" [label="dsi_lane_data_o"];
+  "inst:u_pipe" -> "out:dsi_lane_valid_o" [label="dsi_lane_valid_o"];
+  "inst:u_pipe" -> "out:stats_done_o" [label="stats_done_o"];
+  "inst:u_tmds_ser" -> "out:tmds_serial_o" [label="tmds_serial_o"];
+  "inst:u_vision" -> "out:sdram_*" [label="sdram_*"];
+  "inst:u_cpu" -> "inst:u_axil_cdc" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Lite
+c_* (17)"];
+  "inst:u_axil_cdc" -> "inst:u_vbus" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Lite
+v_* (17)"];
+  "inst:u_vbus" -> "inst:u_pipe" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Lite
+b_* (17)"];
+  "inst:u_vbus" -> "inst:u_vision" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Lite
+b_* (17)"];
+  "inst:u_vbus" -> "inst:u_filter" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Lite
+b_* (17)"];
+  "inst:u_pipe" -> "inst:u_vs_adapt" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Stream
+im_* (5)"];
+  "inst:u_vs_adapt" -> "inst:u_vision" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Stream
+va_* (5)"];
+  "inst:u_vs_adapt" -> "inst:u_filter" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Stream
+vo_* (5)"];
+  "inst:u_vision" -> "inst:u_vs_adapt" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Stream
+vr_* (5)"];
+  "inst:u_filter" -> "inst:u_pipe" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Stream
+ir_* (5)"];
+}

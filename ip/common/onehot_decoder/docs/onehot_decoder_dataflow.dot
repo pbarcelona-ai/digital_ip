@@ -1,0 +1,25 @@
+digraph "onehot_decoder_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>onehot_decoder</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/common/onehot_decoder/src/onehot_decoder.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:en_i" "in:sel_i" }
+    "in:en_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="en_i"];
+    "in:sel_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="sel_i\n[$clog2(WIDTH)-1:0]"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:err_o" "out:onehot_o" }
+    "out:err_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="err_o"];
+    "out:onehot_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="onehot_o\n[WIDTH-1:0]"];
+  }
+  subgraph cluster_b0 { label="always_comb @ line 26"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:e_c" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="e_c"];
+    "sig:oh_c" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="oh_c\n[WIDTH-1:0]"];
+  }
+  "in:en_i" -> "sig:e_c";
+  "in:en_i" -> "sig:oh_c";
+  "in:sel_i" -> "sig:e_c";
+  "in:sel_i" -> "sig:oh_c";
+  "sig:e_c" -> "out:err_o";
+  "sig:oh_c" -> "out:onehot_o";
+}

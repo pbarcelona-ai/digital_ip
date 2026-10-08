@@ -1,0 +1,33 @@
+// ***************
+// Filename: py_core_fsm.dot
+// Author: FPGA Cores 4 U
+// Description: Control state machine of py_core (st, state_e in py_core.sv):
+//   fetch, operand bytes, execute, constant / bus waits, done and trap.
+//   Render: dot -Tsvg py_core_fsm.dot -o py_core_fsm.svg
+// Date: 2026-10-08
+// ***************
+digraph py_core_fsm {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.35, ranksep=0.6, fontname="Helvetica", labelloc=t, labeljust=l,
+         label=<<FONT POINT-SIZE="18"><B>py_core</B> control FSM</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">st : state_e (py_core.sv). An instruction takes S_FETCH, S_OP, 0-2 operand states and S_EXEC; red = trap / interrupt.</FONT><BR ALIGN="LEFT"/>>];
+  edge [fontname="Helvetica", fontsize=9, arrowsize=0.7];
+    node [shape=ellipse, style=filled, fillcolor="#fef3c7", color="#a16207", fontsize=10, fontname="Helvetica"];
+    S_IDLE; S_FETCH; S_OP; S_ARG0; S_ARG1; S_EXEC; S_CONST; S_WR; S_RD; S_DONE; S_TRAP [fillcolor="#fee2e2", color="#dc2626"];
+    S_IDLE -> S_FETCH [label="start_i", fontsize=8];
+    S_FETCH -> S_OP;
+    S_FETCH -> S_FETCH [color="#dc2626", label="take_irq", fontsize=8];
+    S_OP -> S_ARG0 [label="nargs ≥ 1", fontsize=8];
+    S_OP -> S_EXEC [label="no operand", fontsize=8];
+    S_ARG0 -> S_ARG1 [label="nargs = 2", fontsize=8];
+    S_ARG0 -> S_EXEC [label="nargs = 1", fontsize=8];
+    S_ARG1 -> S_EXEC;
+    S_EXEC -> S_FETCH [label="most ops", fontsize=8];
+    S_EXEC -> S_CONST [label="LOAD_CONST", fontsize=8];
+    S_EXEC -> S_WR [label="MEM32_STORE", fontsize=8];
+    S_EXEC -> S_RD [label="MEM32_LOAD", fontsize=8];
+    S_EXEC -> S_DONE [label="RETURN_VALUE", fontsize=8];
+    S_CONST -> S_FETCH; S_WR -> S_FETCH [label="bresp OKAY", fontsize=8]; S_RD -> S_FETCH [label="rresp OKAY", fontsize=8];
+    S_EXEC -> S_TRAP [color="#dc2626", label="trap()", fontsize=8];
+    S_WR -> S_TRAP [color="#dc2626", style=dashed]; S_RD -> S_TRAP [color="#dc2626", style=dashed];
+    S_TRAP -> S_FETCH [label="resume_i → resume_pc_i, or start_i → 0", fontsize=8];
+    S_DONE -> S_FETCH [label="start_i", fontsize=8];
+}

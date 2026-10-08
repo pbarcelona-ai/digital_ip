@@ -1,0 +1,81 @@
+digraph "memory_arbiter_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>memory_arbiter</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/memory/memory_arbiter/src/memory_arbiter.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:c_addr_i" "in:c_req_i" "in:c_wdata_i" "in:c_we_i" "in:clr_err_i" "in:m_rdata_i" "in:m_ready_i" "in:m_rvalid_i" }
+    "in:c_addr_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="c_addr_i\n[CLIENTS*ADDR_W-1:0]"];
+    "in:c_req_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="c_req_i\n[CLIENTS-1:0]"];
+    "in:c_wdata_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="c_wdata_i\n[CLIENTS*DATA_W-1:0]"];
+    "in:c_we_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="c_we_i\n[CLIENTS-1:0]"];
+    "in:clr_err_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="clr_err_i"];
+    "in:m_rdata_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="m_rdata_i\n[DATA_W-1:0]"];
+    "in:m_ready_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="m_ready_i"];
+    "in:m_rvalid_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="m_rvalid_i"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:c_rdata_o" "out:c_ready_o" "out:c_rvalid_o" "out:err_o" "out:m_addr_o" "out:m_req_o" "out:m_wdata_o" "out:m_we_o" }
+    "out:c_rdata_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="c_rdata_o\n[DATA_W-1:0]"];
+    "out:c_ready_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="c_ready_o\n[CLIENTS-1:0]"];
+    "out:c_rvalid_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="c_rvalid_o\n[CLIENTS-1:0]"];
+    "out:err_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="err_o"];
+    "out:m_addr_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="m_addr_o\n[ADDR_W-1:0]"];
+    "out:m_req_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="m_req_o"];
+    "out:m_wdata_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="m_wdata_o\n[DATA_W-1:0]"];
+    "out:m_we_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="m_we_o"];
+  }
+  subgraph cluster_b0 { label="always_comb @ line 66"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:elig" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="elig\n[CLIENTS-1:0]"];
+    "sig:sel" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="sel\n[IW-1:0]"];
+    "sig:sel_v" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="sel_v"];
+  }
+  subgraph cluster_b1 { label="always_ff @ line 90"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:last" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="last\n[IW-1:0]"];
+    "sig:o_rd" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="o_rd\n[OW:0]"];
+    "sig:o_wr" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="o_wr\n[OW:0]"];
+    "sig:ord" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="ord\n[IW-1:0] x [0:MAX_OUT-1]"];
+  }
+  "sig:accept" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="accept"];
+  "sig:ord_empty" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="ord_empty"];
+  "sig:ord_full" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="ord_full"];
+  "in:c_addr_i" -> "out:m_addr_o";
+  "in:c_req_i" -> "sig:elig";
+  "in:c_wdata_i" -> "out:m_wdata_o";
+  "in:c_we_i" -> "out:m_we_o";
+  "in:c_we_i" -> "sig:elig";
+  "in:clr_err_i" -> "out:err_o";
+  "in:m_rdata_i" -> "out:c_rdata_o";
+  "in:m_ready_i" -> "sig:accept";
+  "in:m_rvalid_i" -> "out:c_rvalid_o";
+  "in:m_rvalid_i" -> "out:err_o";
+  "in:m_rvalid_i" -> "sig:o_rd";
+  "out:m_we_o" -> "sig:o_wr";
+  "out:m_we_o" -> "sig:ord";
+  "sig:accept" -> "out:c_ready_o";
+  "sig:accept" -> "sig:last";
+  "sig:accept" -> "sig:o_wr";
+  "sig:accept" -> "sig:ord";
+  "sig:elig" -> "sig:sel";
+  "sig:elig" -> "sig:sel_v";
+  "sig:o_rd" -> "out:c_rvalid_o";
+  "sig:o_rd" -> "sig:o_rd";
+  "sig:o_rd" -> "sig:ord_empty";
+  "sig:o_rd" -> "sig:ord_full";
+  "sig:o_wr" -> "sig:o_wr";
+  "sig:o_wr" -> "sig:ord";
+  "sig:o_wr" -> "sig:ord_empty";
+  "sig:o_wr" -> "sig:ord_full";
+  "sig:ord" -> "out:c_rvalid_o";
+  "sig:ord_empty" -> "out:c_rvalid_o";
+  "sig:ord_empty" -> "out:err_o";
+  "sig:ord_empty" -> "sig:o_rd";
+  "sig:ord_full" -> "sig:elig";
+  "sig:sel" -> "out:c_ready_o";
+  "sig:sel" -> "out:m_addr_o";
+  "sig:sel" -> "out:m_wdata_o";
+  "sig:sel" -> "out:m_we_o";
+  "sig:sel" -> "sig:last";
+  "sig:sel" -> "sig:ord";
+  "sig:sel_v" -> "out:m_req_o";
+  "sig:sel_v" -> "sig:accept";
+}

@@ -1,0 +1,32 @@
+digraph "timestamp_counter_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>timestamp_counter</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/timing/timestamp_counter/src/timestamp_counter.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:capture_i" "in:clear_i" "in:load_i" "in:load_val_i" "in:tick_i" }
+    "in:capture_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="capture_i"];
+    "in:clear_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="clear_i"];
+    "in:load_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="load_i"];
+    "in:load_val_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="load_val_i\n[WIDTH-1:0]"];
+    "in:tick_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="tick_i"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:cap_valid_o" "out:capture_o" "out:count_o" "out:wrap_o" }
+    "out:cap_valid_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="cap_valid_o"];
+    "out:capture_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="capture_o\n[WIDTH-1:0]"];
+    "out:count_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="count_o\n[WIDTH-1:0]"];
+    "out:wrap_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="wrap_o"];
+  }
+  "in:capture_i" -> "out:cap_valid_o";
+  "in:capture_i" -> "out:capture_o";
+  "in:clear_i" -> "out:count_o";
+  "in:clear_i" -> "out:wrap_o";
+  "in:load_i" -> "out:count_o";
+  "in:load_i" -> "out:wrap_o";
+  "in:load_val_i" -> "out:count_o";
+  "in:tick_i" -> "out:count_o";
+  "in:tick_i" -> "out:wrap_o";
+  "out:count_o" -> "out:capture_o";
+  "out:count_o" -> "out:count_o";
+  "out:count_o" -> "out:wrap_o";
+}

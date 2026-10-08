@@ -1,0 +1,105 @@
+digraph "axi_stream_width_converter_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>axi_stream_width_converter</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/bus/axi_stream_width_converter/src/axi_stream_width_converter.sv; clocks / resets (not drawn): aclk, aresetn<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:m_axis_*" "in:s_axis_*" }
+    "in:m_axis_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="m_axis_tready"];
+    "in:s_axis_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_axis_*\ns_axis_tdata\ns_axis_tkeep\ns_axis_tlast\ns_axis_tuser\ns_axis_tvalid"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:keep_err_o" "out:m_axis_*" "out:s_axis_*" }
+    "out:keep_err_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="keep_err_o"];
+    "out:m_axis_*" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="m_axis_*\nm_axis_tdata\nm_axis_tkeep\nm_axis_tlast\nm_axis_tuser\nm_axis_tvalid"];
+    "out:s_axis_*" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="s_axis_tready"];
+  }
+  subgraph cluster_b0 { label="always_comb @ line 69"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:lc" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="lc\n[$clog2(RATIO+1)-1:0]"];
+  }
+  subgraph cluster_b1 { label="always_ff @ line 101"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:cnt" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="cnt\n[$clog2(RATIO+1)-1:0]"];
+    "sig:full" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="full"];
+    "sig:lst_q" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="lst_q"];
+    "sig:usr_q" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="usr_q\n[USER_W-1:0]"];
+  }
+  subgraph cluster_b2 { label="always_ff @ line 81"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:busy" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="busy"];
+    "sig:dat" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="dat\n[OUT_BYTES*8-1:0]"];
+    "sig:idx" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="idx\n[$clog2(RATIO+1)-1:0]"];
+    "sig:kp" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="kp\n[OUT_BYTES-1:0]"];
+    "sig:last_idx" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="last_idx\n[$clog2(RATIO+1)-1:0]"];
+    "sig:lst" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="lst"];
+    "sig:usr" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="usr\n[USER_W-1:0]"];
+  }
+  "sig:contiguous" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="contiguous"];
+  "in:m_axis_*" -> "out:s_axis_*";
+  "in:m_axis_*" -> "sig:busy";
+  "in:m_axis_*" -> "sig:cnt";
+  "in:m_axis_*" -> "sig:dat";
+  "in:m_axis_*" -> "sig:full";
+  "in:m_axis_*" -> "sig:idx";
+  "in:m_axis_*" -> "sig:kp";
+  "in:m_axis_*" -> "sig:lst_q";
+  "in:m_axis_*" -> "sig:usr_q";
+  "in:s_axis_*" -> "out:keep_err_o";
+  "in:s_axis_*" -> "out:m_axis_*";
+  "in:s_axis_*" -> "sig:busy";
+  "in:s_axis_*" -> "sig:cnt";
+  "in:s_axis_*" -> "sig:contiguous";
+  "in:s_axis_*" -> "sig:dat";
+  "in:s_axis_*" -> "sig:full";
+  "in:s_axis_*" -> "sig:idx";
+  "in:s_axis_*" -> "sig:kp";
+  "in:s_axis_*" -> "sig:last_idx";
+  "in:s_axis_*" -> "sig:lc";
+  "in:s_axis_*" -> "sig:lst";
+  "in:s_axis_*" -> "sig:lst_q";
+  "in:s_axis_*" -> "sig:usr";
+  "in:s_axis_*" -> "sig:usr_q";
+  "out:m_axis_*" -> "out:s_axis_*";
+  "out:s_axis_*" -> "out:keep_err_o";
+  "out:s_axis_*" -> "out:m_axis_*";
+  "out:s_axis_*" -> "sig:cnt";
+  "out:s_axis_*" -> "sig:dat";
+  "out:s_axis_*" -> "sig:full";
+  "out:s_axis_*" -> "sig:kp";
+  "out:s_axis_*" -> "sig:lst_q";
+  "out:s_axis_*" -> "sig:usr_q";
+  "sig:busy" -> "out:m_axis_*";
+  "sig:busy" -> "out:s_axis_*";
+  "sig:busy" -> "sig:busy";
+  "sig:busy" -> "sig:dat";
+  "sig:busy" -> "sig:idx";
+  "sig:busy" -> "sig:kp";
+  "sig:busy" -> "sig:last_idx";
+  "sig:busy" -> "sig:lst";
+  "sig:busy" -> "sig:usr";
+  "sig:cnt" -> "sig:cnt";
+  "sig:cnt" -> "sig:dat";
+  "sig:cnt" -> "sig:full";
+  "sig:cnt" -> "sig:kp";
+  "sig:cnt" -> "sig:lst_q";
+  "sig:cnt" -> "sig:usr_q";
+  "sig:contiguous" -> "out:keep_err_o";
+  "sig:dat" -> "out:m_axis_*";
+  "sig:full" -> "out:m_axis_*";
+  "sig:full" -> "out:s_axis_*";
+  "sig:full" -> "sig:cnt";
+  "sig:full" -> "sig:dat";
+  "sig:full" -> "sig:full";
+  "sig:full" -> "sig:kp";
+  "sig:full" -> "sig:lst_q";
+  "sig:full" -> "sig:usr_q";
+  "sig:idx" -> "out:m_axis_*";
+  "sig:idx" -> "sig:busy";
+  "sig:idx" -> "sig:idx";
+  "sig:kp" -> "out:m_axis_*";
+  "sig:last_idx" -> "out:m_axis_*";
+  "sig:last_idx" -> "sig:busy";
+  "sig:last_idx" -> "sig:idx";
+  "sig:lc" -> "sig:last_idx";
+  "sig:lst" -> "out:m_axis_*";
+  "sig:lst_q" -> "out:m_axis_*";
+  "sig:usr" -> "out:m_axis_*";
+  "sig:usr_q" -> "out:m_axis_*";
+}

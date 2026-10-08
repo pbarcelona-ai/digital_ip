@@ -1,0 +1,53 @@
+digraph "frame_buffer_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>frame_buffer</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from image_processing/vision_system/ip/frame_buffer/src/frame_buffer.sv; clocks / resets (not drawn): clk<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:rd_addr0" "in:rd_addr1" "in:rd_addr2" "in:rd_addr3" "in:rd_en" "in:wr_addr" "in:wr_data" "in:wr_en" }
+    "in:rd_addr0" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="rd_addr0\n[ADDR_W-1:0]"];
+    "in:rd_addr1" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="rd_addr1\n[ADDR_W-1:0]"];
+    "in:rd_addr2" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="rd_addr2\n[ADDR_W-1:0]"];
+    "in:rd_addr3" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="rd_addr3\n[ADDR_W-1:0]"];
+    "in:rd_en" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="rd_en"];
+    "in:wr_addr" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="wr_addr\n[ADDR_W-1:0]"];
+    "in:wr_data" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="wr_data\n[PIX_W-1:0]"];
+    "in:wr_en" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="wr_en"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:rd_data0" "out:rd_data1" "out:rd_data2" "out:rd_data3" }
+    "out:rd_data0" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="rd_data0\n[PIX_W-1:0]"];
+    "out:rd_data1" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="rd_data1\n[PIX_W-1:0]"];
+    "out:rd_data2" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="rd_data2\n[PIX_W-1:0]"];
+    "out:rd_data3" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="rd_data3\n[PIX_W-1:0]"];
+  }
+  subgraph cluster_b0 { label="always_ff @ line 64"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:bank0" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="bank0\n[PIX_W-1:0] x [0:DEPTH-1]"];
+    "sig:bank1" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="bank1\n[PIX_W-1:0] x [0:DEPTH-1]"];
+    "sig:bank2" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="bank2\n[PIX_W-1:0] x [0:DEPTH-1]"];
+    "sig:bank3" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="bank3\n[PIX_W-1:0] x [0:DEPTH-1]"];
+  }
+  "in:rd_addr0" -> "out:rd_data0";
+  "in:rd_addr1" -> "out:rd_data1";
+  "in:rd_addr2" -> "out:rd_data2";
+  "in:rd_addr3" -> "out:rd_data3";
+  "in:rd_en" -> "out:rd_data0";
+  "in:rd_en" -> "out:rd_data1";
+  "in:rd_en" -> "out:rd_data2";
+  "in:rd_en" -> "out:rd_data3";
+  "in:wr_addr" -> "sig:bank0";
+  "in:wr_addr" -> "sig:bank1";
+  "in:wr_addr" -> "sig:bank2";
+  "in:wr_addr" -> "sig:bank3";
+  "in:wr_data" -> "sig:bank0";
+  "in:wr_data" -> "sig:bank1";
+  "in:wr_data" -> "sig:bank2";
+  "in:wr_data" -> "sig:bank3";
+  "in:wr_en" -> "sig:bank0";
+  "in:wr_en" -> "sig:bank1";
+  "in:wr_en" -> "sig:bank2";
+  "in:wr_en" -> "sig:bank3";
+  "sig:bank0" -> "out:rd_data0";
+  "sig:bank1" -> "out:rd_data1";
+  "sig:bank2" -> "out:rd_data2";
+  "sig:bank3" -> "out:rd_data3";
+}

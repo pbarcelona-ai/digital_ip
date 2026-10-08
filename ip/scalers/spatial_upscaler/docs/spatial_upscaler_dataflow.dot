@@ -1,0 +1,94 @@
+digraph "spatial_upscaler_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>spatial_upscaler</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/scalers/spatial_upscaler/src/spatial_upscaler.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:s_axil_*" "in:s_axis_*" }
+    "in:s_axil_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_axil_*\ns_axil_awaddr\ns_axil_awvalid\ns_axil_wdata\ns_axil_wstrb\ns_axil_wvalid\ns_axil_bready\ns_axil_araddr\ns_axil_arvalid\ns_axil_rready"];
+    "in:s_axis_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_axis_*\ns_axis_tdata\ns_axis_tvalid\ns_axis_tuser\ns_axis_tlast"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:m_axis_*" "out:s_axil_*" }
+    "out:m_axis_*" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="m_axis_*\nm_axis_tdata\nm_axis_tvalid\nm_axis_tuser\nm_axis_tlast"];
+    "out:s_axil_*" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="s_axil_*\ns_axil_awready\ns_axil_wready\ns_axil_bresp\ns_axil_bvalid\ns_axil_arready\ns_axil_rdata\ns_axil_rresp\ns_axil_rvalid"];
+  }
+  "sig:m_araddr" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="m_araddr\n[2*ADDR_W-1:0]"];
+  "sig:m_arready" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="m_arready\n[1:0]"];
+  "sig:m_arvalid" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="m_arvalid\n[1:0]"];
+  "sig:m_awaddr" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="m_awaddr\n[2*ADDR_W-1:0]"];
+  "sig:m_awready" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="m_awready\n[1:0]"];
+  "sig:m_awvalid" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="m_awvalid\n[1:0]"];
+  "sig:m_bready" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="m_bready\n[1:0]"];
+  "sig:m_bresp" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="m_bresp\n[3:0]"];
+  "sig:m_bvalid" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="m_bvalid\n[1:0]"];
+  "sig:m_rdata" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="m_rdata\n[63:0]"];
+  "sig:m_rready" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="m_rready\n[1:0]"];
+  "sig:m_rresp" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="m_rresp\n[3:0]"];
+  "sig:m_rvalid" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="m_rvalid\n[1:0]"];
+  "sig:m_wdata" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="m_wdata\n[63:0]"];
+  "sig:m_wready" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="m_wready\n[1:0]"];
+  "sig:m_wstrb" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="m_wstrb\n[7:0]"];
+  "sig:m_wvalid" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="m_wvalid\n[1:0]"];
+  "inst:u_split" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>axil_split</B><BR/><FONT COLOR="#4b5563">u_split</FONT>>];
+  "inst:u_scaler" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>scaler_lanczos</B><BR/><FONT COLOR="#4b5563">u_scaler</FONT>>];
+  "inst:u_sharpen" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>sharpen_cas</B><BR/><FONT COLOR="#4b5563">u_sharpen</FONT>>];
+  "in:s_axil_*" -> "inst:u_split";
+  "inst:u_scaler" -> "sig:m_arready";
+  "inst:u_scaler" -> "sig:m_awready";
+  "inst:u_scaler" -> "sig:m_bresp";
+  "inst:u_scaler" -> "sig:m_bvalid";
+  "inst:u_scaler" -> "sig:m_rdata";
+  "inst:u_scaler" -> "sig:m_rresp";
+  "inst:u_scaler" -> "sig:m_rvalid";
+  "inst:u_scaler" -> "sig:m_wready";
+  "inst:u_sharpen" -> "sig:m_arready";
+  "inst:u_sharpen" -> "sig:m_awready";
+  "inst:u_sharpen" -> "sig:m_bresp";
+  "inst:u_sharpen" -> "sig:m_bvalid";
+  "inst:u_sharpen" -> "sig:m_rdata";
+  "inst:u_sharpen" -> "sig:m_rresp";
+  "inst:u_sharpen" -> "sig:m_rvalid";
+  "inst:u_sharpen" -> "sig:m_wready";
+  "inst:u_split" -> "out:s_axil_*";
+  "inst:u_split" -> "sig:m_araddr";
+  "inst:u_split" -> "sig:m_arvalid";
+  "inst:u_split" -> "sig:m_awaddr";
+  "inst:u_split" -> "sig:m_awvalid";
+  "inst:u_split" -> "sig:m_bready";
+  "inst:u_split" -> "sig:m_rready";
+  "inst:u_split" -> "sig:m_wdata";
+  "inst:u_split" -> "sig:m_wstrb";
+  "inst:u_split" -> "sig:m_wvalid";
+  "sig:m_araddr" -> "inst:u_scaler";
+  "sig:m_araddr" -> "inst:u_sharpen";
+  "sig:m_arready" -> "inst:u_split";
+  "sig:m_arvalid" -> "inst:u_scaler";
+  "sig:m_arvalid" -> "inst:u_sharpen";
+  "sig:m_awaddr" -> "inst:u_scaler";
+  "sig:m_awaddr" -> "inst:u_sharpen";
+  "sig:m_awready" -> "inst:u_split";
+  "sig:m_awvalid" -> "inst:u_scaler";
+  "sig:m_awvalid" -> "inst:u_sharpen";
+  "sig:m_bready" -> "inst:u_scaler";
+  "sig:m_bready" -> "inst:u_sharpen";
+  "sig:m_bresp" -> "inst:u_split";
+  "sig:m_bvalid" -> "inst:u_split";
+  "sig:m_rdata" -> "inst:u_split";
+  "sig:m_rready" -> "inst:u_scaler";
+  "sig:m_rready" -> "inst:u_sharpen";
+  "sig:m_rresp" -> "inst:u_split";
+  "sig:m_rvalid" -> "inst:u_split";
+  "sig:m_wdata" -> "inst:u_scaler";
+  "sig:m_wdata" -> "inst:u_sharpen";
+  "sig:m_wready" -> "inst:u_split";
+  "sig:m_wstrb" -> "inst:u_scaler";
+  "sig:m_wstrb" -> "inst:u_sharpen";
+  "sig:m_wvalid" -> "inst:u_scaler";
+  "sig:m_wvalid" -> "inst:u_sharpen";
+  "inst:u_scaler" -> "inst:u_sharpen" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Stream
+mid_t* (5)"];
+  "inst:u_sharpen" -> "out:m_axis_*" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Stream
+m_axis_t* (5)"];
+  "in:s_axis_*" -> "inst:u_scaler" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Stream
+s_axis_t* (5)"];
+}

@@ -1,0 +1,137 @@
+digraph "i2c_master_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>i2c_top</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/peripherals/i2c_master/src/i2c_top.sv; clocks / resets (not drawn): aclk, aresetn<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:s_axil_*" "in:s_axis_*" "in:scl_i" "in:sda_i" }
+    "in:s_axil_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_axil_*\ns_axil_awaddr\ns_axil_awvalid\ns_axil_wdata\ns_axil_wstrb\ns_axil_wvalid\ns_axil_bready\ns_axil_araddr\ns_axil_arvalid\ns_axil_rready"];
+    "in:s_axis_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_axis_*\ns_axis_tdata\ns_axis_tvalid\ns_axis_tlast"];
+    "in:scl_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="scl_i"];
+    "in:sda_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="sda_i"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:m_axis_*" "out:s_axil_*" "out:scl_o" "out:scl_t" "out:sda_o" "out:sda_t" }
+    "out:m_axis_*" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="m_axis_*\nm_axis_tdata\nm_axis_tvalid\nm_axis_tlast"];
+    "out:s_axil_*" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="s_axil_*\ns_axil_awready\ns_axil_wready\ns_axil_bresp\ns_axil_bvalid\ns_axil_arready\ns_axil_rdata\ns_axil_rresp\ns_axil_rvalid"];
+    "out:scl_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="scl_o"];
+    "out:scl_t" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="scl_t"];
+    "out:sda_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="sda_o"];
+    "out:sda_t" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="sda_t"];
+  }
+  subgraph cluster_b0 { label="always @ line 70"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:ip_chk_b_q" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="ip_chk_b_q"];
+    "sig:ip_chk_r_q" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="ip_chk_r_q"];
+  }
+  subgraph cluster_b1 { label="always_ff @ line 101"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:start_p" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="start_p"];
+  }
+  subgraph cluster_b2 { label="always_ff @ line 152"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:f_arb" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="f_arb\n[31:0]"];
+    "sig:f_done" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="f_done\n[31:0]"];
+    "sig:f_nack" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="f_nack\n[31:0]"];
+  }
+  "sig:arb_p" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="arb_p"];
+  "sig:bc_abort" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="bc_abort"];
+  "sig:bc_arb" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="bc_arb"];
+  "sig:bc_busy" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="bc_busy"];
+  "sig:bc_cmd" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="bc_cmd\n[1:0]"];
+  "sig:bc_din" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="bc_din"];
+  "sig:bc_done" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="bc_done"];
+  "sig:bc_dout" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="bc_dout"];
+  "sig:bc_valid" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="bc_valid"];
+  "sig:busy" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="busy"];
+  "sig:done_p" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="done_p"];
+  "sig:nack_p" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="nack_p"];
+  "sig:rd" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="rd\n[5*32-1:0]"];
+  "sig:regs" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="regs\n[5*32-1:0]"];
+  "sig:rxf_lvl" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="rxf_lvl\n[LW-1:0]"];
+  "sig:rxf_user" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="rxf_user"];
+  "sig:scl_low" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="scl_low"];
+  "sig:sda_low" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="sda_low"];
+  "sig:status" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="status\n[31:0]"];
+  "sig:txf_last" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="txf_last"];
+  "sig:txf_lvl" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="txf_lvl\n[LW-1:0]"];
+  "sig:txf_user" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="txf_user"];
+  "sig:wr_data" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="wr_data\n[31:0]"];
+  "sig:wr_pulse" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="wr_pulse\n[4:0]"];
+  "const:scl_o" [shape=plaintext, fontcolor="#6b7280", fontsize=8, label="constant"];
+  "const:sda_o" [shape=plaintext, fontcolor="#6b7280", fontsize=8, label="constant"];
+  "inst:u_regs" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>ip_axil_regs</B><BR/><FONT COLOR="#4b5563">u_regs</FONT>>];
+  "inst:u_txf" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>ip_axis_fifo</B><BR/><FONT COLOR="#4b5563">u_txf</FONT>>];
+  "inst:u_rxf" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>ip_axis_fifo</B><BR/><FONT COLOR="#4b5563">u_rxf</FONT>>];
+  "inst:u_fsm" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>i2c_master_fsm</B><BR/><FONT COLOR="#4b5563">u_fsm</FONT>>];
+  "inst:u_bit" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>i2c_bit_ctrl</B><BR/><FONT COLOR="#4b5563">u_bit</FONT>>];
+  "const:scl_o" -> "out:scl_o";
+  "const:sda_o" -> "out:sda_o";
+  "in:s_axil_*" -> "sig:ip_chk_b_q";
+  "in:s_axil_*" -> "sig:ip_chk_r_q";
+  "in:scl_i" -> "inst:u_bit";
+  "in:sda_i" -> "inst:u_bit";
+  "inst:u_bit" -> "sig:bc_arb";
+  "inst:u_bit" -> "sig:bc_busy";
+  "inst:u_bit" -> "sig:bc_done";
+  "inst:u_bit" -> "sig:bc_dout";
+  "inst:u_bit" -> "sig:scl_low";
+  "inst:u_bit" -> "sig:sda_low";
+  "inst:u_fsm" -> "sig:arb_p";
+  "inst:u_fsm" -> "sig:bc_abort";
+  "inst:u_fsm" -> "sig:bc_cmd";
+  "inst:u_fsm" -> "sig:bc_din";
+  "inst:u_fsm" -> "sig:bc_valid";
+  "inst:u_fsm" -> "sig:busy";
+  "inst:u_fsm" -> "sig:done_p";
+  "inst:u_fsm" -> "sig:nack_p";
+  "inst:u_regs" -> "out:s_axil_*";
+  "inst:u_regs" -> "sig:regs";
+  "inst:u_regs" -> "sig:wr_data";
+  "inst:u_regs" -> "sig:wr_pulse";
+  "inst:u_rxf" -> "sig:rxf_lvl";
+  "inst:u_rxf" -> "sig:rxf_user";
+  "inst:u_txf" -> "sig:txf_last";
+  "inst:u_txf" -> "sig:txf_lvl";
+  "inst:u_txf" -> "sig:txf_user";
+  "out:s_axil_*" -> "sig:ip_chk_b_q";
+  "out:s_axil_*" -> "sig:ip_chk_r_q";
+  "sig:arb_p" -> "sig:f_arb";
+  "sig:bc_abort" -> "inst:u_bit";
+  "sig:bc_arb" -> "inst:u_fsm";
+  "sig:bc_cmd" -> "inst:u_bit";
+  "sig:bc_din" -> "inst:u_bit";
+  "sig:bc_done" -> "inst:u_fsm";
+  "sig:bc_dout" -> "inst:u_fsm";
+  "sig:bc_valid" -> "inst:u_bit";
+  "sig:busy" -> "sig:status";
+  "sig:done_p" -> "sig:f_done";
+  "sig:f_arb" -> "sig:status";
+  "sig:f_done" -> "sig:status";
+  "sig:f_nack" -> "sig:status";
+  "sig:nack_p" -> "sig:f_nack";
+  "sig:rd" -> "inst:u_regs";
+  "sig:regs" -> "inst:u_bit";
+  "sig:regs" -> "inst:u_fsm";
+  "sig:regs" -> "sig:rd";
+  "sig:rxf_lvl" -> "sig:status";
+  "sig:scl_low" -> "out:scl_t";
+  "sig:sda_low" -> "out:sda_t";
+  "sig:start_p" -> "inst:u_fsm";
+  "sig:start_p" -> "sig:f_done";
+  "sig:status" -> "sig:rd";
+  "sig:wr_data" -> "sig:f_arb";
+  "sig:wr_data" -> "sig:f_done";
+  "sig:wr_data" -> "sig:f_nack";
+  "sig:wr_data" -> "sig:start_p";
+  "sig:wr_pulse" -> "sig:f_arb";
+  "sig:wr_pulse" -> "sig:f_done";
+  "sig:wr_pulse" -> "sig:f_nack";
+  "sig:wr_pulse" -> "sig:start_p";
+  "inst:u_txf" -> "inst:u_fsm" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Stream
+txf_* (3)"];
+  "inst:u_rxf" -> "out:m_axis_*" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Stream
+m_axis_t* (4)"];
+  "inst:u_fsm" -> "inst:u_rxf" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Stream
+rx_* (4)"];
+  "in:s_axil_*" -> "inst:u_regs" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Lite
+s_axil_* (17)"];
+  "in:s_axis_*" -> "inst:u_txf" [penwidth=3.2, color="#0f766e", fontcolor="#0f766e", fontname="Courier", fontsize=9, label="AXI4-Stream
+s_axis_t* (4)"];
+}

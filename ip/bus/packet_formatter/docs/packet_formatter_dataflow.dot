@@ -1,0 +1,74 @@
+digraph "packet_formatter_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>packet_formatter</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/bus/packet_formatter/src/packet_formatter.sv; clocks / resets (not drawn): aclk, aresetn<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:hdr_i" "in:m_axis_*" "in:s_axis_*" "in:trailer_i" }
+    "in:hdr_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="hdr_i\n[HDR_BYTES*8-1:0]"];
+    "in:m_axis_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="m_axis_tready"];
+    "in:s_axis_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_axis_*\ns_axis_tdata\ns_axis_tkeep\ns_axis_tlast\ns_axis_tvalid"];
+    "in:trailer_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="trailer_i\n[DATA_W-1:0]"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:align_err_o" "out:m_axis_*" "out:s_axis_*" }
+    "out:align_err_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="align_err_o"];
+    "out:m_axis_*" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="m_axis_*\nm_axis_tdata\nm_axis_tkeep\nm_axis_tlast\nm_axis_tvalid"];
+    "out:s_axis_*" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="s_axis_tready"];
+  }
+  subgraph cluster_b0 { label="always_ff @ line 64"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:beats" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="beats\n[15:0]"];
+    "sig:hb" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="hb\n[$clog2(HB+1)-1:0]"];
+    "sig:hreg" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="hreg\n[HDR_BYTES*8-1:0]"];
+    "sig:st" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="st"];
+    "sig:treg" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="treg\n[DATA_W-1:0]"];
+  }
+  "sig:full_keep" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="full_keep"];
+  "sig:is_pad" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="is_pad"];
+  "sig:last_tail" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="last_tail"];
+  "sig:tail_needed" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="tail_needed"];
+  "sig:tail_wanted" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="tail_wanted"];
+  "in:hdr_i" -> "sig:hreg";
+  "in:m_axis_*" -> "out:align_err_o";
+  "in:m_axis_*" -> "out:s_axis_*";
+  "in:m_axis_*" -> "sig:beats";
+  "in:m_axis_*" -> "sig:hb";
+  "in:m_axis_*" -> "sig:st";
+  "in:s_axis_*" -> "out:align_err_o";
+  "in:s_axis_*" -> "out:m_axis_*";
+  "in:s_axis_*" -> "sig:beats";
+  "in:s_axis_*" -> "sig:full_keep";
+  "in:s_axis_*" -> "sig:hb";
+  "in:s_axis_*" -> "sig:hreg";
+  "in:s_axis_*" -> "sig:st";
+  "in:s_axis_*" -> "sig:tail_needed";
+  "in:s_axis_*" -> "sig:treg";
+  "in:trailer_i" -> "sig:treg";
+  "sig:beats" -> "sig:beats";
+  "sig:beats" -> "sig:is_pad";
+  "sig:beats" -> "sig:last_tail";
+  "sig:beats" -> "sig:tail_wanted";
+  "sig:full_keep" -> "out:align_err_o";
+  "sig:full_keep" -> "sig:tail_needed";
+  "sig:hb" -> "out:m_axis_*";
+  "sig:hb" -> "sig:hb";
+  "sig:hb" -> "sig:st";
+  "sig:hreg" -> "out:m_axis_*";
+  "sig:is_pad" -> "out:m_axis_*";
+  "sig:is_pad" -> "sig:last_tail";
+  "sig:last_tail" -> "out:m_axis_*";
+  "sig:last_tail" -> "sig:st";
+  "sig:st" -> "out:align_err_o";
+  "sig:st" -> "out:m_axis_*";
+  "sig:st" -> "out:s_axis_*";
+  "sig:st" -> "sig:beats";
+  "sig:st" -> "sig:hb";
+  "sig:st" -> "sig:hreg";
+  "sig:st" -> "sig:st";
+  "sig:st" -> "sig:treg";
+  "sig:tail_needed" -> "out:align_err_o";
+  "sig:tail_needed" -> "out:m_axis_*";
+  "sig:tail_needed" -> "sig:st";
+  "sig:tail_wanted" -> "out:align_err_o";
+  "sig:tail_wanted" -> "sig:tail_needed";
+  "sig:treg" -> "out:m_axis_*";
+}

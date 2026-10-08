@@ -1,0 +1,69 @@
+digraph "pulse_generator_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>pulse_generator</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/timing/pulse_generator/src/pulse_generator.sv; clocks / resets (not drawn): clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:en_i" "in:oneshot_i" "in:period_i" "in:trigger_i" "in:width_i" }
+    "in:en_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="en_i"];
+    "in:oneshot_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="oneshot_i"];
+    "in:period_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="period_i\n[WIDTH-1:0]"];
+    "in:trigger_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="trigger_i"];
+    "in:width_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="width_i\n[WIDTH-1:0]"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:pulse_o" "out:start_o" }
+    "out:pulse_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="pulse_o"];
+    "out:start_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="start_o"];
+  }
+  subgraph cluster_b0 { label="always_ff @ line 33"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:active" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="active"];
+    "sig:p_lat" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="p_lat\n[WIDTH-1:0]"];
+    "sig:pcnt" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="pcnt\n[WIDTH-1:0]"];
+    "sig:raw" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="raw"];
+    "sig:w_lat" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="w_lat\n[WIDTH-1:0]"];
+    "sig:wcnt" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="wcnt\n[WIDTH-1:0]"];
+  }
+  "in:en_i" -> "out:start_o";
+  "in:en_i" -> "sig:active";
+  "in:en_i" -> "sig:p_lat";
+  "in:en_i" -> "sig:pcnt";
+  "in:en_i" -> "sig:raw";
+  "in:en_i" -> "sig:w_lat";
+  "in:en_i" -> "sig:wcnt";
+  "in:oneshot_i" -> "out:start_o";
+  "in:oneshot_i" -> "sig:active";
+  "in:oneshot_i" -> "sig:p_lat";
+  "in:oneshot_i" -> "sig:pcnt";
+  "in:oneshot_i" -> "sig:raw";
+  "in:oneshot_i" -> "sig:w_lat";
+  "in:oneshot_i" -> "sig:wcnt";
+  "in:period_i" -> "out:start_o";
+  "in:period_i" -> "sig:p_lat";
+  "in:period_i" -> "sig:pcnt";
+  "in:period_i" -> "sig:raw";
+  "in:period_i" -> "sig:w_lat";
+  "in:period_i" -> "sig:wcnt";
+  "in:trigger_i" -> "out:start_o";
+  "in:trigger_i" -> "sig:active";
+  "in:trigger_i" -> "sig:raw";
+  "in:trigger_i" -> "sig:wcnt";
+  "in:width_i" -> "out:start_o";
+  "in:width_i" -> "sig:active";
+  "in:width_i" -> "sig:raw";
+  "in:width_i" -> "sig:w_lat";
+  "in:width_i" -> "sig:wcnt";
+  "sig:active" -> "out:start_o";
+  "sig:active" -> "sig:active";
+  "sig:active" -> "sig:raw";
+  "sig:active" -> "sig:wcnt";
+  "sig:pcnt" -> "out:start_o";
+  "sig:pcnt" -> "sig:p_lat";
+  "sig:pcnt" -> "sig:pcnt";
+  "sig:pcnt" -> "sig:raw";
+  "sig:pcnt" -> "sig:w_lat";
+  "sig:pcnt" -> "sig:wcnt";
+  "sig:raw" -> "out:pulse_o";
+  "sig:wcnt" -> "sig:active";
+  "sig:wcnt" -> "sig:raw";
+  "sig:wcnt" -> "sig:wcnt";
+}
