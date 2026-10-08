@@ -102,7 +102,7 @@ module i2c_master_fsm (
           ST_TXB_I: state <= ST_TXB_W;
           ST_TXB_W: if (bc_done) begin
             sh <= {sh[6:0], 1'b0}; nbit <= nbit + 4'd1;
-            state <= (nbit == 4'd7) ? ST_ACK_I : ST_TXB_I;
+            state <= state_t'((nbit == 4'd7) ? ST_ACK_I : ST_TXB_I);
           end
           ST_ACK_I: state <= ST_ACK_W;
           ST_ACK_W: if (bc_done) begin
@@ -115,7 +115,7 @@ module i2c_master_fsm (
               else                state <= ST_WFETCH;
             end else begin                           // data byte acknowledged
               left <= left - 16'd1;
-              state <= (left == 16'd1) ? ST_END : ST_WFETCH;
+              state <= state_t'((left == 16'd1) ? ST_END : ST_WFETCH);
             end
           end
           ST_WFETCH: if (s_tvalid) begin
@@ -125,16 +125,16 @@ module i2c_master_fsm (
           ST_RBIT_I: state <= ST_RBIT_W;
           ST_RBIT_W: if (bc_done) begin
             sh <= {sh[6:0], bc_dout}; nbit <= nbit + 4'd1;
-            state <= (nbit == 4'd7) ? ST_RPUSH : ST_RBIT_I;
+            state <= state_t'((nbit == 4'd7) ? ST_RPUSH : ST_RBIT_I);
           end
           ST_RPUSH: if (m_tready) state <= ST_RACK_I;
           ST_RACK_I: state <= ST_RACK_W;
           ST_RACK_W: if (bc_done) begin
             left <= left - 16'd1; nbit <= '0;
-            state <= (left == 16'd1) ? ST_END : ST_RBIT_I;
+            state <= state_t'((left == 16'd1) ? ST_END : ST_RBIT_I);
           end
           // ---- finish ----
-          ST_END: state <= nostop_q ? ST_DONE : ST_STOP_I;
+          ST_END: state <= state_t'(nostop_q ? ST_DONE : ST_STOP_I);
           ST_STOP_I: state <= ST_STOP_W;
           ST_STOP_W: if (bc_done) state <= ST_DONE;
           ST_DONE: begin

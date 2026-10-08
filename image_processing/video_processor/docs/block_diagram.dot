@@ -1,0 +1,165 @@
+// ***************
+// Filename: block_diagram.dot
+// Author: FPGA Cores 4 U
+// Description: Block diagram of video_processor. Every block is labelled
+//   with the library module name (bold) and its instance name (u_*);
+//   nested IP is shown inside its parent. Fill colour = clock domain.
+//   Render: make diagram   (dot -Tsvg / -Tpng, Graphviz)
+// Date: 2026-10-02
+// ***************
+digraph video_processor {
+  graph [rankdir=LR, newrank=true, compound=true, bgcolor="white", pad=0.3, nodesep=0.22, ranksep=0.32,
+         fontname="Helvetica", fontsize=12, labelloc=t, labeljust=l,
+         label=<<FONT POINT-SIZE="22"><B>video_processor: video datapath detail</B></FONT><FONT POINT-SIZE="13">   u_pipe (video_pipeline) and the serializers; the full top level, with py_soc and vision_system, is in system_block_diagram.svg</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">Bold = library IP module name, grey = instance name. Every ISP stage and the scaler can be bypassed (BYPASS register, 0x008). Interfaces tagged `VP_* are included / excluded in src/configuration.sv.</FONT><BR ALIGN="LEFT"/>>];
+  node  [shape=plaintext, fontname="Helvetica", fontsize=10, margin=0];
+  edge  [color="#374151", arrowsize=0.7, penwidth=1.3, fontname="Helvetica", fontsize=9, fontcolor="#374151"];
+
+  // ======================= board (outside video_processor) =======================
+  subgraph cluster_board_in {
+    label=<<B>Board / vendor (not in this design)</B>>; style="dashed,rounded"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=11;
+    sensor [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>Camera sensor</B><BR/>RAW10 Bayer, MIPI CSI-2</TD></TR></TABLE>>];
+    dphy_rx [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>D-PHY RX</B> (vendor)<BR/>HS bytes per lane (PPI)<BR/>→ byte_clk</TD></TR></TABLE>>];
+    pll [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>PLL / MMCM</B> (vendor)<BR/>pix_clk, tmds_ser_clk (10x),<BR/>lvds_ser_clk (7x / 3.5x), tx_byte_clk<BR/>arst_n = locked AND board reset</TD></TR></TABLE>>];
+    host [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280" STYLE="dashed"><TR><TD><B>Host processor</B><BR/>AXI4-Lite master, e.g. <B>py_soc</B><BR/><FONT COLOR="#6b7280">(py_core + spi_flash_ctrl, uart_top,<BR/>i2c_top for sensor setup, gpio_top …;<BR/>needs an AXI master port to connect)</FONT></TD></TR></TABLE>>];
+  }
+  sensor -> dphy_rx [label="CSI-2\nlanes"];
+
+  // ======================= video_processor =======================
+  subgraph cluster_top {
+    label=<<FONT POINT-SIZE="15"><B>video_processor</B></FONT>   <FONT COLOR="#6b7280">src/video_processor.sv</FONT>>;
+    style="rounded,filled"; fillcolor="#fbfdff"; color="#1e3a8a"; penwidth=2.2; fontsize=12;
+
+    resets [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fef9c3" COLOR="#a16207">
+      <TR><TD><B>reset_sync</B> ×5</TD></TR>
+      <TR><TD ALIGN="LEFT"><FONT COLOR="#4b5563">u_rst_pix · u_rst_byte · u_rst_tx_byte<BR ALIGN="LEFT"/>u_rst_tmds · u_rst_lvds</FONT><BR ALIGN="LEFT"/>async assert, sync release per domain</TD></TR></TABLE>>];
+
+    // ----------------------- video_pipeline -----------------------
+    subgraph cluster_pipe {
+      label=<<FONT POINT-SIZE="14"><B>video_pipeline</B></FONT>  <FONT COLOR="#6b7280">u_pipe</FONT>>;
+      style="rounded,filled"; fillcolor="#ffffff"; color="#047857"; penwidth=1.8;
+
+      // --- control plane ---
+      subgraph cluster_ctl {
+        label=<<B>Control (AXI4-Lite, pix_clk)</B>>; style="rounded,dashed"; color="#7c3aed"; fontcolor="#5b21b6"; fontsize=10;
+        split [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ede9fe" COLOR="#7c3aed"><TR><TD><B>axil_split</B><BR/><FONT COLOR="#4b5563">u_split</FONT><BR/>addr bit 14</TD></TR></TABLE>>];
+        regs [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ede9fe" COLOR="#7c3aed"><TR><TD><B>ip_axil_regs</B><BR/><FONT COLOR="#4b5563">u_regs</FONT><BR/>0x000–0x0FF: CTRL, BYPASS,<BR/>ISP, VTG, OUT_CTRL, status,<BR/>BUILD_CFG</TD></TR></TABLE>>];
+        split -> regs;
+      }
+
+      // --- camera input, byte_clk ---
+      subgraph cluster_rx {
+        label=<<B>Camera input</B>  `VP_CSI2_RX>; style="rounded,dashed"; color="#b45309"; fontcolor="#92400e"; fontsize=10;
+        csi [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ffedd5" COLOR="#c2410c"><TR><TD><B>csi2_rx</B><BR/><FONT COLOR="#4b5563">u_csi</FONT><BR/>lane merge, header ECC,<BR/>CRC-16, VC / DT filter</TD></TR></TABLE>>];
+        cdc [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fde68a" COLOR="#a16207"><TR><TD><B>axis_async_bridge</B><BR/><FONT COLOR="#4b5563">u_cdc</FONT><BR/>byte_clk → pix_clk<BR/>(async_fifo)</TD></TR></TABLE>>];
+        psync [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fde68a" COLOR="#a16207"><TR><TD><B>pulse_sync</B> ×5<BR/><FONT COLOR="#4b5563">u_ps_fs, u_ps_corr, u_ps_err,<BR/>u_ps_crc, u_ps_ovf</FONT><BR/>event counters → regs</TD></TR></TABLE>>];
+        unpack [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#dcfce7" COLOR="#15803d"><TR><TD><B>csi2_raw_unpack</B><BR/><FONT COLOR="#4b5563">u_unpack</FONT><BR/>RAW8 / RAW10 → pixels</TD></TR></TABLE>>];
+        csi -> cdc -> unpack;
+        csi -> psync [style=dashed, arrowsize=0.5];
+      }
+
+      // --- ISP, pix_clk ---
+      subgraph cluster_isp {
+        label=<<B>ISP</B>  (each stage: bypass bit in BYPASS)>; style="rounded,dashed"; color="#15803d"; fontcolor="#166534"; fontsize=10;
+        blcwb [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#dcfce7" COLOR="#15803d"><TR><TD><B>isp_blc_wb</B><BR/><FONT COLOR="#4b5563">u_blc_wb</FONT><BR/>black level, white balance</TD></TR><TR><TD><FONT POINT-SIZE="9">bypass [0] BLC · [1] WB</FONT></TD></TR></TABLE>>];
+        dpc [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#dcfce7" COLOR="#15803d"><TR><TD><B>isp_dpc</B><BR/><FONT COLOR="#4b5563">u_dpc</FONT><BR/>defect pixel correction</TD></TR><TR><TD BGCOLOR="#bbf7d0"><B>isp_window</B> <FONT COLOR="#4b5563">u_win</FONT><BR/>5×5, mirror border</TD></TR><TR><TD><FONT POINT-SIZE="9">bypass [2]</FONT></TD></TR></TABLE>>];
+        demosaic [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#dcfce7" COLOR="#15803d"><TR><TD><B>isp_demosaic</B><BR/><FONT COLOR="#4b5563">u_demosaic</FONT><BR/>bilinear Bayer → RGB</TD></TR><TR><TD BGCOLOR="#bbf7d0"><B>isp_window</B> <FONT COLOR="#4b5563">u_win</FONT><BR/>3×3, mirror border</TD></TR><TR><TD><FONT POINT-SIZE="9">bypass [3]</FONT></TD></TR></TABLE>>];
+        ccm [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#dcfce7" COLOR="#15803d"><TR><TD><B>isp_ccm</B><BR/><FONT COLOR="#4b5563">u_ccm</FONT><BR/>3×3 colour matrix</TD></TR><TR><TD><FONT POINT-SIZE="9">bypass [4]</FONT></TD></TR></TABLE>>];
+        stats [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#dcfce7" COLOR="#15803d" STYLE="dashed"><TR><TD><B>isp_stats</B><BR/><FONT COLOR="#4b5563">u_stats</FONT><BR/>R/G/B sums, clip count<BR/>(AE / AWB) → stats_done_o</TD></TR></TABLE>>];
+        gamma [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#dcfce7" COLOR="#15803d"><TR><TD><B>isp_gamma</B><BR/><FONT COLOR="#4b5563">u_gamma</FONT><BR/>LUT 10 → 8 bit</TD></TR><TR><TD><FONT POINT-SIZE="9">bypass [5]</FONT></TD></TR></TABLE>>];
+        csc [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#dcfce7" COLOR="#15803d"><TR><TD><B>isp_csc</B><BR/><FONT COLOR="#4b5563">u_csc</FONT><BR/>RGB → YCbCr 601 / 709</TD></TR><TR><TD><FONT POINT-SIZE="9">bypass [6]</FONT></TD></TR></TABLE>>];
+        blcwb -> dpc -> demosaic -> ccm -> gamma -> csc;
+        ccm -> stats [style=dashed, label="tap"];
+      }
+
+      // --- geometry ---
+      subgraph cluster_geo {
+        label=<<B>Scaler</B>  (bypass [7], SCALER parameter)>; style="rounded,dashed"; color="#0e7490"; fontcolor="#155e75"; fontsize=10;
+        route [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#e0f2fe" COLOR="#0369a1" STYLE="dashed"><TR><TD>route / bypass<BR/><FONT COLOR="#4b5563">(video_pipeline logic)</FONT></TD></TR></TABLE>>];
+        scaler [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#cffafe" COLOR="#0e7490">
+          <TR><TD COLSPAN="2"><B>scaler_bilinear</B> <FONT COLOR="#4b5563">u_scaler</FONT><BR/>line-buffer mode, regs 0x4000–0x7FFF</TD></TR>
+          <TR><TD BGCOLOR="#a5f3fc"><B>scaler_ctrl</B><BR/><FONT COLOR="#4b5563">u_ctrl</FONT></TD><TD BGCOLOR="#a5f3fc"><B>axil_regbus</B><BR/><FONT COLOR="#4b5563">u_ctrl.u_axil</FONT></TD></TR>
+          <TR><TD BGCOLOR="#a5f3fc"><B>scaler_dda</B><BR/><FONT COLOR="#4b5563">u_dda</FONT></TD><TD BGCOLOR="#a5f3fc"><B>banked_framebuf</B><BR/><FONT COLOR="#4b5563">u_fb</FONT></TD></TR></TABLE>>];
+        merge [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#e0f2fe" COLOR="#0369a1" STYLE="dashed"><TR><TD>merge</TD></TR></TABLE>>];
+        route -> scaler -> merge;
+        route -> merge [label="bypass", style=dashed];
+      }
+
+      // --- output timing ---
+      subgraph cluster_out {
+        label=<<B>Output timing</B>  (genlock to camera, CTRL.TPG colour bars)>; style="rounded,dashed"; color="#15803d"; fontcolor="#166534"; fontsize=10;
+        vtg [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#dcfce7" COLOR="#15803d"><TR><TD><B>vid_timing_gen</B><BR/><FONT COLOR="#4b5563">u_vtg</FONT><BR/>hs / vs / de</TD></TR></TABLE>>];
+        a2v [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#dcfce7" COLOR="#15803d"><TR><TD><B>axis_to_video</B><BR/><FONT COLOR="#4b5563">u_out</FONT><BR/>stream → timed video, TPG</TD></TR><TR><TD BGCOLOR="#bbf7d0"><B>ip_axis_fifo</B> <FONT COLOR="#4b5563">u_fifo</FONT></TD></TR></TABLE>>];
+        vtg -> a2v [label="timing"];
+      }
+
+      // --- transmitters ---
+      subgraph cluster_tx {
+        label=<<B>Output transmitters</B>>; style="rounded,dashed"; color="#be185d"; fontcolor="#9d174d"; fontsize=10;
+        hdmi [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#dcfce7" COLOR="#15803d"><TR><TD><B>hdmi_tx</B> <FONT COLOR="#4b5563">u_hdmi</FONT>  `VP_HDMI<BR/>HDMI / DVI, AVI InfoFrame</TD></TR><TR><TD BGCOLOR="#bbf7d0"><B>tmds_encoder</B> ×3<BR/><FONT COLOR="#4b5563">u_ch0, u_ch1, u_ch2</FONT></TD></TR></TABLE>>];
+        lvds [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#dcfce7" COLOR="#15803d"><TR><TD><B>lvds_tx</B> <FONT COLOR="#4b5563">u_lvds</FONT>  `VP_LVDS<BR/>OpenLDI 7-bit words<BR/>VESA / JEIDA, 18 / 24 bpp, dual link</TD></TR></TABLE>>];
+        dsi [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fce7f3" COLOR="#be185d">
+          <TR><TD COLSPAN="2"><B>dsi_tx</B> <FONT COLOR="#4b5563">u_dsi</FONT>  `VP_DSI<BR/>DSI video + DCS commands</TD></TR>
+          <TR><TD BGCOLOR="#dcfce7"><B>mipi_line_buf</B><BR/><FONT COLOR="#4b5563">u_lb</FONT></TD><TD><B>mipi_tx_engine</B><BR/><FONT COLOR="#4b5563">u_eng</FONT></TD></TR>
+          <TR><TD COLSPAN="2"><B>async_fifo</B> ×3 <FONT COLOR="#4b5563">u_ev, u_cmd, u_pay</FONT></TD></TR></TABLE>>];
+        csitx [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fce7f3" COLOR="#be185d">
+          <TR><TD COLSPAN="2"><B>csi2_tx</B> <FONT COLOR="#4b5563">u_csitx</FONT>  `VP_CSI2_TX<BR/>RGB888 / YUV422 to a processor</TD></TR>
+          <TR><TD BGCOLOR="#dcfce7"><B>mipi_line_buf</B><BR/><FONT COLOR="#4b5563">u_lb</FONT></TD><TD><B>mipi_tx_engine</B><BR/><FONT COLOR="#4b5563">u_eng</FONT></TD></TR>
+          <TR><TD COLSPAN="2"><B>async_fifo</B> <FONT COLOR="#4b5563">u_ev</FONT></TD></TR></TABLE>>];
+        bsync [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fde68a" COLOR="#a16207"><TR><TD><B>bit_sync</B><BR/><FONT COLOR="#4b5563">u_dsi_busy</FONT></TD></TR></TABLE>>];
+        dsi -> bsync [style=dashed, arrowsize=0.5];
+      }
+
+      // pipeline data path
+      unpack -> blcwb [label="RAW\n10b"];
+      csc -> route [label="RGB / YCbCr\n24b"];
+      merge -> a2v;
+      a2v -> hdmi; a2v -> lvds; a2v -> dsi; a2v -> csitx;
+    }
+
+    // ----------------------- serializers (in video_processor) -----------------------
+    subgraph cluster_ser {
+      label=<<B>Serializers</B> (generic, behavioural)>; style="rounded,dashed"; color="#1d4ed8"; fontcolor="#1e40af"; fontsize=10;
+      tser [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#dbeafe" COLOR="#1d4ed8"><TR><TD><B>tmds_serializer</B><BR/><FONT COLOR="#4b5563">u_tmds_ser</FONT>  `VP_HDMI<BR/>10:1 on tmds_ser_clk</TD></TR></TABLE>>];
+      lser [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#dbeafe" COLOR="#1d4ed8"><TR><TD><B>lvds_serializer</B> ×2<BR/><FONT COLOR="#4b5563">u_lvds_ser_a, u_lvds_ser_b</FONT>  `VP_LVDS<BR/>7:1 on lvds_ser_clk, 5 lanes each</TD></TR></TABLE>>];
+    }
+    hdmi -> tser [label="TMDS 10b ×4"];
+    lvds -> lser [label="7b words"];
+  }
+
+  // ======================= board outputs =======================
+  subgraph cluster_board_out {
+    label=<<B>Board / vendor (not in this design)</B>>; style="dashed,rounded"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=11;
+    hdmi_con [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>OBUFDS</B> ×4 → HDMI / DVI connector</TD></TR></TABLE>>];
+    lvds_con [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>OBUFDS</B> ×5 / ×10 → LVDS panel</TD></TR></TABLE>>];
+    dphy_dsi [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>D-PHY TX</B> (vendor) → DSI panel</TD></TR></TABLE>>];
+    dphy_csi [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>D-PHY TX</B> (vendor) → SoC / processor</TD></TR></TABLE>>];
+  }
+
+  // ======================= legend =======================
+  legend [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
+    <TR><TD COLSPAN="2"><B>Clock domain (fill)</B></TD></TR>
+    <TR><TD BGCOLOR="#ffedd5" WIDTH="22"> </TD><TD ALIGN="LEFT">byte_clk (D-PHY RX)</TD></TR>
+    <TR><TD BGCOLOR="#dcfce7"> </TD><TD ALIGN="LEFT">pix_clk</TD></TR>
+    <TR><TD BGCOLOR="#ede9fe"> </TD><TD ALIGN="LEFT">pix_clk, register / control</TD></TR>
+    <TR><TD BGCOLOR="#cffafe"> </TD><TD ALIGN="LEFT">pix_clk, scaler</TD></TR>
+    <TR><TD BGCOLOR="#fce7f3"> </TD><TD ALIGN="LEFT">pix_clk → tx_byte_clk (MIPI TX)</TD></TR>
+    <TR><TD BGCOLOR="#dbeafe"> </TD><TD ALIGN="LEFT">pix_clk → serial clock</TD></TR>
+    <TR><TD BGCOLOR="#fde68a"> </TD><TD ALIGN="LEFT">clock-domain crossing</TD></TR>
+    <TR><TD BGCOLOR="#fef9c3"> </TD><TD ALIGN="LEFT">reset synchronisers</TD></TR>
+    <TR><TD BGCOLOR="#f3f4f6"> </TD><TD ALIGN="LEFT">board / vendor, outside the design</TD></TR></TABLE>>];
+
+  // ======================= top-level connections =======================
+  dphy_rx -> csi [label="lane_data / valid\nbyte_clk"];
+  host -> split [label="AXI4-Lite\ns_axil_*", color="#7c3aed", fontcolor="#5b21b6"];
+  pll -> resets [label="clocks, arst_n", color="#a16207", fontcolor="#a16207", style=dashed];
+  regs -> blcwb [style=dotted, color="#7c3aed", arrowhead=none, constraint=false];
+  split -> scaler [label="0x4000+", style=dotted, color="#7c3aed", fontcolor="#5b21b6", constraint=false];
+  tser -> hdmi_con [label="tmds_serial_o[3:0]"];
+  lser -> lvds_con [label="lvds_a/b_serial_o[4:0]"];
+  dsi -> dphy_dsi [label="dsi_lane_*\ntx_byte_clk"];
+  csitx -> dphy_csi [label="csitx_lane_*\ntx_byte_clk"];
+  dphy_csi -> legend [style=invis];
+
+  // keep inputs on the left, outputs on the right
+  { rank=same; sensor; pll; host; }
+}

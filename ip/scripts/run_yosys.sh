@@ -4,7 +4,8 @@
 # Author: FPGA Cores 4 U
 # Description: Run the common Yosys Xilinx 7-series flow on one IP.
 #   Sources come from <ip>/scripts/build.f, the flow is in
-#   scripts/synth.ys and all results go to build/yosys/<ip>.
+#   scripts/synth.ys and all results go to build/yosys/<ip>. An IP with a
+#   scripts/sv2v marker file is converted with sv2v before Yosys reads it.
 # Date: 2026-09-29
 #
 # Usage: scripts/run_yosys.sh <ip>
@@ -19,11 +20,22 @@ fi
 command -v yosys >/dev/null || { echo "yosys not found"; exit 1; }
 BUILD_ROOT="${BUILD_ROOT:-$REPO/build}"
 OUT="$BUILD_ROOT/yosys/$IP"; rm -rf "$OUT"; mkdir -p "$OUT"
+if [ -f "$IPDIR/scripts/sv2v" ]; then
+  # IP includes sources the Yosys SystemVerilog reader cannot parse (e.g. the
+  # scaler family): convert the whole file list with sv2v first, as the
+  # scaler flow does
+  command -v sv2v >/dev/null || { echo "sv2v not found"; exit 1; }
+  sv2v $(filelist "$IP") > "$OUT/$IP.sv2v.v"
+  { echo "# generated from $CAT/$IP/scripts/build.f via sv2v"
+    echo "read_verilog -sv $OUT/$IP.sv2v.v"
+    echo "hierarchy -check -top $TOP"; } > "$OUT/read_design.ys"
+else
 {
   echo "# generated from $CAT/$IP/scripts/build.f"
   for f in $(filelist "$IP"); do echo "read_verilog -sv $f"; done
   echo "hierarchy -check -top $TOP"
 } > "$OUT/read_design.ys"
+fi
 cd "$OUT"
 yosys -l yosys.log -s "$REPO/scripts/synth.ys" > /dev/null || { tail -5 yosys.log; exit 1; }
 # ltp sees module instances as combinational boxes, so the top entry is a

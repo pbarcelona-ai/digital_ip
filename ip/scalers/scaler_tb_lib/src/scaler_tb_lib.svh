@@ -103,6 +103,7 @@ task automatic check_buffering(input int ih);
 `endif
 endtask
 
+int fcov_multi = 0;      // frames-per-test coverage bin, read by buffering_report()
 task automatic buffering_report();
   string mode;
   mode = "n/a";
@@ -129,7 +130,7 @@ int fcov_x_up = 0, fcov_x_down = 0, fcov_x_same = 0;
 int fcov_y_up = 0, fcov_y_down = 0, fcov_y_same = 0;
 int fcov_mixed = 0, fcov_int2x = 0, fcov_nonint = 0, fcov_big_down = 0;
 int fcov_in_1px = 0, fcov_out_1px = 0, fcov_in_max = 0;
-int fcov_junk = 0, fcov_fullrate = 0, fcov_backpressure = 0, fcov_file = 0, fcov_multi = 0;
+int fcov_junk = 0, fcov_fullrate = 0, fcov_backpressure = 0, fcov_file = 0;
 int fcov_pattern [4];
 initial for (int i = 0; i < 4; i++) fcov_pattern[i] = 0;
 

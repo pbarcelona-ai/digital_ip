@@ -107,6 +107,7 @@ module tb_scaler_ctrl;
   // Complete capture scenario: configure, enable, send a frame, check the
   // frame-buffer writes, gen_start and STATUS, emulate gen_done, check
   // FRAME_CNT / FRAME_DONE / error bits, then disable and clear
+  int e_pre;                            // error count at the start of a scenario
   task automatic capture_test(int w, int h, int junk, bit bad_eol, int restart_at);
     logic [31:0] st, fc0, fc1;
     e_pre = errors;
@@ -146,7 +147,6 @@ module tb_scaler_ctrl;
     $display("capture %0dx%0d junk=%0d bad_eol=%0b restart=%0d : %s", w, h, junk, bad_eol,
              restart_at, errors == e_pre ? "pass" : "FAIL");
   endtask
-  int e_pre;
 
   // Main sequence: register checks, ext bus forwarding, then captures
 

@@ -104,10 +104,9 @@ module tb_spatial_upscaler;
     return r;
   endfunction
 
-  task automatic mm(input int v, inout int mn, inout int mx);
-    if (v < mn) mn = v;
-    if (v > mx) mx = v;
-  endtask
+  // Min/max helpers (functions: they are called from golden_pixel)
+  function automatic int imin(input int a, input int b); return (a < b) ? a : b; endfunction
+  function automatic int imax(input int a, input int b); return (a > b) ? a : b; endfunction
 
   function automatic logic [PIX_W-1:0] golden_pixel(int ox, int oy);
     logic [PIX_W-1:0] r;
@@ -119,10 +118,10 @@ module tb_spatial_upscaler;
       e = mc(ox, oy, c); n = mc(ox, oy - 1, c); s = mc(ox, oy + 1, c);
       w = mc(ox - 1, oy, c); ea = mc(ox + 1, oy, c);
       mn5 = e; mx5 = e;
-      mm(n, mn5, mx5); mm(s, mn5, mx5); mm(w, mn5, mx5); mm(ea, mn5, mx5);
+      mn5 = imin(n, mn5); mx5 = imax(n, mx5); mn5 = imin(s, mn5); mx5 = imax(s, mx5); mn5 = imin(w, mn5); mx5 = imax(w, mx5); mn5 = imin(ea, mn5); mx5 = imax(ea, mx5);
       mn9 = mn5; mx9 = mx5;
-      mm(mc(ox - 1, oy - 1, c), mn9, mx9); mm(mc(ox + 1, oy - 1, c), mn9, mx9);
-      mm(mc(ox - 1, oy + 1, c), mn9, mx9); mm(mc(ox + 1, oy + 1, c), mn9, mx9);
+      mn9 = imin(mc(ox - 1, oy - 1, c), mn9); mx9 = imax(mc(ox - 1, oy - 1, c), mx9); mn9 = imin(mc(ox + 1, oy - 1, c), mn9); mx9 = imax(mc(ox + 1, oy - 1, c), mx9);
+      mn9 = imin(mc(ox - 1, oy + 1, c), mn9); mx9 = imax(mc(ox - 1, oy + 1, c), mx9); mn9 = imin(mc(ox + 1, oy + 1, c), mn9); mx9 = imax(mc(ox + 1, oy + 1, c), mx9);
       head = mn5 + mn9;
       if (2 * M - (mx5 + mx9) < head) head = 2 * M - (mx5 + mx9);
       if (mx5 + mx9 == 0) amp = 0;

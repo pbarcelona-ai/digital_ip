@@ -43,6 +43,7 @@ module async_fifo #(
 
   // ---------------- write domain ----------------
   logic [AW:0] wbin, wgray, wbin_n, wgray_n;
+  logic [AW:0] rbin, rgray, rbin_n, rgray_n;                   // read pointers (declared before the write side uses rgray)
   (* async_reg = "true" *) logic [AW:0] rgray_s1, rgray_s2;   // read gray in wclk
   logic wfull;
   wire  wen = wvalid & ~wfull;
@@ -64,7 +65,6 @@ module async_fifo #(
   assign wready = ~wfull;
 
   // ---------------- read domain ----------------
-  logic [AW:0] rbin, rgray, rbin_n, rgray_n;
   (* async_reg = "true" *) logic [AW:0] wgray_s1, wgray_s2;   // write gray in rclk
   logic rempty;
   logic [DATA_W-1:0] mem_q, o_q; logic mem_q_vld, o_vld;

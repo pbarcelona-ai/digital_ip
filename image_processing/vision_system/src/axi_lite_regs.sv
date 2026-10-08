@@ -450,6 +450,6 @@ module axi_lite_regs #(
   assign cfg_out.h23       = reg_h23;
   assign cfg_out.h31       = reg_h31;
   assign cfg_out.h32       = reg_h32;
-  assign cfg_out.model_sel = reg_model_sel[2:0];
+  assign cfg_out.model_sel = distortion_model_pkg::distortion_model_e'(reg_model_sel[2:0]);
 
 endmodule

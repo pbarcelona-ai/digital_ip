@@ -398,7 +398,7 @@ module scaler_ctrl #(
         end
         // wait for the generator (NBUF = 1 and line-buffer mode)
         S_GENERATE: begin
-          if (gen_free) state <= enable ? S_CAPTURE : S_IDLE;
+          if (gen_free) state <= state_t'(enable ? S_CAPTURE : S_IDLE);
         end
         // NBUF = 2: a frame is waiting in cap_buf for the generator
         S_HOLD: begin
@@ -407,7 +407,7 @@ module scaler_ctrl #(
             gen_busy  <= 1'b1;
             gen_start <= 1'b1;
             cap_buf   <= !cap_buf;
-            state     <= enable ? S_CAPTURE : S_IDLE;
+            state     <= state_t'(enable ? S_CAPTURE : S_IDLE);
           end
         end
         default: state <= S_IDLE;

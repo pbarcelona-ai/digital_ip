@@ -123,25 +123,6 @@ module scaler_polyphase #(
   logic [ADDR_W-1:0]  ext_waddr, ext_raddr;
   logic [31:0]        ext_wdata;
 
-  scaler_ctrl #(.PIX_W(PIX_W), .ADDR_W(ADDR_W), .MAX_W(MAX_W), .MAX_H(MAX_H),
-                .IP_ID(IP_ID), .CAPS(CAPS), .NBUF(NBUF), .LB_ROWS(LB_ROWS),
-                .LB_TAPS(WIN_T), .LB_CTR((TAPS - 1) / 2), .LB_RND(1 << (16 - PHASE_BITS - 1))) u_ctrl (
-    .clk, .rst_n,
-    .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready,
-    .s_axil_wdata,  .s_axil_wstrb,   .s_axil_wvalid, .s_axil_wready,
-    .s_axil_bresp,  .s_axil_bvalid,  .s_axil_bready,
-    .s_axil_araddr, .s_axil_arvalid, .s_axil_arready,
-    .s_axil_rdata,  .s_axil_rresp,   .s_axil_rvalid, .s_axil_rready,
-    .s_axis_tdata, .s_axis_tvalid, .s_axis_tready, .s_axis_tuser, .s_axis_tlast,
-    .fb_we, .fb_wx, .fb_wy, .fb_wdata,
-    .fb_wbuf, .gen_buf, .gen_start, .gen_done,
-    .lb_nxt_y(d_nxt_y), .lb_nxt_v(d_busy), .lb_o_y(d_y), .lb_o_v(d_valid),
-    .lb_a_y(a_y), .lb_a_v(v_q[0]), .lb_hold,
-    .cfg_in_w(in_w), .cfg_in_h(in_h), .cfg_out_w(out_w), .cfg_out_h(out_h),
-    .cfg_step_x(step_x), .cfg_step_y(step_y), .cfg_offs_x(offs_x), .cfg_offs_y(offs_y),
-    .ext_wr, .ext_waddr, .ext_wdata, .ext_rd, .ext_raddr, .ext_rdata(ext_rdata)
-  );
-
   // ---------------------------------------------------------------- coefficient tables
   // coef_h[phase][tap] / coef_v[phase][tap], written over AXI-Lite. Each
   // phase row is read in full every clock, so the tables are kept as
@@ -382,4 +363,24 @@ module scaler_polyphase #(
 
   assign gen_done = m_axis_tvalid && m_axis_tready && m_eof;
 
+  // Control, registers and frame buffers. Instantiated last so every
+  // signal it connects to is declared above it.
+  scaler_ctrl #(.PIX_W(PIX_W), .ADDR_W(ADDR_W), .MAX_W(MAX_W), .MAX_H(MAX_H),
+                .IP_ID(IP_ID), .CAPS(CAPS), .NBUF(NBUF), .LB_ROWS(LB_ROWS),
+                .LB_TAPS(WIN_T), .LB_CTR((TAPS - 1) / 2), .LB_RND(1 << (16 - PHASE_BITS - 1))) u_ctrl (
+    .clk, .rst_n,
+    .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready,
+    .s_axil_wdata,  .s_axil_wstrb,   .s_axil_wvalid, .s_axil_wready,
+    .s_axil_bresp,  .s_axil_bvalid,  .s_axil_bready,
+    .s_axil_araddr, .s_axil_arvalid, .s_axil_arready,
+    .s_axil_rdata,  .s_axil_rresp,   .s_axil_rvalid, .s_axil_rready,
+    .s_axis_tdata, .s_axis_tvalid, .s_axis_tready, .s_axis_tuser, .s_axis_tlast,
+    .fb_we, .fb_wx, .fb_wy, .fb_wdata,
+    .fb_wbuf, .gen_buf, .gen_start, .gen_done,
+    .lb_nxt_y(d_nxt_y), .lb_nxt_v(d_busy), .lb_o_y(d_y), .lb_o_v(d_valid),
+    .lb_a_y(a_y), .lb_a_v(v_q[0]), .lb_hold,
+    .cfg_in_w(in_w), .cfg_in_h(in_h), .cfg_out_w(out_w), .cfg_out_h(out_h),
+    .cfg_step_x(step_x), .cfg_step_y(step_y), .cfg_offs_x(offs_x), .cfg_offs_y(offs_y),
+    .ext_wr, .ext_waddr, .ext_wdata, .ext_rd, .ext_raddr, .ext_rdata(ext_rdata)
+  );
 endmodule

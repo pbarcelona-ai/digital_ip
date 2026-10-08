@@ -77,7 +77,7 @@ module dma_rd_engine #(
       case (state)
         S_IDLE: if (start_i) begin
           addr_q <= addr_i; left <= nwords_i; err_o <= 1'b0;
-          state <= (nwords_i == 24'd0) ? S_DONE : S_CALC;
+          state <= state_t'((nwords_i == 24'd0) ? S_DONE : S_CALC);
         end
         S_CALC: begin blen <= 9'(cap1); state <= S_AR; end
         S_AR: if (m_axi_arready) begin
@@ -87,7 +87,7 @@ module dma_rd_engine #(
         end
         S_DATA: if (m_axi_rvalid & m_tready) begin
           if (m_axi_rresp != 2'b00) err_o <= 1'b1;
-          if (m_axi_rlast) state <= (left == 24'd0) ? S_DONE : S_CALC;
+          if (m_axi_rlast) state <= state_t'((left == 24'd0) ? S_DONE : S_CALC);
         end
         S_DONE: begin done_o <= 1'b1; state <= S_IDLE; end
         default: state <= S_IDLE;

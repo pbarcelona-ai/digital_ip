@@ -82,7 +82,7 @@ module dma_wr_engine #(
       case (state)
         S_IDLE: if (start_i) begin
           addr_q <= addr_i; left <= nwords_i; err_o <= 1'b0;
-          state <= (nwords_i == 24'd0) ? S_DONE : S_CALC;
+          state <= state_t'((nwords_i == 24'd0) ? S_DONE : S_CALC);
         end
         S_CALC: begin blen <= 9'(cap1); beat <= '0; state <= S_AW; end
         S_AW: if (m_axi_awready) begin
@@ -96,7 +96,7 @@ module dma_wr_engine #(
         end
         S_B: if (m_axi_bvalid) begin
           if (m_axi_bresp != 2'b00) err_o <= 1'b1;
-          state <= (left == 24'd0) ? S_DONE : S_CALC;
+          state <= state_t'((left == 24'd0) ? S_DONE : S_CALC);
         end
         S_DONE: begin done_o <= 1'b1; state <= S_IDLE; end
         default: state <= S_IDLE;

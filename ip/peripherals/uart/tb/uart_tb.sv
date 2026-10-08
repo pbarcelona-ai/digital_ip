@@ -135,7 +135,7 @@ module uart_tb;
     // ---- Test 1: transmit 8N1 ----
     mon_en = 1; mon_nbits = 8;
     for (int i = 0; i < 6; i++) begin
-      exp_q.push_back(8'hA0 + i * 17); stream_send(8'hA0 + i * 17);
+      exp_q.push_back(8'(8'hA0 + i * 17)); stream_send(8'hA0 + i * 17);
     end
     wait (mon_count == 6);
     #(BIT_NS * 3);
@@ -145,7 +145,7 @@ module uart_tb;
     axil_write(8'h00, 32'b0001_0111 | (32'd1 << 6));   // tx,rx,par_en,stop2, 7 bits
     mon_nbits = 7; mon_pen = 1; mon_podd = 0; mon_stop2 = 1; mon_count = 0;
     for (int i = 0; i < 4; i++) begin
-      exp_q.push_back(8'h35 + i * 9); stream_send(8'h35 + i * 9);
+      exp_q.push_back(8'(8'h35 + i * 9)); stream_send(8'h35 + i * 9);
     end
     wait (mon_count == 4);
     #(BIT_NS * 3);
@@ -161,7 +161,7 @@ module uart_tb;
     // ---- Test 3: receive 8N1 from the external driver ----
     axil_write(8'h00, 32'h3);
     for (int i = 0; i < 8; i++) begin
-      rx_q.push_back(8'h10 * i + 3);
+      rx_q.push_back(8'(8'h10 * i + 3));
       serial_send(8'h10 * i + 3, 8, 0, 0, 0, 0, 0);
     end
     #(BIT_NS * 3);
@@ -188,7 +188,7 @@ module uart_tb;
     // ---- Test 5: internal loopback ----
     axil_write(8'h00, 32'h23);                           // tx,rx,loopback
     for (int i = 0; i < 10; i++) begin
-      rx_q.push_back(8'hF0 ^ (i * 29)); stream_send(8'hF0 ^ (i * 29));
+      rx_q.push_back(8'(8'hF0 ^ (i * 29))); stream_send(8'hF0 ^ (i * 29));
     end
     #(BIT_NS * 10 * 10 + BIT_NS * 3);
     check(rx_q.size() == 0, $sformatf("loopback: %0d bytes missing", rx_q.size()));
