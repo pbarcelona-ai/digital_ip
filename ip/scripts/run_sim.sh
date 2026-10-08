@@ -34,6 +34,12 @@ if [[ "$CAT" == scalers ]]; then
     *) echo "unsupported simulator '$SIM'" >&2; exit 2 ;;
   esac
 fi
+# An IP with its own flow (e.g. py_soc: compile the firmware, then simulate) provides scripts/run_test.sh;
+# it must exit non-zero on failure and accepts the same --vcd option.
+if [ -x "$IPDIR/scripts/run_test.sh" ]; then
+  "$IPDIR/scripts/run_test.sh" "$@" && { echo "[$IP] PASSED"; exit 0; }
+  echo "[$IP] SIMULATION FAILED"; exit 1
+fi
 VCD=0; WAVE=0; LINT=0
 for a in "$@"; do
   case "$a" in --vcd) VCD=1;; --wave) VCD=1; WAVE=1;; --lint) LINT=1;;

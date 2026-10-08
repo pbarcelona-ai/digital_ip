@@ -183,7 +183,7 @@ def render_index(rows: list[tuple[str, str, str]], hosted_copy: bool = False) ->
         groups.setdefault(row[1], []).append(row)
     sections = []
     for category in sorted(groups, key=str.casefold):
-        display_category = category.upper() if category.casefold() in {"cdc", "fifo"} else category.title()
+        display_category = category.upper() if category.casefold() in {"cdc", "fifo", "cpu"} else category.title()
         items = []
         for name, _, top in sorted(groups[category], key=lambda row: row[0].casefold()):
             title, _, _ = module_info(name, category, top)

@@ -97,12 +97,39 @@ Generated from `scripts/ips.csv`, RTL headers, and scaler module READMEs.
 | [sharpen_cas](sharpen_cas/index.html) | scalers | `sharpen_cas` | [`sharpen_cas_tb.sv`](../scalers/sharpen_cas/tb/sharpen_cas_tb.sv) |
 | [spatial_upscaler](spatial_upscaler/index.html) | scalers | `spatial_upscaler` | [`spatial_upscaler_tb.sv`](../scalers/spatial_upscaler/tb/spatial_upscaler_tb.sv) |
 | [mac](mac/index.html) | math | `mac` | [`mac_tb.sv`](../math/mac/tb/mac_tb.sv) |
+| [csi2_rx](csi2_rx/index.html) | video | `csi2_rx` | [`csi2_rx_tb.sv`](../video/csi2_rx/tb/csi2_rx_tb.sv) |
+| [csi2_raw_unpack](csi2_raw_unpack/index.html) | video | `csi2_raw_unpack` | [`csi2_raw_unpack_tb.sv`](../video/csi2_raw_unpack/tb/csi2_raw_unpack_tb.sv) |
+| [isp_window](isp_window/index.html) | video | `isp_window` | [`isp_window_tb.sv`](../video/isp_window/tb/isp_window_tb.sv) |
+| [isp_blc_wb](isp_blc_wb/index.html) | video | `isp_blc_wb` | [`isp_blc_wb_tb.sv`](../video/isp_blc_wb/tb/isp_blc_wb_tb.sv) |
+| [isp_dpc](isp_dpc/index.html) | video | `isp_dpc` | [`isp_dpc_tb.sv`](../video/isp_dpc/tb/isp_dpc_tb.sv) |
+| [isp_demosaic](isp_demosaic/index.html) | video | `isp_demosaic` | [`isp_demosaic_tb.sv`](../video/isp_demosaic/tb/isp_demosaic_tb.sv) |
+| [isp_ccm](isp_ccm/index.html) | video | `isp_ccm` | [`isp_ccm_tb.sv`](../video/isp_ccm/tb/isp_ccm_tb.sv) |
+| [isp_gamma](isp_gamma/index.html) | video | `isp_gamma` | [`isp_gamma_tb.sv`](../video/isp_gamma/tb/isp_gamma_tb.sv) |
+| [isp_csc](isp_csc/index.html) | video | `isp_csc` | [`isp_csc_tb.sv`](../video/isp_csc/tb/isp_csc_tb.sv) |
+| [isp_stats](isp_stats/index.html) | video | `isp_stats` | [`isp_stats_tb.sv`](../video/isp_stats/tb/isp_stats_tb.sv) |
+| [vid_timing_gen](vid_timing_gen/index.html) | video | `vid_timing_gen` | [`vid_timing_gen_tb.sv`](../video/vid_timing_gen/tb/vid_timing_gen_tb.sv) |
+| [axis_to_video](axis_to_video/index.html) | video | `axis_to_video` | [`axis_to_video_tb.sv`](../video/axis_to_video/tb/axis_to_video_tb.sv) |
+| [tmds_encoder](tmds_encoder/index.html) | video | `tmds_encoder` | [`tmds_encoder_tb.sv`](../video/tmds_encoder/tb/tmds_encoder_tb.sv) |
+| [hdmi_tx](hdmi_tx/index.html) | video | `hdmi_tx` | [`hdmi_tx_tb.sv`](../video/hdmi_tx/tb/hdmi_tx_tb.sv) |
+| [tmds_serializer](tmds_serializer/index.html) | video | `tmds_serializer` | [`tmds_serializer_tb.sv`](../video/tmds_serializer/tb/tmds_serializer_tb.sv) |
+| [video_pipeline](video_pipeline/index.html) | video | `video_pipeline` | [`video_pipeline_tb.sv`](../video/video_pipeline/tb/video_pipeline_tb.sv) |
+| [csi2_tx](csi2_tx/index.html) | video | `csi2_tx` | [`csi2_tx_tb.sv`](../video/csi2_tx/tb/csi2_tx_tb.sv) |
+| [dsi_tx](dsi_tx/index.html) | video | `dsi_tx` | [`dsi_tx_tb.sv`](../video/dsi_tx/tb/dsi_tx_tb.sv) |
+| [lvds_tx](lvds_tx/index.html) | video | `lvds_tx` | [`lvds_tx_tb.sv`](../video/lvds_tx/tb/lvds_tx_tb.sv) |
+| [lvds_serializer](lvds_serializer/index.html) | video | `lvds_serializer` | [`lvds_serializer_tb.sv`](../video/lvds_serializer/tb/lvds_serializer_tb.sv) |
+| [conv2d_core](conv2d_core/index.html) | video | `conv2d_core` | [`conv2d_core_tb.sv`](../video/conv2d_core/tb/conv2d_core_tb.sv) |
+| [conv2d_filter](conv2d_filter/index.html) | video | `conv2d_filter` | [`conv2d_filter_tb.sv`](../video/conv2d_filter/tb/conv2d_filter_tb.sv) |
+| [blur_filter](blur_filter/index.html) | video | `blur_filter` | [`blur_filter_tb.sv`](../video/blur_filter/tb/blur_filter_tb.sv) |
+| [sharpen_filter](sharpen_filter/index.html) | video | `sharpen_filter` | [`sharpen_filter_tb.sv`](../video/sharpen_filter/tb/sharpen_filter_tb.sv) |
+| [blur_sharpen](blur_sharpen/index.html) | video | `blur_sharpen` | [`blur_sharpen_tb.sv`](../video/blur_sharpen/tb/blur_sharpen_tb.sv) |
+| [py_core](py_core/index.html) | cpu | `py_core` | [`py_core_tb.sv`](../cpu/py_core/tb/py_core_tb.sv) |
+| [py_soc](py_soc/index.html) | cpu | `py_soc` | [`py_soc_tb.sv`](../cpu/py_soc/tb/py_soc_tb.sv) |
 
 ## reset_ctrl
 
 **Ip Reset Sync Top** · category `cdc` · top `ip_reset_sync_top`
 
-Top level of the reset synchronizer IP. Synchronizes an asynchronous external reset for the AXI-Lite bus and for NUM_OUT replicated user resets (fan-out control). A software reset bit, hold- time register, reset event counter and status are exposed through an AXI-Lite register file. Register map - 0x00 CTRL[0]=soft reset (self clearing), 0x04 HOLD cycles, 0x08 STATUS[0]=active [1]=event seen (W1C), 0x0C event count. Version 1.0.0. Clock - aclk, the external reset arst_i is asynchronous and is synchronized with STAGES flops. Reset - the reset asserts asynchronously and releases synchronously; outputs are held for HOLD_DEFAULT clocks or the programmed hold. Latency - release is STAGES+1 clocks after arst_i deasserts plus the hold. Errors - illegal parameters stop elaboration; out of range AXI- Lite accesses return SLVERR.
+Top level of the reset synchronizer IP. Synchronizes an asynchronous external reset for the AXI-Lite bus and for NUM_OUT replicated user resets (fan-out control). A software reset bit, hold-time register, reset event counter and status are exposed through an AXI-Lite register file. Register map - 0x00 CTRL[0]=soft reset (self clearing), 0x04 HOLD cycles, 0x08 STATUS[0]=active [1]=event seen (W1C), 0x0C event count. Version 1.0.0. Clock - aclk, the external reset arst_i is asynchronous and is synchronized with STAGES flops. Reset - the reset asserts asynchronously and releases synchronously; outputs are held for HOLD_DEFAULT clocks or the programmed hold. Latency - release is STAGES+1 clocks after arst_i deasserts plus the hold. Errors - illegal parameters stop elaboration; out of range AXI-Lite accesses return SLVERR.
 
 Sources: `../../shared/src/common/ip_axil_regs.sv`, `src/rst_sync.sv`, `src/ip_reset_sync_top.sv`
 
@@ -132,7 +159,7 @@ Sources: `../../shared/src/common/ip_axil_regs.sv`, `../../shared/src/fifo/ip_ax
 
 **I2C Top** · category `peripherals` · top `i2c_top`
 
-I2C master IP top level. AXI-Lite registers start and describe a transaction; write data is taken from an AXI-Stream slave port and read data is returned on an AXI-Stream master port (tlast marks the last byte). Open-drain pins use i/o/t style signals. Map - 0x00 CTRL [0]en [1]start(pulse) [2]read [3]no_stop; 0x04 ADDR[6:0]; 0x08 LEN; 0x0C DIV (phase clocks-1, f_scl = f_clk/(4*(DIV+1))); 0x10 STATUS [0]busy [1]done [2]nack [3]arb_lost, [3:1] are write-1-to- clear. Version 1.0.0. Clock - single clock aclk, every input is synchronous to it unless a two-flop synchronizer is mentioned. Reset - synchronous active low aresetn, registers take the documented reset values. Latency - AXI-Lite write response and read data follow the request by about 2 to 3 clocks (ip_axil_regs, registered read path). Timing - registered outputs, no combinational path from the bus to the pins. Errors - out of range AXI-Lite accesses return SLVERR; illegal parameter values stop elaboration with an $error.
+I2C master IP top level. AXI-Lite registers start and describe a transaction; write data is taken from an AXI-Stream slave port and read data is returned on an AXI-Stream master port (tlast marks the last byte). Open-drain pins use i/o/t style signals. Map - 0x00 CTRL [0]en [1]start(pulse) [2]read [3]no_stop; 0x04 ADDR[6:0]; 0x08 LEN; 0x0C DIV (phase clocks-1, f_scl = f_clk/(4*(DIV+1))); 0x10 STATUS [0]busy [1]done [2]nack [3]arb_lost, [3:1] are write-1-to-clear. Version 1.0.0. Clock - single clock aclk, every input is synchronous to it unless a two-flop synchronizer is mentioned. Reset - synchronous active low aresetn, registers take the documented reset values. Latency - AXI-Lite write response and read data follow the request by about 2 to 3 clocks (ip_axil_regs, registered read path). Timing - registered outputs, no combinational path from the bus to the pins. Errors - out of range AXI-Lite accesses return SLVERR; illegal parameter values stop elaboration with an $error.
 
 Sources: `../../shared/src/common/ip_axil_regs.sv`, `../../shared/src/fifo/ip_axis_fifo.sv`, `src/i2c_bit_ctrl.sv`, `src/i2c_master_fsm.sv`, `src/i2c_top.sv`
 
@@ -152,7 +179,7 @@ Sources: `../../shared/src/common/ip_axil_regs.sv`, `../../shared/src/fifo/ip_ax
 
 **Gpio Top** · category `peripherals` · top `gpio_top`
 
-General purpose I/O IP with WIDTH pins. Per-pin direction, output register with atomic SET/CLEAR/TOGGLE registers, two flop input synchronizers, per-pin rising/falling edge interrupts with enable masks and write-1-to-clear status, and an interrupt output. Tri-state style pins (gpio_t=1 means input). Map - 0x00 OUT, 0x04 DIR(1=output), 0x08 IN (read only), 0x0C SET, 0x10 CLEAR, 0x14 TOGGLE, 0x18 INT_EN, 0x1C RISE_EN, 0x20 FALL_EN, 0x24 INT_STATUS (W1C). Version 1.0.0. Clock - single clock aclk, every input is synchronous to it unless a two-flop synchronizer is mentioned. Reset - synchronous active low aresetn, registers take the documented reset values. Latency - AXI- Lite write response and read data follow the request by about 2 to 3 clocks (ip_axil_regs, registered read path). Timing - registered outputs, no combinational path from the bus to the pins. Errors - out of range AXI-Lite accesses return SLVERR; illegal parameter values stop elaboration with an $error.
+General purpose I/O IP with WIDTH pins. Per-pin direction, output register with atomic SET/CLEAR/TOGGLE registers, two flop input synchronizers, per-pin rising/falling edge interrupts with enable masks and write-1-to-clear status, and an interrupt output. Tri-state style pins (gpio_t=1 means input). Map - 0x00 OUT, 0x04 DIR(1=output), 0x08 IN (read only), 0x0C SET, 0x10 CLEAR, 0x14 TOGGLE, 0x18 INT_EN, 0x1C RISE_EN, 0x20 FALL_EN, 0x24 INT_STATUS (W1C). Version 1.0.0. Clock - single clock aclk, every input is synchronous to it unless a two-flop synchronizer is mentioned. Reset - synchronous active low aresetn, registers take the documented reset values. Latency - AXI-Lite write response and read data follow the request by about 2 to 3 clocks (ip_axil_regs, registered read path). Timing - registered outputs, no combinational path from the bus to the pins. Errors - out of range AXI-Lite accesses return SLVERR; illegal parameter values stop elaboration with an $error.
 
 Sources: `../../shared/src/common/ip_axil_regs.sv`, `src/gpio_top.sv`
 
@@ -192,7 +219,7 @@ Sources: `../../shared/src/common/ip_axil_regs.sv`, `src/quad_dec_top.sv`
 
 **Watchdog Top** · category `timing` · top `watchdog_top`
 
-Watchdog timer IP. Prescaled up-counter with programmable timeout and pre-timeout interrupt, optional window mode (kicks before WINDOW_OPEN are violations), key-protected kick register, write-once lock bit that prevents disabling, and a stretched system reset output. Map - 0x00 CTRL [0]en [1]window_en [2]lock, 0x04 TIMEOUT ticks, 0x08 PRESCALE (clk divide-1), 0x0C PRETIMEOUT ticks, 0x10 WINDOW_OPEN ticks, 0x14 KICK (write 0x5AFEC0DE), 0x18 STATUS [0]pretimeout [1]expired [2]early kick [3]bad key (W1C), 0x1C COUNT. Version 1.0.0. Clock - single clock aclk, every input is synchronous to it unless a two-flop synchronizer is mentioned. Reset - synchronous active low aresetn, registers take the documented reset values. Latency - AXI- Lite write response and read data follow the request by about 2 to 3 clocks (ip_axil_regs, registered read path). Timing - registered outputs, no combinational path from the bus to the pins. Errors - out of range AXI-Lite accesses return SLVERR; illegal parameter values stop elaboration with an $error.
+Watchdog timer IP. Prescaled up-counter with programmable timeout and pre-timeout interrupt, optional window mode (kicks before WINDOW_OPEN are violations), key-protected kick register, write-once lock bit that prevents disabling, and a stretched system reset output. Map - 0x00 CTRL [0]en [1]window_en [2]lock, 0x04 TIMEOUT ticks, 0x08 PRESCALE (clk divide-1), 0x0C PRETIMEOUT ticks, 0x10 WINDOW_OPEN ticks, 0x14 KICK (write 0x5AFEC0DE), 0x18 STATUS [0]pretimeout [1]expired [2]early kick [3]bad key (W1C), 0x1C COUNT. Version 1.0.0. Clock - single clock aclk, every input is synchronous to it unless a two-flop synchronizer is mentioned. Reset - synchronous active low aresetn, registers take the documented reset values. Latency - AXI-Lite write response and read data follow the request by about 2 to 3 clocks (ip_axil_regs, registered read path). Timing - registered outputs, no combinational path from the bus to the pins. Errors - out of range AXI-Lite accesses return SLVERR; illegal parameter values stop elaboration with an $error.
 
 Sources: `../../shared/src/common/ip_axil_regs.sv`, `src/watchdog_top.sv`
 
@@ -202,7 +229,7 @@ Sources: `../../shared/src/common/ip_axil_regs.sv`, `src/watchdog_top.sv`
 
 **Edge Event Capture Top** · category `peripherals` · top `edge_event_capture_top`
 
-Multi-channel edge detector IP. Each of WIDTH inputs goes through a synchronizer chain, an optional debounce filter (input must be stable for DEBOUNCE clocks), and rise/fall detection with enable masks. Events set write-1-to-clear pending flags, increment an event counter, drive direct pulse outputs and are timestamped into an AXI- Stream event record {timestamp, fall flags, rise flags} through a FIFO (drop counter on overflow). Map - 0x00 CTRL [0]en, 0x04 RISE_EN, 0x08 FALL_EN, 0x0C DEBOUNCE clocks, 0x10 RISE_PEND (W1C), 0x14 FALL_PEND (W1C), 0x18 EVENT_COUNT, 0x1C TIMESTAMP, 0x20 DROP_COUNT, 0x24 IRQ_EN. Version 1.0.0. Clock - single clock aclk, every input is synchronous to it unless a two-flop synchronizer is mentioned. Reset - synchronous active low aresetn, registers take the documented reset values. Latency - AXI-Lite write response and read data follow the request by about 2 to 3 clocks (ip_axil_regs, registered read path). Timing - registered outputs, no combinational path from the bus to the pins. Errors - out of range AXI-Lite accesses return SLVERR; illegal parameter values stop elaboration with an $error.
+Multi-channel edge detector IP. Each of WIDTH inputs goes through a synchronizer chain, an optional debounce filter (input must be stable for DEBOUNCE clocks), and rise/fall detection with enable masks. Events set write-1-to-clear pending flags, increment an event counter, drive direct pulse outputs and are timestamped into an AXI-Stream event record {timestamp, fall flags, rise flags} through a FIFO (drop counter on overflow). Map - 0x00 CTRL [0]en, 0x04 RISE_EN, 0x08 FALL_EN, 0x0C DEBOUNCE clocks, 0x10 RISE_PEND (W1C), 0x14 FALL_PEND (W1C), 0x18 EVENT_COUNT, 0x1C TIMESTAMP, 0x20 DROP_COUNT, 0x24 IRQ_EN. Version 1.0.0. Clock - single clock aclk, every input is synchronous to it unless a two-flop synchronizer is mentioned. Reset - synchronous active low aresetn, registers take the documented reset values. Latency - AXI-Lite write response and read data follow the request by about 2 to 3 clocks (ip_axil_regs, registered read path). Timing - registered outputs, no combinational path from the bus to the pins. Errors - out of range AXI-Lite accesses return SLVERR; illegal parameter values stop elaboration with an $error.
 
 Sources: `../../shared/src/common/ip_axil_regs.sv`, `../../shared/src/fifo/ip_axis_fifo.sv`, `src/edge_event_capture_top.sv`
 
@@ -212,7 +239,7 @@ Sources: `../../shared/src/common/ip_axil_regs.sv`, `../../shared/src/fifo/ip_ax
 
 **Async Fifo** · category `fifo` · top `async_fifo`
 
-Dual clock (asynchronous) FIFO. Gray coded read and write pointers cross domains through two flop synchronizers, full is generated in the write domain and empty in the read domain. Storage is a dual clock RAM (block RAM capable) with a registered read and a first-word-fall- through output register. DEPTH must be a power of two >= 4. Assert both resets together. Version 1.0.0. Clocks - wclk and rclk are unrelated (Gray-coded pointers, two-flop synchronizers), each with its own synchronous active low reset (reset both together). Latency - a written word is visible on the read side 3 to 5 read clocks later; full/empty flags are conservative, never optimistic. Timing - constrain the pointer crossings with set_max_delay -datapath_only (or false path with skew control); the memory read path is registered. Errors - writing when full or reading when empty is ignored (and asserted in simulation); illegal parameters stop elaboration. Clock - the clock of the parent block, all signals are synchronous to it. Reset - synchronous, driven by the parent block. block.
+Dual clock (asynchronous) FIFO. Gray coded read and write pointers cross domains through two flop synchronizers, full is generated in the write domain and empty in the read domain. Storage is a dual clock RAM (block RAM capable) with a registered read and a first-word-fall-through output register. DEPTH must be a power of two >= 4. Assert both resets together. Version 1.0.0. Clocks - wclk and rclk are unrelated (Gray-coded pointers, two-flop synchronizers), each with its own synchronous active low reset (reset both together). Latency - a written word is visible on the read side 3 to 5 read clocks later; full/empty flags are conservative, never optimistic. Timing - constrain the pointer crossings with set_max_delay -datapath_only (or false path with skew control); the memory read path is registered. Errors - writing when full or reading when empty is ignored (and asserted in simulation); illegal parameters stop elaboration.
 
 Sources: `src/async_fifo.sv`
 
@@ -222,7 +249,7 @@ Sources: `src/async_fifo.sv`
 
 **Axis Async Bridge** · category `cdc` · top `axis_async_bridge`
 
-AXI-Stream asynchronous clock domain bridge. Carries tdata, tkeep, tlast and tuser from the slave clock domain to the master clock domain through a gray pointer dual clock FIFO. Each side has an independent active-low reset that is synchronized locally (async assert, sync release). Optional depth for rate matching. Both resets should be asserted together. Version 1.0.0. Clocks - s_clk and m_clk unrelated, built on async_fifo with the same crossing rules and latency (3 to 5 destination clocks). Reset - synchronous active low per domain. Timing - see async_fifo. Errors - none at run time (full FIFO deasserts s_tready, nothing is dropped); illegal parameters stop elaboration. Clock - the clock of the parent block, all signals are synchronous to it. Latency - as documented in the parent block, fixed and independent of data. as documented in the parent block, fixed and independent of data.
+AXI-Stream asynchronous clock domain bridge. Carries tdata, tkeep, tlast and tuser from the slave clock domain to the master clock domain through a gray pointer dual clock FIFO. Each side has an independent active-low reset that is synchronized locally (async assert, sync release). Optional depth for rate matching. Both resets should be asserted together. Version 1.0.0. Clocks - s_clk and m_clk unrelated, built on async_fifo with the same crossing rules and latency (3 to 5 destination clocks). Reset - synchronous active low per domain. Timing - see async_fifo. Errors - none at run time (full FIFO deasserts s_tready, nothing is dropped); illegal parameters stop elaboration.
 
 Sources: `../../fifo/async_fifo/src/async_fifo.sv`, `src/axis_async_bridge.sv`
 
@@ -232,7 +259,7 @@ Sources: `../../fifo/async_fifo/src/async_fifo.sv`, `src/axis_async_bridge.sv`
 
 **Axi4 Lite Cdc** · category `cdc` · top `axi4_lite_cdc`
 
-AXI4-Lite clock domain bridge. An AXI-Lite slave in the source clock domain is connected to an AXI-Lite master in the destination domain using a toggle request / toggle acknowledge handshake with two flop synchronizers. One transaction is outstanding at a time; address, data and response buses are held stable while the handshake crosses, so no per-bit synchronization is needed. Works for any clock ratio. Version 1.0.0. Clocks - s_clk (slave side) and m_clk (master side) unrelated, each channel crosses with a toggle handshake and two-flop synchronizers. Reset - synchronous active low per domain, reset both together. Latency - roughly 6 to 10 clocks of the slower domain per transaction; one transaction outstanding at a time. Timing - address/data registers cross under a max-delay constraint of one destination period. Errors - the master side response (including SLVERR) is passed back unchanged; illegal parameters stop elaboration. Clock - the clock of the parent block, all signals are synchronous to it. signals are synchronous to it.
+AXI4-Lite clock domain bridge. An AXI-Lite slave in the source clock domain is connected to an AXI-Lite master in the destination domain using a toggle request / toggle acknowledge handshake with two flop synchronizers. One transaction is outstanding at a time; address, data and response buses are held stable while the handshake crosses, so no per-bit synchronization is needed. Works for any clock ratio. Version 1.0.0. Clocks - s_clk (slave side) and m_clk (master side) unrelated, each channel crosses with a toggle handshake and two-flop synchronizers. Reset - synchronous active low per domain, reset both together. Latency - roughly 6 to 10 clocks of the slower domain per transaction; one transaction outstanding at a time. Timing - address/data registers cross under a max-delay constraint of one destination period. Errors - the master side response (including SLVERR) is passed back unchanged; illegal parameters stop elaboration.
 
 Sources: `src/cdc_sync_bit.sv`, `src/axi4_lite_cdc.sv`
 
@@ -242,7 +269,7 @@ Sources: `src/cdc_sync_bit.sv`, `src/axi4_lite_cdc.sv`
 
 **Dma Engine** · category `bus` · top `dma_engine`
 
-Memory to memory DMA engine. Copies LEN bytes from SRC to DST over one AXI4 master port using burst read and write engines decoupled by a stream FIFO (bursts limited to MAX_BURST beats and never crossing 4 KB). Programmed over AXI-Lite - 0x00 CTRL [0]start (pulse) [1]irq_en, 0x04 SRC, 0x08 DST, 0x0C LEN (bytes, multiple of 4), 0x10 STATUS [0]busy [8]done (W1C) [9]error (W1C). irq_o follows done when enabled. Addresses must be 4 byte aligned. Version 1.0.0. Clock - single clock aclk, every input is synchronous to it unless a two-flop synchronizer is mentioned. Reset - synchronous active low aresetn, registers take the documented reset values. Latency - AXI- Lite write response and read data follow the request by about 2 to 3 clocks (ip_axil_regs, registered read path). Timing - registered outputs, no combinational path from the bus to the pins. Errors - out of range AXI-Lite accesses return SLVERR; illegal parameter values stop elaboration with an $error. The AXI4 master follows the AXI4 rules of 4 KB burst boundaries; a bus error response stops the transfer and is reported in STATUS.
+Memory to memory DMA engine. Copies LEN bytes from SRC to DST over one AXI4 master port using burst read and write engines decoupled by a stream FIFO (bursts limited to MAX_BURST beats and never crossing 4 KB). Programmed over AXI-Lite - 0x00 CTRL [0]start (pulse) [1]irq_en, 0x04 SRC, 0x08 DST, 0x0C LEN (bytes, multiple of 4), 0x10 STATUS [0]busy [8]done (W1C) [9]error (W1C). irq_o follows done when enabled. Addresses must be 4 byte aligned. Version 1.0.0. Clock - single clock aclk, every input is synchronous to it unless a two-flop synchronizer is mentioned. Reset - synchronous active low aresetn, registers take the documented reset values. Latency - AXI-Lite write response and read data follow the request by about 2 to 3 clocks (ip_axil_regs, registered read path). Timing - registered outputs, no combinational path from the bus to the pins. Errors - out of range AXI-Lite accesses return SLVERR; illegal parameter values stop elaboration with an $error. The AXI4 master follows the AXI4 rules of 4 KB burst boundaries; a bus error response stops the transfer and is reported in STATUS.
 
 Sources: `../../shared/src/common/ip_axil_regs.sv`, `../../shared/src/fifo/ip_axis_fifo.sv`, `../../shared/src/bus/dma_common/dma_rd_engine.sv`, `../../shared/src/bus/dma_common/dma_wr_engine.sv`, `src/dma_engine.sv`
 
@@ -252,7 +279,7 @@ Sources: `../../shared/src/common/ip_axil_regs.sv`, `../../shared/src/fifo/ip_ax
 
 **Axis Dma** · category `bus` · top `axis_dma`
 
-AXI-Stream DMA with two independent channels sharing one AXI4 master port. MM2S reads LEN bytes from memory and emits them on an AXI-Stream master (tlast on the last word). S2MM accepts an AXI- Stream slave and writes LEN bytes to memory. Both use burst engines limited to MAX_BURST beats and 4 KB boundaries, with FIFOs on the stream sides. AXI-Lite map - 0x00 CTRL [0]mm2s_start [1]s2mm_start (pulses) [2]irq_en, 0x04 MM2S_ADDR, 0x08 MM2S_LEN, 0x0C S2MM_ADDR, 0x10 S2MM_LEN, 0x14 STATUS [0]mm2s_busy [1]s2mm_busy [8]mm2s_done [9]s2mm_done [10]mm2s_err [11]s2mm_err, done and error bits are W1C. Version 1.0.0. Clock - single clock aclk, every input is synchronous to it unless a two-flop synchronizer is mentioned. Reset - synchronous active low aresetn, registers take the documented reset values. Latency - AXI-Lite write response and read data follow the request by about 2 to 3 clocks (ip_axil_regs, registered read path). Timing - registered outputs, no combinational path from the bus to the pins. Errors - out of range AXI-Lite accesses return SLVERR; illegal parameter values stop elaboration with an $error. The AXI4 master follows the AXI4 rules of 4 KB burst boundaries; a bus error response stops the transfer and is reported in STATUS.
+AXI-Stream DMA with two independent channels sharing one AXI4 master port. MM2S reads LEN bytes from memory and emits them on an AXI-Stream master (tlast on the last word). S2MM accepts an AXI-Stream slave and writes LEN bytes to memory. Both use burst engines limited to MAX_BURST beats and 4 KB boundaries, with FIFOs on the stream sides. AXI-Lite map - 0x00 CTRL [0]mm2s_start [1]s2mm_start (pulses) [2]irq_en, 0x04 MM2S_ADDR, 0x08 MM2S_LEN, 0x0C S2MM_ADDR, 0x10 S2MM_LEN, 0x14 STATUS [0]mm2s_busy [1]s2mm_busy [8]mm2s_done [9]s2mm_done [10]mm2s_err [11]s2mm_err, done and error bits are W1C. Version 1.0.0. Clock - single clock aclk, every input is synchronous to it unless a two-flop synchronizer is mentioned. Reset - synchronous active low aresetn, registers take the documented reset values. Latency - AXI-Lite write response and read data follow the request by about 2 to 3 clocks (ip_axil_regs, registered read path). Timing - registered outputs, no combinational path from the bus to the pins. Errors - out of range AXI-Lite accesses return SLVERR; illegal parameter values stop elaboration with an $error. The AXI4 master follows the AXI4 rules of 4 KB burst boundaries; a bus error response stops the transfer and is reported in STATUS.
 
 Sources: `../../shared/src/common/ip_axil_regs.sv`, `../../shared/src/fifo/ip_axis_fifo.sv`, `../../shared/src/bus/dma_common/dma_rd_engine.sv`, `../../shared/src/bus/dma_common/dma_wr_engine.sv`, `src/axis_dma.sv`
 
@@ -272,7 +299,7 @@ Sources: `src/bit_sync.sv`
 
 **Toggle Sync** · category `cdc` · top `toggle_sync`
 
-Event transfer between clock domains using a toggle level. Version 1.0.0. Every one-clock event_i pulse in the source domain flips a toggle flop; the destination synchronizes the toggle and emits event_o for each change. No handshake, so events must be spaced at least STAGES+2 destination clocks apart (source clock period permitting) or they are lost; use pulse_sync when spacing cannot be guaranteed. Clocks - src_clk and dst_clk are unrelated. Reset - synchronous per domain, active low. Latency - STAGES+1 dst clocks. Errors - none reported; STAGES<2 rejected at elaboration. Clock - the clock of the parent block, all signals are synchronous to it. synchronous to it.
+Event transfer between clock domains using a toggle level. Version 1.0.0. Every one-clock event_i pulse in the source domain flips a toggle flop; the destination synchronizes the toggle and emits event_o for each change. No handshake, so events must be spaced at least STAGES+2 destination clocks apart (source clock period permitting) or they are lost; use pulse_sync when spacing cannot be guaranteed. Clocks - src_clk and dst_clk are unrelated. Reset - synchronous per domain, active low. Latency - STAGES+1 dst clocks. Errors - none reported; STAGES<2 rejected at elaboration.
 
 Sources: `../../cdc/bit_sync/src/bit_sync.sv`, `src/toggle_sync.sv`
 
@@ -282,7 +309,7 @@ Sources: `../../cdc/bit_sync/src/bit_sync.sv`, `src/toggle_sync.sv`
 
 **Pulse Sync** · category `cdc` · top `pulse_sync`
 
-Pulse transfer between clock domains with full handshake. Version 1.0.0. A toggle crosses to the destination and an acknowledge toggle crosses back, so a new pulse is accepted only when the previous one has completed (busy_o low). Pulses arriving while busy are dropped and flagged on drop_o (one src clock) so nothing is lost silently. Clocks - src_clk and dst_clk unrelated. Reset - synchronous per domain, active low. Latency - about STAGES+2 dst clocks to pulse_o; busy clears after ~2*STAGES+3 clocks of the slower domain. Errors - drop_o on overrun; STAGES<2 rejected at elaboration. Clock - the clock of the parent block, all signals are synchronous to it. all signals are synchronous to it.
+Pulse transfer between clock domains with full handshake. Version 1.0.0. A toggle crosses to the destination and an acknowledge toggle crosses back, so a new pulse is accepted only when the previous one has completed (busy_o low). Pulses arriving while busy are dropped and flagged on drop_o (one src clock) so nothing is lost silently. Clocks - src_clk and dst_clk unrelated. Reset - synchronous per domain, active low. Latency - about STAGES+2 dst clocks to pulse_o; busy clears after ~2*STAGES+3 clocks of the slower domain. Errors - drop_o on overrun; STAGES<2 rejected at elaboration.
 
 Sources: `../../cdc/bit_sync/src/bit_sync.sv`, `src/pulse_sync.sv`
 
@@ -342,7 +369,7 @@ Sources: `src/timeout_timer.sv`
 
 **Priority Encoder** · category `common` · top `priority_encoder`
 
-Priority encoder. Version 1.0.0. Encodes the highest- priority asserted request: LSB_HIGH=1 gives bit 0 the highest priority, LSB_HIGH=0 gives the MSB. Outputs the index, a one-hot vector and a valid flag. REGISTERED=1 adds one output register stage (latency 1, synchronous reset to invalid); otherwise the module is purely combinational (latency 0) and clk/rst_n are unused. Timing - log2(WIDTH) LUT levels; register the output for wide vectors at 100 MHz. Errors - WIDTH < 2 rejected at elaboration; idx_o is 0 when valid_o is low. Clock - the clock of the parent block, all signals are synchronous to it. Reset - synchronous, driven by the parent block. Latency - as documented in the parent block, fixed and independent of data. driven by the parent block. Latency - as documented in the parent block, fixed and independent of data.
+Priority encoder. Version 1.0.0. Encodes the highest-priority asserted request: LSB_HIGH=1 gives bit 0 the highest priority, LSB_HIGH=0 gives the MSB. Outputs the index, a one-hot vector and a valid flag. REGISTERED=1 adds one output register stage (latency 1, synchronous reset to invalid); otherwise the module is purely combinational (latency 0) and clk/rst_n are unused. Timing - log2(WIDTH) LUT levels; register the output for wide vectors at 100 MHz. Errors - WIDTH < 2 rejected at elaboration; idx_o is 0 when valid_o is low. Clock - the clock of the parent block, all signals are synchronous to it.
 
 Sources: `src/priority_encoder.sv`
 
@@ -352,7 +379,7 @@ Sources: `src/priority_encoder.sv`
 
 **Onehot Decoder** · category `common` · top `onehot_decoder`
 
-Binary to one-hot decoder with enable. Version 1.0.0. Bit sel_i of onehot_o is set when en_i is high. A select value >= WIDTH sets err_o and produces an all-zero output. REGISTERED=1 adds one output register stage (latency 1, synchronous reset to zero); otherwise the block is combinational (latency 0). Errors - out-of- range select flagged on err_o; WIDTH < 2 rejected at elaboration. Clock - the clock of the parent block, all signals are synchronous to it. Reset - synchronous, driven by the parent block. Latency - as documented in the parent block, fixed and independent of data. parent block, all signals are synchronous to it. Reset - synchronous, driven by the parent block. Latency - as documented in the parent block, fixed and independent of data.
+Binary to one-hot decoder with enable. Version 1.0.0. Bit sel_i of onehot_o is set when en_i is high. A select value >= WIDTH sets err_o and produces an all-zero output. REGISTERED=1 adds one output register stage (latency 1, synchronous reset to zero); otherwise the block is combinational (latency 0). Errors - out-of-range select flagged on err_o; WIDTH < 2 rejected at elaboration. Clock - the clock of the parent block, all signals are synchronous to it.
 
 Sources: `src/onehot_decoder.sv`
 
@@ -372,7 +399,7 @@ Sources: `src/single_port_ram.sv`
 
 **Simple Dual Port Ram** · category `memory` · top `simple_dual_port_ram`
 
-Simple dual-port RAM with an independent write port and read port. Version 1.0.0. CLOCKING 0 uses wclk for both ports; a separate rclk is used when ASYNC=1 (unrelated clocks, read-during- write of the same address returns old or new data, undefined which). Optional byte enables. Inferred as block RAM. Reset - the read output register resets synchronously (active low, rclk domain). Latency - read data one rclk after raddr with re_i. Errors - DEPTH<2, WIDTH<1 or BYTE_EN with WIDTH not multiple of 8 rejected at elaboration. Clock - the clock of the parent block, all signals are synchronous to it. parent block, all signals are synchronous to it.
+Simple dual-port RAM with an independent write port and read port. Version 1.0.0. CLOCKING 0 uses wclk for both ports; a separate rclk is used when ASYNC=1 (unrelated clocks, read-during-write of the same address returns old or new data, undefined which). Optional byte enables. Inferred as block RAM. Reset - the read output register resets synchronously (active low, rclk domain). Latency - read data one rclk after raddr with re_i. Errors - DEPTH<2, WIDTH<1 or BYTE_EN with WIDTH not multiple of 8 rejected at elaboration.
 
 Sources: `src/simple_dual_port_ram.sv`
 
@@ -382,7 +409,7 @@ Sources: `src/simple_dual_port_ram.sv`
 
 **True Dual Port Ram** · category `memory` · top `true_dual_port_ram`
 
-True dual-port RAM. Version 1.0.0. Two fully independent ports A and B, each with its own clock, enable, write enable, address, data in and registered data out (read-first). Simultaneous writes to the same address from both ports are undefined - the wr_conflict_o flag (simulation-only assertion plus registered detect when both ports share one clock) reports it. Inferred as block RAM in a single-clock configuration. Reset - output registers reset synchronously to zero per port. Latency - 1 clock per port. Errors - DEPTH<2 or WIDTH<1 rejected at elaboration. Clock - the clock of the parent block, all signals are synchronous to it. synchronous to it.
+True dual-port RAM. Version 1.0.0. Two fully independent ports A and B, each with its own clock, enable, write enable, address, data in and registered data out (read-first). Simultaneous writes to the same address from both ports are undefined - the wr_conflict_o flag (simulation-only assertion plus registered detect when both ports share one clock) reports it. Inferred as block RAM in a single-clock configuration. Reset - output registers reset synchronously to zero per port. Latency - 1 clock per port. Errors - DEPTH<2 or WIDTH<1 rejected at elaboration.
 
 Sources: `src/true_dual_port_ram.sv`
 
@@ -402,7 +429,7 @@ Sources: `src/rom.sv`
 
 **Register File** · category `memory` · top `register_file`
 
-Multi-register file. Version 1.0.0. NREG registers of WIDTH bits with one write port and NRD combinational read ports (asynchronous read, so no read latency - LUT-RAM friendly). ZERO_REG0=1 hard-wires register 0 to zero. Write-through bypass (BYPASS=1) returns write data on a read of the register being written in the same clock. Clock - clk. Reset - synchronous active low, all registers cleared. Errors - NREG<2 rejected at elaboration; writes to register 0 with ZERO_REG0 are ignored. Latency - as documented in the parent block, fixed and independent of data. data.
+Multi-register file. Version 1.0.0. NREG registers of WIDTH bits with one write port and NRD combinational read ports (asynchronous read, so no read latency - LUT-RAM friendly). ZERO_REG0=1 hard-wires register 0 to zero. Write-through bypass (BYPASS=1) returns write data on a read of the register being written in the same clock. Clock - clk. Reset - synchronous active low, all registers cleared. Errors - NREG<2 rejected at elaboration; writes to register 0 with ZERO_REG0 are ignored.
 
 Sources: `src/register_file.sv`
 
@@ -502,7 +529,7 @@ Sources: `src/timestamp_counter.sv`
 
 **Rate Limiter** · category `timing` · top `rate_limiter`
 
-Token-bucket rate limiter for valid/ready streams or events. Version 1.0.0. One token is added every refill_period_i clocks up to a bucket size of burst_i; each transferred word (s_valid_i & s_ready_o) consumes one token. When the bucket is empty s_ready_o is low, so the average rate is 1/refill_period_i words per clock with bursts up to burst_i. Data passes combinationally between s_* and m_* (no added latency, no storage). refill_period_i = 0 disables limiting. Clock - clk. Reset - synchronous active low, bucket full. Errors - none; a downstream stall (m_ready_i low) does not consume tokens. TOKEN_W < 2 rejected at elaboration. Latency - as documented in the parent block, fixed and independent of data. independent of data.
+Token-bucket rate limiter for valid/ready streams or events. Version 1.0.0. One token is added every refill_period_i clocks up to a bucket size of burst_i; each transferred word (s_valid_i & s_ready_o) consumes one token. When the bucket is empty s_ready_o is low, so the average rate is 1/refill_period_i words per clock with bursts up to burst_i. Data passes combinationally between s_* and m_* (no added latency, no storage). refill_period_i = 0 disables limiting. Clock - clk. Reset - synchronous active low, bucket full. Errors - none; a downstream stall (m_ready_i low) does not consume tokens. TOKEN_W < 2 rejected at elaboration.
 
 Sources: `src/rate_limiter.sv`
 
@@ -592,7 +619,7 @@ Sources: `src/axi_stream_arbiter.sv`
 
 **Parity Gen** · category `integrity` · top `parity_gen`
 
-Parity generator. Version 1.0.0. parity_o is the XOR reduction of data_i (even parity - data plus parity bit contain an even number of ones) or its inverse for ODD=1. REGISTERED=1 adds one output register (latency 1, synchronous active-low reset to the parity of an all-zero word); otherwise the module is combinational with 0 latency and clk/rst_n unused. Clock - clk when registered. Timing - log2(WIDTH) XOR levels; register wide words at 100 MHz. Errors - WIDTH < 1 rejected at elaboration. Reset - synchronous, driven by the parent block. Latency - as documented in the parent block, fixed and independent of data. as documented in the parent block, fixed and independent of data.
+Parity generator. Version 1.0.0. parity_o is the XOR reduction of data_i (even parity - data plus parity bit contain an even number of ones) or its inverse for ODD=1. REGISTERED=1 adds one output register (latency 1, synchronous active-low reset to the parity of an all-zero word); otherwise the module is combinational with 0 latency and clk/rst_n unused. Clock - clk when registered. Timing - log2(WIDTH) XOR levels; register wide words at 100 MHz. Errors - WIDTH < 1 rejected at elaboration.
 
 Sources: `src/parity_gen.sv`
 
@@ -652,7 +679,7 @@ Sources: `src/checksum.sv`
 
 **Lfsr** · category `integrity` · top `lfsr`
 
-Linear-feedback shift register / PRBS generator. Version 1.0.0. Fibonacci LFSR of WIDTH bits with feedback taps TAPS (bit i of TAPS set means state bit i is XORed into the feedback). Defaults implement PRBS7 (x^7+x^6+1, TAPS=0x60, period 127). STEPS shifts are computed per enabled clock (parallel PRBS, STEPS bits per clock, bit_o[STEPS-1:0] with bit 0 the oldest). load_i loads seed_i; an all- zero seed (the lock-up state) is replaced by SEED and flagged on lockup_o. Clock - clk. Reset - synchronous active low, state = SEED. Latency - state_o updates 1 clock after en_i. Errors - WIDTH < 2, STEPS < 1, TAPS = 0 or SEED = 0 rejected at elaboration.
+Linear-feedback shift register / PRBS generator. Version 1.0.0. Fibonacci LFSR of WIDTH bits with feedback taps TAPS (bit i of TAPS set means state bit i is XORed into the feedback). Defaults implement PRBS7 (x^7+x^6+1, TAPS=0x60, period 127). STEPS shifts are computed per enabled clock (parallel PRBS, STEPS bits per clock, bit_o[STEPS-1:0] with bit 0 the oldest). load_i loads seed_i; an all-zero seed (the lock-up state) is replaced by SEED and flagged on lockup_o. Clock - clk. Reset - synchronous active low, state = SEED. Latency - state_o updates 1 clock after en_i. Errors - WIDTH < 2, STEPS < 1, TAPS = 0 or SEED = 0 rejected at elaboration.
 
 Sources: `src/lfsr.sv`
 
@@ -662,7 +689,7 @@ Sources: `src/lfsr.sv`
 
 **Error Status** · category `integrity` · top `error_status`
 
-Sticky hardware error/status register. Version 1.0.0. NERR error inputs (level or pulse) set sticky bits in status_o. Software clears bits with clr_mask_i (write-1-to-clear style, one clock, a simultaneous new error wins) or all with clr_all_i. irq_mask_i gates irq_o = |(status_o & irq_mask_i), which is a level until cleared. first_idx_o holds the lowest index that fired in the earliest error clock since the last clear (first_valid_o marks it), useful for root- cause logging, and count_o counts total error clocks (saturating). Clock - clk. Reset - synchronous active low, all clear. Latency - status_o is registered, 1 clock after err_i; irq_o adds combinational AND-OR. Errors - NERR < 1 rejected at elaboration.
+Sticky hardware error/status register. Version 1.0.0. NERR error inputs (level or pulse) set sticky bits in status_o. Software clears bits with clr_mask_i (write-1-to-clear style, one clock, a simultaneous new error wins) or all with clr_all_i. irq_mask_i gates irq_o = |(status_o & irq_mask_i), which is a level until cleared. first_idx_o holds the lowest index that fired in the earliest error clock since the last clear (first_valid_o marks it), useful for root-cause logging, and count_o counts total error clocks (saturating). Clock - clk. Reset - synchronous active low, all clear. Latency - status_o is registered, 1 clock after err_i; irq_o adds combinational AND-OR. Errors - NERR < 1 rejected at elaboration.
 
 Sources: `src/error_status.sv`
 
@@ -672,7 +699,7 @@ Sources: `src/error_status.sv`
 
 **Spi Slave** · category `peripherals` · top `spi_slave`
 
-SPI slave (all four modes, 1..32 bit words, MSB or LSB first). Version 1.0.0. sclk, cs_n and mosi are asynchronous inputs, each passed through a 2-flop synchronizer and edge-detected in the system clock domain, so no SPI signal is used as a clock. Requirement - sclk period at least 6 system clocks (f_sclk <= f_clk/6, e.g. 16 MHz sclk at 100 MHz) and cs_n low at least 4 system clocks before the first sclk edge. Transmit - the word offered on tx_data_i (tx_valid_i high) is loaded when cs_n falls and after every completed word, tx_ready_o pulses when it is taken; if none is offered zeros are sent and underrun_o pulses. Receive - rx_valid_o pulses for one clock with rx_data_o after every full word. Frame errors - cs_n rising in the middle of a word discards it and pulses frame_err_o. miso_oe_o is high while cs_n is low (connect to a tri-state buffer at the top level; no vendor primitive here). Reset - synchronous active low, idle. Latency - rx_valid_o about 3 system clocks after the sampling sclk edge. Errors - WORD_BITS outside 1..32 rejected at elaboration. Clock - the clock of the parent block, all signals are synchronous to it. synchronous to it.
+SPI slave (all four modes, 1..32 bit words, MSB or LSB first). Version 1.0.0. sclk, cs_n and mosi are asynchronous inputs, each passed through a 2-flop synchronizer and edge-detected in the system clock domain, so no SPI signal is used as a clock. Requirement - sclk period at least 6 system clocks (f_sclk <= f_clk/6, e.g. 16 MHz sclk at 100 MHz) and cs_n low at least 4 system clocks before the first sclk edge. Transmit - the word offered on tx_data_i (tx_valid_i high) is loaded when cs_n falls and after every completed word, tx_ready_o pulses when it is taken; if none is offered zeros are sent and underrun_o pulses. Receive - rx_valid_o pulses for one clock with rx_data_o after every full word. Frame errors - cs_n rising in the middle of a word discards it and pulses frame_err_o. miso_oe_o is high while cs_n is low (connect to a tri-state buffer at the top level; no vendor primitive here). Reset - synchronous active low, idle. Latency - rx_valid_o about 3 system clocks after the sampling sclk edge. Errors - WORD_BITS outside 1..32 rejected at elaboration.
 
 Sources: `../../cdc/bit_sync/src/bit_sync.sv`, `src/spi_slave.sv`
 
@@ -682,7 +709,7 @@ Sources: `../../cdc/bit_sync/src/bit_sync.sv`, `src/spi_slave.sv`
 
 **Clock Domain Bridge** · category `cdc` · top `clock_domain_bridge`
 
-Generic clock-domain bridge for multi-bit words using a four- phase toggle handshake. Version 1.0.0. A word accepted on the source valid/ready interface is held in a source register while a request toggle crosses to the destination (bit_sync); the destination copies the word into its own output register (data is stable, so the multi-bit capture is safe), presents it on the destination valid/ready interface and, when it is taken, returns an acknowledge toggle. The source is ready again only after the acknowledge has been synchronized back, so at most one word is in flight and words are never lost, duplicated or reordered. Clocks - s_clk and m_clk unrelated, any ratio. Reset - synchronous per domain, active low; reset both domains together (or hold the slower one longer). Latency - about 2*STAGES+3 clocks of the slower domain per word. Throughput - one word per round trip (low), use async_fifo for streaming. Timing - the data register to destination register path is a false path or a max-delay constraint of one destination period; no combinational logic on it. Errors - STAGES < 2 or DATA_W < 1 rejected at elaboration. Clock - the clock of the parent block, all signals are synchronous to it.
+Generic clock-domain bridge for multi-bit words using a four-phase toggle handshake. Version 1.0.0. A word accepted on the source valid/ready interface is held in a source register while a request toggle crosses to the destination (bit_sync); the destination copies the word into its own output register (data is stable, so the multi-bit capture is safe), presents it on the destination valid/ready interface and, when it is taken, returns an acknowledge toggle. The source is ready again only after the acknowledge has been synchronized back, so at most one word is in flight and words are never lost, duplicated or reordered. Clocks - s_clk and m_clk unrelated, any ratio. Reset - synchronous per domain, active low; reset both domains together (or hold the slower one longer). Latency - about 2*STAGES+3 clocks of the slower domain per word. Throughput - one word per round trip (low), use async_fifo for streaming. Timing - the data register to destination register path is a false path or a max-delay constraint of one destination period; no combinational logic on it. Errors - STAGES < 2 or DATA_W < 1 rejected at elaboration.
 
 Sources: `../../cdc/bit_sync/src/bit_sync.sv`, `src/clock_domain_bridge.sv`
 
@@ -692,7 +719,7 @@ Sources: `../../cdc/bit_sync/src/bit_sync.sv`, `src/clock_domain_bridge.sv`
 
 **Uart Tx** · category `peripherals` · top `uart_tx`
 
-UART transmitter. Pulls bytes from an AXI-Stream style interface and shifts them out LSB first with a start bit, 5 to 8 data bits, optional even or odd parity and one or two stop bits. Bit timing comes from a 16x tick so each bit lasts 16 ticks. The tx line is registered to avoid glitches. Version 1.0.0. Helper block of its IP; see the top level description for clock, reset, latency and error behavior. Clock - the clock of the parent block, all signals are synchronous to it. Reset - synchronous, driven by the parent block. Latency - as documented in the parent block, fixed and independent of data. Errors - none reported here, out-of-range parameters stop elaboration or are handled by the parent block. Reset - synchronous, driven by the parent block. Latency - as documented in the parent block, fixed and independent of data. Errors - none reported here, out-of-range parameters stop elaboration or are handled by the parent block.
+UART transmitter. Pulls bytes from an AXI-Stream style interface and shifts them out LSB first with a start bit, 5 to 8 data bits, optional even or odd parity and one or two stop bits. Bit timing comes from a 16x tick so each bit lasts 16 ticks. The tx line is registered to avoid glitches. Version 1.0.0. Helper block of its IP; see the top level description for clock, reset, latency and error behavior. Errors - none reported here, out-of-range parameters stop elaboration or are handled by the parent block.
 
 Sources: `../../peripherals/uart/src/uart_tx.sv`, `../../timing/baud_generator/src/baud_generator.sv`
 
@@ -702,7 +729,7 @@ Sources: `../../peripherals/uart/src/uart_tx.sv`, `../../timing/baud_generator/s
 
 **Uart Rx** · category `peripherals` · top `uart_rx`
 
-UART receiver. Two flop synchronizer, start bit qualification at mid bit, then sampling every 16 ticks in the middle of each bit. Supports 5 to 8 data bits, optional parity and stop bit check. Produces a one clock word strobe with parity and framing error flags. Break and noise on the start bit are rejected. Version 1.0.0. Helper block of its IP; see the top level description for clock, reset, latency and error behavior. Clock - the clock of the parent block, all signals are synchronous to it. Reset - synchronous, driven by the parent block. Latency - as documented in the parent block, fixed and independent of data. Errors - none reported here, out-of-range parameters stop elaboration or are handled by the parent block. synchronous to it. Reset - synchronous, driven by the parent block. Latency - as documented in the parent block, fixed and independent of data. Errors - none reported here, out-of-range parameters stop elaboration or are handled by the parent block.
+UART receiver. Two flop synchronizer, start bit qualification at mid bit, then sampling every 16 ticks in the middle of each bit. Supports 5 to 8 data bits, optional parity and stop bit check. Produces a one clock word strobe with parity and framing error flags. Break and noise on the start bit are rejected. Version 1.0.0. Helper block of its IP; see the top level description for clock, reset, latency and error behavior. Errors - none reported here, out-of-range parameters stop elaboration or are handled by the parent block.
 
 Sources: `../../peripherals/uart/src/uart_rx.sv`, `../../timing/baud_generator/src/baud_generator.sv`
 
@@ -712,7 +739,7 @@ Sources: `../../peripherals/uart/src/uart_rx.sv`, `../../timing/baud_generator/s
 
 **Cordic** · category `common` · top `cordic`
 
-Pipelined CORDIC. Version 1.0.0. MODE 0 (rotation) rotates the vector (x_i, y_i) by the angle z_i, giving x*cos-y*sin and x*sin+y*cos (with x_i=A, y_i=0 it is a sine/cosine generator of amplitude A); MODE 1 (vectoring) returns the magnitude sqrt(x^2+y^2) in mag_o and the angle atan2(y,x) in z_o. Angles are unsigned turns - z is ZW bits and 2^ZW equals 2*pi, so the phase word of an NCO connects directly. Full-circle range is handled by a quadrant pre- rotation, the CORDIC gain (1.6468) is compensated by a constant multiplier, and WIDTH+2 guard bits are used internally. One result per clock (fully pipelined), ITER micro-rotations. Clock - clk with valid_i/valid_o. Reset - synchronous active low clears the valid pipeline (data registers are unreset, valid_o=0 masks them). Latency - ITER+2 clocks. Accuracy - about 2 LSB in rotation mode and 2 LSB plus 2^-ITER rad in vectoring mode; inputs must satisfy |(x,y)| <= 2^(WIDTH-1)-1 (rotation) so results fit; magnitude output has WIDTH+1 bits. Errors - out-of-range parameters rejected at elaboration.
+Pipelined CORDIC. Version 1.0.0. MODE 0 (rotation) rotates the vector (x_i, y_i) by the angle z_i, giving x*cos-y*sin and x*sin+y*cos (with x_i=A, y_i=0 it is a sine/cosine generator of amplitude A); MODE 1 (vectoring) returns the magnitude sqrt(x^2+y^2) in mag_o and the angle atan2(y,x) in z_o. Angles are unsigned turns - z is ZW bits and 2^ZW equals 2*pi, so the phase word of an NCO connects directly. Full-circle range is handled by a quadrant pre-rotation, the CORDIC gain (1.6468) is compensated by a constant multiplier, and WIDTH+2 guard bits are used internally. One result per clock (fully pipelined), ITER micro-rotations. Clock - clk with valid_i/valid_o. Reset - synchronous active low clears the valid pipeline (data registers are unreset, valid_o=0 masks them). Latency - ITER+2 clocks. Accuracy - about 2 LSB in rotation mode and 2 LSB plus 2^-ITER rad in vectoring mode; inputs must satisfy |(x,y)| <= 2^(WIDTH-1)-1 (rotation) so results fit; magnitude output has WIDTH+1 bits. Errors - out-of-range parameters rejected at elaboration.
 
 Sources: `src/cordic.sv`
 
@@ -802,7 +829,7 @@ Sources: `../../shared/src/integrity/crc_core/crc_core.sv`, `../../integrity/crc
 
 **Spi Flash Ctrl** · category `peripherals` · top `spi_flash_ctrl`
 
-SPI NOR flash controller (single-bit SPI mode 0, 3-byte addressing, e.g. W25Qxx / S25FL / MX25). Version 1.0.0. AXI4-Lite registers issue generic commands - write CMD (0x00) with opcode[7:0], addr_en[8], dummy bytes[15:12], read_data[16], write_data[17] after setting ADDR (0x04, 24 bit) and LEN (0x08, data bytes 0..65535); the controller then drives cs_n, sends opcode, address and dummy bytes and moves LEN data bytes: bytes read from the flash leave on the AXI- Stream master port (m_axis) and bytes to write are taken from the AXI- Stream slave port (s_axis), each waiting for the stream handshake with sclk stopped between bytes (so the flash never sees a gap it cannot handle, and no byte is lost). Any flash command is expressible: 9F read ID, 03/0B read, 06 write enable, 02 page program, 20/D8/C7 erase, 05 read status (poll STATUS-of-flash yourself by issuing 05 with LEN=1). Registers - 0x00 CMD (write starts, reads back last), 0x04 ADDR, 0x08 LEN, 0x0C CLKDIV (sclk half period in clocks, min 3, reset 4, so 12.5 MHz at 100 MHz), 0x10 STATUS (bit0 busy, bit1 done sticky, bit2 cmd_err sticky; write 1 to clear bits 1 and 2), 0x14 IRQ_EN (bit0), 0x18 IP_VERSION. A CMD written while busy is ignored and sets cmd_err. irq_o = done & IRQ_EN. Clock - aclk; miso is asynchronous and double-registered, which is why the half period is at least 3 clocks. Reset - synchronous aresetn, cs_n high, sclk low. Timing - cs_n is asserted one half period before the first sclk edge, held one half period after the last, and kept high for two half periods between commands. Latency - command starts 2 clocks after the CMD write; data throughput is 8 bit times per byte plus stream wait. The flash write- in-progress state is the flash's own business: poll it with command 05. Errors - cmd_err (command while busy); a stalled stream simply pauses the transfer.
+SPI NOR flash controller (single-bit SPI mode 0, 3-byte addressing, e.g. W25Qxx / S25FL / MX25). Version 1.0.0. AXI4-Lite registers issue generic commands - write CMD (0x00) with opcode[7:0], addr_en[8], dummy bytes[15:12], read_data[16], write_data[17] after setting ADDR (0x04, 24 bit) and LEN (0x08, data bytes 0..65535); the controller then drives cs_n, sends opcode, address and dummy bytes and moves LEN data bytes: bytes read from the flash leave on the AXI-Stream master port (m_axis) and bytes to write are taken from the AXI-Stream slave port (s_axis), each waiting for the stream handshake with sclk stopped between bytes (so the flash never sees a gap it cannot handle, and no byte is lost). Any flash command is expressible: 9F read ID, 03/0B read, 06 write enable, 02 page program, 20/D8/C7 erase, 05 read status (poll STATUS-of-flash yourself by issuing 05 with LEN=1). Registers - 0x00 CMD (write starts, reads back last), 0x04 ADDR, 0x08 LEN, 0x0C CLKDIV (sclk half period in clocks, min 3, reset 4, so 12.5 MHz at 100 MHz), 0x10 STATUS (bit0 busy, bit1 done sticky, bit2 cmd_err sticky; write 1 to clear bits 1 and 2), 0x14 IRQ_EN (bit0), 0x18 IP_VERSION. A CMD written while busy is ignored and sets cmd_err. irq_o = done & IRQ_EN. Clock - aclk; miso is asynchronous and double-registered, which is why the half period is at least 3 clocks. Reset - synchronous aresetn, cs_n high, sclk low. Timing - cs_n is asserted one half period before the first sclk edge, held one half period after the last, and kept high for two half periods between commands. Latency - command starts 2 clocks after the CMD write; data throughput is 8 bit times per byte plus stream wait. The flash write-in-progress state is the flash's own business: poll it with command 05. Errors - cmd_err (command while busy); a stalled stream simply pauses the transfer.
 
 Sources: `../../shared/src/common/ip_axil_regs.sv`, `src/spi_flash_ctrl.sv`
 
@@ -832,7 +859,7 @@ Sources: `../../bus/axi4_lite_slave/src/axi4_lite_slave.sv`, `../../bus/axi4_lit
 
 **Pcie Tl Ep Top** · category `peripherals` · top `pcie_tl_ep_top`
 
-PCIe transaction layer endpoint IP top level. 64 bit AXI- Stream TLP ports (rx from and tx to a PCIe link core such as a hard block), Type 0 config space, BAR0 with block RAM and a stream window, plus AXI-Stream user ports - s_axis words are DMA written to host memory as Memory Write TLPs, m_axis carries payload written to the BAR0 stream window. AXI-Lite map - 0x00 CTRL[0]=dma_en; 0x04/0x08 DMA_ADDR lo/hi; 0x0C DMA_LEN_DW; 0x10 STATUS [0]mem_en [1]bus_master [2]dma_busy; 0x14 CPL_ID; 0x18 BAR0; 0x1C RX_TLP; 0x20 MWR; 0x24 MRD; 0x28 CFG; 0x2C UR; 0x30 DMA_TLP counters. PHY, LTSSM and data link layer are not included. Version 1.0.0. Scope - transaction layer only (no PHY, data link layer, LTSSM, credit or flow-control logic; a link core must supply the TLP stream). Clock - aclk (250 MHz class for a Gen2 x4 link core, 100 MHz used in simulation), everything synchronous. Reset - synchronous aresetn, DMA idle, counters cleared, BAR RAM contents undefined. Latency - a memory read is answered with a completion about 5 clocks after the request TLP ends; a memory write reaches the RAM 2 clocks after the last beat. Errors - unsupported requests are answered with an Unsupported Request completion and counted (UR counter); illegal parameters stop elaboration.
+PCIe transaction layer endpoint IP top level. 64 bit AXI-Stream TLP ports (rx from and tx to a PCIe link core such as a hard block), Type 0 config space, BAR0 with block RAM and a stream window, plus AXI-Stream user ports - s_axis words are DMA written to host memory as Memory Write TLPs, m_axis carries payload written to the BAR0 stream window. AXI-Lite map - 0x00 CTRL[0]=dma_en; 0x04/0x08 DMA_ADDR lo/hi; 0x0C DMA_LEN_DW; 0x10 STATUS [0]mem_en [1]bus_master [2]dma_busy; 0x14 CPL_ID; 0x18 BAR0; 0x1C RX_TLP; 0x20 MWR; 0x24 MRD; 0x28 CFG; 0x2C UR; 0x30 DMA_TLP counters. PHY, LTSSM and data link layer are not included. Version 1.0.0. Scope - transaction layer only (no PHY, data link layer, LTSSM, credit or flow-control logic; a link core must supply the TLP stream). Clock - aclk (250 MHz class for a Gen2 x4 link core, 100 MHz used in simulation), everything synchronous. Reset - synchronous aresetn, DMA idle, counters cleared, BAR RAM contents undefined. Latency - a memory read is answered with a completion about 5 clocks after the request TLP ends; a memory write reaches the RAM 2 clocks after the last beat. Errors - unsupported requests are answered with an Unsupported Request completion and counted (UR counter); illegal parameters stop elaboration.
 
 Sources: `src/pcie_axis_to_dw.sv`, `src/pcie_dw_to_axis.sv`, `src/pcie_axis_fifo.sv`, `src/pcie_axil_regs.sv`, `src/pcie_tl_target.sv`, `src/pcie_tl_dma.sv`, `src/pcie_tl_ep_top.sv`
 
@@ -1027,3 +1054,273 @@ One-cycle-latency multiply-accumulate unit. Fixed-point mode supports independen
 Sources: `src/mac.sv`, `src/fp32_fma.sv`
 
 [HTML module page](mac/index.html)
+
+## csi2_rx
+
+**Csi2 Rx** · category `video` · top `csi2_rx`
+
+MIPI CSI-2 receiver, protocol layer. Version 1.0.0. Takes the per-lane HS byte streams of a D-PHY receiver (PPI style: one byte per lane per byte clock, lane_valid high during the HS burst, sync byte already stripped; the analog D-PHY itself is vendor IP) and produces the payload of the selected long packets as an AXI-Stream of NLANES bytes. - Lane deskew: per-lane 8-byte FIFOs absorb up to 7 byte clocks of skew between lanes; lanes are merged byte 0 = lane 0. - Packet header: 6-bit ECC checked; single-bit errors corrected (ecc_corrected_o), multi-bit errors drop the packet (ecc_error_o). - Short packets: frame start / end (data types 0x00 / 0x01) reported. - Long packets with virtual channel vc_i and data type dt_i are streamed; others (embedded data, other VCs) are dropped. The CRC-16 of every long packet is checked (crc_error_o). One packet per HS burst (the usual sensor behaviour); bytes after a packet's checksum up to the end of the burst are ignored. Output - m_axis_tdata byte i is payload byte i of the word, tkeep is contiguous from bit 0, tlast ends each packet (one image line), tuser marks the first word after frame start. There is no back-pressure on a sensor: the output is valid for one clock, and a word not accepted (m_axis_tready low) is lost and flagged on overflow_o - put a FIFO or axis_async_bridge behind this block. Status outputs are one-clock pulses. Clock - byte clock only. Reset - synchronous rst_n (active low). Latency - about 4 byte clocks.
+
+Sources: `src/csi2_rx.sv`
+
+[HTML module page](csi2_rx/index.html)
+
+## csi2_raw_unpack
+
+**Csi2 Raw Unpack** · category `video` · top `csi2_raw_unpack`
+
+CSI-2 RAW payload unpacker. Version 1.0.0. Converts the packed payload bytes of csi2_rx (IN_BYTES bytes per word, tkeep contiguous from bit 0, tlast = end of line, tuser = start of frame) into one pixel per clock in the AXI-Stream video format of this library (tuser = SOF on the first pixel, tlast = EOL on the last pixel of a line). Formats (fmt_i = CSI-2 data type): 0x2A RAW8  - 1 byte  -> 1 pixel 0x2B RAW10 - 5 bytes -> 4 pixels: bytes 0-3 hold bits [9:2] of pixels 0-3, byte 4 holds bits [1:0] of pixel i in bits [2i+1:2i] 0x2C RAW12 - 3 bytes -> 2 pixels: bytes 0-1 hold bits [11:4], byte 2 holds bits [3:0] of pixel 0 in [3:0], pixel 1 in [7:4] Pixels are aligned to OUT_W bits (shifted left when narrower, right when wider). A line must hold whole groups (CSI-2 requires this). Unknown formats are treated as RAW8. Resync - grouping is checked against the line and frame markers: a group that would run past the end of a line drops the bytes up to that end, and one that would start before a start-of-frame byte drops the bytes before it. Payload words lost upstream (e.g. a full clock-crossing FIFO) therefore corrupt at most the line they belong to. Throughput - 1 pixel per clock; the input is back-pressured while the byte buffer is full. Clock - clk only. Reset - synchronous rst_n (active low). Latency - 2 clocks.
+
+Sources: `src/csi2_raw_unpack.sv`
+
+[HTML module page](csi2_raw_unpack/index.html)
+
+## isp_window
+
+**Isp Window** · category `video` · top `isp_window`
+
+N x N neighbourhood (window) generator for streaming video. Version 1.0.0. For every input pixel it outputs the N x N window centred on it, in raster order, using N-1 line buffers (block RAM). The output frame has the same size as the input; pixels outside the frame come from the BORDER rule: BORDER = 0  clamp to edge   (x = -1 -> 0,  x = W -> W-1) BORDER = 1  mirror, edge not repeated (reflect-101: x = -1 -> 1, x = W -> W-2). This keeps the colour phase of Bayer data, so it is the right choice before demosaic. Needs W, H >= R + 1. The frame size comes from width_i / height_i (static during a frame); the block scans a (W+R) x (H+R) grid, R = (N-1)/2, and generates the last R columns and rows itself, so a frame is complete without waiting for the next one. Window layout - m_axis_tdata[(r*N + c)*PW +: PW] is row r (0 = top), column c (0 = left); the centre is r = c = R. m_x / m_y give the centre coordinates. tuser = SOF, tlast = EOL, as on the input. Resync - input pixels before a start-of-frame pixel are dropped, and a start-of-frame pixel arriving where the scan expects an ordinary pixel (a short frame, or a size change mid-frame) restarts the scan at (0,0) with it; windows already output for the short frame remain valid. sof_wait_o - high while the scan waits for a frame's first pixel (between frames; registered, independent of the inputs): a parent may switch width_i / height_i when it sees a start-of-frame pixel in that state. Throughput - 1 pixel per clock plus R idle input cycles per line and R lines per frame. Clock - clk only. Reset - synchronous rst_n (active low). Latency - R lines + R + 1 clocks.
+
+Sources: `src/isp_window.sv`
+
+[HTML module page](isp_window/index.html)
+
+## isp_blc_wb
+
+**Isp Blc Wb** · category `video` · top `isp_blc_wb`
+
+Bayer-domain black level correction and white balance. Version 1.0.0. For each RAW pixel of colour c (from the CFA phase): black level:   v = max(raw - blc[c], 0)               (blc_bypass_i: v = raw) white balance: out = min((v * gain[c] + 128) >> 8, 2^PW-1) (wb_bypass_i: out = v) Colours c: 0 = R, 1 = Gr (green on a red row), 2 = Gb, 3 = B. blc_i holds four PW-bit offsets, colour c in [c*PW +: PW]; gains are unsigned Q4.8 (256 = 1.0, max 15.996) for R, G (both greens) and B. CFA pattern cfa_i: 0 RGGB, 1 GRBG, 2 GBRG, 3 BGGR (top-left 2x2). The phase restarts at every tuser (SOF) and tlast (EOL) pixel. Bypass bits and the pattern are sampled at the start of each frame, so a change never splits a frame. Clock - clk only. Reset - synchronous rst_n (active low). Latency - 2 clocks, 1 pixel per clock.
+
+Sources: `src/isp_blc_wb.sv`
+
+[HTML module page](isp_blc_wb/index.html)
+
+## isp_dpc
+
+**Isp Dpc** · category `video` · top `isp_dpc`
+
+Bayer defective (hot / dead) pixel correction. Version 1.0.0. Compares each RAW pixel with its 8 same-colour neighbours (two pixels away horizontally, vertically and diagonally, which share the colour in every Bayer pattern): c > max + thr  ->  out = max       (hot pixel) c < min - thr  ->  out = min       (dead pixel) otherwise      ->  out = c Borders are mirrored without repeating the edge pixel (isp_window BORDER = 1), so edge pixels also have 8 true same-colour neighbours. bypass_i (sampled at the start of each output frame) passes the centre pixel unchanged through the same latency. corrected_o pulses once per corrected pixel (for a statistics counter). Frame size from width_i / height_i. Clock - clk only. Reset - synchronous rst_n (active low). Latency - 2 lines + 4 clocks.
+
+Sources: `../isp_window/src/isp_window.sv`, `src/isp_dpc.sv`
+
+[HTML module page](isp_dpc/index.html)
+
+## isp_demosaic
+
+**Isp Demosaic** · category `video` · top `isp_demosaic`
+
+Bayer to RGB demosaic, bilinear 3x3. Version 1.0.0. With the 3x3 window (n, s, e, w = cross neighbours, d = diagonals) around a pixel of CFA colour: R:  R = c,           G = (n+s+e+w+2)/4,  B = (sum d + 2)/4 B:  B = c,           G = (n+s+e+w+2)/4,  R = (sum d + 2)/4 Gr: G = c,  R = (e+w+1)/2,  B = (n+s+1)/2     (green on a red row) Gb: G = c,  B = (e+w+1)/2,  R = (n+s+1)/2     (green on a blue row) Borders are mirrored without repeating the edge pixel (isp_window BORDER = 1), which keeps the CFA colour of every neighbour. CFA pattern cfa_i: 0 RGGB, 1 GRBG, 2 GBRG, 3 BGGR. bypass_i outputs the raw value on all three components (a grey image), so downstream RGB blocks keep working. cfa_i / bypass_i are sampled at the start of each output frame. Output pixel {B, G, R}: component 0 (R) in the LSBs. Clock - clk only. Reset - synchronous rst_n (active low). Latency - 1 line + 3 clocks.
+
+Sources: `../isp_window/src/isp_window.sv`, `src/isp_demosaic.sv`
+
+[HTML module page](isp_demosaic/index.html)
+
+## isp_ccm
+
+**Isp Ccm** · category `video` · top `isp_ccm`
+
+3x3 colour correction matrix with offsets. Version 1.0.0. out[i] = clamp((sum_j coef[i][j] * in[j] + 512) >> 10 + off[i], 0, 2^PW-1) i, j: 0 = R, 1 = G, 2 = B. Coefficients are signed Q5.10 (16 bits, 1024 = 1.0, range -32 .. +31.999), coef_i[(3*i + j)*16 +: 16]; offsets are signed, in output units, off_i[i*16 +: 16]. Identity is coef = diag(1024), off = 0. The arithmetic shift rounds half up. bypass_i (sampled at each frame start) passes pixels unchanged through the same latency. Pixel {B, G, R}, component 0 in the LSBs. Clock - clk only. Reset - synchronous rst_n (active low). Latency - 3 clocks, 1 pixel per clock (9 multipliers, map to DSP blocks).
+
+Sources: `src/isp_ccm.sv`
+
+[HTML module page](isp_ccm/index.html)
+
+## isp_gamma
+
+**Isp Gamma** · category `video` · top `isp_gamma`
+
+Gamma / tone curve lookup for RGB. Version 1.0.0. One programmable curve of 2^IN_W entries x OUT_W bits is applied to all three components (three copies of the table, written together, so one pixel per clock). Write the table through lut_we_i / lut_addr_i / lut_data_i at any time; a frame in flight may see a mix of old and new entries. Power-up contents are the linear curve in >> (IN_W - OUT_W) (FPGA RAM initialisation). bypass_i (sampled at each frame start) outputs in >> (IN_W - OUT_W) for every component, i.e. the linear curve without the table. Pixel {B, G, R}, component 0 in the LSBs. Clock - clk only. Reset - synchronous rst_n (active low). Latency - 1 clock.
+
+Sources: `src/isp_gamma.sv`
+
+[HTML module page](isp_gamma/index.html)
+
+## isp_csc
+
+**Isp Csc** · category `video` · top `isp_csc`
+
+RGB to YCbCr 4:4:4 colour space converter, 8-bit, limited range (Y 16-235, Cb/Cr 16-240). Version 1.0.0. Integer coefficients (x/256), rounded: BT.601: Y = 16 + ( 66R + 129G +  25B + 128) >> 8 Cb = 128 + (-38R -  74G + 112B + 128) >> 8 Cr = 128 + (112R -  94G -  18B + 128) >> 8 BT.709: Y = 16 + ( 47R + 157G +  16B + 128) >> 8 Cb = 128 + (-26R -  86G + 112B + 128) >> 8 Cr = 128 + (112R - 102G -  10B + 128) >> 8 (>> is an arithmetic shift.) bt709_i selects the matrix. Output pixel {Cb, Y, Cr} (component 0 = Cr in the LSBs), so each component lands on the HDMI channel that carries it in YCbCr 4:4:4 (red channel Cr, green channel Y, blue channel Cb). bypass_i passes RGB unchanged. Both are sampled at each frame start. Clock - clk only. Reset - synchronous rst_n (active low). Latency - 2 clocks.
+
+Sources: `src/isp_csc.sv`
+
+[HTML module page](isp_csc/index.html)
+
+## isp_stats
+
+**Isp Stats** · category `video` · top `isp_stats`
+
+Per-frame image statistics for auto exposure and auto white balance software. Version 1.0.0. Monitors an RGB AXI-Stream (it only observes the handshake, it never stalls the stream) and accumulates over each frame: the sum of each component, the number of pixels, and the number of pixels with any component >= sat_thr_i (clipping). At the start of the next frame (tuser) the totals are copied to the outputs and frame_done_o pulses, so the outputs always describe the last complete frame and stay stable for a whole frame time. A frame that is never followed by another is reported when flush_i pulses. Clock - clk only. Reset - synchronous rst_n (active low).
+
+Sources: `src/isp_stats.sv`
+
+[HTML module page](isp_stats/index.html)
+
+## vid_timing_gen
+
+**Vid Timing Gen** · category `video` · top `vid_timing_gen`
+
+Programmable video timing generator. Version 1.0.0. Produces de / hsync / vsync for any progressive mode from its active, front porch, sync and back porch lengths (pixels for h, lines for v). Line layout: active, front porch, sync, back porch; frame layout likewise in lines. vsync changes at the hsync leading edge (CEA-861). Sync polarity per hs_pol_i / vs_pol_i (1 = active high). Genlock - with lock_en_i set, the last back-porch line of a frame is repeated while src_ready_i is low (the source has no frame ready), up to lock_max_i extra lines, then the frame starts anyway. Extending vertical blanking line by line keeps hsync regular, so the display follows the source frame rate without a frame buffer; waiting_o is high on extra lines. Outputs are registered (1 clock after the counters): x_o / y_o are the active-area coordinates, sof_o marks the first active pixel of a frame, eol_o the last active pixel of a line, vblank_o the vertical blanking lines. Settings are sampled at frame start. enable_i low holds the generator at the start of a frame with all outputs inactive. Clock - clk (pixel clock) only. Reset - synchronous rst_n (active low).
+
+Sources: `src/vid_timing_gen.sv`
+
+[HTML module page](vid_timing_gen/index.html)
+
+## axis_to_video
+
+**Axis To Video** · category `video` · top `axis_to_video`
+
+AXI-Stream video to timed video output. Version 1.0.0. Buffers the incoming pixel stream in a FIFO and outputs one pixel on every active (de) cycle of a timing generator (vid_timing_gen), all in the pixel clock domain. Frame lock - an output frame starts only from an input start of frame: src_ready_o is high when the FIFO head is an SOF pixel and the FIFO holds at least start_level_i pixels; connect it to the timing generator's src_ready_i (genlock) so the display waits for the source. At sof_i the head must be that SOF pixel, otherwise the frame is output black. If the FIFO runs empty during a frame, or an SOF arrives before the output frame ends, the rest of the frame is black, underflow_o pulses and the block resynchronises: input pixels up to the next SOF are discarded. During vertical blanking (vblank_i) the output frame is over, so leftover input pixels of a longer or interrupted frame are discarded too and the next SOF reaches the FIFO head. Test pattern - with tpg_en_i the input is discarded and eight vertical colour bars (white, yellow, cyan, green, magenta, red, blue, black) are output instead; the pattern is RGB. The output (rgb_o, de_o, hs_o, vs_o) is registered, 1 clock after the timing inputs. Pixel {B, G, R}, component 0 in the LSBs. Clock - clk only. Reset - synchronous rst_n (active low).
+
+Sources: `../../shared/src/fifo/ip_axis_fifo.sv`, `src/axis_to_video.sv`
+
+[HTML module page](axis_to_video/index.html)
+
+## tmds_encoder
+
+**Tmds Encoder** · category `video` · top `tmds_encoder`
+
+TMDS encoder for one DVI / HDMI channel. Version 1.0.0. mode_i selects the symbol of each pixel clock: 0 CONTROL - c_i = {C1, C0} -> one of the four control tokens 1 VIDEO   - d_i, 8b/10b transition-minimised, DC-balanced coding of the DVI 1.0 specification (running disparity kept here) 2 TERC4   - t_i -> HDMI TERC4 symbol (data island payload) 3 GUARD   - g_i is sent as is (HDMI guard band symbol) The running disparity is cleared in every non-video period, as the specification requires. q_o[0] is the first bit on the wire. Clock - pixel clock only. Reset - synchronous rst_n (active low). Latency - 1 clock (registered output).
+
+Sources: `src/tmds_encoder.sv`
+
+[HTML module page](tmds_encoder/index.html)
+
+## hdmi_tx
+
+**Hdmi Tx** · category `video` · top `hdmi_tx`
+
+DVI / HDMI transmitter, TMDS link layer. Version 1.0.0. Encodes 24-bit video with its de / hsync / vsync into three 10-bit TMDS symbol streams (channel 0 blue + syncs, 1 green, 2 red) plus the TMDS clock pattern, for a 10:1 serializer (tmds_serializer or vendor OSERDES) and differential output buffers. hdmi_mode_i = 0 (DVI): video and control periods only. hdmi_mode_i = 1 (HDMI): additionally - before every active line: 8-clock video preamble (CTL0 = 1) and a 2-clock video guard band, found with an 11-clock look-ahead (the output is delayed by 11 clocks); - once per frame, starting at the vsync leading edge: one data island (8-clock preamble, 2-clock guard band, 32-clock packet, 2-clock guard band) carrying an AVI InfoFrame (version 2): colour space avi_y_i (0 RGB, 1 YCbCr 4:2:2, 2 YCbCr 4:4:4), colorimetry avi_c_i, picture aspect avi_m_i, VIC avi_vic_i, RGB quantisation range avi_q_i (0 default, 1 limited, 2 full). The packet header and sub-packets carry the BCH ECC of the HDMI specification. Requirements on the timing (true for every CEA-861 mode): horizontal blanking >= 12 clocks, and the vsync leading edge at least 56 clocks before the next active line (the island and a following preamble fit). Input pixel {B, G, R} (or {Cb, Y, Cr}): component 0 in the LSBs. vs_pol_i tells which vsync level is the active one. Clock - pixel clock only. Reset - synchronous rst_n (active low). Latency - 12 clocks.
+
+Sources: `../tmds_encoder/src/tmds_encoder.sv`, `src/hdmi_tx.sv`
+
+[HTML module page](hdmi_tx/index.html)
+
+## tmds_serializer
+
+**Tmds Serializer** · category `video` · top `tmds_serializer`
+
+Generic 10:1 TMDS serializer (behavioural, technology independent). Version 1.0.0. Shifts the three channel symbols and the clock pattern out LSB first on ser_clk, which must be exactly 10x the pixel clock and come from the same PLL / MMCM. A toggle written every pixel clock is synchronised into ser_clk; three ser_clk cycles after each toggle edge the symbols (stable for the whole pixel period) are loaded, so the result does not depend on the phase between the clocks. Use this for simulation, for slow links, or on devices with fast general fabric; at 1080p60 (1.485 Gbit/s per lane) replace it with the vendor serializer (e.g. two cascaded OSERDESE2 in 10:1 DDR mode with a 5x clock) and differential output buffers (OBUFDS / TMDS_33 I/O). Clocks - pix_clk and ser_clk = 10 x pix_clk, related. Reset - synchronous per domain, active low. Latency - about 2 pixel clocks.
+
+Sources: `src/tmds_serializer.sv`
+
+[HTML module page](tmds_serializer/index.html)
+
+## video_pipeline
+
+**Video Pipeline** · category `video` · top `video_pipeline`
+
+MIPI CSI-2 camera to HDMI / DVI video pipeline. Version 1.0.0.  byte_clk | pix_clk D-PHY -> csi2_rx -> axis_async_bridge -> csi2_raw_unpack -> isp_blc_wb -> isp_dpc -> isp_demosaic -> isp_ccm -> isp_gamma -> isp_csc -> [scaler_bilinear | bypass] -> axis_to_video -> hdmi_tx  -> TMDS (HDMI / DVI) -> lvds_tx  -> OpenLDI (LVDS panel) -> dsi_tx   -> MIPI DSI (panel) -> csi2_tx  -> MIPI CSI-2 (processor) vid_timing_gen drives axis_to_video (genlock to the camera) and hdmi_tx; isp_stats taps the linear RGB after the CCM for AE / AWB software.  Every function can be bypassed (BYPASS register, applied at the next frame start): black level, white balance, defect correction, demosaic (raw value on R, G and B), CCM, gamma (linear 10 -> 8 bit), CSC (RGB out), scaler (stream routed around it). CTRL.TPG replaces the whole pipeline output with colour bars.  The D-PHY analog front end is vendor IP: connect its per-lane HS byte outputs (PPI) to lane_data_i / lane_valid_i. The TMDS symbols leave on tmds*_o for a 10:1 serializer (tmds_serializer or vendor OSERDES) and differential output buffers.  No frame buffer: the display is genlocked to the camera (CTRL.LOCK), so the display line time must be at least the camera line time; insert an external frame buffer (axis_dma + DRAM) before axis_to_video for independent frame rates.  AXI4-Lite (pix_clk), ADDR_W = 15: 0x0000-0x00FF pipeline registers, 0x4000-0x7FFF the scaler's own map (scaler_ctrl, base 0x4000). 0x000 ID          RO "VPIP" 0x004 CTRL        [0] output enable [1] HDMI (0 = DVI) [2] TPG [3] genlock [5:4] CFA (0 RGGB 1 GRBG 2 GBRG 3 BGGR) [6] CSC BT.709 (0 = BT.601) [7] insert: route the stream after isp_csc out through ins_m_axis_* and back in on ins_s_axis_* (`VP_INSERT; taken at the next frame start) 0x008 BYPASS      [0] BLC [1] WB [2] DPC [3] demosaic [4] CCM [5] gamma [6] CSC [7] scaler          (reset 0xC0: RGB out, no scaler) 0x00C STATUS      RO [0] output locked to the camera 0x010 CSI         [5:0] data type (reset 0x2B RAW10) [7:6] virtual channel 0x014 FRAME_SIZE  [15:0] camera width [31:16] height 0x018-0x024 BLC   R, Gr, Gb, B black levels 0x028-0x030 WB    R, G, B gains Q4.8 (reset 0x100) 0x034 DPC_THR     defect threshold (reset 64) 0x038-0x058 CCM   coefficients c00..c22, signed Q5.10 (reset identity) 0x05C-0x064 CCM   offsets R, G, B (signed) 0x068 GAMMA_ADDR  table index for the next GAMMA_DATA write 0x06C GAMMA_DATA  [7:0] writes table[index], index auto-increments 0x070 STAT_THR    clip threshold (10-bit, reset 1000) 0x074-0x07C STAT  RO sums of R, G, B (low 32 bits) of the last frame 0x080 STAT_PIX    RO pixels, 0x084 STAT_CLIP RO clipped pixels 0x088 STAT_FRAMES RO 0x08C-0x0A8 VTG   h active, h front porch, h sync, h back porch, v active, v front porch, v sync, v back porch 0x0AC SYNC_POL    [0] hsync [1] vsync active high 0x0B0 LOCK_MAX    genlock: max extra blanking lines (reset 1023) 0x0B4 START_LEVEL pixels buffered before a frame starts (reset 16) 0x0B8 AVI         [6:0] VIC [9:8] picture aspect [11:10] RGB range (colour space and colorimetry follow CSC settings) 0x0BC CSI_FRAMES  RO, 0x0C0 ECC_CORR RO, 0x0C4 ECC_ERR RO, 0x0C8 CRC_ERR RO, 0x0CC UNDERFLOWS RO, 0x0D0 DPC_CORR RO, 0x0D4 CSI_OVERFLOW RO (CSI words lost: the bridge FIFO was full) 0x0D8 OUT_CTRL    [0] LVDS dual link [1] LVDS 18 bpp [2] LVDS JEIDA [4] DSI video [5] DSI EoTp [7:6] DSI virtual channel [8] CSI-2 TX enable [9] CSI-2 TX YUV422 [11:10] its VC 0x0DC DSI_GAPS    [15:0] LP clocks after a sync packet, [31:16] after pixels 0x0E0 CSITX_GAP   LP clocks between CSI-2 TX packets 0x0E4 DSI_CMD     write: queue a DSI command {[24] long, [23:16] data type, [15:0] data / word count} (sent with DSI video off) 0x0E8 DSI_CMD_BYTE write: [7:0] next payload byte of a long command 0x0EC TX_STATUS   RO [0] DSI command queue busy 0x0F0 DSI_DROPS   RO lines DSI could not send in time 0x0F4 CSITX_DROPS RO lines CSI-2 TX could not send in time 0x0F8 CSITX_FRAMES RO frames sent by CSI-2 TX The DSI, CSI-2 TX and LVDS outputs carry the same timed video as HDMI; panels need RGB (CSC bypassed), CSI-2 YUV422 needs YCbCr (CSC on). Scaler settings: clear its CTRL.ENABLE, wait for STATUS.BUSY = 0, then change sizes / steps and enable it again (scaler_ctrl does not support changing them while a frame is being generated). 0x0FC BUILD_CFG   RO interfaces built: [0] CSI-2 RX [1] HDMI [2] LVDS [3] DSI [4] CSI-2 TX [5] scaler [6] insert point External interfaces are included or excluded with the `defines in configuration.sv (compiled first, see scripts/build.f); an excluded interface has no ports or logic and its registers read as 0. Clocks - byte_clk (D-PHY), pix_clk (pipeline, registers, video out). Resets - byte_rst_n, pix_rst_n, synchronous active low; assert both.
+
+Sources: `src/configuration.sv`, `../../shared/src/common/ip_axil_regs.sv`, `../../shared/src/fifo/ip_axis_fifo.sv`, `../../fifo/async_fifo/src/async_fifo.sv`, `../../cdc/axis_async_bridge/src/axis_async_bridge.sv`, `../../cdc/bit_sync/src/bit_sync.sv`, `../../cdc/pulse_sync/src/pulse_sync.sv`, `../../scalers/axil_split/src/axil_split.sv`, `../../scalers/axil_regbus/src/axil_regbus.sv`, `../../scalers/scaler_ctrl/src/scaler_ctrl.sv`, `../../scalers/scaler_dda/src/scaler_dda.sv`, `../../scalers/banked_framebuf/src/banked_framebuf.sv`, `../../scalers/scaler_bilinear/src/scaler_bilinear.sv`, `../csi2_rx/src/csi2_rx.sv`, `../csi2_raw_unpack/src/csi2_raw_unpack.sv`, `../isp_window/src/isp_window.sv`, `../isp_blc_wb/src/isp_blc_wb.sv`, `../isp_dpc/src/isp_dpc.sv`, `../isp_demosaic/src/isp_demosaic.sv`, `../isp_ccm/src/isp_ccm.sv`, `../isp_gamma/src/isp_gamma.sv`, `../isp_csc/src/isp_csc.sv`, `../isp_stats/src/isp_stats.sv`, `../vid_timing_gen/src/vid_timing_gen.sv`, `../axis_to_video/src/axis_to_video.sv`, `../tmds_encoder/src/tmds_encoder.sv`, `../hdmi_tx/src/hdmi_tx.sv`, `../mipi_line_buf/src/mipi_line_buf.sv`, `../mipi_tx_engine/src/mipi_tx_engine.sv`, `../csi2_tx/src/csi2_tx.sv`, `../dsi_tx/src/dsi_tx.sv`, `../lvds_tx/src/lvds_tx.sv`, `src/video_pipeline.sv`
+
+[HTML module page](video_pipeline/index.html)
+
+## csi2_tx
+
+**Csi2 Tx** · category `video` · top `csi2_tx`
+
+MIPI CSI-2 transmitter: video in, CSI-2 packets out on a D-PHY (PPI style, see mipi_tx_engine). Version 1.0.0. Makes the pipeline output look like a camera to a downstream processor. Input - timed video on the pixel clock (rgb_i, de_i, vs_i, as driven to a display): a frame starts at the vsync leading edge (vs_pol_i = active level), each de run is a line. Pixels {B, G, R}, or {Cb, Y, Cr} for YUV. Output per frame: Frame Start (data = frame number, 1..65535), one long packet per line - RGB888 (data type 0x24, bytes B, G, R) or YUV422 8-bit (0x1E, bytes U, Y0, V, Y1, chroma averaged over the pixel pair; even widths only) - and Frame End at the next vsync, each packet in its own HS burst followed by lp_gap_i byte clocks of LP state. Virtual channel vc_i. Lines are buffered (mipi_line_buf): the link must carry a line (width x 3 or 2 bytes / NLANES byte clocks plus about 40 clocks of overhead) within a line time; otherwise lines are dropped and line_drop_o pulses. Config is quasi-static (change it between frames, or with enable_i low). Clocks - pclk, bclk (D-PHY byte clock). Resets - synchronous per domain, active low.
+
+Sources: `../../cdc/bit_sync/src/bit_sync.sv`, `../../cdc/pulse_sync/src/pulse_sync.sv`, `../../fifo/async_fifo/src/async_fifo.sv`, `../mipi_line_buf/src/mipi_line_buf.sv`, `../mipi_tx_engine/src/mipi_tx_engine.sv`, `src/csi2_tx.sv`
+
+[HTML module page](csi2_tx/index.html)
+
+## dsi_tx
+
+**Dsi Tx** · category `video` · top `dsi_tx`
+
+MIPI DSI host transmitter, video mode with sync events. Version 1.0.0. Drives a MIPI DSI display panel through a D-PHY (PPI style, see mipi_tx_engine; the analog D-PHY is vendor IP). Video - timed video on the pixel clock (rgb_i {B, G, R}, de_i, hs_i, vs_i as driven to a display). At every hsync leading edge one DSI line starts: a Vertical Sync Start packet (0x01) on the line where vsync becomes active, a Horizontal Sync Start packet (0x21) on all others, then sync_gap_i byte clocks of LP (blanking), then - if a video line was received since the previous hsync - its RGB888 packed pixel stream (0x3E, bytes R, G, B per pixel), then LP until the next line. Pixel data therefore trails the sync events by exactly one line, keeping the panel timing (VSA / VBP / VFP / HSA / HBP / HFP) of the timing generator. eotp_i appends an End of Transmission packet to every burst. Virtual channel vc_i. A line needs (width x 3 + 12) / NLANES byte clocks plus the LP transitions; lines that do not fit are dropped (line_drop_o). Commands - for panel initialisation, while video_en_i is low: write the payload bytes of a long command with cmd_byte_wr_i / cmd_byte_i, then cmd_wr_i with cmd_i = {long, data type, data / word count}; e.g. {0, 0x05, 0x0011} DCS short write "exit sleep", {0, 0x15, 0x0036} with parameter in [15:8], {1, 0x39, n} DCS long write of n bytes. They are sent in HS mode, in order, each in its own burst. Panels that only accept commands in LP escape mode need the PHY's escape-mode path. Clocks - pclk (video, commands), bclk (D-PHY byte clock). Resets - synchronous per domain, active low.
+
+Sources: `../../cdc/bit_sync/src/bit_sync.sv`, `../../cdc/pulse_sync/src/pulse_sync.sv`, `../../fifo/async_fifo/src/async_fifo.sv`, `../mipi_line_buf/src/mipi_line_buf.sv`, `../mipi_tx_engine/src/mipi_tx_engine.sv`, `src/dsi_tx.sv`
+
+[HTML module page](dsi_tx/index.html)
+
+## lvds_tx
+
+**Lvds Tx** · category `video` · top `lvds_tx`
+
+LVDS display transmitter (OpenLDI / FPD-Link 7:1). Version 1.0.0. Maps timed video (rgb_i {B, G, R}, de_i, hs_i, vs_i) onto the 7-bit words of the LVDS data lanes for a 7:1 serializer (lvds_serializer or vendor OSERDES) and LVDS output buffers. Bit 6 of each word is sent first; the clock lane carries 1100011 (clk_word_o). 24 bpp, VESA (SPWG)               24 bpp, JEIDA lane 0  G0 R5 R4 R3 R2 R1 R0      G2 R7 R6 R5 R4 R3 R2 lane 1  B1 B0 G5 G4 G3 G2 G1      B3 B2 G7 G6 G5 G4 G3 lane 2  DE VS HS B5 B4 B3 B2      DE VS HS B7 B6 B5 B4 lane 3  0  B7 B6 G7 G6 R7 R6      0  B1 B0 G1 G0 R1 R0 18 bpp (bpp18_i) uses lanes 0-2 with the six MSBs of each component in the JEIDA positions (lane 3 is held at 0); the VESA / JEIDA choice only matters for 24 bpp. Single link: one pixel per word, a word every pixel clock (stb_o always high), LVDS clock = pixel clock. Dual link (dual_i): pixel pairs, the first (odd, 1-based) pixel of each pair on link A and the second on link B, a word every second pixel clock (stb_o on alternate clocks), LVDS clock = pixel clock / 2; the active area must start on an even pixel clock of the line (even horizontal timing values). Outputs are registered and change only with stb_o. Clock - pixel clock. Reset - synchronous rst_n (active low).
+
+Sources: `src/lvds_tx.sv`
+
+[HTML module page](lvds_tx/index.html)
+
+## lvds_serializer
+
+**Lvds Serializer** · category `video` · top `lvds_serializer`
+
+Generic 7:1 LVDS serializer (behavioural, technology independent). Version 1.0.0. Shifts NL 7-bit words out MSB (bit 6) first on ser_clk, which must be exactly 7x the word rate (7x the pixel clock for single link, 3.5x for dual link with stb_i on alternate pixel clocks) and come from the same PLL / MMCM. A toggle written with every word (stb_i) is synchronised into ser_clk and the word, stable for the whole word period, is loaded a few ser_clk cycles after each toggle edge, so the result does not depend on the phase between the clocks. Put the clock lane in one of the NL lanes (word 1100011). For high resolutions use the vendor serializer (OSERDESE2 in 7:1 mode or an ISERDES/OSERDES based 7:1 design) and LVDS output buffers. Clocks - pix_clk, ser_clk (related). Resets - synchronous per domain, active low. Latency - about 2 word periods.
+
+Sources: `src/lvds_serializer.sv`
+
+[HTML module page](lvds_serializer/index.html)
+
+## conv2d_core
+
+**Conv2D Core** · category `video` · top `conv2d_core`
+
+Programmable N x N 2D convolution for AXI4-Stream video. Version 1.0.0. isp_window builds the N x N neighbourhood of every pixel (N-1 line buffers, BORDER rule at the frame edges) and a 4-stage multiply-accumulate pipeline computes, per colour component, out = clamp((sum(k[i] * p[i]) + 2^(shift-1)) >>> shift, 0, 2^CW-1) with signed COEF_W-bit coefficients k (coef_i[i*COEF_W +: COEF_W], i = r*N + c, see conv2d_pkg) and shift 0..31 (no rounding term when 0). The same kernel is applied to all C components. coef_i / shift_i are sampled when a frame's first window is formed (R = (N-1)/2 lines after its start-of-frame pixel) and held for the whole frame, so a kernel change never splits a frame; the latency does not depend on the kernel (an identity kernel is a pass-through with the same delay). Pixels - s_axis_tdata component j in [j*CW +: CW]; tuser = SOF, tlast = EOL. Frame size from width_i / height_i (>= R + 1, static during a frame), see isp_window. Throughput - 1 pixel per clock (plus isp_window's R idle cycles per line and R lines per frame). sof_wait_o is isp_window's: while it is high and a start-of-frame pixel is presented, a parent may switch width_i / height_i for the new frame (no combinational path from s_axis_tready). Resources - N*N*C multipliers (CW+1 x COEF_W bits). Clock - clk. Reset - synchronous rst_n (active low). Latency - isp_window (R lines + R + 1 clocks) + 4 clocks.
+
+Sources: `src/conv2d_pkg.sv`, `../isp_window/src/isp_window.sv`, `src/conv2d_core.sv`
+
+[HTML module page](conv2d_core/index.html)
+
+## conv2d_filter
+
+**Conv2D Filter** · category `video` · top `conv2d_filter`
+
+Programmable N x N convolution filter: conv2d_core with an AXI4-Lite register map. Version 1.0.0. The kernel defines the filter (blur, sharpen, edge detect, emboss, identity ...); blur_filter and sharpen_filter are this module with other reset kernels. Registers (32-bit, ADDR_W = 8): 0x00 ID          RO  ID parameter ("C2DF" by default) 0x04 FRAME_SIZE  [15:0] width [31:16] height (>= (N+1)/2 each) 0x08 SHIFT       [4:0] result right shift (normalisation) 0x0C STATUS      RO  [15:0] frames filtered 0x10 INFO        RO  [3:0] N [11:8] COEF_W [23:16] C [31:24] CW 0x40 + 4*i K[i]  signed coefficient i = r*N + c (low COEF_W bits used, reads return the sign-extended value) New FRAME_SIZE / SHIFT / K values are taken at the next frame start (they are copied when a start-of-frame pixel enters, so a frame always uses one complete kernel). out = clamp((sum(K*p) + round) >>> SHIFT). Data - AXI4-Stream video, C components of CW bits, tuser = SOF, tlast = EOL. Clock - clk (stream and registers). Reset - synchronous rst_n (active low). Latency - see conv2d_core.
+
+Sources: `../conv2d_core/src/conv2d_pkg.sv`, `../../shared/src/common/ip_axil_regs.sv`, `../isp_window/src/isp_window.sv`, `../conv2d_core/src/conv2d_core.sv`, `src/conv2d_filter.sv`
+
+[HTML module page](conv2d_filter/index.html)
+
+## blur_filter
+
+**Blur Filter** · category `video` · top `blur_filter`
+
+Blurring filter for AXI4-Stream video. Version 1.0.0. conv2d_filter whose reset kernel is a binomial (Gaussian) blur, [1 4 6 4 1] x [1 4 6 4 1] / 256 for N = 5 ([1 2 1] x [1 2 1] / 16 for N = 3). The kernel and SHIFT stay programmable over AXI4-Lite (same register map as conv2d_filter, ID "BLUR"): e.g. a 3 x 3 kernel inside the 5 x 5 for a lighter blur, or another strength. FRAME_SIZE must match the video. Clock - clk. Reset - synchronous rst_n (active low).
+
+Sources: `../conv2d_core/src/conv2d_pkg.sv`, `../../shared/src/common/ip_axil_regs.sv`, `../isp_window/src/isp_window.sv`, `../conv2d_core/src/conv2d_core.sv`, `../conv2d_filter/src/conv2d_filter.sv`, `src/blur_filter.sv`
+
+[HTML module page](blur_filter/index.html)
+
+## sharpen_filter
+
+**Sharpen Filter** · category `video` · top `sharpen_filter`
+
+Sharpening filter for AXI4-Stream video. Version 1.0.0. conv2d_filter whose reset kernel is an unsharp mask: (1 + AMOUNT) x identity - AMOUNT x blur, sum 1.0 (flat areas keep their level, edges and detail are amplified). The kernel and SHIFT stay programmable over AXI4-Lite (same register map as conv2d_filter, ID "SHRP"): e.g. a 3 x 3 kernel inside the 5 x 5 for a finer sharpen, or another strength. FRAME_SIZE must match the video. Clock - clk. Reset - synchronous rst_n (active low).
+
+Sources: `../conv2d_core/src/conv2d_pkg.sv`, `../../shared/src/common/ip_axil_regs.sv`, `../isp_window/src/isp_window.sv`, `../conv2d_core/src/conv2d_core.sv`, `../conv2d_filter/src/conv2d_filter.sv`, `src/sharpen_filter.sv`
+
+[HTML module page](sharpen_filter/index.html)
+
+## blur_sharpen
+
+**Blur Sharpen** · category `video` · top `blur_sharpen`
+
+Blur and sharpen filter pair for AXI4-Stream video with an AXI4-Lite register map. Version 1.0.0. Two conv2d_core stages are always in line; MODE decides which kernel each stage runs, and a stage that is not needed runs the identity kernel (pass-through), so the latency and throughput are the same in every mode: MODE  stage 1   stage 2   result 0    blur      identity  blurring only 1    sharpen   identity  sharpening only 2    sharpen   blur      sharpening, then blurring 3    blur      sharpen   blurring, then sharpening 4    identity  identity  pass-through (5-7 also) The blur and sharpen kernels are programmable (reset: binomial blur and unsharp mask, see conv2d_pkg). MODE, FRAME_SIZE, the kernels and shifts are copied when a start-of-frame pixel enters, so a change applies from the next frame and never splits one; stage 2 takes the copy belonging to the frame it is filtering. Registers (32-bit, ADDR_W = 9): 0x000 ID          RO "BLSH" 0x004 MODE        [2:0], reset 0 0x008 FRAME_SIZE  [15:0] width [31:16] height (>= (N+1)/2 each) 0x00C BLUR_SHIFT  [4:0] 0x010 SHARP_SHIFT [4:0] 0x014 STATUS      RO [2:0] mode of the last frame that entered [31:16] frames out 0x018 INFO        RO [3:0] N [11:8] COEF_W [23:16] C [31:24] CW 0x040 + 4*i       BLUR_K[i], signed, i = r*N + c 0x0C0 + 4*i       SHARP_K[i], signed Each stage: out = clamp((sum(K*p) + round) >>> SHIFT, 0, 2^CW-1). Data - C components of CW bits, tuser = SOF, tlast = EOL. Clock - clk. Reset - synchronous rst_n (active low). Latency - 2 x conv2d_core. Resources - 2 x N*N*C multipliers, 2 x (N-1) line buffers.
+
+Sources: `../conv2d_core/src/conv2d_pkg.sv`, `../../shared/src/common/ip_axil_regs.sv`, `../isp_window/src/isp_window.sv`, `../conv2d_core/src/conv2d_core.sv`, `src/blur_sharpen.sv`
+
+[HTML module page](blur_sharpen/index.html)
+
+## py_core
+
+**Py Core** · category `cpu` · top `py_core`
+
+Python-bytecode stack machine (sketch). Executes the opcode set in py_core_pkg directly: 33-bit small-int arithmetic, compares, locals, globals, jumps, function calls, native mem32 load/store over an AXI4-Lite master, and one level of interrupts. Anything outside the fast path (heap objects, bigints, unknown opcodes) raises a trap and the core stalls with trap_pc_o at the faulting instruction, so a helper (microcode or a small RISC-V) can emulate it and resume at resume_pc_i.  Calls - CALL pushes the return address on a return stack and gives the callee a fresh frame of N_LOCALS locals (frame 0 is the main program). Arguments travel on the operand stack: the callee's first instructions pop them into its locals. RETURN pops the frame and leaves the return value on the operand stack. N_FRAMES bounds the call depth (deeper is TRAP_STACK, i.e. RecursionError). Locals are not cleared on entry; the compiler only reads locals it has assigned.  Interrupts - irq_i is a level input, sampled between instructions when IRQ_ENABLE has run, no handler is active and a frame is free. Entry is a call to the SET_IRQ_VECTOR address that also saves the operand stack depth; RETURN_FROM_IRQ returns and restores it. Handlers may call functions. Globals are shared, which is how handlers pass data to the main program. No nesting: irq_i is ignored while a handler runs.  Code memory - byte-wide, synchronous read, 1 clock latency. Constant pool - VW-bit words, same timing. Operand stack, locals, globals - flops; locals - one memory with combinational read (LUT RAM). Clock - clk only. Reset - synchronous rst_n (active low). Throughput - multi-cycle FSM, 2 + operand-byte clocks per instruction, plus bus latency for mem32. Status - architecture sketch.
+
+Sources: `src/py_core_pkg.sv`, `src/py_core.sv`
+
+[HTML module page](py_core/index.html)
+
+## py_soc
+
+**Py Soc** · category `cpu` · top `py_soc`
+
+Python microcontroller. py_core plus code/constant memory, a flash boot loader, an AXI4-Lite interconnect and the library peripherals: SPI NOR flash controller, 2x UART, 2x I2C master, 2x SPI master, 3x 32-bit GPIO, watchdog and interrupt controller. Every streaming data path (UART, I2C, SPI, flash) goes through a py_stream_port with its own TX and RX FIFO (*_TX_FIFO / *_RX_FIFO words, default 16), so receive can be polled (RXDATA valid bit) or interrupt driven (IRQ_EN).  Boot - on every release of reset (rst_n or watchdog) py_boot owns the bus, copies the pyc.py image from flash address BOOT_ADDR into code and constant memory, checks it, and starts the core at pc 0. boot_done_o / boot_err_o / boot_err_code_o report the result; a bad image leaves the core stopped. After boot the core owns the bus, and the flash stays available to software (e.g. data logging) at 0xC000.  Address map (each window 256 bytes; *_D = py_stream_port data port): 0x0100 SYSCTL (reset cause, boot status, cycle counter, ID) 0x1000 INTC   0x2000 WDT    0x3000 GPIO0  0x4000 GPIO1  0x5000 GPIO2 0x6000 UART0  0x6100 UART0_D  0x7000 UART1  0x7100 UART1_D 0x8000 I2C0   0x8100 I2C0_D   0x9000 I2C1   0x9100 I2C1_D 0xA000 SPI0   0xA100 SPI0_D   0xB000 SPI1   0xB100 SPI1_D 0xC000 FLASH  0xC100 FLASH_D 0x1_0000-0x1_FFFF EXT (EXT_EN = 1): the m_ext_axil_* master port, for registers outside py_soc (address offset in the window) Unmapped addresses return DECERR (core trap TRAP_BUS).  Interrupt controller sources (all level): 0 UART0_D  1 UART1_D  2 I2C0_D  3 I2C1_D  4 SPI0_D  5 SPI1_D 6 GPIO0    7 GPIO1    8 GPIO2   9 WDT pre-timeout 10 FLASH command done  11 FLASH_D 12-15 ext_irq_i[3:0] (level, synchronous to clk; tie low if unused)  Reset - rst_n (synchronous, active low) resets everything. A watchdog expiry is stretched to WDT_RST_CYCLES clocks (wdt_reset_o) and resets the whole system, watchdog included, so it comes back disabled like any other reset; the system then boots from flash again. Clock - clk only.
+
+Sources: `../py_core/src/py_core_pkg.sv`, `../py_core/src/py_core.sv`, `../../shared/src/common/ip_axil_regs.sv`, `../../shared/src/fifo/ip_axis_fifo.sv`, `../../bus/axi4_lite_slave/src/axi4_lite_slave.sv`, `../../bus/axi4_lite_decoder/src/axi4_lite_decoder.sv`, `../../peripherals/uart/src/uart_baud.sv`, `../../peripherals/uart/src/uart_tx.sv`, `../../peripherals/uart/src/uart_rx.sv`, `../../peripherals/uart/src/uart_top.sv`, `../../peripherals/i2c_master/src/i2c_bit_ctrl.sv`, `../../peripherals/i2c_master/src/i2c_master_fsm.sv`, `../../peripherals/i2c_master/src/i2c_top.sv`, `../../peripherals/spi_master/src/spi_engine.sv`, `../../peripherals/spi_master/src/spi_top.sv`, `../../peripherals/gpio/src/gpio_top.sv`, `../../peripherals/intc/src/intc_top.sv`, `../../timing/watchdog/src/watchdog_top.sv`, `src/py_stream_port.sv`, `src/py_axil_xbar.sv`, `../../peripherals/spi_flash_ctrl/src/spi_flash_ctrl.sv`, `src/py_boot.sv`, `src/py_sysctl.sv`, `src/py_soc.sv`
+
+[HTML module page](py_soc/index.html)

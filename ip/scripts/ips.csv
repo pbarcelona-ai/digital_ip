@@ -117,3 +117,5 @@ conv2d_filter,video,conv2d_filter
 blur_filter,video,blur_filter
 sharpen_filter,video,sharpen_filter
 blur_sharpen,video,blur_sharpen
+py_core,cpu,py_core
+py_soc,cpu,py_soc
