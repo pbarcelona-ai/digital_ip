@@ -71,6 +71,7 @@ module axi4_lite_cdc #(
   logic req_is_wr, req_tog;
   logic [31:0] rsp_rdata; logic [1:0] rsp_resp;    // driven by dest domain
   logic ack_tog_sync, ack_prev;
+  logic ack_tog;                       // driven by the destination side below
 
   assign s_axil_awready = (ss == S_IDLE) & ~aw_seen;
   assign s_axil_wready  = (ss == S_IDLE) & ~w_seen;
@@ -116,7 +117,7 @@ module axi4_lite_cdc #(
   // ---------------- destination domain ----------------
   typedef enum logic [2:0] {D_IDLE, D_WR, D_WRESP, D_RD, D_RRESP, D_ACK} d_state_t;
   d_state_t ds;
-  logic req_tog_sync, req_prev, ack_tog;
+  logic req_tog_sync, req_prev;
   logic aw_done, w_done;
   cdc_sync_bit u_req_sync (.clk(m_clk), .d_i(req_tog), .q_o(req_tog_sync));
 
@@ -138,7 +139,7 @@ module axi4_lite_cdc #(
       case (ds)
         D_IDLE: if (req_tog_sync != req_prev) begin
           req_prev <= req_tog_sync; aw_done <= 1'b0; w_done <= 1'b0;
-          ds <= req_is_wr ? D_WR : D_RD;
+          ds <= d_state_t'(req_is_wr ? D_WR : D_RD);
         end
         D_WR: begin
           if (m_axil_awvalid & m_axil_awready) aw_done <= 1'b1;

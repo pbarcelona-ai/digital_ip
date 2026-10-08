@@ -80,7 +80,7 @@ module eth_mac_if #(
         T_DATA: begin
           if (s_axis_tvalid) begin
             gmii_txd <= s_axis_tdata; gmii_tx_en <= 1'b1; tcnt <= tcnt + 1'b1;
-            if (s_axis_tlast) ts <= (tcnt + 1 >= MIN_FRAME) ? T_FCS : T_PAD;
+            if (s_axis_tlast) ts <= tstate_t'((tcnt + 1 >= MIN_FRAME) ? T_FCS : T_PAD);
             fcnt <= '0;
           end else begin                                      // source gap: abort
             gmii_tx_en <= 1'b0; gmii_tx_er <= 1'b1; underrun_o <= 1'b1; ts <= T_IFG; tcnt <= '0;

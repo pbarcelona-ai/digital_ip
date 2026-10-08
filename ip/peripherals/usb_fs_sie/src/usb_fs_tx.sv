@@ -186,7 +186,7 @@ module usb_fs_tx #(
         T_EOP2: if (tick) begin dp_o <= 1'b1; dm_o <= 1'b0; j <= 1'b1; state <= T_EOP3; end
         T_EOP3: if (tick) begin
           oe_o <= 1'b0; pkt_done_o <= 1'b1;
-          state <= last_seen ? T_IDLE : T_DRAIN;
+          state <= tstate_t'(last_seen ? T_IDLE : T_DRAIN);
         end
         T_DRAIN: if (s_valid) begin                        // discard extra bytes
           if (s_last) state <= T_IDLE;

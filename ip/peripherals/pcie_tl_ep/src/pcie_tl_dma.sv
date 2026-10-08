@@ -97,7 +97,7 @@ module pcie_tl_dma #(
         end
         D_H0: if (tx_ready) state <= D_H1;
         D_H1: if (tx_ready) state <= D_H2;
-        D_H2: if (tx_ready) state <= use4 ? D_H3 : D_DATA;
+        D_H2: if (tx_ready) state <= dstate_t'(use4 ? D_H3 : D_DATA);
         D_H3: if (tx_ready) state <= D_DATA;
         D_DATA: if (tx_valid & tx_ready) begin
           cnt <= cnt + 10'd1;

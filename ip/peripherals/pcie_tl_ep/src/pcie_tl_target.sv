@@ -243,13 +243,13 @@ module pcie_tl_target #(
         R_H1: if (rx_valid) begin
           req_id <= rx_dw[31:16]; tag <= rx_dw[15:8];
           last_be <= rx_dw[7:4]; first_be <= rx_dw[3:0];
-          rstate <= rx_last ? R_H0 : R_H2;
+          rstate <= rstate_t'(rx_last ? R_H0 : R_H2);
         end
         R_H2: if (rx_valid) begin
           dw_cnt <= '0; hdr_last <= rx_last;
           if (fmt[0]) begin                               // 4DW: address high
             addr_hi <= rx_dw;
-            rstate  <= rx_last ? R_H0 : R_H3;
+            rstate  <= rstate_t'(rx_last ? R_H0 : R_H3);
           end else begin                                  // 3DW: address / cfg
             addr_hi <= 32'd0; addr_lo <= {rx_dw[31:2], 2'b00};
             cfg_reg <= rx_dw[7:2];
@@ -274,19 +274,19 @@ module pcie_tl_target #(
             end else begin                                 // memory write
               tgt_cfg <= 1'b0; tgt_ram <= addr_hit && !sel_str;
               tgt_str <= addr_hit && sel_str; p_mwr <= 1'b1;
-              rstate  <= hdr_last ? R_H0 : (addr_hit ? R_DATA : R_DROP);
+              rstate  <= rstate_t'(hdr_last ? R_H0 : (addr_hit ? R_DATA : R_DROP));
             end
           end else if (ttype == 5'b00100 && !fmt[0]) begin   // config type 0
             if (!c_busy) begin
               tgt_cfg <= 1'b1; tgt_ram <= 1'b0; tgt_str <= 1'b0; hit <= 1'b0;
               c_start <= 1'b1; p_cfg <= 1'b1;
-              rstate  <= (fmt[1] && !hdr_last) ? R_DATA : R_H0;
+              rstate  <= rstate_t'((fmt[1] && !hdr_last) ? R_DATA : R_H0);
             end
           end else begin                                   // unsupported type
             tgt_cfg <= 1'b0; tgt_ram <= 1'b0; tgt_str <= 1'b0; hit <= 1'b0;
             if (!fmt[1] && ttype[4:3] == 2'b00) begin      // non-posted: UR
               if (!c_busy) begin c_start <= 1'b1; p_ur <= 1'b1; rstate <= R_H0; end
-            end else rstate <= hdr_last ? R_H0 : R_DROP;   // posted: drop
+            end else rstate <= rstate_t'(hdr_last ? R_H0 : R_DROP);   // posted: drop
           end
         end
         // ---- payload DWs ----

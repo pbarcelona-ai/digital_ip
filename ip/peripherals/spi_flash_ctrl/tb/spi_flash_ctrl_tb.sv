@@ -136,7 +136,7 @@ module spi_flash_ctrl_tb;
     for (int i = 0; i < 8; i++) txq.push_back(8'h11); cmd(8'h02, 1, 0, 0, 1, 24'h002000, 8); wait_idle(); wait_wip();
     rxq.delete(); cmd(8'h03, 1, 0, 1, 0, 24'h002000, 8); wait_idle(); repeat (3) @(posedge aclk); check(rxq.size() == 8 && rxq[0] == 8'hFF, "program without WEL took effect");
     cmd(8'h06, 0, 0, 0, 0, 0, 0); wait_idle(); slow_tx = 1;
-    for (int i = 0; i < 20; i++) begin ref_mem[i] = i + 1; txq.push_back(i + 1); end
+    for (int i = 0; i < 20; i++) begin ref_mem[i] = i + 1; txq.push_back(8'(i + 1)); end
     cmd(8'h02, 1, 0, 0, 1, 24'h0020F0, 20); wait_idle(); wait_wip(); slow_tx = 0;               // crosses the 256 byte page end -> wraps to 0x002000
     rxq.delete(); cmd(8'h03, 1, 0, 1, 0, 24'h0020F0, 16); wait_idle(); repeat (3) @(posedge aclk);
     for (int i = 0; i < 16; i++) check(rxq[i] === ref_mem[i], $sformatf("page tail byte %0d: %h", i, rxq[i]));

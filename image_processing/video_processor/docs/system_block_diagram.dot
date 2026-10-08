@@ -1,0 +1,220 @@
+// ***************
+// Filename: system_block_diagram.dot
+// Author: FPGA Cores 4 U
+// Description: Block diagram of the video_processor top level
+//   (src/video_processor.sv): MIPI CSI-2 camera input, ISP (video_pipeline),
+//   lens-distortion correction (vision_system) at the pipeline insert point,
+//   scaler, HDMI / DVI and LVDS outputs (MIPI DSI / CSI-2 optional), and the
+//   py_soc control CPU with its external interfaces. No target device or
+//   board is selected; vendor parts are shown generically. Blocks carry
+//   the library module name (bold) and instance name (grey).
+//   Render: make diagram
+// Date: 2026-10-02
+// ***************
+digraph video_system {
+  graph [rankdir=LR, newrank=true, compound=true, bgcolor="white", pad=0.35, nodesep=0.25, ranksep=0.45,
+         fontname="Helvetica", labelloc=t, labeljust=l,
+         label=<<FONT POINT-SIZE="24"><B>video_processor</B></FONT><FONT POINT-SIZE="14">  video processing system top level  (no target device / board selected)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">Bold = library IP module, grey = instance. Dashed outline = vendor / board part or optional interface. Thick arrows = video, purple = AXI4-Lite control, red = interrupts.</FONT><BR ALIGN="LEFT"/>>];
+  node  [shape=plaintext, fontname="Helvetica", fontsize=10, margin=0];
+  edge  [color="#1f2937", arrowsize=0.7, penwidth=1.2, fontname="Helvetica", fontsize=9, fontcolor="#374151"];
+
+  // ======================= external devices: inputs =======================
+  subgraph cluster_ext_in {
+    label=<<B>External devices</B>>; style="dashed,rounded"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=11;
+    sensor [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>Camera module</B><BR/>RAW10 Bayer sensor<BR/>MIPI CSI-2, 1-4 lanes<BR/>CCI (I2C) control</TD></TR></TABLE>>];
+    flash [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>SPI NOR flash</B><BR/>firmware sw/video_init.py<BR/>(pyc.py bytecode image)</TD></TR></TABLE>>];
+    console [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>UART 0</B> debug console<BR/><B>UART 1</B> host / control link</TD></TR></TABLE>>];
+    i2cdev [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>I2C 0</B> camera sensor CCI<BR/><B>I2C 1</B> HDMI DDC / EDID,<BR/>panel / PMIC, EEPROM</TD></TR></TABLE>>];
+    spidev [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>SPI 0</B> panel init / touch<BR/><B>SPI 1</B> ADC, sensors<BR/>(2 chip selects each)</TD></TR></TABLE>>];
+    gpiodev [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>GPIO</B> 3 × 32 bits<BR/>camera RESET / PWDN, HDMI HPD,<BR/>panel enable / backlight,<BR/>LEDs, buttons, strap pins</TD></TR></TABLE>>];
+    clkin [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>Oscillator</B> + board reset</TD></TR></TABLE>>];
+  }
+
+  // ======================= FPGA / ASIC =======================
+  subgraph cluster_chip {
+    label=<<FONT POINT-SIZE="16"><B>video_processor</B></FONT>  <FONT COLOR="#6b7280">src/video_processor.sv · FPGA / ASIC, target to be selected</FONT>>;
+    style="rounded,filled"; fillcolor="#fbfdff"; color="#1e3a8a"; penwidth=2.4;
+
+    // ---------------- clocks and resets ----------------
+    subgraph cluster_clk {
+      label=<<B>Clocks and resets</B>>; style="rounded,dashed"; color="#a16207"; fontcolor="#854d0e"; fontsize=10;
+      pll [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#f3f4f6" COLOR="#6b7280" STYLE="dashed"><TR><TD><B>PLL / MMCM</B> (vendor)<BR/>cpu_clk, pix_clk,<BR/>tmds_ser_clk 10×, lvds_ser_clk 7×,<BR/>tx_byte_clk</TD></TR></TABLE>>];
+      rsts [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fef9c3" COLOR="#a16207"><TR><TD><B>reset_sync</B> (one per domain)<BR/>+ py_sysctl reset cause,<BR/>watchdog reset</TD></TR></TABLE>>];
+      pll -> rsts;
+    }
+
+    // ---------------- control CPU ----------------
+    subgraph cluster_cpu {
+      label=<<FONT POINT-SIZE="13"><B>py_soc</B></FONT>  <FONT COLOR="#6b7280">u_cpu · Python-bytecode control processor (cpu_clk)</FONT>>;
+      style="rounded,filled"; fillcolor="#faf5ff"; color="#7c3aed"; penwidth=1.8;
+      core [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ede9fe" COLOR="#7c3aed">
+        <TR><TD><B>py_core</B> <FONT COLOR="#4b5563">u_core</FONT><BR/>stack machine, CALL / RETURN,<BR/>interrupts</TD></TR>
+        <TR><TD><B>py_boot</B> <FONT COLOR="#4b5563">u_boot</FONT><BR/>flash → code / const RAM on reset</TD></TR></TABLE>>];
+      xbar [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ede9fe" COLOR="#7c3aed"><TR><TD><B>py_axil_xbar</B><BR/><FONT COLOR="#4b5563">u_xbar</FONT><BR/>AXI4-Lite peripheral bus</TD></TR></TABLE>>];
+      periph [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#ede9fe" COLOR="#7c3aed">
+        <TR><TD><B>spi_flash_ctrl</B></TD><TD>boot + run-time flash</TD></TR>
+        <TR><TD><B>uart_top</B> ×2</TD><TD>py_stream_port FIFOs</TD></TR>
+        <TR><TD><B>i2c_top</B> ×2</TD><TD>py_stream_port FIFOs</TD></TR>
+        <TR><TD><B>spi_top</B> ×2</TD><TD>py_stream_port FIFOs</TD></TR>
+        <TR><TD><B>gpio_top</B> ×3</TD><TD>32-bit banks</TD></TR>
+        <TR><TD><B>intc_top</B></TD><TD>interrupt controller</TD></TR>
+        <TR><TD><B>watchdog_top</B></TD><TD>system reset</TD></TR>
+        <TR><TD><B>py_sysctl</B></TD><TD>reset cause, IDs</TD></TR></TABLE>>];
+      ext_axi [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ede9fe" COLOR="#7c3aed"><TR><TD><B>external window</B> (EXT_EN = 1)<BR/>0x1_0000–0x1_FFFF → m_ext_axil_*<BR/>ext_irq_i → intc sources 12–15</TD></TR></TABLE>>];
+      core -> xbar [color="#7c3aed"];
+      xbar -> periph [color="#7c3aed"];
+      xbar -> ext_axi [color="#7c3aed"];
+    }
+
+    // ---------------- control interconnect ----------------
+    subgraph cluster_bus {
+      label=<<B>Control interconnect</B>>; style="rounded,dashed"; color="#7c3aed"; fontcolor="#5b21b6"; fontsize=10;
+      acdc [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fde68a" COLOR="#a16207"><TR><TD><B>axi4_lite_cdc</B><BR/><FONT COLOR="#4b5563">u_axil_cdc</FONT><BR/>cpu_clk → pix_clk</TD></TR></TABLE>>];
+      adec [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ede9fe" COLOR="#7c3aed"><TR><TD><B>py_axil_xbar</B> <FONT COLOR="#4b5563">u_vbus</FONT><BR/>(<B>axi4_lite_decoder</B> ×2)<BR/>video register bus, pix_clk</TD></TR></TABLE>>];
+      irqs [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fde68a" COLOR="#a16207"><TR><TD><B>pulse_sync</B><BR/><FONT COLOR="#4b5563">u_irq_stats</FONT><BR/>pix_clk → cpu_clk</TD></TR></TABLE>>];
+      acdc -> adec [color="#7c3aed"];
+    }
+
+    // ---------------- video_pipeline (input half) ----------------
+    subgraph cluster_vp {
+      label=<<FONT POINT-SIZE="13"><B>video_pipeline</B></FONT>  <FONT COLOR="#6b7280">u_pipe (inside video_processor) · every stage bypassable</FONT>>;
+      style="rounded,filled"; fillcolor="#f7fef9"; color="#047857"; penwidth=1.8;
+
+      csi [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ffedd5" COLOR="#c2410c">
+        <TR><TD><B>csi2_rx</B> <FONT COLOR="#4b5563">u_csi</FONT><BR/>ECC, CRC, VC / DT</TD></TR>
+        <TR><TD BGCOLOR="#fde68a"><B>axis_async_bridge</B> <FONT COLOR="#4b5563">u_cdc</FONT><BR/>byte_clk → pix_clk</TD></TR>
+        <TR><TD BGCOLOR="#dcfce7"><B>csi2_raw_unpack</B> <FONT COLOR="#4b5563">u_unpack</FONT></TD></TR></TABLE>>];
+      isp [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#dcfce7" COLOR="#15803d">
+        <TR><TD COLSPAN="2"><B>ISP</B></TD></TR>
+        <TR><TD><B>isp_blc_wb</B></TD><TD>black level, WB</TD></TR>
+        <TR><TD><B>isp_dpc</B> + <B>isp_window</B></TD><TD>defect pixels</TD></TR>
+        <TR><TD><B>isp_demosaic</B> + <B>isp_window</B></TD><TD>Bayer → RGB</TD></TR>
+        <TR><TD><B>isp_ccm</B></TD><TD>colour matrix</TD></TR>
+        <TR><TD><B>isp_gamma</B></TD><TD>gamma LUT</TD></TR>
+        <TR><TD><B>isp_csc</B></TD><TD>RGB → YCbCr</TD></TR></TABLE>>];
+      stats [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#dcfce7" COLOR="#15803d"><TR><TD><B>isp_stats</B> <FONT COLOR="#4b5563">u_stats</FONT><BR/>AE / AWB statistics</TD></TR></TABLE>>];
+      ins [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#dcfce7" COLOR="#047857"><TR><TD><B>insert point</B>  `VP_INSERT<BR/>ins_m_axis_* / ins_s_axis_*<BR/>CTRL[7], switched per frame</TD></TR></TABLE>>];
+      scaler [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#cffafe" COLOR="#0e7490">
+        <TR><TD COLSPAN="2"><B>scaler_bilinear</B> <FONT COLOR="#4b5563">u_scaler</FONT></TD></TR>
+        <TR><TD><B>scaler_ctrl</B></TD><TD><B>scaler_dda</B></TD></TR>
+        <TR><TD><B>axil_regbus</B></TD><TD><B>banked_framebuf</B></TD></TR></TABLE>>];
+      timing [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#dcfce7" COLOR="#15803d">
+        <TR><TD><B>vid_timing_gen</B> <FONT COLOR="#4b5563">u_vtg</FONT></TD></TR>
+        <TR><TD><B>axis_to_video</B> <FONT COLOR="#4b5563">u_out</FONT><BR/>timed video, test pattern</TD></TR></TABLE>>];
+      vregs [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ede9fe" COLOR="#7c3aed"><TR><TD><B>axil_split</B> + <B>ip_axil_regs</B><BR/><FONT COLOR="#4b5563">u_split, u_regs</FONT></TD></TR></TABLE>>];
+      hdmi [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#dcfce7" COLOR="#15803d"><TR><TD><B>hdmi_tx</B> <FONT COLOR="#4b5563">u_hdmi</FONT><BR/><B>tmds_encoder</B> ×3</TD></TR></TABLE>>];
+      lvds [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#dcfce7" COLOR="#15803d"><TR><TD><B>lvds_tx</B> <FONT COLOR="#4b5563">u_lvds</FONT><BR/>OpenLDI, single / dual link</TD></TR></TABLE>>];
+      mipitx [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fce7f3" COLOR="#be185d" STYLE="dashed"><TR><TD>optional:<BR/><B>dsi_tx</B> · <B>csi2_tx</B><BR/>(<B>mipi_line_buf</B>, <B>mipi_tx_engine</B>)</TD></TR></TABLE>>];
+
+      csi -> isp [penwidth=2.6, label="RAW10"];
+      isp -> stats [style=dashed, label="tap"];
+      isp -> ins [penwidth=2.6, label="RGB 24b"];
+      scaler -> timing [penwidth=2.6];
+      ins -> scaler [penwidth=2.6, label="bypass /\nreturn"];
+      timing -> hdmi [penwidth=2.6]; timing -> lvds [penwidth=2.6]; timing -> mipitx [penwidth=2.0, style=dashed];
+    }
+
+    // ---------------- vision_system adapter ----------------
+    adapt [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fff7ed" COLOR="#c2410c">
+      <TR><TD><B>vs_stream_adapter</B> <FONT COLOR="#4b5563">u_vs_adapt</FONT><BR/>frame admission (drop while busy),<BR/>line gaps</TD></TR>
+      <TR><TD BGCOLOR="#ffedd5"><B>ip_axis_fifo</B> <FONT COLOR="#4b5563">u_ret_fifo</FONT><BR/>return path (vision_system never stalls)</TD></TR></TABLE>>];
+
+    // ---------------- blur_sharpen ----------------
+    filt [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ecfccb" COLOR="#4d7c0f">
+      <TR><TD COLSPAN="2"><B>blur_sharpen</B> <FONT COLOR="#4b5563">u_filter</FONT>  `VP_FILTER<BR/>MODE 0 blur · 1 sharpen · 2 sharpen→blur · 3 blur→sharpen · 4 pass</TD></TR>
+      <TR><TD BGCOLOR="#d9f99d"><B>conv2d_core</B> <FONT COLOR="#4b5563">u_stage1</FONT><BR/><B>isp_window</B> + 5×5 MAC</TD>
+          <TD BGCOLOR="#d9f99d"><B>conv2d_core</B> <FONT COLOR="#4b5563">u_stage2</FONT><BR/><B>isp_window</B> + 5×5 MAC</TD></TR>
+      <TR><TD COLSPAN="2"><B>ip_axil_regs</B> <FONT COLOR="#4b5563">u_regs</FONT>: blur / sharpen kernel banks (conv2d_pkg)</TD></TR></TABLE>>];
+
+    // ---------------- vision_system ----------------
+    subgraph cluster_vs {
+      label=<<FONT POINT-SIZE="13"><B>vision_system</B></FONT>  <FONT COLOR="#6b7280">u_vision · lens / barrel distortion correction (pix_clk)</FONT>>;
+      style="rounded,filled"; fillcolor="#fffbeb"; color="#c2410c"; penwidth=1.8;
+      vs_in [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fff7ed" COLOR="#c2410c"><TR><TD><B>axis_in_ctrl</B><BR/><FONT COLOR="#4b5563">u_in</FONT><BR/>frame capture</TD></TR></TABLE>>];
+      vs_fb [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ffedd5" COLOR="#ea580c"><TR><TD><B>frame_buffer</B> or<BR/><B>ext_frame_buffer</B><BR/><FONT COLOR="#4b5563">u_fb (USE_EXT_FB)</FONT></TD></TR></TABLE>>];
+      vs_out [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#fff7ed" COLOR="#c2410c">
+        <TR><TD COLSPAN="2"><B>axis_out_ctrl</B> <FONT COLOR="#4b5563">u_out</FONT></TD></TR>
+        <TR><TD><B>coord_gen</B></TD><TD><B>fixed_recip</B>, <B>mulq_s</B></TD></TR>
+        <TR><TD><B>bilinear</B></TD><TD><B>bicubic</B></TD></TR></TABLE>>];
+      vs_regs [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ede9fe" COLOR="#7c3aed"><TR><TD><B>axi_lite_regs</B><BR/><FONT COLOR="#4b5563">u_regs</FONT><BR/>k1 k2 k3, size, centre, scale</TD></TR></TABLE>>];
+      vs_in -> vs_fb -> vs_out [penwidth=2.0];
+    }
+
+    // ---------------- serializers ----------------
+    subgraph cluster_ser {
+      label=<<B>Serializers</B> (video_processor)>; style="rounded,dashed"; color="#1d4ed8"; fontcolor="#1e40af"; fontsize=10;
+      tser [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#dbeafe" COLOR="#1d4ed8"><TR><TD><B>tmds_serializer</B><BR/><FONT COLOR="#4b5563">u_tmds_ser</FONT> 10:1</TD></TR></TABLE>>];
+      lser [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#dbeafe" COLOR="#1d4ed8"><TR><TD><B>lvds_serializer</B> ×2<BR/><FONT COLOR="#4b5563">u_lvds_ser_a / _b</FONT> 7:1</TD></TR></TABLE>>];
+    }
+
+    // ---------------- vendor PHY / IO ----------------
+    dphy_rx [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#f3f4f6" COLOR="#6b7280" STYLE="dashed"><TR><TD><B>D-PHY RX</B> (vendor)<BR/>PPI bytes, byte_clk</TD></TR></TABLE>>];
+    obuf_h [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#f3f4f6" COLOR="#6b7280" STYLE="dashed"><TR><TD><B>OBUFDS</B> ×4<BR/>(or OSERDES)</TD></TR></TABLE>>];
+    obuf_l [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#f3f4f6" COLOR="#6b7280" STYLE="dashed"><TR><TD><B>OBUFDS</B> ×5 / ×10<BR/>(or OSERDES)</TD></TR></TABLE>>];
+    dphy_tx [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#f3f4f6" COLOR="#6b7280" STYLE="dashed"><TR><TD><B>D-PHY TX</B> (vendor)</TD></TR></TABLE>>];
+  }
+
+  // ======================= external devices: outputs =======================
+  subgraph cluster_ext_out {
+    label=<<B>External devices</B>>; style="dashed,rounded"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=11;
+    monitor [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>HDMI / DVI monitor</B><BR/>TMDS + DDC + HPD</TD></TR></TABLE>>];
+    panel [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>LVDS panel</B><BR/>OpenLDI single / dual link</TD></TR></TABLE>>];
+    mipidev [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280" STYLE="dashed"><TR><TD>optional: DSI panel /<BR/>SoC CSI-2 input</TD></TR></TABLE>>];
+    sdram [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>SDRAM</B><BR/>vision_system frame<BR/>(USE_EXT_FB = 1)</TD></TR></TABLE>>];
+  }
+
+  // ======================= legend =======================
+  legend [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3">
+    <TR><TD COLSPAN="2"><B>Legend</B></TD></TR>
+    <TR><TD BGCOLOR="#ffedd5" WIDTH="22"> </TD><TD ALIGN="LEFT">camera input (byte_clk)</TD></TR>
+    <TR><TD BGCOLOR="#dcfce7"> </TD><TD ALIGN="LEFT">video datapath (pix_clk)</TD></TR>
+    <TR><TD BGCOLOR="#fff7ed"> </TD><TD ALIGN="LEFT">vision_system (pix_clk)</TD></TR>
+    <TR><TD BGCOLOR="#cffafe"> </TD><TD ALIGN="LEFT">scaler</TD></TR>
+    <TR><TD BGCOLOR="#ecfccb"> </TD><TD ALIGN="LEFT">blur / sharpen filter (pix_clk)</TD></TR>
+    <TR><TD BGCOLOR="#ede9fe"> </TD><TD ALIGN="LEFT">CPU, registers, control</TD></TR>
+    <TR><TD BGCOLOR="#fde68a"> </TD><TD ALIGN="LEFT">clock-domain crossing</TD></TR>
+    <TR><TD BGCOLOR="#dbeafe"> </TD><TD ALIGN="LEFT">serial clock domain</TD></TR>
+    <TR><TD BGCOLOR="#fce7f3"> </TD><TD ALIGN="LEFT">MIPI TX (optional)</TD></TR>
+    <TR><TD BGCOLOR="#f3f4f6"> </TD><TD ALIGN="LEFT">vendor / external part</TD></TR></TABLE>>];
+
+  // ======================= connections =======================
+  // video
+  sensor -> dphy_rx [penwidth=2.6, label="CSI-2 lanes"];
+  dphy_rx -> csi [penwidth=2.6, label="PPI"];
+  ins -> adapt [penwidth=2.6, color="#c2410c", label="AXIS RGB 24b"];
+  adapt -> vs_in [penwidth=2.6, color="#c2410c", label="≤ 720 × 720"];
+  vs_out -> adapt [penwidth=2.6, color="#c2410c", label="corrected"];
+  adapt -> filt [penwidth=2.6, color="#4d7c0f", label="corrected"];
+  filt -> ins [penwidth=2.6, color="#4d7c0f", label="filtered"];
+  vs_fb -> sdram [dir=both, label="SDRAM bus"];
+  hdmi -> tser [penwidth=2.6, label="10b ×4"];
+  lvds -> lser [penwidth=2.6, label="7b words"];
+  tser -> obuf_h [penwidth=2.6]; obuf_h -> monitor [penwidth=2.6, label="TMDS"];
+  lser -> obuf_l [penwidth=2.6]; obuf_l -> panel [penwidth=2.6, label="LVDS"];
+  mipitx -> dphy_tx [style=dashed]; dphy_tx -> mipidev [style=dashed];
+
+  // CPU external interfaces
+  flash -> periph [dir=both, label="SPI: sclk cs_n mosi miso", color="#7c3aed"];
+  console -> periph [dir=both, label="txd / rxd ×2", color="#7c3aed"];
+  i2cdev -> periph [dir=both, label="scl / sda ×2", color="#7c3aed"];
+  spidev -> periph [dir=both, label="sclk mosi miso cs_n ×2", color="#7c3aed"];
+  gpiodev -> periph [dir=both, label="gpio[95:0]", color="#7c3aed"];
+  clkin -> pll [color="#a16207"];
+  i2cdev -> sensor [dir=both, style=dashed, color="#7c3aed", fontcolor="#5b21b6", label="I2C 0 = CCI\nGPIO RESET / PWDN"];
+
+  // control plane
+  ext_axi -> acdc [color="#7c3aed", penwidth=1.8, label="AXI4-Lite"];
+  adec -> vregs [color="#7c3aed", penwidth=1.6, label="0x1_0000"];
+  adec -> vs_regs [color="#7c3aed", penwidth=1.6, label="0x1_8000"];
+  adec -> filt [color="#7c3aed", penwidth=1.6, label="0x1_8200", constraint=false];
+  vregs -> isp [style=dotted, color="#7c3aed", arrowhead=none, constraint=false];
+  vs_regs -> vs_out [style=dotted, color="#7c3aed", arrowhead=none, constraint=false];
+
+  // interrupts
+  stats -> irqs [color="#dc2626", style=dashed, label="stats_done", fontcolor="#dc2626", constraint=false];
+  irqs -> periph [color="#dc2626", style=dashed, label="intc_top source 12", fontcolor="#dc2626", constraint=false];
+  rsts -> core [color="#a16207", style=dashed, label="resets", fontcolor="#a16207", constraint=false];
+
+  // the camera's control path: I2C 0 configures the sensor (shown above)
+  monitor -> legend [style=invis];
+}

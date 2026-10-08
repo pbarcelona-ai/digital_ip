@@ -123,7 +123,7 @@ module spi_flash_ctrl (
             if (!sclk_hi) begin sclk_hi <= 1'b1; rx_sr <= {rx_sr[6:0], miso_s}; end                     // rising edge: sample
             else begin
               sclk_hi <= 1'b0; tx_sr <= {tx_sr[6:0], 1'b0}; bit_i <= bit_i + 1'b1;                     // falling edge: shift
-              if (bit_i == 3'd7) st <= is_rx ? S_WRX : S_LOAD;
+              if (bit_i == 3'd7) st <= st_t'(is_rx ? S_WRX : S_LOAD);
             end
           end else hc <= hc + 1'b1;
         end
