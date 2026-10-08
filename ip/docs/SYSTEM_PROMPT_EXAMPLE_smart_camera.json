@@ -1,0 +1,7 @@
+{"name": "smart_camera", "purpose": "Camera with lens correction, timestamp overlay, HDMI monitor out and UDP video streaming.",
+ "features": ["cpu", "debug_uart", "i2c", "gpio", "mipi_camera", "lens", "osd", "framebuffer", "hdmi_out", "ethernet"],
+ "custom_functions": ["motion detection"],
+ "reuse_add": ["blur_sharpen", "jpeg_encoder"],
+ "decision.ddr": "vendor", "detail.ddr": "vendor DDR3 controller, AXI4 128-bit",
+ "decision.udp": "thirdparty", "detail.udp": "verilog-ethernet udp_complete (MIT)",
+ "decision.custom:jpeg_encoder": "stub"}
