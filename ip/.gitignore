@@ -8,6 +8,9 @@ obj_dir/
 *.vvp
 *.vcd
 *.fst
+*.log
+*.tmp
+*.rpt
 
 # synthesis output of each module (regenerate with <module>/synth.sh or
 # tools/synth_all.sh); the hierarchical utilization reports are kept as
