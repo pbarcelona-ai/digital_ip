@@ -13,7 +13,7 @@ cd "$(dirname "$0")/.."
 DEFS=""
 [ "${VCD:-0}" = "1" ] && DEFS="-DDUMP_VCD"
 
-iverilog -g2012 $DEFS -o smoke.vvp \
+iverilog -g2012 -I tests $DEFS -o smoke.vvp \
   include/ppm_io_pkg.sv include/golden_model_pkg.sv \
   ../include/barrel_pkg.sv ../include/distortion_model_pkg.sv \
   ../ip/fixed_recip/src/fixed_recip.sv ../ip/mulq/src/mulq_s.sv ../ip/coord_gen/src/coord_gen.sv \

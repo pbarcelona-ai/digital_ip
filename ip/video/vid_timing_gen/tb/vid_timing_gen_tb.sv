@@ -10,14 +10,12 @@
 //   (waiting high on them); with src_ready going high during the wait, the
 //   next frame must start at the end of that line. Prints TEST PASSED on
 //   success.
+//   The test tasks are in tests/vid_timing_gen_tests.sv (`included).
 // Date: 2026-10-01
 `timescale 1ns/1ps
 module vid_timing_gen_tb;
   logic clk = 0, rst_n = 0; always #5 clk = ~clk;
   int errors = 0;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; if (errors < 30) $display("ERROR @%0t: %s", $time, m); end
-  endtask
 
   logic en; logic [15:0] ha, hf, hs, hb, va, vf, vs, vb, lmax; logic hp, vp, lk, rdy;
   logic de, hso, vso, sof, eol, vbl, wt; logic [15:0] x, y;
@@ -26,37 +24,8 @@ module vid_timing_gen_tb;
     .lock_en_i(lk), .src_ready_i(rdy), .lock_max_i(lmax),
     .de_o(de), .hs_o(hso), .vs_o(vso), .x_o(x), .y_o(y), .sof_o(sof), .eol_o(eol), .vblank_o(vbl), .waiting_o(wt));
 
-  // Measure one frame starting at sof (the first active pixel)
-  task automatic measure_frame(input int extra_exp);
-    int line, h, n_de, vs_start_line, vs_lines, waits; bit hs_a, hs_q, vs_a, vs_q, first_vs;
-    int htot, vtot; htot = ha + hf + hs + hb; vtot = va + vf + vs + vb + extra_exp;
-    while (!sof) @(posedge clk);
-    line = 0; h = 0; n_de = 0; vs_start_line = -1; vs_lines = 0; waits = 0; hs_q = 0; vs_q = 0;
-    for (int i = 0; i < htot * vtot; i++) begin
-      hs_a = (hso == hp); vs_a = (vso == vp);
-      // horizontal: active 0..ha-1, sync ha+hf .. ha+hf+hs-1
-      check(de == (h < ha && line < va), $sformatf("de at h %0d line %0d", h, line));
-      if (de) begin check(x == h && y == line, $sformatf("x/y %0d/%0d at %0d/%0d", x, y, h, line)); n_de++; end
-      check(sof == (h == 0 && line == 0), $sformatf("sof at %0d/%0d", h, line));
-      check(eol == (h == ha - 1 && line < va), $sformatf("eol at %0d/%0d", h, line));
-      check(vbl == (line >= va), $sformatf("vblank at line %0d", line));
-      check(hs_a == (h >= ha + hf && h < ha + hf + hs), $sformatf("hsync at h %0d line %0d", h, line));
-      if (vs_a && !vs_q) begin
-        vs_start_line = line;
-        check(h == ha + hf, $sformatf("vsync starts at h %0d, not at the hsync leading edge %0d", h, ha + hf));
-      end
-      if (!vs_a && vs_q) check(h == ha + hf, $sformatf("vsync ends at h %0d, not at the hsync leading edge", h));
-      if (vs_a && h == ha + hf) vs_lines++;
-      if (wt && h == 0) waits++;
-      vs_q = vs_a;
-      @(posedge clk);
-      h++; if (h == htot) begin h = 0; line++; end
-    end
-    check(n_de == ha * va, $sformatf("%0d active pixels, exp %0d", n_de, ha * va));
-    check(vs_start_line == va + vf && vs_lines == vs, $sformatf("vsync line %0d x%0d, exp %0d x%0d", vs_start_line, vs_lines, va + vf, vs));
-    check(waits == extra_exp, $sformatf("%0d genlock lines, exp %0d", waits, extra_exp));
-    check(sof, "next frame did not start on time");
-  endtask
+  // test tasks: tests/vid_timing_gen_tests.sv
+  `include "vid_timing_gen_tests.sv"
 
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("vid_timing_gen_tb.vcd"); $dumpvars(0, vid_timing_gen_tb); end

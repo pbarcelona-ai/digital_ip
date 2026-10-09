@@ -11,7 +11,7 @@ cd "$(dirname "$0")/.."
 DEFS=""
 [ "${VCD:-0}" = "1" ] && DEFS="-DDUMP_VCD"
 
-iverilog -g2012 $DEFS -o tb_bilinear.vvp \
+iverilog -g2012 -I tb/tests $DEFS -o tb_bilinear.vvp \
   ../../include/barrel_pkg.sv src/bilinear.sv tb/tb_bilinear.sv
 vvp tb_bilinear.vvp
 

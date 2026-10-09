@@ -5,6 +5,7 @@
 //   reads and writes checked against a reference queue including full,
 //   empty, level, almost flags, overflow and underflow sticky flags (with
 //   clear), and one clock read latency. Prints TEST PASSED on success.
+//   The test tasks are in tests/sync_fifo_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module sync_fifo_tb;
@@ -15,9 +16,8 @@ module sync_fifo_tb;
     .full_o(full), .empty_o(empty), .level_o(lvl), .afull_thresh_i(5'd12), .aempty_thresh_i(5'd2),
     .almost_full_o(af), .almost_empty_o(ae), .clr_err_i(clr), .overflow_o(ovf), .underflow_o(unf));
   int errors = 0; logic [15:0] q[$]; logic exp_v; logic [15:0] exp_d;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
-  endtask
+  // test tasks: tests/sync_fifo_tests.sv
+  `include "sync_fifo_tests.sv"
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("sync_fifo_tb.vcd"); $dumpvars(0, sync_fifo_tb); end
     repeat (3) @(posedge clk); rst_n = 1; @(posedge clk);

@@ -7,6 +7,7 @@
 //   its own data), address pass-through, DECERR for unmapped reads and
 //   writes with no slave activity, and a random soak against a model.
 //   Prints TEST PASSED on success.
+//   The test tasks are in tests/axi4_lite_mux_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module axi4_lite_mux_tb;
@@ -36,9 +37,8 @@ module axi4_lite_mux_tb;
     always @(posedge aclk) begin if (awv[i] && awr[i]) slave_writes[i]++; if (arv[i] && arr[i]) slave_reads[i]++; end
   end
   int errors = 0; logic [31:0] rd; logic [31:0] model [0:11];
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
-  endtask
+  // test tasks: tests/axi4_lite_mux_tests.sv
+  `include "axi4_lite_mux_tests.sv"
   function automatic int addr_of(input int k); return (k / 4) * 256 + (k % 4) * 4; endfunction
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("axi4_lite_mux_tb.vcd"); $dumpvars(0, axi4_lite_mux_tb); end

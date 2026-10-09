@@ -21,7 +21,7 @@ MODE="${1:-all}"
 build_and_run() {
   local src="$1"
   local vvp="/tmp/$(basename "$src" .sv).vvp"
-  iverilog -g2012 -o "$vvp" \
+  iverilog -g2012 -I tests -o "$vvp" \
     ../include/ppm_io_pkg.sv ../include/golden_model_pkg.sv \
     ../../include/barrel_pkg.sv ../../include/distortion_model_pkg.sv \
     ../../ip/fixed_recip/src/fixed_recip.sv ../../ip/mulq/src/mulq_s.sv ../../ip/coord_gen/src/coord_gen.sv \

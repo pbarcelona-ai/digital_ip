@@ -6,6 +6,7 @@
 //   duty update at the period boundary, prescaler, output inversion and
 //   complementary outputs with dead time (never both high, gap equals
 //   DEADTIME). Prints TEST PASSED on success.
+//   The test tasks are in tests/pwm_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module pwm_tb;
@@ -22,15 +23,10 @@ module pwm_tb;
 .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready, .s_axil_wdata, .s_axil_wstrb, .s_axil_wvalid, .s_axil_wready, .s_axil_bresp, .s_axil_bvalid, .s_axil_bready, .s_axil_araddr, .s_axil_arvalid, .s_axil_arready, .s_axil_rdata, .s_axil_rresp, .s_axil_rvalid, .s_axil_rready,
     .pwm_o(pwm), .pwm_n_o(pwm_n), .period_pulse_o(pp));
   int errors = 0; logic [31:0] rd;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
-  endtask
-  // Measure high count of channel ch and period length over one full period
+  // used by task measure (tests/pwm_tests.sv)
   int hi_cnt, per_cnt;
-  task automatic measure(input int ch);
-    @(posedge pp); #1; hi_cnt = 0; per_cnt = 0;
-    do begin @(posedge aclk); #1; per_cnt++; hi_cnt += pwm[ch]; end while (!pp);
-  endtask
+  // test tasks: tests/pwm_tests.sv
+  `include "pwm_tests.sv"
   int both_high = 0, gap_min = 1000, gap = 0, prev_any = 0;
   always @(posedge aclk) begin
     if (pwm[3] && pwm_n[3]) both_high++;

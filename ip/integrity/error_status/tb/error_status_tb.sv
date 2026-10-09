@@ -5,6 +5,7 @@
 //   set, W1C-style clear, error-wins-over-clear, clear-all, irq masking,
 //   first-error index capture and hold, saturating error counter and reset
 //   state. Prints TEST PASSED on success.
+//   The test tasks are in tests/error_status_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module error_status_tb;
@@ -12,8 +13,8 @@ module error_status_tb;
   logic [7:0] err = 0, clr = 0, im = 0, st; logic ca = 0, fv, irq; logic [2:0] fi; logic [3:0] cnt;
   error_status #(.NERR(8), .CNT_W(4)) dut (.clk, .rst_n, .err_i(err), .clr_mask_i(clr), .clr_all_i(ca), .irq_mask_i(im), .status_o(st), .first_idx_o(fi), .first_valid_o(fv), .count_o(cnt), .irq_o(irq));
   int errors = 0;
-  task automatic check(input bit c, input string m); if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end endtask
-  task automatic pulse_err(input logic [7:0] e); @(posedge clk); #1 err = e; @(posedge clk); #1 err = 0; endtask
+  // test tasks: tests/error_status_tests.sv
+  `include "error_status_tests.sv"
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("error_status_tb.vcd"); $dumpvars(0, error_status_tb); end
     repeat (3) @(posedge clk); rst_n = 1; @(posedge clk); #1;

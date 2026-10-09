@@ -10,14 +10,12 @@
 //   frame with correct ECC and checksum, and the InfoFrame fields must
 //   match the configuration (RGB full range and YCbCr 4:4:4 BT.709).
 //   Prints TEST PASSED on success.
+//   The test tasks are in tests/hdmi_tx_tests.sv (`included).
 // Date: 2026-10-01
 `timescale 1ns/1ps
 module hdmi_tx_tb;
   logic clk = 0, rst_n = 0; always #5 clk = ~clk;
   int errors = 0;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; if (errors < 30) $display("ERROR @%0t: %s", $time, m); end
-  endtask
 
   localparam int HA = 48, VA = 10;
   logic en, pol, mode; logic [1:0] ay, ac, am, aq; logic [6:0] vic;
@@ -40,41 +38,8 @@ module hdmi_tx_tb;
   logic sink_en = 0;
   hdmi_sink_model #(.MAXW(64), .MAXH(16)) sink (.clk, .en(sink_en), .ch0(t0), .ch1(t1), .ch2(t2));
 
-  // Wait for nf complete frames at the sink and check each against the source
-  task automatic frames(input int nf);
-    int f0; f0 = sink.frames;
-    repeat (nf) begin
-      int target; target = sink.frames + 1;
-      while (sink.frames < target) @(posedge clk);
-      // The frame just ended was produced while fnum had the value of its sof
-      check(sink.lines == VA && sink.line_len == HA, $sformatf("geometry %0dx%0d", sink.line_len, sink.lines));
-      begin
-        int ef; ef = -1;
-        // find the frame number that matches pixel (0,0)
-        for (int f = fnum - 3; f <= fnum; f++) if (sink.frame[0][0] == pix(0, 0, f)) ef = f;
-        check(ef >= 0, "frame number not found");
-        if (ef >= 0) for (int yy = 0; yy < VA; yy++) for (int xx = 0; xx < HA; xx++)
-          if (sink.frame[yy][xx] !== pix(xx, yy, ef)) begin
-            check(0, $sformatf("pixel (%0d,%0d) = %h exp %h", xx, yy, sink.frame[yy][xx], pix(xx, yy, ef)));
-            break;
-          end
-      end
-    end
-  endtask
-
-  task automatic start(input bit hdmi, input bit p);
-    en = 0; mode = hdmi; pol = p; sink_en = 0;
-    repeat (5) @(posedge clk);
-    sink.hdmi = hdmi; sink.vs_active = p;
-    en = 1;
-    repeat (3 * (HA + 86)) @(posedge clk);                       // let the pipeline fill
-    sink_en = 1;
-    begin                                                          // align to a frame boundary
-      int f0; f0 = sink.frames;
-      while (sink.frames == f0) @(posedge clk);
-    end
-    sink.frames = 0; sink.islands = 0; sink.avi_frames = 0;
-  endtask
+  // test tasks: tests/hdmi_tx_tests.sv
+  `include "hdmi_tx_tests.sv"
 
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("hdmi_tx_tb.vcd"); $dumpvars(0, hdmi_tx_tb); end

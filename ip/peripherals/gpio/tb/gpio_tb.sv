@@ -5,6 +5,7 @@
 //   and output registers, atomic set/clear/toggle, input synchronization,
 //   rising and falling edge interrupts with masks, write-1-to-clear and
 //   the irq output. Prints TEST PASSED on success.
+//   The test tasks are in tests/gpio_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module gpio_tb;
@@ -22,9 +23,8 @@ module gpio_tb;
 .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready, .s_axil_wdata, .s_axil_wstrb, .s_axil_wvalid, .s_axil_wready, .s_axil_bresp, .s_axil_bvalid, .s_axil_bready, .s_axil_araddr, .s_axil_arvalid, .s_axil_arready, .s_axil_rdata, .s_axil_rresp, .s_axil_rvalid, .s_axil_rready,
     .gpio_i, .gpio_o, .gpio_t, .irq_o(irq));
   int errors = 0; logic [31:0] rd;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
-  endtask
+  // test tasks: tests/gpio_tests.sv
+  `include "gpio_tests.sv"
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("gpio_tb.vcd"); $dumpvars(0, gpio_tb); end
     repeat (4) @(posedge aclk); aresetn = 1; repeat (2) @(posedge aclk);

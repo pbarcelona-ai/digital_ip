@@ -8,6 +8,7 @@
 //   framing error (stop bit low) and bit-time skew of plus/minus 3
 //   percent; the received data and error flags are compared with what was
 //   sent. Prints TEST PASSED on success.
+//   The test tasks are in tests/uart_rx_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module uart_rx_tb;
@@ -17,26 +18,10 @@ module uart_rx_tb;
   uart_rx dut (.clk, .rst_n, .tick16_i(tick), .en_i(en), .data_bits_i(nb), .parity_en_i(pe), .parity_odd_i(po), .rxd_i(rxd), .data_o(data), .valid_o(valid), .frame_err_o(ferr), .parity_err_o(perr), .busy_o(busy));
   int errors = 0, nrx = 0; logic [7:0] rx_d[$]; logic rx_f[$], rx_p[$];
   always @(posedge clk) if (valid) begin rx_d.push_back(data); rx_f.push_back(ferr); rx_p.push_back(perr); end
-  task automatic check(input bit c, input string m); if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end endtask
   int bt = 100;                                   // clocks per bit
-  task automatic frame(input logic [7:0] d, input int bits, input bit par, input bit odd, input bit bad_par, input bit bad_stop);
-    int ex; ex = 0; for (int i = 0; i < bits; i++) ex ^= d[i];
-    rxd = 0; repeat (bt) @(posedge clk);
-    for (int i = 0; i < bits; i++) begin rxd = d[i]; repeat (bt) @(posedge clk); end
-    if (par) begin rxd = (odd ? ~ex[0] : ex[0]) ^ bad_par; repeat (bt) @(posedge clk); end
-    rxd = bad_stop ? 1'b0 : 1'b1; repeat (bt) @(posedge clk);
-    rxd = 1;
-  endtask
   int exp_n = 0;                                  // frames already checked
-  task automatic expect_frame(input logic [7:0] d, input int bits, input bit fe, input bit pe_);
-    repeat (20) @(posedge clk);
-    check(rx_d.size() == exp_n + 1, $sformatf("frame not received (%0d checked, %0d received)", exp_n, rx_d.size()));
-    if (rx_d.size() > exp_n) begin
-      check(rx_d[exp_n] == (d & ((8'd1 << bits) - 1)), $sformatf("data %h exp %h", rx_d[exp_n], d & ((8'd1 << bits) - 1)));
-      check(rx_f[exp_n] == fe, "frame error flag"); check(rx_p[exp_n] == pe_, "parity error flag");
-    end
-    exp_n = rx_d.size();
-  endtask
+  // test tasks: tests/uart_rx_tests.sv
+  `include "uart_rx_tests.sv"
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("uart_rx_tb.vcd"); $dumpvars(0, uart_rx_tb); end
     repeat (4) @(posedge clk); rst_n = 1; repeat (50) @(posedge clk);

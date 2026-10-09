@@ -51,6 +51,8 @@ SRCS="$(filelist "$IP" | tr '\n' ' ')"
 # Testbench helper models may need the shared register file: add it if absent
 case "$SRCS" in *ip_axil_regs.sv*) ;; *) EXTRA="$REPO/shared/src/common/ip_axil_regs.sv" ;; esac
 TB_SRCS="$(filelist "$IP" tb/scripts/build.f | tr '\n' ' ')"
+# test tasks: tb/tests/<name>_tests.sv next to every testbench file compiled (`included)
+TB_INC="-I $IPDIR/tb/tests"; for f in $TB_SRCS; do [ -d "$(dirname "$f")/tests" ] && TB_INC="$TB_INC -I $(dirname "$f")/tests"; done
 
 case "$SIM" in
   iverilog|icarus) ;;
@@ -61,7 +63,7 @@ if [ "$LINT" = 1 ]; then
   verilator --lint-only -Wall -Wno-fatal --top-module "$TOP" $SRCS
 fi
 cd "$OUT"                                   # VCD files land here
-iverilog -g2012 -Wall -Wno-timescale -s "$TB" -o "$TB.vvp" $SRCS ${EXTRA:-} $TB_SRCS
+iverilog -g2012 -Wall -Wno-timescale $TB_INC -s "$TB" -o "$TB.vvp" $SRCS ${EXTRA:-} $TB_SRCS
 ARGS=""; [ "$VCD" = 1 ] && ARGS="+vcd"
 vvp -n "$TB.vvp" $ARGS | tee "$TB.log"
 grep -q "TEST PASSED" "$TB.log" || { echo "[$IP] SIMULATION FAILED"; exit 1; }

@@ -6,6 +6,7 @@
 //   STEPS=8 instance equals eight serial steps, hold on disabled clocks,
 //   load, and rejection of an all-zero seed (lockup_o). Prints TEST PASSED
 //   on success.
+//   The test tasks are in tests/lfsr_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module lfsr_tb;
@@ -20,7 +21,8 @@ module lfsr_tb;
   lfsr #(.WIDTH(9), .TAPS(9'h110), .SEED(9'h1FF)) u9 (.clk, .rst_n, .en_i(en), .load_i(ld), .seed_i(seed[8:0]), .state_o(s9), .bit_o(b9), .lockup_o(lk9));
   lfsr #(.WIDTH(7), .TAPS(7'h60), .SEED(7'h7F), .STEPS(8)) up (.clk, .rst_n, .en_i(en), .load_i(ld), .seed_i(seed[6:0]), .state_o(p7), .bit_o(pb), .lockup_o(lkp));
   int errors = 0, n7, n15, n9;
-  task automatic check(input bit c, input string m); if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end endtask
+  // test tasks: tests/lfsr_tests.sv
+  `include "lfsr_tests.sv"
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("lfsr_tb.vcd"); $dumpvars(0, lfsr_tb); end
     repeat (3) @(posedge clk); rst_n = 1; @(posedge clk); #1;

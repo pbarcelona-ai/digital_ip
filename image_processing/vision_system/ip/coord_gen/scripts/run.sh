@@ -14,7 +14,7 @@ cd "$(dirname "$0")/.."
 DEFS=""
 [ "${VCD:-0}" = "1" ] && DEFS="-DDUMP_VCD"
 
-iverilog -g2012 $DEFS -o tb_coord_gen.vvp \
+iverilog -g2012 -I tb/tests $DEFS -o tb_coord_gen.vvp \
   ../../include/barrel_pkg.sv ../../include/distortion_model_pkg.sv \
   ../fixed_recip/src/fixed_recip.sv ../mulq/src/mulq_s.sv \
   src/coord_gen.sv tb/tb_coord_gen.sv

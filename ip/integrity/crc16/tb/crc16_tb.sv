@@ -7,6 +7,7 @@
 //   messages (random length, byte and word feeds) with a bit-serial
 //   reference model, including init and mid-stream idle cycles. Prints
 //   TEST PASSED on success.
+//   The test tasks are in tests/crc16_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module crc16_tb;
@@ -31,22 +32,8 @@ module crc16_tb;
     for (int i = 0; i < W; i++) out[i] = RO ? r[W-1-i] : r[i];
     return out ^ XO;
   endfunction
-  task automatic feed();
-    int n, idx; n = msg.size();
-    @(posedge clk); #1 init = 1; @(posedge clk); #1 init = 0;
-    for (int i = 0; i < n; i++) begin
-      @(posedge clk); #1 v8 = 1; d8 = msg[i];
-      if ($urandom_range(0, 5) == 0) begin @(posedge clk); #1 v8 = 0; end       // idle gap
-    end
-    @(posedge clk); #1 v8 = 0;
-    idx = 0;
-    while (idx < n) begin
-      logic [31:0] w32; logic [3:0] kp; w32 = 0; kp = 0;
-      for (int b = 0; b < 4; b++) if (idx + b < n) begin w32[b*8 +: 8] = msg[idx + b]; kp[b] = 1; end
-      @(posedge clk); #1 v32 = 1; d32 = w32; k32 = kp; idx += 4;
-    end
-    @(posedge clk); #1 v32 = 0; @(posedge clk); #1;
-  endtask
+  // test tasks: tests/crc16_tests.sv
+  `include "crc16_tests.sv"
   logic [W-1:0] exp;
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("crc16_tb.vcd"); $dumpvars(0, crc16_tb); end

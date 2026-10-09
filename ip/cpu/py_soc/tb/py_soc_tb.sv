@@ -11,10 +11,14 @@
 //   GPIO2 pins 0 and 31 when the firmware reaches stage 2, then waits for
 //   the watchdog reset, checks the firmware's result globals at that
 //   moment, and checks that the system boots from flash again and the
-//   firmware halts reporting the watchdog as the reset cause. Any core
+//   firmware halts reporting the watchdog as the reset cause. The core
+//   logic reset output (core_rst_n_o) must be held after reset, released by
+//   the firmware's SYSCTL CORE_RESET write, and held again by the watchdog
+//   reset. Any core
 //   trap fails the test. With +corrupt one payload byte of the image is
 //   flipped and the test instead expects boot_err (checksum) and a core
 //   that never starts. Prints TEST PASSED on success.
+//   The test tasks are in tests/py_soc_tests.sv (`included).
 // Date: 2026-10-01
 `timescale 1ns/1ps
 module py_soc_tb;
@@ -23,7 +27,7 @@ module py_soc_tb;
 
   logic [1:0] uart_txd, uart_rxd, scl_i, scl_o, scl_t, sda_i, sda_o, sda_t, sclk, mosi, miso;
   logic [3:0] cs_n; logic [95:0] gpio_i, gpio_o, gpio_t; logic [31:0] gpio2_drv = '0;
-  logic done, trap, wdt_reset; logic [33:0] result; logic [3:0] trap_cause; logic [12:0] trap_pc;
+  logic done, trap, wdt_reset, core_rst_n; logic [33:0] result; logic [3:0] trap_cause; logic [12:0] trap_pc;
   logic boot_done, boot_err; logic [2:0] boot_err_code; logic fl_sclk, fl_cs_n, fl_mosi, fl_miso; int fl_wip;
 
   py_soc #(.CLK_HZ(100_000_000), .UART_BAUD(2_000_000), .I2C_HZ(2_000_000), .SPI_HZ(10_000_000),
@@ -35,7 +39,7 @@ module py_soc_tb;
     .uart_txd_o(uart_txd), .uart_rxd_i(uart_rxd),
     .i2c_scl_i(scl_i), .i2c_scl_o(scl_o), .i2c_scl_t(scl_t), .i2c_sda_i(sda_i), .i2c_sda_o(sda_o), .i2c_sda_t(sda_t),
     .spi_sclk_o(sclk), .spi_mosi_o(mosi), .spi_miso_i(miso), .spi_cs_n_o(cs_n),
-    .gpio_i, .gpio_o, .gpio_t, .wdt_reset_o(wdt_reset), .ext_irq_i(4'b0),
+    .gpio_i, .gpio_o, .gpio_t, .wdt_reset_o(wdt_reset), .core_rst_n_o(core_rst_n), .ext_irq_i(4'b0),
     .m_ext_axil_awaddr(), .m_ext_axil_awvalid(), .m_ext_axil_awready(1'b0), .m_ext_axil_wdata(), .m_ext_axil_wstrb(),
     .m_ext_axil_wvalid(), .m_ext_axil_wready(1'b0), .m_ext_axil_bresp(2'b0), .m_ext_axil_bvalid(1'b0), .m_ext_axil_bready(),
     .m_ext_axil_araddr(), .m_ext_axil_arvalid(), .m_ext_axil_arready(1'b0), .m_ext_axil_rdata(32'b0), .m_ext_axil_rresp(2'b0),
@@ -60,9 +64,8 @@ module py_soc_tb;
   endfunction
 
   int errors = 0;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
-  endtask
+  // test tasks: tests/py_soc_tests.sv
+  `include "py_soc_tests.sv"
 
   // Progress log and trap detection
   longint last_stage = -1;
@@ -103,6 +106,7 @@ module py_soc_tb;
       $finish;
     end
     check(boot_done && !boot_err, $sformatf("boot from flash failed, code %0d", boot_err_code));
+    check(core_rst_n === 1'b0, "core logic reset (core_rst_n_o) must be held after reset");
     $display("[%t] booted from flash: %0d code bytes", $realtime, PROG_BYTES);
     for (int i = 0; i < PROG_BYTES; i++)
       if (dut.code_mem[i] !== flash.mem[12 + i]) begin check(0, $sformatf("code byte %0d differs from flash", i)); break; end
@@ -133,10 +137,12 @@ module py_soc_tb;
     check(g(G_wdt_pre) >= 3, "watchdog pre-timeout interrupts");
     check(g(G_flash_count) == 4 && g(G_flash_word) == 'h3143_5950, "flash interrupt read of the image header");
     check(i2c_dev0.mem[16] == 8'hAA && i2c_dev0.mem[17] == 8'h55, "I2C0 write landed in slave memory");
+    check(core_rst_n === 1'b1, "the firmware's CORE_RESET write must release core_rst_n_o");
 
     // Watchdog reset: the boot loader copies the image from flash again and the firmware starts over
     repeat (5) @(posedge clk);
     check(!boot_done && wdt_reset, "watchdog reset must hold the system and restart the boot loader");
+    check(core_rst_n === 1'b0, "a watchdog reset must put the core logic back into reset");
     wait (!wdt_reset);
     fork
       begin wait (done); end

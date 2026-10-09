@@ -13,13 +13,15 @@ digraph "video_pipeline_dataflow" {
     "in:s_axil_*" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="s_axil_*\ns_axil_awaddr\ns_axil_awvalid\ns_axil_wdata\ns_axil_wstrb\ns_axil_wvalid\ns_axil_bready\ns_axil_araddr\ns_axil_arvalid\ns_axil_rready"];
   }
   subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
-    { rank=max; "out:csitx_hs_req_o" "out:csitx_lane_data_o" "out:csitx_lane_valid_o" "out:dsi_hs_req_o" "out:dsi_lane_data_o" "out:dsi_lane_valid_o" "out:ins_m_axis_*" "out:ins_s_axis_*" "out:lvds_a_o" "out:lvds_b_o" "out:lvds_clk_word_o" "out:lvds_stb_o" "out:s_axil_*" "out:stats_done_o" "out:tmds0_o" "out:tmds1_o" "out:tmds2_o" "out:tmds_clk_o" }
+    { rank=max; "out:csitx_hs_req_o" "out:csitx_lane_data_o" "out:csitx_lane_valid_o" "out:dsi_hs_req_o" "out:dsi_lane_data_o" "out:dsi_lane_valid_o" "out:eof_in_o" "out:eof_out_o" "out:ins_m_axis_*" "out:ins_s_axis_*" "out:lvds_a_o" "out:lvds_b_o" "out:lvds_clk_word_o" "out:lvds_stb_o" "out:s_axil_*" "out:stats_done_o" "out:tmds0_o" "out:tmds1_o" "out:tmds2_o" "out:tmds_clk_o" }
     "out:csitx_hs_req_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="csitx_hs_req_o"];
     "out:csitx_lane_data_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="csitx_lane_data_o\n[CSITX_LANES*8-1:0]"];
     "out:csitx_lane_valid_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="csitx_lane_valid_o\n[CSITX_LANES-1:0]"];
     "out:dsi_hs_req_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="dsi_hs_req_o"];
     "out:dsi_lane_data_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="dsi_lane_data_o\n[DSI_LANES*8-1:0]"];
     "out:dsi_lane_valid_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="dsi_lane_valid_o\n[DSI_LANES-1:0]"];
+    "out:eof_in_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="eof_in_o"];
+    "out:eof_out_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="eof_out_o"];
     "out:ins_m_axis_*" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="ins_m_axis_*\nins_m_axis_tdata\nins_m_axis_tlast\nins_m_axis_tuser\nins_m_axis_tvalid"];
     "out:ins_s_axis_*" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="ins_s_axis_tready"];
     "out:lvds_a_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="lvds_a_o\n[27:0]"];
@@ -33,31 +35,31 @@ digraph "video_pipeline_dataflow" {
     "out:tmds2_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="tmds2_o\n[9:0]"];
     "out:tmds_clk_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="tmds_clk_o\n[9:0]"];
   }
-  subgraph cluster_b0 { label="always_comb @ line 292"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+  subgraph cluster_b0 { label="always_comb @ line 300"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
     "sig:coef" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="coef\n[9*16-1:0]"];
     "sig:offs" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="offs\n[3*16-1:0]"];
   }
-  subgraph cluster_b1 { label="always_comb @ line 392"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+  subgraph cluster_b1 { label="always_comb @ line 400"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
     "sig:rq_valid" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="rq_valid\n[3:0]"];
   }
-  subgraph cluster_b2 { label="always_comb @ line 544"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+  subgraph cluster_b2 { label="always_comb @ line 574"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
     "sig:rd" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="rd\n[NREG*32-1:0]"];
   }
-  subgraph cluster_b3 { label="always_ff @ line 240"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+  subgraph cluster_b3 { label="always_ff @ line 248"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
     "sig:csi_cfg_s1" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="csi_cfg_s1\n[7:0]"];
     "sig:csi_cfg_s2" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="csi_cfg_s2\n[7:0]"];
   }
-  subgraph cluster_b4 { label="always_ff @ line 309"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+  subgraph cluster_b4 { label="always_ff @ line 317"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
     "sig:g_wa" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="g_wa\n[RW-1:0]"];
     "sig:g_wd" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="g_wd\n[7:0]"];
     "sig:g_we" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="g_we"];
     "sig:gidx" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="gidx\n[RW-1:0]"];
   }
-  subgraph cluster_b5 { label="always_ff @ line 359"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+  subgraph cluster_b5 { label="always_ff @ line 367"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
     "sig:ins_en_s" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="ins_en_s"];
     "sig:ins_mode" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="ins_mode"];
   }
-  subgraph cluster_b6 { label="always_ff @ line 419"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+  subgraph cluster_b6 { label="always_ff @ line 427"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
     "sig:by_started" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="by_started"];
     "sig:idle" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="idle\n[15:0]"];
     "sig:in_route" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="in_route"];
@@ -69,11 +71,15 @@ digraph "video_pipeline_dataflow" {
     "sig:sof_pushed" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="sof_pushed"];
     "sig:sof_route" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="sof_route"];
   }
-  subgraph cluster_b7 { label="always_ff @ line 457"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+  subgraph cluster_b7 { label="always_ff @ line 465"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
     "sig:ar_q" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="ar_q"];
     "sig:b_q" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="b_q"];
   }
-  subgraph cluster_b8 { label="always_ff @ line 504"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+  subgraph cluster_b8 { label="always_ff @ line 488"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+    "sig:ln_in" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="ln_in\n[15:0]"];
+    "sig:ln_out" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="ln_out\n[15:0]"];
+  }
+  subgraph cluster_b9 { label="always_ff @ line 534"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
     "sig:cg_s1" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="cg_s1\n[31:0]"];
     "sig:cg_s2" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="cg_s2\n[31:0]"];
     "sig:dg_s1" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="dg_s1\n[31:0]"];
@@ -81,11 +87,11 @@ digraph "video_pipeline_dataflow" {
     "sig:oc_s1" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="oc_s1\n[31:0]"];
     "sig:oc_s2" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="oc_s2\n[31:0]"];
   }
-  subgraph cluster_b9 { label="always_ff @ line 530"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+  subgraph cluster_b10 { label="always_ff @ line 560"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
     "sig:n_ctx_drop" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="n_ctx_drop\n[31:0]"];
     "sig:n_dsi_drop" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="n_dsi_drop\n[31:0]"];
   }
-  subgraph cluster_b10 { label="always_ff @ line 537"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
+  subgraph cluster_b11 { label="always_ff @ line 567"; style="rounded"; color="#c4b5fd"; fontcolor="#6d28d9"; fontsize=9;
     "sig:n_corr" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="n_corr\n[31:0]"];
     "sig:n_crc" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="n_crc\n[31:0]"];
     "sig:n_dpc" [shape=box, peripheries=2, style="filled", fillcolor="#ede9fe", color="#7c3aed", label="n_dpc\n[31:0]"];
@@ -146,6 +152,8 @@ digraph "video_pipeline_dataflow" {
   "sig:ir_r" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="ir_r"];
   "sig:ir_u" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="ir_u"];
   "sig:ir_v" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="ir_v"];
+  "sig:ln_in_c" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="ln_in_c\n[15:0]"];
+  "sig:ln_out_c" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="ln_out_c\n[15:0]"];
   "sig:lock_en" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="lock_en"];
   "sig:locked" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="locked"];
   "sig:m_d" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="m_d\n[3*RW-1:0]"];
@@ -208,6 +216,10 @@ digraph "video_pipeline_dataflow" {
   "sig:st_pix" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="st_pix\n[31:0]"];
   "sig:st_r" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="st_r\n[39:0]"];
   "sig:tpg" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="tpg"];
+  "sig:u_l" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="u_l"];
+  "sig:u_r" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="u_r"];
+  "sig:u_u" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="u_u"];
+  "sig:u_v" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="u_v"];
   "sig:underflow" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="underflow"];
   "sig:v_act" [shape=ellipse, style="filled", fillcolor="#f3f4f6", color="#6b7280", label="v_act\n[15:0]"];
   "sig:v_de" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="v_de"];
@@ -256,6 +268,7 @@ digraph "video_pipeline_dataflow" {
   "in:lane_data_i" -> "inst:u_csi";
   "in:lane_valid_i" -> "inst:u_csi";
   "in:s_axil_*" -> "inst:u_split";
+  "inst:u_blc_wb" -> "sig:u_r";
   "inst:u_ccm" -> "sig:m_d";
   "inst:u_ccm" -> "sig:m_u";
   "inst:u_ccm" -> "sig:m_v";
@@ -347,6 +360,9 @@ digraph "video_pipeline_dataflow" {
   "inst:u_stats" -> "sig:st_g";
   "inst:u_stats" -> "sig:st_pix";
   "inst:u_stats" -> "sig:st_r";
+  "inst:u_unpack" -> "sig:u_l";
+  "inst:u_unpack" -> "sig:u_u";
+  "inst:u_unpack" -> "sig:u_v";
   "inst:u_vtg" -> "sig:de";
   "inst:u_vtg" -> "sig:eol";
   "inst:u_vtg" -> "sig:hs";
@@ -448,6 +464,8 @@ digraph "video_pipeline_dataflow" {
   "sig:e_ovf" -> "inst:u_ps_ovf";
   "sig:fh" -> "inst:u_demosaic";
   "sig:fh" -> "inst:u_dpc";
+  "sig:fh" -> "out:eof_in_o";
+  "sig:fh" -> "sig:ln_in";
   "sig:fw" -> "inst:u_demosaic";
   "sig:fw" -> "inst:u_dpc";
   "sig:g_wa" -> "inst:u_gamma";
@@ -481,6 +499,12 @@ digraph "video_pipeline_dataflow" {
   "sig:ir_r" -> "out:ins_s_axis_*";
   "sig:ir_u" -> "sig:cs_u";
   "sig:ir_v" -> "sig:cs_v";
+  "sig:ln_in" -> "sig:ln_in_c";
+  "sig:ln_in_c" -> "out:eof_in_o";
+  "sig:ln_in_c" -> "sig:ln_in";
+  "sig:ln_out" -> "sig:ln_out_c";
+  "sig:ln_out_c" -> "out:eof_out_o";
+  "sig:ln_out_c" -> "sig:ln_out";
   "sig:lock_en" -> "inst:u_vtg";
   "sig:locked" -> "sig:rd";
   "sig:m_d" -> "inst:u_stats";
@@ -509,13 +533,20 @@ digraph "video_pipeline_dataflow" {
   "sig:new_route" -> "sig:sof_route";
   "sig:o_d" -> "inst:u_out";
   "sig:o_l" -> "inst:u_out";
+  "sig:o_l" -> "out:eof_out_o";
+  "sig:o_l" -> "sig:ln_out";
   "sig:o_l" -> "sig:out_lines";
   "sig:o_l" -> "sig:sc_end";
+  "sig:o_r" -> "out:eof_out_o";
   "sig:o_r" -> "sig:by_r";
+  "sig:o_r" -> "sig:ln_out";
   "sig:o_r" -> "sig:out_beat";
   "sig:o_r" -> "sig:sc_r";
   "sig:o_u" -> "inst:u_out";
+  "sig:o_u" -> "sig:ln_out_c";
   "sig:o_v" -> "inst:u_out";
+  "sig:o_v" -> "out:eof_out_o";
+  "sig:o_v" -> "sig:ln_out";
   "sig:o_v" -> "sig:out_beat";
   "sig:oc" -> "inst:u_csitx";
   "sig:oc" -> "inst:u_dsi";
@@ -671,7 +702,16 @@ digraph "video_pipeline_dataflow" {
   "sig:st_pix" -> "sig:rd";
   "sig:st_r" -> "sig:rd";
   "sig:tpg" -> "inst:u_out";
+  "sig:u_l" -> "out:eof_in_o";
+  "sig:u_l" -> "sig:ln_in";
+  "sig:u_r" -> "out:eof_in_o";
+  "sig:u_r" -> "sig:ln_in";
+  "sig:u_u" -> "sig:ln_in_c";
+  "sig:u_v" -> "out:eof_in_o";
+  "sig:u_v" -> "sig:ln_in";
   "sig:underflow" -> "sig:n_under";
+  "sig:v_act" -> "out:eof_out_o";
+  "sig:v_act" -> "sig:ln_out";
   "sig:v_act" -> "sig:sc_end";
   "sig:v_de" -> "inst:u_csitx";
   "sig:v_de" -> "inst:u_dsi";

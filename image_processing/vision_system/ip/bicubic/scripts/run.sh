@@ -10,7 +10,7 @@ cd "$(dirname "$0")/.."
 DEFS=""
 [ "${VCD:-0}" = "1" ] && DEFS="-DDUMP_VCD"
 
-iverilog -g2012 $DEFS -o tb_bicubic.vvp \
+iverilog -g2012 -I tb/tests $DEFS -o tb_bicubic.vvp \
   ../../include/barrel_pkg.sv ../mulq/src/mulq_s.sv \
   src/bicubic.sv tb/tb_bicubic.sv
 vvp tb_bicubic.vvp

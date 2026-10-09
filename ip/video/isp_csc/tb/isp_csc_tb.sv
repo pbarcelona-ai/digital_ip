@@ -8,15 +8,13 @@
 //   with settings changed mid-frame (must only apply at the next frame),
 //   random input gaps and output back-pressure. Prints TEST PASSED on
 //   success.
+//   The test tasks are in tests/isp_csc_tests.sv (`included).
 // Date: 2026-10-01
 `timescale 1ns/1ps
 module isp_csc_tb;
   localparam int MAXP = 2048;
   logic clk = 0, rst_n = 0; always #5 clk = ~clk;
   int errors = 0;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; if (errors < 30) $display("ERROR @%0t: %s", $time, m); end
-  endtask
 
   logic by, m709; logic [23:0] sd, md; logic sl, su, sv, sr, ml, mu, mv, mr;
   isp_csc dut (.clk, .rst_n, .bypass_i(by), .bt709_i(m709),
@@ -44,23 +42,8 @@ module isp_csc_tb;
     return {8'(clamp8(128 + (cb >>> 8))), 8'(clamp8(16 + (y >>> 8))), 8'(clamp8(128 + (cr >>> 8)))};
   endfunction
 
-  task automatic frame(input int w, input int h, input bit bt709, input bit bypass);
-    W = w; nout = 0; m709 = bt709; by = bypass;
-    for (int n = 0; n < w * h; n++) begin
-      if (n < 8) img[n] = {{8{n[2]}}, {8{n[1]}}, {8{n[0]}}};       // colour bar colours
-      else img[n] = {8'($urandom_range(255)), 8'($urandom_range(255)), 8'($urandom_range(255))};
-      exp_px[n] = bypass ? img[n] : model(img[n], bt709);
-    end
-    for (int n = 0; n < w * h; n++) begin
-      while ($urandom_range(99) < gap_pct) begin sv <= 0; @(posedge clk); end
-      sd <= img[n]; su <= (n == 0); sl <= (n % w == w - 1); sv <= 1;
-      @(posedge clk); while (!sr) @(posedge clk);
-      if (n == w * h / 2) begin by <= ~bypass; m709 <= ~bt709; end
-    end
-    sv <= 0;
-    repeat (20) @(posedge clk);
-    check(nout == w * h, $sformatf("%0d pixels out of %0d", nout, w * h));
-  endtask
+  // test tasks: tests/isp_csc_tests.sv
+  `include "isp_csc_tests.sv"
 
   initial begin
     logic [23:0] k, wh, gy;

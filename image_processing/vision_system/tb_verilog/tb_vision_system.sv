@@ -6,6 +6,7 @@
 // fisheye/panoramic/perspective correction tests, each
 // bit-exact vs. an independent golden model with a genuine
 // measured image-quality improvement.
+//   The test tasks are in tests/vision_system_tests.sv (`included).
 // Date: September 26, 2026
 // ***************
 // =============================================================================
@@ -88,7 +89,6 @@ module tb_vision_system;
   logic [7:0] ls_r[], ls_g[], ls_b[];
   string work_dir = "work";
 
-
   vision_system dut (
     .clk, .rst_n,
     .s_axis_tvalid, .s_axis_tready, .s_axis_tdata, .s_axis_tlast, .s_axis_tuser,
@@ -100,105 +100,12 @@ module tb_vision_system;
     .s_axil_rdata, .s_axil_rresp, .s_axil_rvalid, .s_axil_rready
   );
 
-  // ---- AXI4-Lite driver tasks --------------------------------------------
-  task automatic axil_write(input int addr, input longint data);
-    begin
-      @(posedge clk);
-      s_axil_awaddr  <= addr[7:0];
-      s_axil_awvalid <= 1'b1;
-      s_axil_wdata   <= data[31:0];
-      s_axil_wstrb   <= 4'hF;
-      s_axil_wvalid  <= 1'b1;
-      @(posedge clk);
-      s_axil_awvalid <= 1'b0;
-      s_axil_wvalid  <= 1'b0;
-      while (s_axil_bvalid !== 1'b1) @(posedge clk);
-      s_axil_bready <= 1'b1;
-      @(posedge clk);
-      s_axil_bready <= 1'b0;
-    end
-  endtask
-
-  task automatic axil_read(input int addr, output logic [31:0] data);
-    begin
-      @(posedge clk);
-      s_axil_araddr  <= addr[7:0];
-      s_axil_arvalid <= 1'b1;
-      @(posedge clk);
-      s_axil_arvalid <= 1'b0;
-      while (s_axil_rvalid !== 1'b1) @(posedge clk);
-      data = s_axil_rdata;
-      s_axil_rready <= 1'b1;
-      @(posedge clk);
-      s_axil_rready <= 1'b0;
-    end
-  endtask
-
-  // ---- AXI4-Stream input driver -------------------------------------------
-  task automatic stream_frame_in(
-    input int w, input int h,
-    input logic [7:0] img_r[], input logic [7:0] img_g[], input logic [7:0] img_b[]
-  );
-    int x, y;
-    begin
-      for (y = 0; y < h; y = y + 1) begin
-        for (x = 0; x < w; x = x + 1) begin
-          s_axis_tvalid <= 1'b1;
-          s_axis_tdata  <= {img_r[y*w+x], img_g[y*w+x], img_b[y*w+x]};
-          s_axis_tlast  <= (x == w-1);
-          s_axis_tuser  <= (x == 0) && (y == 0);
-          do @(posedge clk); while (!s_axis_tready);
-        end
-        s_axis_tvalid <= 1'b0;
-        s_axis_tlast  <= 1'b0;
-        s_axis_tuser  <= 1'b0;
-        repeat (LINE_GAP) @(posedge clk);
-      end
-    end
-  endtask
-
-  // ---- AXI4-Stream output monitor (runs concurrently, via fork) ---------
+  // used by task capture_frame_out (tests/vision_system_tests.sv)
   logic [7:0] cap_r[], cap_g[], cap_b[];
   int cap_w, cap_h, cap_count, cap_total;
   logic cap_done, cap_tlast_err, cap_tuser_err;
 
-  task automatic capture_frame_out(input int w, input int h);
-    int x;
-    begin
-      cap_w = w; cap_h = h;
-      cap_r = new[w*h]; cap_g = new[w*h]; cap_b = new[w*h];
-      cap_count = 0; cap_total = w*h; cap_done = 1'b0;
-      cap_tlast_err = 1'b0; cap_tuser_err = 1'b0;
-      while (cap_count < cap_total) begin
-        @(posedge clk);
-        if (m_axis_tvalid === 1'b1 && m_axis_tready === 1'b1) begin
-          x = cap_count % w;
-          cap_r[cap_count] = m_axis_tdata[23:16];
-          cap_g[cap_count] = m_axis_tdata[15:8];
-          cap_b[cap_count] = m_axis_tdata[7:0];
-          if (m_axis_tlast !== (x == w-1)) cap_tlast_err = 1'b1;
-          if (cap_count == 0 && m_axis_tuser !== 1'b1) cap_tuser_err = 1'b1;
-          cap_count = cap_count + 1;
-        end
-      end
-      cap_done = 1'b1;
-    end
-  endtask
-
-  // ---- one frame within a distortion x interp-mode group -----------------
-  // Synthesizes a warped_<label>.ppm from src_r/g/b (BILINEAR forward
-  // remap always -- synthesizing the distorted stimulus is independent of
-  // which interpolation mode the DUT is about to be tested in), computes
-  // the bit-exact golden CORRECTED reference using whichever interpolation
-  // mode is currently under test (mirrors the DUT's own selected mode),
-  // programs IMG_WIDTH/IMG_HEIGHT for this frame's own shape, streams it
-  // through the already-configured DUT, captures the output, and runs the
-  // self-checks. Does NOT reset the DUT and does NOT rewrite K1/K2/K3 or
-  // INTERP_MODE -- those are set once per group by run_group() below, so
-  // that calling this 3x in a row exercises the back-to-back consecutive-
-  // frame path (with the image SIZE changing between frames, on top of
-  // the distortion-type changes already covered by the earlier two-
-  // scenario testing).
+  // used by task run_one_frame (tests/vision_system_tests.sv)
   logic [7:0] warp_r[], warp_g[], warp_b[];
   logic [7:0] gold_r[], gold_g[], gold_b[];
   remap_cfg_t cfg;
@@ -210,376 +117,18 @@ module tb_vision_system;
   logic [31:0] status_val, version_val;
   int overall_pass, overall_any_fail, overall_checks;
 
-  task automatic run_one_frame(
-    input string label, input int fw, input int fh,
-    input logic [7:0] fsrc_r[], input logic [7:0] fsrc_g[], input logic [7:0] fsrc_b[],
-    input int interp_mode_val
-  );
-    begin
-      $display("--- frame: %s  (%0dx%0d, interp_mode=%0d) ---", label, fw, fh, interp_mode_val);
-      cfg = make_remap_cfg(fw, fh, 32'h0000_8000, 32'h0000_8000, 32'h0001_0000);
-      radial_remap_ref(cfg, kd1q, kd2q, kd3q, fsrc_r, fsrc_g, fsrc_b, warp_r, warp_g, warp_b);
-      ppm_write({work_dir, "/warped_", label, ".ppm"}, fw, fh, warp_r, warp_g, warp_b);
-
-      if (interp_mode_val)
-        radial_remap_bicubic_ref(cfg, kc1q, kc2q, kc3q, warp_r, warp_g, warp_b, gold_r, gold_g, gold_b);
-      else
-        radial_remap_ref(cfg, kc1q, kc2q, kc3q, warp_r, warp_g, warp_b, gold_r, gold_g, gold_b);
-
-      axil_write(REG_IMG_WIDTH,  fw);
-      axil_write(REG_IMG_HEIGHT, fh);
-
-      status_val = 32'hFFFF_FFFF;
-      i = 0;
-      while (i < 200 && status_val[2] !== 1'b0) begin
-        axil_read(REG_STATUS, status_val);
-        if (status_val[2] === 1'b0) i = 200;
-        else begin
-          @(posedge clk);
-          i = i + 1;
-        end
-      end
-      if (status_val[2] !== 1'b0) begin
-        $display("ERROR [%s]: timed out waiting for recip_busy to clear", label);
-        $fatal;
-      end
-
-      fork
-        stream_frame_in(fw, fh, warp_r, warp_g, warp_b);
-        capture_frame_out(fw, fh);
-      join
-
-      ppm_write({work_dir, "/corrected_", label, ".ppm"}, fw, fh, cap_r, cap_g, cap_b);
-
-      max_err = 0; mismatches = 0;
-      for (i = 0; i < fw*fh; i = i + 1) begin
-        d = int'(cap_r[i]) - int'(gold_r[i]); if (d<0) d=-d; if (d>max_err) max_err=d; if (d>1) mismatches=mismatches+1;
-        d = int'(cap_g[i]) - int'(gold_g[i]); if (d<0) d=-d; if (d>max_err) max_err=d; if (d>1) mismatches=mismatches+1;
-        d = int'(cap_b[i]) - int'(gold_b[i]); if (d<0) d=-d; if (d>max_err) max_err=d; if (d>1) mismatches=mismatches+1;
-      end
-      $display("[%s] DUT vs golden model: max_err=%0d  channel-mismatches(>1)=%0d/%0d",
-                label, max_err, mismatches, fw*fh*3);
-
-      mae_warp_acc = 0; mae_corr_acc = 0;
-      for (i = 0; i < fw*fh; i = i + 1) begin
-        d = int'(warp_r[i]) - int'(fsrc_r[i]); if (d<0) d=-d; mae_warp_acc += d;
-        d = int'(warp_g[i]) - int'(fsrc_g[i]); if (d<0) d=-d; mae_warp_acc += d;
-        d = int'(warp_b[i]) - int'(fsrc_b[i]); if (d<0) d=-d; mae_warp_acc += d;
-        d = int'(cap_r[i])  - int'(fsrc_r[i]); if (d<0) d=-d; mae_corr_acc += d;
-        d = int'(cap_g[i])  - int'(fsrc_g[i]); if (d<0) d=-d; mae_corr_acc += d;
-        d = int'(cap_b[i])  - int'(fsrc_b[i]); if (d<0) d=-d; mae_corr_acc += d;
-      end
-      mae_warp = real'(mae_warp_acc) / real'(fw*fh*3);
-      mae_corr = real'(mae_corr_acc) / real'(fw*fh*3);
-      $display("[%s] MAE(warped, original)       = %f", label, mae_warp);
-      $display("[%s] MAE(DUT-corrected, original) = %f", label, mae_corr);
-
-      overall_checks = overall_checks + 4;
-      if (mismatches == 0 && max_err <= 1) begin
-        $display("[%s] SELF-CHECK bit-exact-vs-golden : PASS", label);
-        overall_pass = overall_pass + 1;
-      end else begin
-        $display("[%s] SELF-CHECK bit-exact-vs-golden : FAIL", label);
-        overall_any_fail = 1;
-      end
-      if (mae_corr < 0.85 * mae_warp) begin
-        $display("[%s] SELF-CHECK correction-quality  : PASS", label);
-        overall_pass = overall_pass + 1;
-      end else begin
-        $display("[%s] SELF-CHECK correction-quality  : FAIL", label);
-        overall_any_fail = 1;
-      end
-      if (cap_tlast_err) begin
-        $display("[%s] SELF-CHECK tlast timing       : FAIL", label);
-        overall_any_fail = 1;
-      end else begin
-        $display("[%s] SELF-CHECK tlast timing       : PASS", label);
-        overall_pass = overall_pass + 1;
-      end
-      if (cap_tuser_err) begin
-        $display("[%s] SELF-CHECK tuser (start-of-frame) : FAIL", label);
-        overall_any_fail = 1;
-      end else begin
-        $display("[%s] SELF-CHECK tuser (start-of-frame) : PASS", label);
-        overall_pass = overall_pass + 1;
-      end
-    end
-  endtask
-
-  // ---- REAL fisheye/panoramic correction test (division model) ------------
-  // Synthesizes a genuinely fisheye/panoramic-DISTORTED image by applying
-  // the division model once (forward, kd1/kd2) to a flat source image via
-  // full_remap_ref, fits a correction (kc1/kc2) via
-  // fit_division_model_coeffs (a grid search, not a closed-form inverse --
-  // the division model isn't linear in its coefficients), applies that
-  // correction through the ACTUAL DUT, and checks both bit-exactness
-  // against the golden model and a genuine MAE improvement -- the exact
-  // same evidentiary standard the barrel/pincushion (radial) tests are
-  // held to, not merely "the hook was a no-op".
+  // used by task run_division_model_correction_test (tests/vision_system_tests.sv)
   longint dm_kdq1, dm_kdq2, dm_kcq1, dm_kcq2;
   real    mae_dm_warp, mae_dm_corr;
   longint mae_dm_warp_acc, mae_dm_corr_acc;
 
-  task automatic run_division_model_correction_test(
-    input string label, input int model_sel_val, input real kd1, input real kd2,
-    input int fw, input int fh,
-    input logic [7:0] fsrc_r[], input logic [7:0] fsrc_g[], input logic [7:0] fsrc_b[]
-  );
-    begin
-      $display("=== %s correction test (MODEL_SEL=%0d, %0dx%0d, kd1=%f kd2=%f) ===",
-                 label, model_sel_val, fw, fh, kd1, kd2);
-      dm_kdq1 = longint'($rtoi(kd1 * 65536.0));
-      dm_kdq2 = longint'($rtoi(kd2 * 65536.0));
-
-      cfg = make_remap_cfg(fw, fh, 32'h0000_8000, 32'h0000_8000, 32'h0001_0000);
-      full_remap_ref(cfg, model_sel_val, dm_kdq1, dm_kdq2, 0, 0, 0, 0,0,0, 0,0,0, 0,0,
-                      fsrc_r, fsrc_g, fsrc_b, warp_r, warp_g, warp_b);
-      ppm_write({work_dir, "/warped_", label, ".ppm"}, fw, fh, warp_r, warp_g, warp_b);
-
-      fit_division_model_coeffs(cfg, model_sel_val, warp_r, warp_g, warp_b,
-                                  fsrc_r, fsrc_g, fsrc_b, dm_kcq1, dm_kcq2);
-      $display("[%s] fitted correction coeffs (Q16.16): kc1=%0d kc2=%0d", label, dm_kcq1, dm_kcq2);
-
-      full_remap_ref(cfg, model_sel_val, dm_kcq1, dm_kcq2, 0, 0, 0, 0,0,0, 0,0,0, 0,0,
-                      warp_r, warp_g, warp_b, gold_r, gold_g, gold_b);
-
-      axil_write(REG_MODEL_SEL, model_sel_val);
-      axil_write(REG_INTERP_MODE, 0);
-      axil_write(REG_K1, dm_kcq1);
-      axil_write(REG_K2, dm_kcq2);
-      axil_write(REG_K3, 0);
-      axil_write(REG_P1, 0);
-      axil_write(REG_P2, 0);
-      axil_write(REG_CENTER_X, 32'h0000_8000);
-      axil_write(REG_CENTER_Y, 32'h0000_8000);
-      axil_write(REG_SCALE,    32'h0001_0000);
-      axil_write(REG_IMG_WIDTH,  fw);
-      axil_write(REG_IMG_HEIGHT, fh);
-
-      status_val = 32'hFFFF_FFFF;
-      i = 0;
-      while (i < 200 && status_val[2] !== 1'b0) begin
-        axil_read(REG_STATUS, status_val);
-        if (status_val[2] === 1'b0) i = 200;
-        else begin @(posedge clk); i = i + 1; end
-      end
-      if (status_val[2] !== 1'b0) begin
-        $display("ERROR [%s]: timed out waiting for recip_busy to clear", label);
-        $fatal;
-      end
-
-      fork
-        stream_frame_in(fw, fh, warp_r, warp_g, warp_b);
-        capture_frame_out(fw, fh);
-      join
-
-      ppm_write({work_dir, "/corrected_", label, ".ppm"}, fw, fh, cap_r, cap_g, cap_b);
-
-      max_err = 0; mismatches = 0;
-      for (i = 0; i < fw*fh; i = i + 1) begin
-        d = int'(cap_r[i]) - int'(gold_r[i]); if (d<0) d=-d; if (d>max_err) max_err=d; if (d>1) mismatches=mismatches+1;
-        d = int'(cap_g[i]) - int'(gold_g[i]); if (d<0) d=-d; if (d>max_err) max_err=d; if (d>1) mismatches=mismatches+1;
-        d = int'(cap_b[i]) - int'(gold_b[i]); if (d<0) d=-d; if (d>max_err) max_err=d; if (d>1) mismatches=mismatches+1;
-      end
-      mae_dm_warp_acc = 0; mae_dm_corr_acc = 0;
-      for (i = 0; i < fw*fh; i = i + 1) begin
-        d = int'(warp_r[i]) - int'(fsrc_r[i]); if (d<0) d=-d; mae_dm_warp_acc += d;
-        d = int'(warp_g[i]) - int'(fsrc_g[i]); if (d<0) d=-d; mae_dm_warp_acc += d;
-        d = int'(warp_b[i]) - int'(fsrc_b[i]); if (d<0) d=-d; mae_dm_warp_acc += d;
-        d = int'(cap_r[i])  - int'(fsrc_r[i]); if (d<0) d=-d; mae_dm_corr_acc += d;
-        d = int'(cap_g[i])  - int'(fsrc_g[i]); if (d<0) d=-d; mae_dm_corr_acc += d;
-        d = int'(cap_b[i])  - int'(fsrc_b[i]); if (d<0) d=-d; mae_dm_corr_acc += d;
-      end
-      mae_dm_warp = real'(mae_dm_warp_acc) / real'(fw*fh*3);
-      mae_dm_corr = real'(mae_dm_corr_acc) / real'(fw*fh*3);
-      $display("[%s] DUT vs golden model: max_err=%0d  channel-mismatches(>1)=%0d/%0d",
-                label, max_err, mismatches, fw*fh*3);
-      $display("[%s] MAE(warped, original)       = %f", label, mae_dm_warp);
-      $display("[%s] MAE(DUT-corrected, original) = %f", label, mae_dm_corr);
-
-      overall_checks = overall_checks + 2;
-      if (mismatches == 0 && max_err <= 1) begin
-        $display("[%s] SELF-CHECK bit-exact-vs-golden  : PASS", label);
-        overall_pass = overall_pass + 1;
-      end else begin
-        $display("[%s] SELF-CHECK bit-exact-vs-golden  : FAIL", label);
-        overall_any_fail = 1;
-      end
-      if (mae_dm_corr < 0.85 * mae_dm_warp) begin
-        $display("[%s] SELF-CHECK correction-quality   : PASS", label);
-        overall_pass = overall_pass + 1;
-      end else begin
-        $display("[%s] SELF-CHECK correction-quality   : FAIL", label);
-        overall_any_fail = 1;
-      end
-
-      axil_write(REG_MODEL_SEL, 0);
-    end
-  endtask
-
-  // ---- REAL perspective correction test (exact homography inverse) --------
-  // Synthesizes a genuinely keystone-distorted image with a KNOWN forward
-  // homography, computes its EXACT inverse in closed form (invert_
-  // homography -- unlike the division model, a homography's correction
-  // is not approximate), applies that correction through the DUT, and
-  // checks both bit-exactness and a genuine MAE improvement.
+  // used by task run_perspective_correction_test (tests/vision_system_tests.sv)
   real hf11,hf12,hf13, hf21,hf22,hf23, hf31,hf32;
   real hc11,hc12,hc13, hc21,hc22,hc23, hc31,hc32;
   longint hcq11,hcq12,hcq13, hcq21,hcq22,hcq23, hcq31,hcq32;
 
-  task automatic run_perspective_correction_test(
-    input string label, input int fw, input int fh,
-    input logic [7:0] fsrc_r[], input logic [7:0] fsrc_g[], input logic [7:0] fsrc_b[]
-  );
-    begin
-      $display("=== perspective correction test (%0dx%0d) ===", fw, fh);
-      // Mild keystone: a small x/y-dependent foreshortening (h31,h32),
-      // operating directly on pixel coordinates per this design's
-      // convention (see distortion_model_pkg.sv). These coefficients
-      // must be scaled to the actual frame width: h31/h32 act directly
-      // on pixel coordinates, so a coefficient chosen for a much smaller
-      // test image can put the CORRECTED homography's denominator
-      // zero-crossing (a genuine mathematical singularity, not an RTL
-      // bug) inside a much larger frame. Found exactly this way when
-      // this testbench was scaled up to 720x480: the previous
-      // hf31=0.0016 produces a corrected h31=~-0.0016, whose "1+h31*x"
-      // denominator hits exactly 0 at x=625 -- comfortably inside a
-      // 720-wide frame (and invisible in the smaller frame these
-      // coefficients were originally tuned for). These values keep the
-      // zero-crossing far outside any frame size this project's
-      // testbenches use (~5000, vs. a maximum frame dimension of 720).
-      hf11=1.0; hf12=0.0;    hf13=0.0;
-      hf21=0.0; hf22=1.0;    hf23=0.0;
-      // Scaled to the frame: 0.144/W and -0.06/H give 0.0002/-0.000125 at
-      // 720x480 (the values found safe there) and keep the corrected
-      // homography's zero-crossing ~7x beyond the frame at ANY size.
-      hf31 = 0.144 / real'(fw); hf32 = -0.06 / real'(fh);
-
-      invert_homography(hf11,hf12,hf13, hf21,hf22,hf23, hf31,hf32,
-                          hc11,hc12,hc13, hc21,hc22,hc23, hc31,hc32);
-      $display("[%s] forward H31=%f H32=%f -> correcting H31=%f H32=%f", label, hf31, hf32, hc31, hc32);
-
-      hcq11 = longint'($rtoi(hc11*65536.0)); hcq12 = longint'($rtoi(hc12*65536.0)); hcq13 = longint'($rtoi(hc13*65536.0));
-      hcq21 = longint'($rtoi(hc21*65536.0)); hcq22 = longint'($rtoi(hc22*65536.0)); hcq23 = longint'($rtoi(hc23*65536.0));
-      hcq31 = longint'($rtoi(hc31*65536.0)); hcq32 = longint'($rtoi(hc32*65536.0));
-
-      cfg = make_remap_cfg(fw, fh, 32'h0000_8000, 32'h0000_8000, 32'h0001_0000);
-      full_remap_ref(cfg, 3 /*MODEL_PERSPECTIVE*/, 0,0,0,0,0,
-                      longint'($rtoi(hf11*65536.0)), longint'($rtoi(hf12*65536.0)), longint'($rtoi(hf13*65536.0)),
-                      longint'($rtoi(hf21*65536.0)), longint'($rtoi(hf22*65536.0)), longint'($rtoi(hf23*65536.0)),
-                      longint'($rtoi(hf31*65536.0)), longint'($rtoi(hf32*65536.0)),
-                      fsrc_r, fsrc_g, fsrc_b, warp_r, warp_g, warp_b);
-      ppm_write({work_dir, "/warped_", label, ".ppm"}, fw, fh, warp_r, warp_g, warp_b);
-
-      full_remap_ref(cfg, 3, 0,0,0,0,0, hcq11,hcq12,hcq13, hcq21,hcq22,hcq23, hcq31,hcq32,
-                      warp_r, warp_g, warp_b, gold_r, gold_g, gold_b);
-
-      axil_write(REG_MODEL_SEL, 3);
-      axil_write(REG_INTERP_MODE, 0);
-      axil_write(REG_H11, hcq11); axil_write(REG_H12, hcq12); axil_write(REG_H13, hcq13);
-      axil_write(REG_H21, hcq21); axil_write(REG_H22, hcq22); axil_write(REG_H23, hcq23);
-      axil_write(REG_H31, hcq31); axil_write(REG_H32, hcq32);
-      axil_write(REG_CENTER_X, 32'h0000_8000);
-      axil_write(REG_CENTER_Y, 32'h0000_8000);
-      axil_write(REG_SCALE,    32'h0001_0000);
-      axil_write(REG_IMG_WIDTH,  fw);
-      axil_write(REG_IMG_HEIGHT, fh);
-
-      status_val = 32'hFFFF_FFFF;
-      i = 0;
-      while (i < 200 && status_val[2] !== 1'b0) begin
-        axil_read(REG_STATUS, status_val);
-        if (status_val[2] === 1'b0) i = 200;
-        else begin @(posedge clk); i = i + 1; end
-      end
-      if (status_val[2] !== 1'b0) begin
-        $display("ERROR [%s]: timed out waiting for recip_busy to clear", label);
-        $fatal;
-      end
-
-      fork
-        stream_frame_in(fw, fh, warp_r, warp_g, warp_b);
-        capture_frame_out(fw, fh);
-      join
-
-      ppm_write({work_dir, "/corrected_", label, ".ppm"}, fw, fh, cap_r, cap_g, cap_b);
-
-      max_err = 0; mismatches = 0;
-      for (i = 0; i < fw*fh; i = i + 1) begin
-        d = int'(cap_r[i]) - int'(gold_r[i]); if (d<0) d=-d; if (d>max_err) max_err=d; if (d>1) mismatches=mismatches+1;
-        d = int'(cap_g[i]) - int'(gold_g[i]); if (d<0) d=-d; if (d>max_err) max_err=d; if (d>1) mismatches=mismatches+1;
-        d = int'(cap_b[i]) - int'(gold_b[i]); if (d<0) d=-d; if (d>max_err) max_err=d; if (d>1) mismatches=mismatches+1;
-      end
-      mae_dm_warp_acc = 0; mae_dm_corr_acc = 0;
-      for (i = 0; i < fw*fh; i = i + 1) begin
-        d = int'(warp_r[i]) - int'(fsrc_r[i]); if (d<0) d=-d; mae_dm_warp_acc += d;
-        d = int'(warp_g[i]) - int'(fsrc_g[i]); if (d<0) d=-d; mae_dm_warp_acc += d;
-        d = int'(warp_b[i]) - int'(fsrc_b[i]); if (d<0) d=-d; mae_dm_warp_acc += d;
-        d = int'(cap_r[i])  - int'(fsrc_r[i]); if (d<0) d=-d; mae_dm_corr_acc += d;
-        d = int'(cap_g[i])  - int'(fsrc_g[i]); if (d<0) d=-d; mae_dm_corr_acc += d;
-        d = int'(cap_b[i])  - int'(fsrc_b[i]); if (d<0) d=-d; mae_dm_corr_acc += d;
-      end
-      mae_dm_warp = real'(mae_dm_warp_acc) / real'(fw*fh*3);
-      mae_dm_corr = real'(mae_dm_corr_acc) / real'(fw*fh*3);
-      $display("[%s] DUT vs golden model: max_err=%0d  channel-mismatches(>1)=%0d/%0d",
-                label, max_err, mismatches, fw*fh*3);
-      $display("[%s] MAE(warped, original)       = %f", label, mae_dm_warp);
-      $display("[%s] MAE(DUT-corrected, original) = %f", label, mae_dm_corr);
-
-      overall_checks = overall_checks + 2;
-      if (mismatches == 0 && max_err <= 1) begin
-        $display("[%s] SELF-CHECK bit-exact-vs-golden  : PASS", label);
-        overall_pass = overall_pass + 1;
-      end else begin
-        $display("[%s] SELF-CHECK bit-exact-vs-golden  : FAIL", label);
-        overall_any_fail = 1;
-      end
-      if (mae_dm_corr < 0.85 * mae_dm_warp) begin
-        $display("[%s] SELF-CHECK correction-quality   : PASS", label);
-        overall_pass = overall_pass + 1;
-      end else begin
-        $display("[%s] SELF-CHECK correction-quality   : FAIL", label);
-        overall_any_fail = 1;
-      end
-
-      axil_write(REG_MODEL_SEL, 0);
-      axil_write(REG_H11, 32'h0001_0000); axil_write(REG_H12, 0); axil_write(REG_H13, 0);
-      axil_write(REG_H21, 0); axil_write(REG_H22, 32'h0001_0000); axil_write(REG_H23, 0);
-      axil_write(REG_H31, 0); axil_write(REG_H32, 0);
-    end
-  endtask
-
-  // ---- one distortion x interp-mode group: 3 CONSECUTIVE frames ----------
-  // (square, portrait, landscape -- no reset between them), continuing to
-  // exercise the back-to-back-frame path (bug #4) with image DIMENSIONS
-  // now changing between consecutive frames too, on top of size being
-  // read from each test image rather than hardcoded.
-  task automatic run_group(input string dist_label, input real kd1, input real kd2, input real kd3,
-                            input int interp_mode_val, input string mode_label);
-    begin
-      $display("=== group: %s / %s  (kd1=%f, kd2=%f, kd3=%f) ===", dist_label, mode_label, kd1, kd2, kd3);
-      kd1q = longint'($rtoi(kd1*65536.0));
-      kd2q = longint'($rtoi(kd2*65536.0));
-      kd3q = longint'($rtoi(kd3*65536.0));
-      fit_correction_coeffs(kd1, kd2, kd3, kc1, kc2, kc3);
-      kc1q = longint'($rtoi(kc1*65536.0));
-      kc2q = longint'($rtoi(kc2*65536.0));
-      kc3q = longint'($rtoi(kc3*65536.0));
-      $display("correction coeffs (Q16.16): k1=%0d k2=%0d k3=%0d", kc1q, kc2q, kc3q);
-
-      axil_write(REG_INTERP_MODE, interp_mode_val);
-      axil_write(REG_K1, kc1q);
-      axil_write(REG_K2, kc2q);
-      axil_write(REG_K3, kc3q);
-      axil_write(REG_CENTER_X, 32'h0000_8000);
-      axil_write(REG_CENTER_Y, 32'h0000_8000);
-      axil_write(REG_SCALE,    32'h0001_0000);
-
-      run_one_frame({dist_label, "_", mode_label, "_square"},    sq_w, sq_h, sq_r, sq_g, sq_b, interp_mode_val);
-      run_one_frame({dist_label, "_", mode_label, "_portrait"},  pt_w, pt_h, pt_r, pt_g, pt_b, interp_mode_val);
-      run_one_frame({dist_label, "_", mode_label, "_landscape"}, ls_w, ls_h, ls_r, ls_g, ls_b, interp_mode_val);
-    end
-  endtask
+  // test tasks: tests/vision_system_tests.sv
+  `include "vision_system_tests.sv"
 
   // ---- main sequence ------------------------------------------------------
   int ok;
@@ -684,7 +233,6 @@ module tb_vision_system;
     $display("ERROR: global timeout -- simulation did not finish");
     $fatal;
   end
-
 
   // Optional waveform dump: compile with -DDUMP_VCD (run.sh does this when
   // VCD=1). Only the first VCD_WINDOW_NS nanoseconds are recorded -- a

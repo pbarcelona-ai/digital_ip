@@ -10,6 +10,7 @@
 //   Plusargs: +IMG=<file.ppm> sharpen a PPM P6 image, +SHARP=<0..256>,
 //   +OUTDIR=<dir>, +NO_PPM, +VCD=<file>, +NO_VCD, +TIMEOUT_MS=<n>.
 //   Compile with -DTB_MAX_W/-DTB_MAX_H for images larger than 48x40.
+//   The test tasks are in tests/sharpen_cas_tests.sv (`included).
 // Date: 2026-09-26
 
 `timescale 1ns/1ps
@@ -101,11 +102,8 @@ module tb_sharpen_cas;
   function automatic int imin(input int a, input int b); return (a < b) ? a : b; endfunction
   function automatic int imax(input int a, input int b); return (a > b) ? a : b; endfunction
 
-  task automatic ip_configure();
-    axil_write(12'h040, sharp);
-    axil_check(12'h040, sharp);
-    ctrl_bits = {30'd0, bypass, 1'b0};             // BYPASS, written together with ENABLE
-  endtask
+  // test tasks: tests/sharpen_cas_tests.sv
+  `include "sharpen_cas_tests.sv"
 
   initial begin
     tb_init("sharpen_cas");

@@ -8,6 +8,7 @@
 //   every clock must all come out in order. Vectoring mode - random points
 //   in all quadrants are compared with sqrt and atan2. Prints TEST PASSED
 //   on success.
+//   The test tasks are in tests/cordic_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module cordic_tb;
@@ -54,9 +55,8 @@ module cordic_tb;
     if (am > 500.0 && da > 6.0 + 65536.0 * 4.0 / (2.0 * PI * am)) begin errors++; $display("ERROR angle %0d exp %f (|v|=%f)", zv, ang, am); end
     qv++;
   end
-  task automatic drive(input int x, input int y, input int z);
-    @(posedge clk); #1 v_i = 1; xi = x; yi = y; zi = z;
-  endtask
+  // test tasks: tests/cordic_tests.sv
+  `include "cordic_tests.sv"
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("cordic_tb.vcd"); $dumpvars(0, cordic_tb); end
     repeat (4) @(posedge clk); rst_n = 1; repeat (2) @(posedge clk);

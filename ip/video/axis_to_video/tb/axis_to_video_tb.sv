@@ -13,14 +13,12 @@
 //       function, so frame_id() avoids it)
 //     - test pattern: eight colour bars, input discarded.
 //   Prints TEST PASSED on success.
+//   The test tasks are in tests/axis_to_video_tests.sv (`included).
 // Date: 2026-10-01
 `timescale 1ns/1ps
 module axis_to_video_tb;
   logic clk = 0, rst_n = 0; always #5 clk = ~clk;
   int errors = 0;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; if (errors < 30) $display("ERROR @%0t: %s", $time, m); end
-  endtask
 
   localparam int HA = 32, VA = 8;
   logic tpg, src_rdy;
@@ -41,18 +39,8 @@ module axis_to_video_tb;
     return {8'(f * 31 + 1), 8'(py), 8'(px)};
   endfunction
 
-  // Source: frames f0 .. f0+n-1; optional stall of stall_cycles after pixel stall_at of frame stall_f
+  // used by task source (tests/axis_to_video_tests.sv)
   int gap_pct = 20, stall_f = -1, stall_at = 0, stall_cycles = 0;
-  task automatic source(input int f0, input int n);
-    for (int f = f0; f < f0 + n; f++)
-      for (int i = 0; i < HA * VA; i++) begin
-        if (f == stall_f && i == stall_at) begin sv <= 0; repeat (stall_cycles) @(posedge clk); end
-        sv <= 0; while ($urandom_range(99) < gap_pct) @(posedge clk);
-        sd <= pix(i % HA, i / HA, f); su <= (i == 0); sl <= (i % HA == HA - 1); sv <= 1;
-        @(posedge clk); while (!sr) @(posedge clk);
-      end
-    sv <= 0;
-  endtask
 
   // Sink: capture output frames (output is one clock after the timing)
   logic [23:0] cap [VA][HA]; int cx, cy, nframes = 0, nunder = 0; logic sof_q;
@@ -65,9 +53,8 @@ module axis_to_video_tb;
       cx++; if (cx == HA) begin cx = 0; cy++; if (cy == VA) nframes++; end
     end
   end
-  task automatic wait_frame();
-    int n; n = nframes; while (nframes == n) @(posedge clk);
-  endtask
+  // test tasks: tests/axis_to_video_tests.sv
+  `include "axis_to_video_tests.sv"
   // Which source frame (if any) is in cap, and is it exact
   function automatic int frame_id();
     int f, ok; logic [23:0] p0, e; logic [7:0] tag;

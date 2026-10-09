@@ -8,8 +8,10 @@
 #     <out>.const.hex  one 34-bit tagged word per line (constant pool)
 #     <out>.lst        disassembly with source lines
 #     <out>_syms.svh   localparams for globals (G_<name>) for testbenches
-#     <out>.flash.bin  boot image for SPI NOR flash (py_boot format below)
-#     <out>.flash.hex  the same image, one byte per line
+#     <out>.flash.bin  boot image for SPI NOR flash (py_boot format below),
+#                      plus the string table at STR_BASE when strings are used
+#     <out>.flash.hex  the same, one byte per line (@8000 before the table)
+#     <out>.strings.txt  the string table: slot, handle, text
 #
 #   Flash image (little endian): "PYC1", u16 code length, u16 constant
 #   count, u32 sum of all payload bytes, then the code bytes, then each
@@ -20,6 +22,9 @@
 #     in conditions, one comparison per expression (< <= > >= == !=),
 #     mem32[addr] loads/stores (also mem32[a] op= v), name op= expr,
 #     if/elif/else, while/break/continue, pass, global, import (ignored).
+#     "from <name> import *" where <name>.py sits next to the source file
+#     inlines that file there (once), so firmware can be split into modules
+#     that share one global namespace; errors name the original file / line.
 #     UPPER_CASE module-level names bound once to a constant expression
 #     (or const(expr)) are folded at compile time.
 #     def f(a, b): ... return x   functions with positional parameters,
@@ -28,9 +33,21 @@
 #     A function passed to irq_handler() is an interrupt handler instead:
 #     no parameters, no return value, cannot be called directly.
 #   Builtins: irq_handler(fn), irq_enable(), irq_disable(), halt(value).
+#   Strings: a string literal (in any expression, e.g. puts("text")) is a
+#     small int handle; the text goes to a string table in flash at
+#     STR_BASE (0x8000), outside the boot image, for the firmware to read at
+#     run time through the flash controller. The table has 512 slots of 64
+#     bytes (0x8000-0xFFFF): [0] length (0..62), [1] 1 if the string
+#     continues in the next slot, [2..] the bytes. A handle is the first slot
+#     number; slots 128..255 are emitted as h - 256 so they fit LOAD_SMALL,
+#     slots 256..511 as h (a constant). Firmware decodes a handle with
+#     slot = h if h >= 256 else h & 255.
+#     strings("a", "b", ...) returns the handle of a block of consecutive
+#     one-slot strings (each <= 62 bytes), so handle + i selects entry i (a
+#     block never straddles slot 256, so the decoding holds for handle + i).
+#     Identical strings share slots.
 #   Not in the hardware fast path (rejected): * / % ** on variables,
-#   default/keyword arguments, closures, strings, lists, dicts, floats,
-#   classes.
+#   default/keyword arguments, closures, lists, dicts, floats, classes.
 #
 # Usage: pyc.py prog.py -o build/prog
 # Date: 2026-10-01
@@ -65,12 +82,42 @@ FOLD = {ast.Add: lambda a, b: a + b, ast.Sub: lambda a, b: a - b, ast.Mult: lamb
         ast.RShift: lambda a, b: a >> b, ast.Pow: lambda a, b: a ** b}
 
 SMALL_MIN, SMALL_MAX = -(1 << 32), (1 << 32) - 1     # 33-bit signed small int
+STR_BASE, STR_SLOTS, STR_SLOT_BYTES = 0x8000, 512, 64  # string table in flash (up to 0xFFFF)
+STR_CHUNK = STR_SLOT_BYTES - 2
 N_LOCALS, N_GLOBALS, N_CONSTS, CODE_SIZE = 16, 32, 256, 1 << 13
 
 
 class CompileError(Exception):
     def __init__(self, node, msg):
-        super().__init__(f"line {getattr(node, 'lineno', '?')}: {msg}")
+        self.lineno, self.msg = getattr(node, 'lineno', None), msg
+        super().__init__(f"line {self.lineno or '?'}: {msg}")
+
+
+def handle(slot):
+    """String handle of a slot: 0..127 as is, 128..255 as slot - 256 (LOAD_SMALL), 256.. as is."""
+    return slot - 256 if 128 <= slot < 256 else slot
+
+
+def inline_imports(path, seen=None):
+    """Source of path with every "from <name> import *" of a sibling <name>.py replaced by that file
+    (each file once), and (file, line) of every line of the result."""
+    import os
+    import re
+    seen = set() if seen is None else seen
+    seen.add(os.path.abspath(path))
+    lines, where = [], []
+    for k, line in enumerate(open(path).read().splitlines(), 1):
+        m = re.match(r"\s*from\s+(\w+)\s+import\s+\*\s*(#.*)?$", line)
+        sub = os.path.join(os.path.dirname(os.path.abspath(path)), m.group(1) + ".py") if m else None
+        if sub and os.path.isfile(sub):
+            if os.path.abspath(sub) not in seen:
+                t, w = inline_imports(sub, seen)
+                lines += t
+                where += w
+            continue
+        lines.append(line)
+        where.append((path, k))
+    return lines, where
 
 
 class Compiler:
@@ -85,6 +132,8 @@ class Compiler:
         self.funcs, self.handlers = {}, set()
         self.in_handler = False
         self.nlabel = 0
+        self.str_slots = []        # (bytes, continues, text) per 64-byte slot
+        self.str_index = {}        # text -> first slot
 
     # ---------------- emission ----------------
     def label(self):
@@ -107,6 +156,49 @@ class Compiler:
                 self.fixups.append((len(self.code), arg))
                 arg = 0
             self.code += bytes([arg & 0xFF, (arg >> 8) & 0xFF])
+
+    # ---------------- strings (flash string table) ----------------
+    def string_handle(self, text, node, single=False):
+        data = text.encode('latin-1', errors='replace')
+        if text in self.str_index:
+            first = self.str_index[text]
+            if single and self.str_slots[first][1]:
+                raise CompileError(node, "strings() entries must fit one slot (62 bytes)")
+            return handle(first)
+        chunks = [data[i:i + STR_CHUNK] for i in range(0, len(data), STR_CHUNK)] or [b'']
+        if single and len(chunks) > 1:
+            raise CompileError(node, f"strings() entry is {len(data)} bytes, at most {STR_CHUNK}")
+        if len(self.str_slots) + len(chunks) > STR_SLOTS:
+            raise CompileError(node, f"string table full ({STR_SLOTS} slots of {STR_CHUNK} bytes)")
+        first = len(self.str_slots)
+        for k, c in enumerate(chunks):
+            self.str_slots.append((c, k < len(chunks) - 1, text if k == 0 else ''))
+        self.str_index[text] = first
+        return handle(first)
+
+    def string_block(self, args, node):
+        """strings("a", "b", ...): consecutive one-slot entries; the handle of the first."""
+        if not args or not all(isinstance(a, ast.Constant) and isinstance(a.value, str) for a in args):
+            raise CompileError(node, "strings() takes string literals")
+        if len(self.str_slots) < 256 < len(self.str_slots) + len(args):
+            while len(self.str_slots) < 256:               # keep handle + i decodable: start at slot 256
+                self.str_slots.append((b'', False, ''))
+        first = len(self.str_slots)
+        for a in args:
+            data = a.value.encode('latin-1', errors='replace')
+            if len(data) > STR_CHUNK:
+                raise CompileError(a, f"strings() entry is {len(data)} bytes, at most {STR_CHUNK}")
+            if len(self.str_slots) == STR_SLOTS:
+                raise CompileError(node, "string table full")
+            self.str_slots.append((data, False, a.value))
+        return handle(first)
+
+    def string_table(self):
+        out = bytearray()
+        for data, cont, _ in self.str_slots:
+            slot = bytes([len(data), 1 if cont else 0]) + data
+            out += slot + b'\0' * (STR_SLOT_BYTES - len(slot))
+        return bytes(out)
 
     def load_int(self, v, node):
         if isinstance(v, bool):
@@ -171,6 +263,10 @@ class Compiler:
         return isinstance(e, ast.Subscript) and isinstance(e.value, ast.Name) and e.value.id == 'mem32'
 
     def expr(self, e):
+        if isinstance(e, ast.Constant) and isinstance(e.value, str):
+            return self.load_int(self.string_handle(e.value, e), e)
+        if isinstance(e, ast.Call) and getattr(e.func, 'id', None) == 'strings':
+            return self.load_int(self.string_block(e.args, e), e)
         v = self.const_value(e)
         if v is not None or (isinstance(e, ast.Constant) and e.value is None):
             if v is None:
@@ -480,12 +576,15 @@ def main():
     ap.add_argument('src')
     ap.add_argument('-o', '--out', required=True, help='output path prefix')
     args = ap.parse_args()
-    text = open(args.src).read()
+    lines, where = inline_imports(args.src)
+    text = "\n".join(lines) + "\n"
     c = Compiler(text)
     try:
         c.compile(ast.parse(text, args.src))
-    except CompileError as e:
-        sys.exit(f"{args.src}: {e}")
+    except (CompileError, SyntaxError) as e:
+        n = e.lineno
+        f, k = where[n - 1] if n and 0 < n <= len(where) else (args.src, n or '?')
+        sys.exit(f"{f}:{k}: {getattr(e, 'msg', e)}")
     with open(args.out + '.code.hex', 'w') as f:
         f.writelines(f"{b:02x}\n" for b in c.code)
     with open(args.out + '.const.hex', 'w') as f:
@@ -499,12 +598,25 @@ def main():
             f.write(f"localparam int G_{k} = {v};\n")
     payload = bytes(c.code) + b''.join(w.to_bytes(5, 'little') for w in c.consts)
     image = b'PYC1' + struct.pack('<HHI', len(c.code), len(c.consts), sum(payload) & 0xFFFFFFFF) + payload
+    table = c.string_table()
+    if table and len(image) > STR_BASE:
+        sys.exit(f"{args.src}: boot image ({len(image)} bytes) overlaps the string table at 0x{STR_BASE:X}")
     with open(args.out + '.flash.bin', 'wb') as f:
         f.write(image)
+        if table:
+            f.write(b'\xff' * (STR_BASE - len(image)) + table)
     with open(args.out + '.flash.hex', 'w') as f:
         f.writelines(f"{b:02x}\n" for b in image)
+        if table:
+            f.write(f"@{STR_BASE:x}\n")
+            f.writelines(f"{b:02x}\n" for b in table)
+    with open(args.out + '.strings.txt', 'w') as f:
+        for k, (data, cont, text) in enumerate(c.str_slots):
+            if text or not cont:
+                h = handle(k)
+                f.write(f"slot {k:3d}  handle {h:4d}  {text!r}\n" if text else f"slot {k:3d}  (continued)\n")
     print(f"{args.src}: {len(c.code)} bytes, {len(c.consts)} consts, {len(c.globals_)} globals, "
-          f"{len(image)} byte flash image")
+          f"{len(image)} byte flash image, {len(c.str_slots)} string slots")
 
 
 if __name__ == '__main__':

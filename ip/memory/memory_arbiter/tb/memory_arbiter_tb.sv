@@ -9,6 +9,7 @@
 //   issuing client, round-robin must be fair under full load, fixed
 //   priority must always favour client 0, and an unsolicited response must
 //   set err_o. Prints TEST PASSED on success.
+//   The test tasks are in tests/memory_arbiter_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module memory_arbiter_tb;
@@ -25,9 +26,8 @@ module memory_arbiter_tb;
     (.clk, .rst_n, .c_req_i(req), .c_we_i(we), .c_addr_i(addr), .c_wdata_i(wdat), .c_ready_o(rdy_p), .c_rvalid_o(rvl_p), .c_rdata_o(rdat_p),
      .m_req_o(mreq_p), .m_we_o(mwe_p), .m_addr_o(maddr_p), .m_wdata_o(mwd_p), .m_ready_i(1'b1), .m_rvalid_i(1'b0), .m_rdata_i('0), .clr_err_i(1'b0), .err_o(err_p));
   int errors = 0;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
-  endtask
+  // test tasks: tests/memory_arbiter_tests.sv
+  `include "memory_arbiter_tests.sv"
   // memory model with 1-4 cycle read latency, in-order responses
   logic [DW-1:0] mem [0:255]; logic [DW-1:0] rq[$]; int dq[$]; int cyc = 0;
   always @(posedge clk) begin

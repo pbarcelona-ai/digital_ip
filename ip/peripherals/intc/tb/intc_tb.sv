@@ -5,6 +5,7 @@
 //   Tests level sources, edge sources with write-1-to-clear, active-low
 //   polarity, enable masking, software interrupt set and lowest-index
 //   priority vector. Prints TEST PASSED on success.
+//   The test tasks are in tests/intc_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module intc_tb;
@@ -21,10 +22,8 @@ module intc_tb;
 .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready, .s_axil_wdata, .s_axil_wstrb, .s_axil_wvalid, .s_axil_wready, .s_axil_bresp, .s_axil_bvalid, .s_axil_bready, .s_axil_araddr, .s_axil_arvalid, .s_axil_arready, .s_axil_rdata, .s_axil_rresp, .s_axil_rvalid, .s_axil_rready,
     .irq_i, .irq_o(irq));
   int errors = 0; logic [31:0] rd;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
-  endtask
-  task automatic settle(); repeat (6) @(posedge aclk); endtask
+  // test tasks: tests/intc_tests.sv
+  `include "intc_tests.sv"
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("intc_tb.vcd"); $dumpvars(0, intc_tb); end
     repeat (4) @(posedge aclk); aresetn = 1; repeat (2) @(posedge aclk);

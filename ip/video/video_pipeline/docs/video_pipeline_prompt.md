@@ -105,7 +105,9 @@ Reject illegal values at elaboration with `$error` inside a generate block.
 | `csitx_lane_valid_o` | output | [CSITX_LANES-1:0] | MIPI transmit D-PHYs (PPI style, see mipi_tx_engine), both on tx_byte_clk | `VP_CSI2_TX` | - |
 | `csitx_hs_req_o` | output | 1 | MIPI transmit D-PHYs (PPI style, see mipi_tx_engine), both on tx_byte_clk | `VP_CSI2_TX` | - |
 | `csitx_tx_ready_i` | input | 1 | MIPI transmit D-PHYs (PPI style, see mipi_tx_engine), both on tx_byte_clk | `VP_CSI2_TX` | - |
-| `stats_done_o` | output | 1 | external block (e.g. vision_system) and back; tuser = SOF, tlast = EOL | - | pulse: new statistics available |
+| `eof_in_o` | output | 1 | stream stage, VTG v active height) | - | - |
+| `eof_out_o` | output | 1 | stream stage, VTG v active height) | - | - |
+| `stats_done_o` | output | 1 | stream stage, VTG v active height) | - | pulse: new statistics available |
 
 Back-pressure on every stream: honour tready, never drop data unless section 6 says so; valid must not depend combinationally on ready.
 
@@ -127,6 +129,9 @@ D-PHY -> csi2_rx -> axis_async_bridge -> csi2_raw_unpack -> isp_blc_wb
                                                  -> csi2_tx  -> MIPI CSI-2 (processor)
 vid_timing_gen drives axis_to_video (genlock to the camera) and hdmi_tx;
 isp_stats taps the linear RGB after the CCM for AE / AWB software.
+eof_in_o / eof_out_o pulse at the end of every frame leaving
+csi2_raw_unpack (first stage) / entering axis_to_video (last stage),
+e.g. for a frame counter.
 
 Every function can be bypassed (BYPASS register, applied at the next
 frame start): black level, white balance, defect correction, demosaic
@@ -261,6 +266,7 @@ BUILD_CFG must report the configuration. +quick runs scenario 8 only.
 plus the status registers (CSI frames, ECC / CRC counters, defects
 corrected, statistics against the model, lock). Prints TEST PASSED on
 success.
+The test tasks are in tests/video_pipeline_tests.sv (`included).
 ```
 
 Also: an independent reference model (not a copy of the RTL); random input gaps and output back-pressure on every stream; register readback; edge cases; a mutation check (break one rule, show the testbench fails).

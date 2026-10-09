@@ -5,6 +5,7 @@
 //   running increment, tick gating, clear, load, coherent capture (value
 //   equals the count at the capture clock even while counting) and wrap
 //   pulse on a small counter. Prints TEST PASSED on success.
+//   The test tasks are in tests/timestamp_counter_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module timestamp_counter_tb;
@@ -15,9 +16,8 @@ module timestamp_counter_tb;
   timestamp_counter #(.WIDTH(4)) d4 (.clk, .rst_n, .tick_i(1'b1), .clear_i(1'b0), .load_i(1'b0), .load_val_i(4'd0), .capture_i(1'b0), .count_o(c4), .capture_o(cv4), .cap_valid_o(cvv4), .wrap_o(wr4));
   always @(posedge clk) if (wr4) wraps++;
   int errors = 0; logic [63:0] snap;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
-  endtask
+  // test tasks: tests/timestamp_counter_tests.sv
+  `include "timestamp_counter_tests.sv"
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("timestamp_counter_tb.vcd"); $dumpvars(0, timestamp_counter_tb); end
     repeat (3) @(posedge clk); rst_n = 1; repeat (10) @(posedge clk); #1; check(cnt == 10 || cnt == 11, $sformatf("count %0d", cnt));

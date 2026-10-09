@@ -7,6 +7,7 @@
 //   crossing 4 KB boundaries with random memory and stream stalls,
 //   followed by a simultaneous MM2S to S2MM loopback copy. Prints TEST
 //   PASSED on success.
+//   The test tasks are in tests/axis_dma_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module axis_dma_tb;
@@ -51,15 +52,10 @@ module axis_dma_tb;
   assign m_tready = loop ? s_tready : m_rnd;
 
   int errors = 0; logic [31:0] rd;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
-  endtask
   logic [31:0] cap[$]; bit caplast[$];
   always @(posedge aclk) if (!loop && m_tvalid && m_tready) begin cap.push_back(m_tdata); caplast.push_back(m_tlast); end
-  task automatic wait_done(input int bit_done);
-    do bfm.read(8'h14, rd); while (rd[bit_done] == 0);
-    bfm.write(8'h14, 32'hF00);
-  endtask
+  // test tasks: tests/axis_dma_tests.sv
+  `include "axis_dma_tests.sv"
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("axis_dma_tb.vcd"); $dumpvars(0, axis_dma_tb); end
     tb_tvalid = 0; tb_tdata = 0; tb_tlast = 0;

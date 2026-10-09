@@ -380,6 +380,13 @@ while flash_count < 4 and t < TMO:
 if flash_word != 0x31435950:                   # "PYC1"
     errors += 1
 
+# 10b. Core logic reset (SYSCTL CORE_RESET): held after reset, released by writing 1
+if mem32[SYSCTL + 0x10] != 0:
+    errors += 1
+mem32[SYSCTL + 0x10] = 1
+if mem32[SYSCTL + 0x10] != 1:
+    errors += 1
+
 # 11. Watchdog: kicked from the pre-timeout interrupt three times, then left to expire
 stage = 11
 mem32[WDT + W_PRESCALE] = 9                    # one tick per 10 clocks

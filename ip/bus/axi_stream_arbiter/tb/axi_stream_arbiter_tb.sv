@@ -7,6 +7,7 @@
 //   content are preserved, tid identifies the source, round-robin is fair
 //   under saturation, fixed priority always favours input 0, and the hog
 //   timeout breaks up an endless packet. Prints TEST PASSED on success.
+//   The test tasks are in tests/axi_stream_arbiter_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module axi_stream_arbiter_tb;
@@ -49,19 +50,8 @@ module axi_stream_arbiter_tb;
       if (ml) begin cur_owner = -1; pkts_out[mid]++; end
     end
   end
-  // stimulus: each source sends packets
-  task automatic source(input int id, input int npk);
-    for (int p = 0; p < npk; p++) begin
-      int len; len = $urandom_range(1, 8);
-      for (int b = 0; b < len; b++) begin
-        @(posedge clk); #1 sv[id] = 1; sd[id*DW +: DW] = $urandom; sl[id] = (b == len - 1); sk[id*2 +: 2] = 2'b11;
-        while (!sr[id]) begin @(posedge clk); #1; end
-      end
-      @(posedge clk); #1 sv[id] = 0; sl[id] = 0;
-      if (gaps_en) repeat ($urandom_range(0, 4)) @(posedge clk);
-      pkts_in[id]++;
-    end
-  endtask
+  // test tasks: tests/axi_stream_arbiter_tests.sv
+  `include "axi_stream_arbiter_tests.sv"
   always @(posedge clk) mr <= ($urandom_range(0, 9) < 7);
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("axi_stream_arbiter_tb.vcd"); $dumpvars(0, axi_stream_arbiter_tb); end

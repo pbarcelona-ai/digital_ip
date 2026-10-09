@@ -6,6 +6,7 @@
 //   within 1 percent), checks the initial burst equals the bucket size,
 //   that data is unmodified, that downstream stalls do not consume tokens
 //   and that period 0 removes the limit. Prints TEST PASSED on success.
+//   The test tasks are in tests/rate_limiter_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module rate_limiter_tb;
@@ -14,10 +15,8 @@ module rate_limiter_tb;
   rate_limiter #(.DATA_W(16), .TOKEN_W(6), .PERIOD_W(16)) dut (.clk, .rst_n, .refill_period_i(per), .burst_i(burst), .s_data_i(sd), .s_valid_i(sv), .s_ready_o(sr), .m_data_o(md), .m_valid_o(mv), .m_ready_i(mr), .tokens_o(tok));
   int errors = 0, xf = 0;
   always @(posedge clk) if (mv && mr) begin xf++; if (md !== sd) begin errors++; $display("ERROR data"); end end
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
-  endtask
-  task automatic run(input int n, output int got); int b; b = xf; repeat (n) @(posedge clk); got = xf - b; endtask
+  // test tasks: tests/rate_limiter_tests.sv
+  `include "rate_limiter_tests.sv"
   int g;
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("rate_limiter_tb.vcd"); $dumpvars(0, rate_limiter_tb); end

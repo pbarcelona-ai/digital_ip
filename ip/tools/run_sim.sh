@@ -15,7 +15,7 @@ verilator --binary --timing --trace --assert +define+SVA_ON -j 0 -Wno-fatal -Wno
   -Wno-UNUSEDPARAM -Wno-DECLFILENAME -Wno-INITIALDLY -Wno-BLKSEQ \
   +define+TB_MAX_W="$TB_MAX_W" +define+TB_MAX_H="$TB_MAX_H" ${VDEFS[@]+"${VDEFS[@]}"} \
   --top-module "$TOP" -Mdir "$BUILD" -o "V$TOP" \
-  -I"$ROOT/scalers/scaler_tb_lib/src" -F "$FL" > "$BUILD/build.log" 2>&1 || { cat "$BUILD/build.log"; exit 1; }
+  -I"$ROOT/scalers/scaler_tb_lib/src" -I"$ROOT/scalers/$IP/tb/tests" -F "$FL" > "$BUILD/build.log" 2>&1 || { cat "$BUILD/build.log"; exit 1; }
 case " ${PLUSARGS[*]:-} " in *" +VCD="*|*" +NO_VCD "*) ;; *) PLUSARGS+=("+VCD=$ROOT/build/scaler/$IP/tb_${IP}.vcd") ;; esac
 "$BUILD/V$TOP" "${PLUSARGS[@]}" | tee "$ROOT/build/scaler/$IP/sim.log"
 

@@ -8,6 +8,7 @@
 //   done/error flags with write-1-to-clear, error on an out-of-range
 //   destination and rejection of an invalid length. Prints TEST PASSED on
 //   success.
+//   The test tasks are in tests/dma_engine_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module dma_engine_tb;
@@ -35,20 +36,8 @@ module dma_engine_tb;
     .wdata, .wstrb, .wlast, .wvalid, .wready, .bresp, .bvalid, .bready, .araddr, .arlen, .arvalid,
     .arready, .rdata, .rresp, .rlast, .rvalid, .rready);
   int errors = 0; logic [31:0] rd;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
-  endtask
-  task automatic run_dma(input [31:0] s, input [31:0] d, input [31:0] len);
-    bfm.write(8'h04, s); bfm.write(8'h08, d); bfm.write(8'h0C, len);
-    bfm.write(8'h10, 32'h300);                       // clear flags
-    bfm.write(8'h00, 32'h3);                         // start + irq_en
-    do bfm.read(8'h10, rd); while (rd[8] == 0 && rd[9] == 0);
-  endtask
-  task automatic verify(input [31:0] s, input [31:0] d, input int words, input string tag);
-    for (int i = 0; i < words; i++)
-      if (mem.mem[d/4 + i] !== mem.mem[s/4 + i]) begin
-        errors++; $display("ERROR %s: word %0d dst %h src %h", tag, i, mem.mem[d/4+i], mem.mem[s/4+i]); i = words; end
-  endtask
+  // test tasks: tests/dma_engine_tests.sv
+  `include "dma_engine_tests.sv"
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("dma_engine_tb.vcd"); $dumpvars(0, dma_engine_tb); end
     repeat (5) @(posedge aclk); aresetn = 1; repeat (2) @(posedge aclk);

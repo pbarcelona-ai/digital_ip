@@ -13,6 +13,7 @@
 //   Engine instantiated with TAPS = 8: Lanczos-4 and a Catmull-Rom kernel
 //   stretched for fully anti-aliased 2:1 downscales. Coefficients come
 //   from scaler_coef_gen.svh and are programmed over AXI-Lite.
+//   The test tasks are in tests/scaler_polyphase_tests.sv (`included).
 // Date: 2026-09-26
 
 `timescale 1ns/1ps
@@ -105,37 +106,8 @@ module tb_scaler_polyphase;
     return r;
   endfunction
 
-  // Derive a table for 'scale', write it over AXI-Lite (H at 0x1000,
-  // V at 0x2000), keep a copy for the model and spot-check read-back.
-  task automatic program_table(input int base, input real scale, input bit vert);
-    gen_coefs(kind, kpa, kpb, TAPS, PHASE_BITS, COEF_FRAC, COEF_W, aa ? scale : 1.0);
-    for (int p = 0; p < PHASES; p++)
-      for (int t = 0; t < TAPS; t++) begin
-        if (vert) tab_v[p][t] = gen_tab[p][t];
-        else      tab_h[p][t] = gen_tab[p][t];
-        axil_write(base + 4 * (16 * p + t), 32'(gen_tab[p][t]));
-      end
-    // spot-check read-back (sign extension)
-    for (int k = 0; k < 4; k++) begin
-      int p = $urandom_range(PHASES - 1, 0), t = $urandom_range(TAPS - 1, 0);
-      axil_check(base + 4 * (16 * p + t), 32'(gen_tab[p][t]));
-    end
-  endtask
-
-  // Per test: tables derived from the X and Y scale factors
-  task automatic ip_configure();
-    program_table(16'h1000, real'(in_w) / real'(out_w), 1'b0);
-    program_table(16'h2000, real'(in_h) / real'(out_h), 1'b1);
-  endtask
-
-  // The tables must power up with bilinear weights
-  task automatic check_default_tables();
-    // reset content = bilinear
-    for (int p = 0; p < PHASES; p += 13) begin
-      axil_check(16'h1000 + 4 * (16 * p + CTR),     32'(((PHASES - p) << COEF_FRAC) / PHASES));
-      axil_check(16'h2000 + 4 * (16 * p + CTR + 1), 32'((p << COEF_FRAC) / PHASES));
-    end
-  endtask
+  // test tasks: tests/scaler_polyphase_tests.sv
+  `include "scaler_polyphase_tests.sv"
 
   // Main test sequence
   initial begin

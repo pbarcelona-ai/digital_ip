@@ -10,6 +10,7 @@
 //   second read is clean), double-bit errors that must be flagged, an
 //   overall-parity-bit error, the error counters and the read latency.
 //   Prints TEST PASSED on success.
+//   The test tasks are in tests/ecc_memory_ctrl_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module ecc_code_case #(parameter int DW = 32) (output int errors);
@@ -43,20 +44,10 @@ module ecc_memory_ctrl_tb;
   int e8, e32, e64;
   ecc_code_case #(8) c8 (e8); ecc_code_case #(32) c32 (e32); ecc_code_case #(64) c64 (e64);
   int errors = 0; logic [DW-1:0] m [D]; bit corrupt [D];
-  task automatic check(input bit c, input string m_); if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m_); end endtask
-  task automatic wr(input int addr, input logic [DW-1:0] d, input logic [CW-1:0] mask);
-    @(posedge clk); #1; while (!rdy) begin @(posedge clk); #1; end
-    req = 1; we = 1; a = addr; wd = d; inj = mask; @(posedge clk); #1 req = 0; we = 0; inj = 0; m[addr] = d; corrupt[addr] = (mask != 0) && ($countones(mask) > 1);
-  endtask
-  // read and wait for the response; returns via globals
+  // used by task rdw (tests/ecc_memory_ctrl_tests.sv)
   logic [DW-1:0] g_d; bit g_sec, g_ded; int g_lat;
-  task automatic rdw(input int addr);
-    int n; n = 0;
-    @(posedge clk); #1; while (!rdy) begin @(posedge clk); #1; end
-    req = 1; we = 0; a = addr; @(posedge clk); #1 req = 0;
-    while (!rv) begin @(posedge clk); #1; n++; end
-    g_d = rd; g_sec = sec; g_ded = ded; g_lat = n;
-  endtask
+  // test tasks: tests/ecc_memory_ctrl_tests.sv
+  `include "ecc_memory_ctrl_tests.sv"
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("ecc_memory_ctrl_tb.vcd"); $dumpvars(0, ecc_memory_ctrl_tb); end
     repeat (4) @(posedge clk); rst_n = 1; repeat (2) @(posedge clk);

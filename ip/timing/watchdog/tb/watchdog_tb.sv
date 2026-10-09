@@ -6,6 +6,7 @@
 //   protection, pre-timeout interrupt, window mode early kick violation,
 //   lock bit preventing disable and status write-1-to-clear. Prints TEST
 //   PASSED on success.
+//   The test tasks are in tests/watchdog_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module watchdog_tb;
@@ -22,9 +23,8 @@ module watchdog_tb;
 .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready, .s_axil_wdata, .s_axil_wstrb, .s_axil_wvalid, .s_axil_wready, .s_axil_bresp, .s_axil_bvalid, .s_axil_bready, .s_axil_araddr, .s_axil_arvalid, .s_axil_arready, .s_axil_rdata, .s_axil_rresp, .s_axil_rvalid, .s_axil_rready,
     .irq_o(irq), .wdt_reset_o(wdt_rst));
   int errors = 0; logic [31:0] rd;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
-  endtask
+  // test tasks: tests/watchdog_tests.sv
+  `include "watchdog_tests.sv"
   int rst_len, rst_events = 0;
   always @(posedge wdt_rst) rst_events++;
   initial begin

@@ -22,7 +22,7 @@ digraph video_system {
   subgraph cluster_ext_in {
     label=<<B>External devices</B>>; style="dashed,rounded"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=11;
     sensor [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>Camera module</B><BR/>RAW10 Bayer sensor<BR/>MIPI CSI-2, 1-4 lanes<BR/>CCI (I2C) control</TD></TR></TABLE>>];
-    flash [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>SPI NOR flash</B><BR/>firmware sw/video_init.py<BR/>(pyc.py bytecode image)</TD></TR></TABLE>>];
+    flash [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>SPI NOR flash</B><BR/>firmware sw/video_proc.py + video_init.py<BR/>(pyc.py bytecode image)</TD></TR></TABLE>>];
     console [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>UART 0</B> debug console<BR/><B>UART 1</B> host / control link</TD></TR></TABLE>>];
     i2cdev [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>I2C 0</B> camera sensor CCI<BR/><B>I2C 1</B> HDMI DDC / EDID,<BR/>panel / PMIC, EEPROM</TD></TR></TABLE>>];
     spidev [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>SPI 0</B> panel init / touch<BR/><B>SPI 1</B> ADC, sensors<BR/>(2 chip selects each)</TD></TR></TABLE>>];
@@ -39,7 +39,7 @@ digraph video_system {
     subgraph cluster_clk {
       label=<<B>Clocks and resets</B>>; style="rounded,dashed"; color="#a16207"; fontcolor="#854d0e"; fontsize=10;
       pll [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#f3f4f6" COLOR="#6b7280" STYLE="dashed"><TR><TD><B>PLL / MMCM</B> (vendor)<BR/>cpu_clk, pix_clk,<BR/>tmds_ser_clk 10×, lvds_ser_clk 7×,<BR/>tx_byte_clk</TD></TR></TABLE>>];
-      rsts [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fef9c3" COLOR="#a16207"><TR><TD><B>reset_sync</B> (one per domain)<BR/>+ py_sysctl reset cause,<BR/>watchdog reset</TD></TR></TABLE>>];
+      rsts [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fef9c3" COLOR="#a16207"><TR><TD><B>reset_sync</B> (one per domain)<BR/>cpu_clk: arst_n · core domains:<BR/>CPU core reset output only (CORE_RESET)<BR/>+ reset cause, watchdog reset</TD></TR></TABLE>>];
       pll -> rsts;
     }
 
@@ -72,6 +72,7 @@ digraph video_system {
       acdc [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fde68a" COLOR="#a16207"><TR><TD><B>axi4_lite_cdc</B><BR/><FONT COLOR="#4b5563">u_axil_cdc</FONT><BR/>cpu_clk → pix_clk</TD></TR></TABLE>>];
       adec [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ede9fe" COLOR="#7c3aed"><TR><TD><B>py_axil_xbar</B> <FONT COLOR="#4b5563">u_vbus</FONT><BR/>(<B>axi4_lite_decoder</B> ×2)<BR/>video register bus, pix_clk</TD></TR></TABLE>>];
       irqs [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fde68a" COLOR="#a16207"><TR><TD><B>pulse_sync</B><BR/><FONT COLOR="#4b5563">u_irq_stats</FONT><BR/>pix_clk → cpu_clk</TD></TR></TABLE>>];
+      fcnt [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fde68a" COLOR="#a16207"><TR><TD><B>frame_counter</B> <FONT COLOR="#4b5563">u_frame_cnt</FONT><BR/>COUNT0 first stage · COUNT1 last stage<BR/>+ <B>bit_sync</B> ×2 → cpu_clk</TD></TR></TABLE>>];
       acdc -> adec [color="#7c3aed"];
     }
 
@@ -207,12 +208,16 @@ digraph video_system {
   adec -> vregs [color="#7c3aed", penwidth=1.6, label="0x1_0000"];
   adec -> vs_regs [color="#7c3aed", penwidth=1.6, label="0x1_8000"];
   adec -> filt [color="#7c3aed", penwidth=1.6, label="0x1_8200", constraint=false];
+  adec -> fcnt [color="#7c3aed", penwidth=1.6, label="0x1_8400"];
   vregs -> isp [style=dotted, color="#7c3aed", arrowhead=none, constraint=false];
   vs_regs -> vs_out [style=dotted, color="#7c3aed", arrowhead=none, constraint=false];
 
   // interrupts
   stats -> irqs [color="#dc2626", style=dashed, label="stats_done", fontcolor="#dc2626", constraint=false];
   irqs -> periph [color="#dc2626", style=dashed, label="intc_top source 12", fontcolor="#dc2626", constraint=false];
+  csi -> fcnt [color="#dc2626", style=dashed, label="eof_in_o", fontcolor="#dc2626", constraint=false];
+  timing -> fcnt [color="#dc2626", style=dashed, label="eof_out_o", fontcolor="#dc2626", constraint=false];
+  fcnt -> periph [color="#dc2626", style=dashed, label="sources 13 / 14", fontcolor="#dc2626", constraint=false];
   rsts -> core [color="#a16207", style=dashed, label="resets", fontcolor="#a16207", constraint=false];
 
   // the camera's control path: I2C 0 configures the sensor (shown above)

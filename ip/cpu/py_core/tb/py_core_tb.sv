@@ -9,6 +9,7 @@
 //   illegal opcode, bus error), a full 32-bit register read, and resume
 //   past an emulated instruction, recursive calls, call depth overflow
 //   and RETURN without a caller. Interrupts are covered by py_soc_tb. Prints TEST PASSED on success.
+//   The test tasks are in tests/py_core_tests.sv (`included).
 // Date: 2026-10-01
 `timescale 1ns/1ps
 module py_core_tb;
@@ -35,13 +36,8 @@ module py_core_tb;
   logic [7:0] code [2**CODE_AW]; logic [33:0] cpool [2**CONST_AW];
   always_ff @(posedge clk) begin code_q <= code[code_addr]; const_q <= cpool[const_addr]; end
 
-  // Tiny assembler: emit bytes at 'here'
+  // used by task emit (tests/py_core_tests.sv)
   int here;
-  task automatic emit(input logic [7:0] b); code[here] = b; here++; endtask
-  task automatic op0(input opcode_e o); emit(o); endtask
-  task automatic op1(input opcode_e o, input logic [7:0] a); emit(o); emit(a); endtask
-  task automatic op2(input opcode_e o, input logic [15:0] a); emit(o); emit(a[7:0]); emit(a[15:8]); endtask
-  task automatic clear_prog(); for (int i = 0; i < 2**CODE_AW; i++) code[i] = 8'hFF; here = 0; endtask
 
   // ---------------- AXI4-Lite slave model ----------------
   // 0x1000 GPIO_OUT (RW), 0x1004 ID (RO, 0x8000_0000: needs all 32 bits unsigned),
@@ -70,23 +66,10 @@ module py_core_tb;
     end
   end
 
-  // ---------------- helpers ----------------
+  // used by task check (tests/py_core_tests.sv)
   int errors = 0;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
-  endtask
-  task automatic run(output bit trapped);
-    @(posedge clk); start <= 1; @(posedge clk); start <= 0;
-    for (int t = 0; t < 20000; t++) begin
-      @(posedge clk);
-      if (done || trap) begin trapped = trap; return; end
-    end
-    errors++; $display("ERROR: timeout"); trapped = 0;
-  endtask
-  task automatic expect_trap(input string name, input trap_e c, input int pc);
-    bit tr; run(tr);
-    check(tr && cause == c && trap_pc == pc, $sformatf("%s: trap=%0b cause=%0d pc=%0d", name, tr, cause, trap_pc));
-  endtask
+  // test tasks: tests/py_core_tests.sv
+  `include "py_core_tests.sv"
 
   initial begin
     bit tr; int loop, end_l, fix_at, tri_at, base_l;

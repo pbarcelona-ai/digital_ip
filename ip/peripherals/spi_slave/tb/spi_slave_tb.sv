@@ -8,6 +8,7 @@
 //   transmitted words (read back over MISO), rx_valid/tx_ready timing,
 //   underrun on an empty transmit queue, and the frame error caused by
 //   dropping cs_n mid-word are all checked. Prints TEST PASSED on success.
+//   The test tasks are in tests/spi_slave_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module spi_case #(parameter int NB = 8, parameter bit CPOL = 0, parameter bit CPHA = 0, parameter bit LSB = 0, parameter int HALF = 6) (input logic clk, input logic rst_n, output int errors, output bit done);
@@ -19,27 +20,9 @@ module spi_case #(parameter int NB = 8, parameter bit CPOL = 0, parameter bit CP
   // slave transmit queue: present the next word whenever available
   logic [NB-1:0] txq[$];
   always @(posedge clk) begin txv <= (txq.size() > 0); if (txq.size() > 0) txd <= txq[0]; if (txr && txq.size() > 0) void'(txq.pop_front()); end
-  task automatic half(); repeat (HALF) @(posedge clk); endtask
   function automatic logic bit_of(input logic [NB-1:0] w, input int k); return LSB ? w[k] : w[NB-1-k]; endfunction
-  // master transfers one word; returns miso word
-  task automatic word(input logic [NB-1:0] mo, output logic [NB-1:0] mi, input bit first);
-    logic [NB-1:0] r; r = 0;
-    for (int k = 0; k < NB; k++) begin
-      if (!CPHA) begin
-        if (k == 0) mosi = bit_of(mo, 0);
-        half(); sclk = ~CPOL; #1;
-        if (LSB) r[k] = miso; else r[NB-1-k] = miso;
-        half(); sclk = CPOL; if (k < NB - 1) mosi = bit_of(mo, k + 1);
-        else mosi = 1'b0;
-      end else begin
-        half(); sclk = ~CPOL; mosi = bit_of(mo, k);
-        half(); sclk = CPOL; #1;
-        if (LSB) r[k] = miso; else r[NB-1-k] = miso;
-      end
-    end
-    mi = r;
-  endtask
-  task automatic check(input bit c, input string m); if (!c) begin errors++; $display("ERROR NB=%0d cpol=%0d cpha=%0d lsb=%0d: %s", NB, CPOL, CPHA, LSB, m); end endtask
+  // test tasks: tests/spi_slave_tests.sv
+  `include "spi_slave_tests.sv"
   logic [NB-1:0] mi, mo [3], st [3];
   initial begin
     errors = 0; done = 0; sclk = CPOL; cs_n = 1; mosi = 0; txv = 0; txd = 0;

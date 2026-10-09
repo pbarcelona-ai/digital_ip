@@ -91,4 +91,5 @@ src/configuration.sv
 ../../ip/video/blur_sharpen/src/blur_sharpen.sv
 # ---- video_processor
 src/vs_stream_adapter.sv
+src/frame_counter.sv
 src/video_processor.sv

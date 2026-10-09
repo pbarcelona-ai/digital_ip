@@ -21,18 +21,28 @@
 //                                   video_pipeline insert point (CTRL[7])
 //     u_filter     blur_sharpen     blur / sharpen after vision_system, same
 //                                   insert loop (MODE 0-3, 4 = pass-through)
+//     u_frame_cnt  frame_counter    frames out of the first pipeline stage
+//                                   (csi2_raw_unpack) and into the last one
+//                                   (axis_to_video): end-of-frame interrupts
+//                                   13 / 14 (bit_sync to cpu_clk) and their
+//                                   counts for the CPU
 //     u_irq_stats  pulse_sync       isp_stats frame done -> intc source 12
 //     u_tmds_ser   tmds_serializer  10:1 HDMI / DVI
 //     u_lvds_ser_a/b lvds_serializer 7:1 LVDS links A / B
-//     u_rst_*      reset_sync       one per clock domain, from arst_n
+//     u_rst_*      reset_sync       one per clock domain: cpu_clk from arst_n,
+//                                   the others from the CPU system's core
+//                                   reset output only
 //
 //   CPU address map (py_soc, mem32[] in the firmware):
 //     0x0_0100-0x0_C1FF  py_soc peripherals (see py_soc.sv)
 //     0x1_0000-0x1_7FFF  video_pipeline (0x1_4000+ scaler)
 //     0x1_8000-0x1_80FF  vision_system (axi_lite_regs)          `VP_VISION
 //     0x1_8200-0x1_83FF  blur_sharpen                           `VP_FILTER
+//     0x1_8400-0x1_84FF  frame_counter
 //   Interrupts: intc source 12 = isp_stats frame done (configure it as an
-//   edge source), 13-15 spare (ext_irq_i).
+//   edge source), 13 = end of frame at the first pipeline stage, 14 = end of
+//   frame at the last stage (frame_counter STATUS, level: write 1 to clear),
+//   15 spare (ext_irq_i).
 //
 //   Configuration (src/configuration.sv): `VP_CSI2_RX, `VP_HDMI, `VP_LVDS,
 //   `VP_DSI, `VP_CSI2_TX select the external video interfaces, `VP_VISION
@@ -48,8 +58,18 @@
 //   Clocks: cpu_clk (CPU, CPU_HZ), pix_clk (video, registers, vision_system),
 //   byte_clk (D-PHY RX), tmds_ser_clk = 10x pix_clk, lvds_ser_clk = 7x
 //   (single link) or 3.5x (dual link) pix_clk, tx_byte_clk (D-PHY TX).
-//   Reset: arst_n, asynchronous active low; each domain gets a synchronised
-//   copy. The watchdog resets the CPU (wdt_reset_o shows it), not the video.
+//   Reset: arst_n, external, asynchronous active low, resets the CPU system
+//   (py_soc). Its release starts the boot: py_boot loads the firmware from
+//   flash, the firmware tests the CPU peripherals and then releases the
+//   core logic reset by writing SYSCTL CORE_RESET (py_soc core_rst_n_o).
+//   Until then every other block (video_pipeline, vision_system,
+//   blur_sharpen, frame_counter, serializers) is held in reset: their only
+//   reset is the CPU system's reset output core_rst_n_o, synchronised per
+//   clock domain (reset_sync). arst_n reaches them through the CPU: it
+//   resets py_soc, which clears CORE_RESET (one cpu_clk edge later).
+//   core_rst_n_o shows the released state to the board. The watchdog resets
+//   the CPU (wdt_reset_o shows it), which clears CORE_RESET and so puts the
+//   core logic back into reset until the firmware has booted again.
 // Date: 2026-10-02
 module video_processor #(
   // video
@@ -97,11 +117,12 @@ module video_processor #(
   input  logic [95:0]         gpio_i,            // 3 x 32 GPIO (t = 1: input)
   output logic [95:0]         gpio_o,
   output logic [95:0]         gpio_t,
-  input  logic [2:0]          ext_irq_i,         // spare interrupts (intc 13-15), cpu_clk
+  input  logic [0:0]          ext_irq_i,         // spare interrupt (intc 15), cpu_clk
   output logic                boot_done_o,
   output logic                boot_err_o,
   output logic                cpu_trap_o,
   output logic                wdt_reset_o,
+  output logic                core_rst_n_o,      // core logic out of reset (released by the CPU)
 `ifdef VP_CSI2_RX
   // ---------------- MIPI CSI-2 camera: D-PHY RX PPI ----------------
   input  logic                byte_clk,
@@ -159,30 +180,34 @@ module video_processor #(
 `endif
 
   // ================================================================ resets
-  logic cpu_rst_n, pix_rst_n;
+  // CPU system: the external reset. Core logic: only the CPU system's reset output (SYSCTL
+  // CORE_RESET, a cpu_clk register that every CPU reset clears), synchronised per clock domain.
+  logic cpu_rst_n, pix_rst_n, core_rel;
+  wire  core_arst_n = core_rel;
+  assign core_rst_n_o = core_rel;
   reset_sync u_rst_cpu (.clk(cpu_clk), .arst_i(arst_n), .rst_o(cpu_rst_n));
-  reset_sync u_rst_pix (.clk(pix_clk), .arst_i(arst_n), .rst_o(pix_rst_n));
+  reset_sync u_rst_pix (.clk(pix_clk), .arst_i(core_arst_n), .rst_o(pix_rst_n));
 `ifdef VP_CSI2_RX
   logic byte_rst_n;
-  reset_sync u_rst_byte (.clk(byte_clk), .arst_i(arst_n), .rst_o(byte_rst_n));
+  reset_sync u_rst_byte (.clk(byte_clk), .arst_i(core_arst_n), .rst_o(byte_rst_n));
 `endif
 `ifdef VP_MIPI_TX
   logic tx_byte_rst_n;
-  reset_sync u_rst_tx_byte (.clk(tx_byte_clk), .arst_i(arst_n), .rst_o(tx_byte_rst_n));
+  reset_sync u_rst_tx_byte (.clk(tx_byte_clk), .arst_i(core_arst_n), .rst_o(tx_byte_rst_n));
 `endif
 `ifdef VP_HDMI
   logic tmds_ser_rst_n;
-  reset_sync u_rst_tmds (.clk(tmds_ser_clk), .arst_i(arst_n), .rst_o(tmds_ser_rst_n));
+  reset_sync u_rst_tmds (.clk(tmds_ser_clk), .arst_i(core_arst_n), .rst_o(tmds_ser_rst_n));
 `endif
 `ifdef VP_LVDS
   logic lvds_ser_rst_n;
-  reset_sync u_rst_lvds (.clk(lvds_ser_clk), .arst_i(arst_n), .rst_o(lvds_ser_rst_n));
+  reset_sync u_rst_lvds (.clk(lvds_ser_clk), .arst_i(core_arst_n), .rst_o(lvds_ser_rst_n));
 `endif
 
   // ================================================================ control CPU
   logic [15:0] c_awaddr, c_araddr; logic [31:0] c_wdata, c_rdata; logic [3:0] c_wstrb; logic [1:0] c_bresp, c_rresp;
   logic c_awvalid, c_awready, c_wvalid, c_wready, c_bvalid, c_bready, c_arvalid, c_arready, c_rvalid, c_rready;
-  logic irq_stats;
+  logic irq_stats; logic [1:0] irq_frame;
   py_soc #(.CLK_HZ(CPU_HZ), .UART_BAUD(UART_BAUD), .I2C_HZ(I2C_HZ), .SPI_HZ(SPI_HZ),
            .BOOT_ADDR(BOOT_ADDR), .FLASH_CLKDIV(FLASH_CLKDIV), .EXT_EN(1'b1)) u_cpu (
     .clk(cpu_clk), .rst_n(cpu_rst_n),
@@ -193,8 +218,8 @@ module video_processor #(
     .uart_txd_o, .uart_rxd_i,
     .i2c_scl_i, .i2c_scl_o, .i2c_scl_t, .i2c_sda_i, .i2c_sda_o, .i2c_sda_t,
     .spi_sclk_o, .spi_mosi_o, .spi_miso_i, .spi_cs_n_o,
-    .gpio_i, .gpio_o, .gpio_t, .wdt_reset_o,
-    .ext_irq_i({ext_irq_i, irq_stats}),
+    .gpio_i, .gpio_o, .gpio_t, .wdt_reset_o, .core_rst_n_o(core_rel),
+    .ext_irq_i({ext_irq_i, irq_frame, irq_stats}),
     .m_ext_axil_awaddr(c_awaddr), .m_ext_axil_awvalid(c_awvalid), .m_ext_axil_awready(c_awready),
     .m_ext_axil_wdata(c_wdata), .m_ext_axil_wstrb(c_wstrb), .m_ext_axil_wvalid(c_wvalid), .m_ext_axil_wready(c_wready),
     .m_ext_axil_bresp(c_bresp), .m_ext_axil_bvalid(c_bvalid), .m_ext_axil_bready(c_bready),
@@ -222,7 +247,7 @@ module video_processor #(
     .m_axil_araddr(v_araddr), .m_axil_arvalid(v_arvalid), .m_axil_arready(v_arready),
     .m_axil_rdata(v_rdata), .m_axil_rresp(v_rresp), .m_axil_rvalid(v_rvalid), .m_axil_rready(v_rready));
 
-  // Slaves: 0 video_pipeline, then vision_system and blur_sharpen when built
+  // Slaves: 0 video_pipeline, then vision_system and blur_sharpen when built, then frame_counter
 `ifdef VP_VISION
   localparam int NV = 1;
 `else
@@ -233,12 +258,13 @@ module video_processor #(
 `else
   localparam int NF = 0;
 `endif
-  localparam int NS = 1 + NV + NF, S_VS = 1, S_FLT = 1 + NV;
+  localparam int NS = 2 + NV + NF, S_VS = 1, S_FLT = 1 + NV, S_FC = 1 + NV + NF;
   function automatic logic [NS*32-1:0] bus_map(input bit mask);
     logic [NS*32-1:0] m;
     m[0 +: 32] = mask ? 32'hFFFF_8000 : 32'h0000_0000;                                   // 0x0000-0x7FFF
     if (NV != 0) m[S_VS*32 +: 32]  = mask ? 32'hFFFF_FF00 : 32'h0000_8000;               // 0x8000-0x80FF
     if (NF != 0) m[S_FLT*32 +: 32] = mask ? 32'hFFFF_FE00 : 32'h0000_8200;               // 0x8200-0x83FF
+    m[S_FC*32 +: 32] = mask ? 32'hFFFF_FF00 : 32'h0000_8400;                              // 0x8400-0x84FF
     return m;
   endfunction
   localparam logic [NS*32-1:0] VBASE = bus_map(1'b0);
@@ -269,6 +295,7 @@ module video_processor #(
 `ifdef VP_INSERT
   logic [23:0] im_d, ir_d; logic im_l, im_u, im_v, im_r, ir_l, ir_u, ir_v, ir_r;
 `endif
+  logic eof_first, eof_last;                         // end-of-frame markers of the first / last stage
   video_pipeline #(
     .NLANES(NLANES), .MAX_W(MAX_W), .CSI_FIFO(CSI_FIFO), .OUT_FIFO(OUT_FIFO),
     .SCALER(SCALER), .DSI_LANES(DSI_LANES), .CSITX_LANES(CSITX_LANES)
@@ -301,7 +328,22 @@ module video_processor #(
     .ins_m_axis_tdata(im_d), .ins_m_axis_tlast(im_l), .ins_m_axis_tuser(im_u), .ins_m_axis_tvalid(im_v), .ins_m_axis_tready(im_r),
     .ins_s_axis_tdata(ir_d), .ins_s_axis_tlast(ir_l), .ins_s_axis_tuser(ir_u), .ins_s_axis_tvalid(ir_v), .ins_s_axis_tready(ir_r),
 `endif
+    .eof_in_o(eof_first), .eof_out_o(eof_last),
     .stats_done_o);
+
+  // ================================================================ frame counters
+  // Interrupt levels (pix_clk) synchronised to cpu_clk; the CPU clears them through STATUS.
+  logic [1:0] irq_frame_pix;
+  frame_counter #(.NCH(2)) u_frame_cnt (.clk(pix_clk), .rst_n(pix_rst_n),
+    .eof_i({eof_last, eof_first}), .irq_o(irq_frame_pix),
+    .s_axil_awaddr(b_awaddr[7:0]), .s_axil_awvalid(b_awvalid[S_FC]), .s_axil_awready(b_awready[S_FC]),
+    .s_axil_wdata(b_wdata), .s_axil_wstrb(b_wstrb), .s_axil_wvalid(b_wvalid[S_FC]), .s_axil_wready(b_wready[S_FC]),
+    .s_axil_bresp(b_bresp[S_FC*2 +: 2]), .s_axil_bvalid(b_bvalid[S_FC]), .s_axil_bready(b_bready[S_FC]),
+    .s_axil_araddr(b_araddr[7:0]), .s_axil_arvalid(b_arvalid[S_FC]), .s_axil_arready(b_arready[S_FC]),
+    .s_axil_rdata(b_rdata[S_FC*32 +: 32]), .s_axil_rresp(b_rresp[S_FC*2 +: 2]), .s_axil_rvalid(b_rvalid[S_FC]),
+    .s_axil_rready(b_rready[S_FC]));
+  bit_sync u_irq_frame0 (.clk(cpu_clk), .rst_n(cpu_rst_n), .d_i(irq_frame_pix[0]), .q_o(irq_frame[0]));
+  bit_sync u_irq_frame1 (.clk(cpu_clk), .rst_n(cpu_rst_n), .d_i(irq_frame_pix[1]), .q_o(irq_frame[1]));
 
   // ================================================================ vision_system at the insert point
 `ifdef VP_INSERT

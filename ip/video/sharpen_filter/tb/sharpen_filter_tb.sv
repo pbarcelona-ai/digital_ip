@@ -6,6 +6,7 @@
 //   conv2d_pkg definition, filters frames with the reset kernel (random gaps
 //   and back-pressure) and after reprogramming it to the identity kernel
 //   (pass-through). Compared with conv2d_ref. Prints TEST PASSED.
+//   The test tasks are in tests/sharpen_filter_tests.sv (`included).
 // Date: 2026-10-08
 `timescale 1ns/1ps
 module sharpen_filter_tb;
@@ -13,9 +14,6 @@ module sharpen_filter_tb;
   localparam logic [25*32-1:0] KERNEL = conv2d_pkg::sharpen_kernel(N, AMT);
   logic clk = 0, rst_n = 0; always #5 clk = ~clk;
   int errors = 0;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; if (errors < 30) $display("ERROR @%0t: %s", $time, m); end
-  endtask
   initial begin #50ms; $display("ERROR: timeout"); $display("TEST FAILED"); $finish; end
 
   logic [7:0] s_axil_awaddr, s_axil_araddr; logic s_axil_awvalid, s_axil_awready, s_axil_wvalid, s_axil_wready;
@@ -35,26 +33,9 @@ module sharpen_filter_tb;
     .m_tdata(md), .m_tlast(ml), .m_tuser(mu), .m_tvalid(mv), .m_tready(mr));
   conv2d_ref #(.N(N), .C(C), .CW(CW), .MAXW(MAXW), .MAXH(MAXH)) mdl ();
 
-  task automatic wr(input int a, input int d); bfm.write(8'(a), 32'(d)); endtask
-  task automatic rd(input int a, output logic [31:0] d); bfm.read(8'(a), d); endtask
   int W = 12, H = 8;
-  task automatic run_frame(input string what);
-    int f0, bad; f0 = vid.frames; vid.ow = W; vid.oh = H;
-    for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) begin
-      logic [23:0] p; p = ((x / 3 + y / 2) % 2) ? 24'hF0E0D0 : 24'h102030;     // edges to blur / sharpen
-      if ($urandom_range(4) == 0) p = $urandom;
-      vid.img[y][x] = p; mdl.img[y][x] = p;
-    end
-    vid.send(W, H);
-    while (vid.frames < f0 + 1) @(posedge clk);
-    mdl.run(W, H); bad = 0;
-    for (int y = 0; y < H; y++) for (int x = 0; x < W; x++)
-      if (vid.out[y][x] !== mdl.out[y][x]) begin
-        if (bad < 3) $display("  %s (%0d,%0d): %h expected %h", what, x, y, vid.out[y][x], mdl.out[y][x]);
-        bad++;
-      end
-    check(bad == 0, $sformatf("%s: %0d pixels differ", what, bad));
-  endtask
+  // test tasks: tests/sharpen_filter_tests.sv
+  `include "sharpen_filter_tests.sv"
 
   initial begin
     logic [31:0] v; int kbad;

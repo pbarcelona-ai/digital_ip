@@ -18,7 +18,7 @@
 //   available to software (e.g. data logging) at 0xC000.
 //
 //   Address map (each window 256 bytes; *_D = py_stream_port data port):
-//     0x0100 SYSCTL (reset cause, boot status, cycle counter, ID)
+//     0x0100 SYSCTL (reset cause, boot status, cycle counter, ID, CORE_RESET)
 //     0x1000 INTC   0x2000 WDT    0x3000 GPIO0  0x4000 GPIO1  0x5000 GPIO2
 //     0x6000 UART0  0x6100 UART0_D  0x7000 UART1  0x7100 UART1_D
 //     0x8000 I2C0   0x8100 I2C0_D   0x9000 I2C1   0x9100 I2C1_D
@@ -27,6 +27,12 @@
 //     0x1_0000-0x1_FFFF EXT (EXT_EN = 1): the m_ext_axil_* master port, for
 //                       registers outside py_soc (address offset in the window)
 //   Unmapped addresses return DECERR (core trap TRAP_BUS).
+//
+//   Core logic reset - core_rst_n_o follows SYSCTL CORE_RESET[0] (0x0110):
+//   low from every system reset until the firmware writes 1, so the logic
+//   outside py_soc (e.g. a video datapath) stays in reset until the CPU has
+//   booted and tested itself. Synchronous to clk; synchronise it per clock
+//   domain (reset_sync) where it is used.
 //
 //   Interrupt controller sources (all level):
 //     0 UART0_D  1 UART1_D  2 I2C0_D  3 I2C1_D  4 SPI0_D  5 SPI1_D
@@ -101,6 +107,8 @@ module py_soc #(
   output logic [95:0]         gpio_t,
   // Watchdog
   output logic                wdt_reset_o,
+  // Reset of the logic outside py_soc, released by the firmware (SYSCTL CORE_RESET)
+  output logic                core_rst_n_o,
   // External interrupts (intc sources 12-15)
   input  logic [3:0]          ext_irq_i,
   // External AXI4-Lite master: window 0x1_0000-0x1_FFFF (EXT_EN = 1), 16-bit offset.
@@ -267,7 +275,8 @@ module py_soc #(
 
   // ---------------- system control ----------------
   py_sysctl u_sys (.aclk(clk), .aresetn(sys_rst_n), .por_n(rst_n), .wdt_reset_i(wdt_reset_o),
-    .boot_done_i(boot_done), .boot_err_i(boot_err_o), .boot_err_code_i(boot_err_code_o), `PY_AXIL_PORT(S_SYS));
+    .boot_done_i(boot_done), .boot_err_i(boot_err_o), .boot_err_code_i(boot_err_code_o),
+    .core_rst_n_o, `PY_AXIL_PORT(S_SYS));
 
   // ---------------- interrupt controller ----------------
   intc_top #(.NUM_IRQ(16)) u_intc (.aclk(clk), .aresetn(sys_rst_n), `PY_AXIL_PORT(S_INTC),

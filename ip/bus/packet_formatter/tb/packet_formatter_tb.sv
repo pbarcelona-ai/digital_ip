@@ -10,6 +10,7 @@
 //   again and must return the original header and payload. Misaligned
 //   payload with a tail request must raise align_err_o. Prints TEST PASSED
 //   on success.
+//   The test tasks are in tests/packet_formatter_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module pf_case #(parameter bit TRL = 0, parameter int MINB = 0) (input logic clk, input logic rst_n, output int errors, output bit done);
@@ -32,25 +33,8 @@ module pf_case #(parameter bit TRL = 0, parameter int MINB = 0) (input logic clk
     end
     if (phv) begin if (phdr !== exp_h[hdr_seen]) begin errors++; $display("ERROR parser header %h expected %h (idx %0d of %0d)", phdr, exp_h[hdr_seen], hdr_seen, exp_h.size()); end hdr_seen++; end
   end
-  task automatic send(input int nbeats);
-    logic [31:0] pl [8];
-    logic [63:0] h; h[31:0] = $urandom; h[63:32] = $urandom; hdr = h; trl = $urandom; exp_h.push_back(h);
-    for (int i = 0; i < 2; i++) exp_q.push_back({1'b0, h[i*32 +: 32]});
-    for (int i = 0; i < nbeats; i++) begin pl[i] = $urandom; end
-    begin int total; total = 2 + nbeats;
-      for (int i = 0; i < nbeats; i++) exp_q.push_back({1'b0, pl[i]});
-      if (TRL) begin while (total + 1 < MINB) begin exp_q.push_back(33'd0); total++; end exp_q.push_back({1'b0, trl}); total++; end
-      else while (total < MINB) begin exp_q.push_back(33'd0); total++; end
-      begin logic [32:0] lst; lst = exp_q[exp_q.size()-1]; lst[32] = 1; exp_q[exp_q.size()-1] = lst; end
-    end
-    for (int i = 0; i < nbeats; i++) begin
-      while ($urandom_range(0, 3) == 0) @(posedge clk);
-      #1 sv = 1; sd = pl[i]; sk = 4'hF; sl = (i == nbeats - 1);
-      @(posedge clk); while (!sr) @(posedge clk);
-      #1 sv = 0; hdr = h;
-    end
-    npk++; repeat (12) @(posedge clk);
-  endtask
+  // test tasks: tests/packet_formatter_tests.sv
+  `include "packet_formatter_tests.sv"
   initial begin
     errors = 0; done = 0; wait (rst_n); repeat (3) @(posedge clk);
     for (int n = 0; n < 60; n++) send($urandom_range(1, 6));

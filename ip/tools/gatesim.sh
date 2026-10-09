@@ -93,7 +93,7 @@ FILES+=("$OUT/${IP}_netlist.v" "$CELLS" "$UNISIM_DIR/RAMB18E1.v" "$UNISIM_DIR/RA
 [ "$YDSP" = 1 ] || FILES+=("$UNISIM_DIR/DSP48E1.v")
 
 echo "gatesim.sh: simulating the netlist (Icarus)"
-iverilog -g2012 -Wno-timescale -DTB_MAX_W=48 -DTB_MAX_H=40 ${DEFS[@]+"${DEFS[@]}"} -I "$ROOT/scalers/scaler_tb_lib/src" \
+iverilog -g2012 -Wno-timescale -DTB_MAX_W=48 -DTB_MAX_H=40 ${DEFS[@]+"${DEFS[@]}"} -I "$ROOT/scalers/scaler_tb_lib/src" -I "$DIR/tb/tests" \
   -s "tb_$IP" -s glbl -o "$OUT/sim.vvp" "${FILES[@]}" > "$OUT/build.log" 2>&1 \
   || { grep -iE "error" "$OUT/build.log" | head; exit 1; }
 NOVCD=(+NO_VCD); [ "$WAVES" = 1 ] && NOVCD=()

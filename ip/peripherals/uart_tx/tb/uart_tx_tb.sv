@@ -7,6 +7,7 @@
 //   and checked for start bit, LSB-first data, parity, stop bits and back-
 //   to-back operation, plus tready flow control and the disabled state.
 //   Prints TEST PASSED on success.
+//   The test tasks are in tests/uart_tx_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module uart_tx_tb;
@@ -15,24 +16,8 @@ module uart_tx_tb;
   baud_generator #(.CLK_HZ(100_000_000), .BAUD(1_000_000), .OVERSAMPLE(16)) bg (.clk, .rst_n, .en_i(1'b1), .use_reg_i(1'b0), .inc_i(32'd0), .sync_i(1'b0), .tick_os_o(tick), .tick_baud_o());
   uart_tx dut (.clk, .rst_n, .tick16_i(tick), .en_i(en), .data_bits_i(nb), .parity_en_i(pe), .parity_odd_i(po), .stop2_i(s2), .s_tdata(td), .s_tvalid(tv), .s_tready(tr), .txd_o(txd), .busy_o(busy));
   int errors = 0;
-  task automatic check(input bit c, input string m); if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end endtask
-  task automatic send_and_check(input logic [7:0] d, input int bits, input bit par, input bit odd, input bit two);
-    logic [7:0] got; bit p, pchk; int exp_par;
-    nb = bits; pe = par; po = odd; s2 = two;
-    fork
-      begin @(posedge clk); #1 td = d; tv = 1; @(posedge clk); while (!tr) @(posedge clk); #1 tv = 0; end
-      begin @(negedge txd); end
-    join
-    repeat (50) @(posedge clk); #1; check(txd == 0, "start bit");
-    got = 0;
-    for (int i = 0; i < bits; i++) begin repeat (100) @(posedge clk); #1 got[i] = txd; end
-    exp_par = 0; for (int i = 0; i < bits; i++) exp_par ^= d[i];
-    check(got == (d & ((8'd1 << bits) - 1)), $sformatf("data %0d bits: got %h exp %h", bits, got, d));
-    if (par) begin repeat (100) @(posedge clk); #1; check(txd == (odd ? ~exp_par[0] : exp_par[0]), "parity bit"); end
-    repeat (100) @(posedge clk); #1; check(txd == 1, "stop bit 1");
-    if (two) begin repeat (100) @(posedge clk); #1; check(txd == 1, "stop bit 2"); end
-    while (busy) @(posedge clk);
-  endtask
+  // test tasks: tests/uart_tx_tests.sv
+  `include "uart_tx_tests.sv"
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("uart_tx_tb.vcd"); $dumpvars(0, uart_tx_tb); end
     repeat (4) @(posedge clk); rst_n = 1; repeat (20) @(posedge clk); check(txd == 1 && !busy, "idle high");

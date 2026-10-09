@@ -9,6 +9,7 @@
 //   for byte with the expected RGB888 (B, G, R) or YUV422 (U, Y0, V, Y1)
 //   payload; frame start / end counts, ECC and CRC errors, dropped lines and
 //   engine underflows are checked. Prints TEST PASSED on success.
+//   The test tasks are in tests/csi2_tx_tests.sv (`included).
 // Date: 2026-10-02
 `timescale 1ns/1ps
 module csi2_tx_tb;
@@ -16,9 +17,6 @@ module csi2_tx_tb;
   always #5 pclk = ~pclk;                        // 100 MHz pixels
   always #4 bclk = ~bclk;                        // 125 MHz D-PHY byte clock
   int errors = 0;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; if (errors < 30) $display("ERROR @%0t: %s", $time, m); end
-  endtask
   initial begin #5ms; $display("ERROR: simulation timeout"); $display("TEST FAILED"); $finish; end
 
   localparam int HA = 32, VA = 8;
@@ -89,21 +87,8 @@ module csi2_tx_tb;
     end
   end
 
-  task automatic run(input bit y422, input int frames);
-    en = 0; yuv = y422;
-    repeat (3000) @(posedge pclk);                 // let the links go idle
-    for (int g = 0; g < 3; g++) begin nframes_rx[g] = 0; nlines[g] = 0; nfe[g] = 0; end
-    en = 1;
-    repeat (frames) begin @(posedge vs); end
-    @(posedge vs); en = 0;                         // one more vsync closes the last frame
-    repeat (3000) @(posedge pclk);
-    for (int g = 0; g < 3; g++) begin
-      check(nframes_rx[g] == frames && nfe[g] == frames && nlines[g] == frames * VA,
-            $sformatf("%s lane set %0d: %0d frames, %0d frame ends, %0d lines; exp %0d, %0d, %0d",
-                      y422 ? "YUV422" : "RGB888", g, nframes_rx[g], nfe[g], nlines[g], frames, frames, frames * VA));
-    end
-    $display("%s: %0d frames of %0dx%0d received on 1, 2 and 4 lanes", y422 ? "YUV422" : "RGB888", frames, HA, VA);
-  endtask
+  // test tasks: tests/csi2_tx_tests.sv
+  `include "csi2_tx_tests.sv"
 
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("csi2_tx_tb.vcd"); $dumpvars(0, csi2_tx_tb); end

@@ -5,6 +5,7 @@
 // its 2-cycle output against an independent 64-bit multiply and
 // arithmetic shift for corner values and a large pseudo-random
 // sweep, and checks the saturated result against qmul semantics.
+//   The test tasks are in tests/mulq_tests.sv (`included).
 // Date: September 26, 2026
 // ***************
 `timescale 1ns/1ps
@@ -29,18 +30,14 @@ module tb_mulq;
     end
   endfunction
 
-  // Two-deep expected/input history to align with the 2-cycle latency.
+  // used by task drive (tests/mulq_tests.sv)
   logic signed [31:0] a1, b1, a2, b2;
   int checks, fails, i;
   logic [31:0] seed;
   logic signed [47:0] exp_s;
 
-  task automatic drive(input logic signed [31:0] x, input logic signed [31:0] y);
-    begin
-      @(posedge clk);
-      a <= x; b <= y;
-    end
-  endtask
+  // test tasks: tests/mulq_tests.sv
+  `include "mulq_tests.sv"
 
   always @(posedge clk) begin
     a1 <= a;  b1 <= b;

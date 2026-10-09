@@ -8,6 +8,7 @@
 //   a reference model; writes must land only in the addressed slave.
 //   Protocol checkers watch the master link and both slave links.
 //   Plusargs: +VCD=<file>, +NO_VCD, +TIMEOUT_MS=<n>.
+//   The test tasks are in tests/axil_split_tests.sv (`included).
 // Date: 2026-09-26
 
 `timescale 1ns/1ps
@@ -105,12 +106,8 @@ module tb_axil_split;
     finish_report();
   end
 
-  task automatic g_slave_report(input int g);
-    int e;
-    if (g == 0) begin g_slave[0].u_chk.report(); e = g_slave[0].u_chk.errors + g_slave[0].u_chk.sva_errors; end
-    else        begin g_slave[1].u_chk.report(); e = g_slave[1].u_chk.errors + g_slave[1].u_chk.sva_errors; end
-    if (e != 0) begin errors++; $display("ERROR: protocol errors on slave port %0d", g); end
-  endtask
+  // test tasks: tests/axil_split_tests.sv
+  `include "axil_split_tests.sv"
 
   // ---------------------------------------------------------------- waveform dump
   // Writes a VCD of the whole testbench hierarchy.

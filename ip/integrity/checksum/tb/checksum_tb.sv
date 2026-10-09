@@ -7,17 +7,13 @@
 //   sum, the ok_o self-verification flag for each mode (message plus its
 //   own checksum), and 300 random messages against a behavioral model.
 //   Prints TEST PASSED on success.
+//   The test tasks are in tests/checksum_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module cs_case #(parameter int MODE = 1) (input logic clk, input logic rst_n, output int errors, output bit ready);
   logic init = 0, v = 0; logic [7:0] b = 0; logic [15:0] c; logic ok;
   checksum #(.MODE(MODE)) dut (.clk, .rst_n, .init_i(init), .valid_i(v), .byte_i(b), .checksum_o(c), .ok_o(ok));
   byte msg[$];
-  task automatic run();
-    @(posedge clk); #1 init = 1; @(posedge clk); #1 init = 0;
-    for (int i = 0; i < msg.size(); i++) begin @(posedge clk); #1 v = 1; b = msg[i]; end
-    @(posedge clk); #1 v = 0; @(posedge clk); #1;
-  endtask
   function automatic logic [15:0] model();
     int s; int f1, f2; int hi;
     s = 0; f1 = 0; f2 = 0;
@@ -31,7 +27,8 @@ module cs_case #(parameter int MODE = 1) (input logic clk, input logic rst_n, ou
     while (s >> 16) s = (s & 16'hFFFF) + (s >> 16);
     return 16'(~s);
   endfunction
-  task automatic check(input bit c_, input string m); if (!c_) begin errors++; $display("ERROR mode %0d: %s", MODE, m); end endtask
+  // test tasks: tests/checksum_tests.sv
+  `include "checksum_tests.sv"
   initial begin
     errors = 0; ready = 0; wait (rst_n); repeat (2) @(posedge clk);
     if (MODE == 1) begin

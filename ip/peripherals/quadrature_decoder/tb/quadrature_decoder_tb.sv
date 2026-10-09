@@ -6,6 +6,7 @@
 //   (x4), glitch rejection by the filter, illegal double transition error
 //   count, index latch and clear, position load and the velocity AXI-
 //   Stream samples. Prints TEST PASSED on success.
+//   The test tasks are in tests/quadrature_decoder_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module quadrature_decoder_tb;
@@ -25,16 +26,10 @@ module quadrature_decoder_tb;
     .m_axis_tdata(m_tdata), .m_axis_tvalid(m_tvalid),
     .m_axis_tready(m_tready), .m_axis_tlast(m_tlast));
   int errors = 0; logic [31:0] rd;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
-  endtask
-  // Encoder step: forward sequence 00 -> 10 -> 11 -> 01 -> 00 (A leads)
+  // used by task step (tests/quadrature_decoder_tests.sv)
   int st = 0;
-  task automatic step(input bit fwd, input int hold);
-    st = fwd ? (st + 1) % 4 : (st + 3) % 4;
-    case (st) 0: {a,b} = 2'b00; 1: {a,b} = 2'b10; 2: {a,b} = 2'b11; 3: {a,b} = 2'b01; endcase
-    repeat (hold) @(posedge aclk);
-  endtask
+  // test tasks: tests/quadrature_decoder_tests.sv
+  `include "quadrature_decoder_tests.sv"
   int vel_samples[$];
   always @(posedge aclk) if (m_tvalid && m_tready) vel_samples.push_back($signed(m_tdata));
   initial begin

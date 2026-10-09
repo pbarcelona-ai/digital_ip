@@ -7,6 +7,7 @@
 //   phase accumulator, checks the pipeline latency, the amplitude range,
 //   phase offset, sync load, enable gating and the Nyquist flag. Prints
 //   TEST PASSED on success.
+//   The test tasks are in tests/dds_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module dds_tb;
@@ -34,9 +35,8 @@ module dds_tb;
     if (s > 32767 || s < -32768) errors++;
     nchk++;
   end
-  task automatic tone(input real f_mhz, input int n);
-    tw = $rtoi(f_mhz / 100.0 * 4294967296.0); @(posedge clk); #1 en = 1; repeat (n) @(posedge clk); #1 en = 0; repeat (IT + 10) @(posedge clk);
-  endtask
+  // test tasks: tests/dds_tests.sv
+  `include "dds_tests.sv"
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("dds_tb.vcd"); $dumpvars(0, dds_tb); end
     repeat (4) @(posedge clk); rst_n = 1; repeat (2) @(posedge clk);

@@ -5,6 +5,7 @@
 //   expiry latency, that activity restarts the count and clears expired,
 //   that timeout 0 disables the timer, the single-clock timeout pulse and
 //   tick enable operation. Prints TEST PASSED on success.
+//   The test tasks are in tests/timeout_timer_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module timeout_timer_tb;
@@ -13,10 +14,8 @@ module timeout_timer_tb;
   timeout_timer #(.WIDTH(10)) dut (.clk, .rst_n, .ce_i(ce), .activity_i(act), .timeout_i(tmo), .expired_o(exp), .timeout_pulse_o(pls));
   int errors = 0, n, pulses = 0;
   always @(posedge clk) if (pls) pulses++;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
-  endtask
-  task automatic kick(); @(posedge clk); #1 act = 1; @(posedge clk); #1 act = 0; endtask
+  // test tasks: tests/timeout_timer_tests.sv
+  `include "timeout_timer_tests.sv"
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("timeout_timer_tb.vcd"); $dumpvars(0, timeout_timer_tb); end
     repeat (3) @(posedge clk); rst_n = 1; tmo = 0; repeat (50) @(posedge clk);

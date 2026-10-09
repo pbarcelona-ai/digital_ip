@@ -12,6 +12,7 @@
 //   -DTB_MAX_W/-DTB_MAX_H for images larger than 48x40.
 //   Extra tests: THRESH = 0 and 200, EDGE_EN = 0 (must equal bilinear)
 //   and coverage that both diagonal modes are exercised.
+//   The test tasks are in tests/scaler_edge_directed_tests.sv (`included).
 // Date: 2026-09-26
 
 `timescale 1ns/1ps
@@ -108,13 +109,8 @@ module tb_scaler_edge_directed;
     return r;
   endfunction
 
-  // Program and read back THRESH / EDGE_CTRL
-  task automatic ip_configure();
-    axil_write(12'h040, thresh);
-    axil_write(12'h044, edge_en);
-    axil_check(12'h040, thresh);
-    axil_check(12'h044, edge_en);
-  endtask
+  // test tasks: tests/scaler_edge_directed_tests.sv
+  `include "scaler_edge_directed_tests.sv"
 
   // Main test sequence
   initial begin

@@ -6,6 +6,7 @@
 //   a change occurring between clock edges never produces a glitch (output
 //   only changes on clock edges). Runs 2 and 3 stage instances. Prints
 //   TEST PASSED on success.
+//   The test tasks are in tests/bit_sync_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module bit_sync_tb;
@@ -14,9 +15,8 @@ module bit_sync_tb;
   bit_sync #(.STAGES(2), .RESET_VAL(1'b1)) u2 (.clk, .rst_n, .d_i(d), .q_o(q2));
   bit_sync #(.STAGES(3)) u3 (.clk, .rst_n, .d_i(d), .q_o(q3));
   int errors = 0;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
-  endtask
+  // test tasks: tests/bit_sync_tests.sv
+  `include "bit_sync_tests.sv"
   int n;
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("bit_sync_tb.vcd"); $dumpvars(0, bit_sync_tb); end

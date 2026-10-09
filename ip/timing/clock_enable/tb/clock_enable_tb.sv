@@ -5,6 +5,7 @@
 //   pulse spacing for several divide ratios (including 0, 1 and a runtime
 //   change), the pulse width, and that disabling stops the pulses. Prints
 //   TEST PASSED on success.
+//   The test tasks are in tests/clock_enable_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module clock_enable_tb;
@@ -13,14 +14,8 @@ module clock_enable_tb;
   clock_enable #(.DIV_W(8)) dut (.clk, .rst_n, .en_i(en), .div_i(div), .ce_o(ce));
   int errors = 0, last, cyc = 0;
   always @(posedge clk) cyc++;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
-  endtask
-  task automatic spacing(input int expect_div);
-    int a, b;
-    @(posedge ce); a = cyc; @(posedge ce); b = cyc; @(posedge ce);
-    check(b - a == expect_div && cyc - b == expect_div, $sformatf("div %0d spacing %0d/%0d", expect_div, b - a, cyc - b));
-  endtask
+  // test tasks: tests/clock_enable_tests.sv
+  `include "clock_enable_tests.sv"
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("clock_enable_tb.vcd"); $dumpvars(0, clock_enable_tb); end
     repeat (3) @(posedge clk); rst_n = 1; en = 1;

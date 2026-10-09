@@ -8,6 +8,7 @@
 //   counted, the output never shows a partial packet before its last word
 //   was written, and pkt_count returns to zero. Prints TEST PASSED on
 //   success.
+//   The test tasks are in tests/packet_fifo_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module packet_fifo_tb;
@@ -19,9 +20,6 @@ module packet_fifo_tb;
   int errors = 0, drops = 0, exp_drops = 0, good_pkts = 0, got_pkts = 0;
   logic [16:0] exp_q[$];                 // {last, data} of accepted packets
   logic [16:0] pend[$];                  // words of the packet being written
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
-  endtask
   // reader
   always @(posedge clk) if (rst_n) begin
     mr <= !stall && ($urandom_range(0, 9) < 6);
@@ -35,16 +33,8 @@ module packet_fifo_tb;
     end
     if (drop) drops++;
   end
-  // writer: one packet at a time; model decides acceptance from the FIFO occupancy visible in the DUT
-  task automatic send_packet(input int len, input bit bad);
-    int free_words, stored; bit will_drop;
-    pend.delete();
-    for (int i = 0; i < len; i++) begin
-      @(posedge clk); #1 sv = 1; sd = $urandom; sl = (i == len - 1); sb = bad && (i == len - 1);
-      pend.push_back({sl, sd});
-    end
-    @(posedge clk); #1 sv = 0; sl = 0; sb = 0;
-  endtask
+  // test tasks: tests/packet_fifo_tests.sv
+  `include "packet_fifo_tests.sv"
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("packet_fifo_tb.vcd"); $dumpvars(0, packet_fifo_tb); end
     repeat (3) @(posedge clk); rst_n = 1;

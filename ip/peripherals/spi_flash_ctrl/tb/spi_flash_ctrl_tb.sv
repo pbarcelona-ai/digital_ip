@@ -9,6 +9,7 @@
 //   erase, a read with stream back-pressure, a write with a slow source, a
 //   command issued while busy (ignored, cmd_err), the done flag / irq and
 //   W1C, and the CLKDIV setting. Prints TEST PASSED on success.
+//   The test tasks are in tests/spi_flash_ctrl_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module spi_flash_model (input logic sclk, input logic cs_n, input logic mosi, output logic miso, output int wip_cycles);
@@ -73,7 +74,6 @@ module spi_flash_ctrl_tb;
     .sclk_o(sclk), .cs_n_o(cs_n), .mosi_o(mosi), .miso_i(miso), .irq_o(irq));
   spi_flash_model flash (.sclk, .cs_n, .mosi, .miso, .wip_cycles(wipc));
   int errors = 0; logic [31:0] rd;
-  task automatic check(input bit c, input string m); if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end endtask
   // receive collector
   byte rxq[$]; bit last_seen = 0; int rx_gap = 0;
   always @(posedge aclk) begin
@@ -92,15 +92,8 @@ module spi_flash_ctrl_tb;
       if (txq.size() > 0 && (!slow_tx || tx_cnt % 5 == 0) && !(txv && !txr)) begin txd <= txq.pop_front(); txv <= 1; end
     end
   end
-  task automatic cmd(input logic [7:0] op, input bit ae, input int dummy, input bit rdd, input bit wrd, input logic [23:0] a, input int len);
-    bfm.write(8'h04, {8'd0, a}); bfm.write(8'h08, len);
-    bfm.write(8'h00, {14'd0, wrd, rdd, dummy[3:0], 3'd0, ae, op});
-  endtask
-  task automatic wait_idle(); logic [31:0] s; do bfm.read(8'h10, s); while (s[0]); endtask
-  task automatic flash_status(output logic [7:0] st);
-    rxq.delete(); cmd(8'h05, 0, 0, 1, 0, 0, 1); wait_idle(); st = rxq.size() ? rxq[0] : 8'hxx;
-  endtask
-  task automatic wait_wip(); logic [7:0] s; int n; n = 0; do begin flash_status(s); n++; end while (s[0] && n < 200); check(n < 200, "WIP never cleared"); endtask
+  // test tasks: tests/spi_flash_ctrl_tests.sv
+  `include "spi_flash_ctrl_tests.sv"
   byte ref_mem [0:255]; logic [7:0] st;
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("spi_flash_ctrl_tb.vcd"); $dumpvars(0, spi_flash_ctrl_tb); end

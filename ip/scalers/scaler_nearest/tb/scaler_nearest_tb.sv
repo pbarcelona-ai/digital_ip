@@ -10,6 +10,7 @@
 //   size, +OUTDIR=<dir>, +NO_PPM, +VCD=<file>, +NO_VCD, +TIMEOUT_MS=<n>.
 //   Inputs/outputs are written as PPM P6 images. Compile with
 //   -DTB_MAX_W/-DTB_MAX_H for images larger than 48x40.
+//   The test tasks are in tests/scaler_nearest_tests.sv (`included).
 // Date: 2026-09-26
 
 `timescale 1ns/1ps
@@ -69,9 +70,8 @@ module tb_scaler_nearest;
     return fetch(ix, iy);
   endfunction
 
-  // No IP-specific registers to program
-  task automatic ip_configure();
-  endtask
+  // test tasks: tests/scaler_nearest_tests.sv
+  `include "scaler_nearest_tests.sv"
 
   // Main test sequence
   initial begin

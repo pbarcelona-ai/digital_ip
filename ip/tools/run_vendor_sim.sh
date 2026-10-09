@@ -18,7 +18,7 @@ case "$SIM" in
     VCS_BIN="${VCS_BIN:-vcs}"
     command -v "$VCS_BIN" >/dev/null || { echo "vcs not found (set VCS_BIN)" >&2; exit 2; }
     VCS_FLAGS_ARR=(); read -r -a VCS_FLAGS_ARR <<< "${VCS_FLAGS:-}"
-    "$VCS_BIN" -full64 -sverilog -top "$TOP" -I"$ROOT/scalers/scaler_tb_lib/src" \
+    "$VCS_BIN" -full64 -sverilog -top "$TOP" -I"$ROOT/scalers/scaler_tb_lib/src" +incdir+"$ROOT/scalers/$IP/tb/tests" \
       "${DEFINES[@]}" "${VCS_FLAGS_ARR[@]}" "${SRCS[@]}" -o "$OUT/$TOP.simv" > "$OUT/build.log" 2>&1 \
       || { tail -40 "$OUT/build.log"; exit 1; }
     (cd "$OUT" && "./$TOP.simv" "${PLUSARGS[@]}") | tee "$OUT/sim.log"
@@ -30,7 +30,7 @@ case "$SIM" in
     command -v "$VSIM_BIN" >/dev/null || { echo "$SIM vsim not found (set VSIM_BIN)" >&2; exit 2; }
     (cd "$OUT" && "$VLIB_BIN" work)
     VLOG_FLAGS_ARR=(); read -r -a VLOG_FLAGS_ARR <<< "${VLOG_FLAGS:-}"
-    "$VLOG_BIN" -sv -work "$OUT/work" +incdir+"$ROOT/scalers/scaler_tb_lib/src" \
+    "$VLOG_BIN" -sv -work "$OUT/work" +incdir+"$ROOT/scalers/scaler_tb_lib/src" +incdir+"$ROOT/scalers/$IP/tb/tests" \
       "${DEFINES[@]}" "${VLOG_FLAGS_ARR[@]}" "${SRCS[@]}" > "$OUT/build.log" 2>&1 \
       || { tail -40 "$OUT/build.log"; exit 1; }
     VSIM_FLAGS_ARR=(); read -r -a VSIM_FLAGS_ARR <<< "${VSIM_FLAGS:-}"
@@ -59,7 +59,7 @@ case "$SIM" in
     VCS_BIN="${VCS_BIN:-vcs}"
     command -v "$VCS_BIN" >/dev/null || { echo "vcs not found (set VCS_BIN)" >&2; exit 2; }
     VCS_FLAGS_ARR=(); read -r -a VCS_FLAGS_ARR <<< "${VCS_FLAGS:-}"
-    "$VCS_BIN" -full64 -sverilog -top "$TOP" -I"$ROOT/scalers/scaler_tb_lib/src" \
+    "$VCS_BIN" -full64 -sverilog -top "$TOP" -I"$ROOT/scalers/scaler_tb_lib/src" +incdir+"$ROOT/scalers/$IP/tb/tests" \
       "${DEFINES[@]}" "${VCS_FLAGS_ARR[@]}" "${SRCS[@]}" -o "$OUT/$TOP.simv" > "$OUT/build.log" 2>&1 \
       || { tail -40 "$OUT/build.log"; exit 1; }
     (cd "$OUT" && "./$TOP.simv" "${PLUSARGS[@]}") | tee "$OUT/sim.log"
@@ -71,7 +71,7 @@ case "$SIM" in
     command -v "$VSIM_BIN" >/dev/null || { echo "$SIM vsim not found (set VSIM_BIN)" >&2; exit 2; }
     (cd "$OUT" && "$VLIB_BIN" work)
     VLOG_FLAGS_ARR=(); read -r -a VLOG_FLAGS_ARR <<< "${VLOG_FLAGS:-}"
-    "$VLOG_BIN" -sv -work "$OUT/work" +incdir+"$ROOT/scalers/scaler_tb_lib/src" \
+    "$VLOG_BIN" -sv -work "$OUT/work" +incdir+"$ROOT/scalers/scaler_tb_lib/src" +incdir+"$ROOT/scalers/$IP/tb/tests" \
       "${DEFINES[@]}" "${VLOG_FLAGS_ARR[@]}" "${SRCS[@]}" > "$OUT/build.log" 2>&1 \
       || { tail -40 "$OUT/build.log"; exit 1; }
     VSIM_FLAGS_ARR=(); read -r -a VSIM_FLAGS_ARR <<< "${VSIM_FLAGS:-}"

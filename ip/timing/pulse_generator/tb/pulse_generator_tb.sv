@@ -6,6 +6,7 @@
 //   width equal to and larger than the period, width 0 and period 0), one-
 //   shot mode with retrigger rejection and inverted polarity. Prints TEST
 //   PASSED on success.
+//   The test tasks are in tests/pulse_generator_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module pulse_generator_tb;
@@ -15,16 +16,8 @@ module pulse_generator_tb;
   pulse_generator #(.WIDTH(12), .INVERT(1)) dinv (.clk, .rst_n, .en_i(en), .oneshot_i(os), .trigger_i(trg), .period_i(per), .width_i(wid), .pulse_o(pi), .start_o(sti));
   int errors = 0, cyc = 0;
   always @(posedge clk) cyc++;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
-  endtask
-  // measure over two consecutive start pulses
-  task automatic meas(output int period, output int width);
-    int t0, t1, hi; hi = 0;
-    @(posedge st); t0 = cyc;
-    do begin @(posedge clk); #1 hi += p; end while (!st || cyc == t0);
-    period = cyc - t0; width = hi;
-  endtask
+  // test tasks: tests/pulse_generator_tests.sv
+  `include "pulse_generator_tests.sv"
   int mp, mw;
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("pulse_generator_tb.vcd"); $dumpvars(0, pulse_generator_tb); end

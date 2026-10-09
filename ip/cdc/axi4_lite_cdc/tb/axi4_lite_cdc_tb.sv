@@ -7,6 +7,7 @@
 //   write/readback, byte strobes, back-to-back transactions, response
 //   codes for out-of-range addresses and a random access soak. Prints TEST
 //   PASSED on success.
+//   The test tasks are in tests/axi4_lite_cdc_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module axi4_lite_cdc_tb;
@@ -41,9 +42,8 @@ module axi4_lite_cdc_tb;
     .s_axil_rdata(m_rdata), .s_axil_rresp(m_rresp), .s_axil_rvalid(m_rvalid), .s_axil_rready(m_rready),
     .reg_o(regs), .wr_pulse_o(wrp), .wr_data_o(wrd), .rd_i(regs));
   int errors = 0; logic [31:0] rd; logic [31:0] model [0:7];
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
-  endtask
+  // test tasks: tests/axi4_lite_cdc_tests.sv
+  `include "axi4_lite_cdc_tests.sv"
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("axi4_lite_cdc_tb.vcd"); $dumpvars(0, axi4_lite_cdc_tb); end
     repeat (5) @(posedge aclk); aresetn = 1; mresetn = 1; repeat (5) @(posedge aclk);

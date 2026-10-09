@@ -6,6 +6,7 @@
 //   and checks the counted edges per gate window against the expected
 //   value within plus/minus 1, plus disable behaviour and saturation of a
 //   small counter. Prints TEST PASSED on success.
+//   The test tasks are in tests/frequency_counter_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module frequency_counter_tb;
@@ -18,14 +19,8 @@ module frequency_counter_tb;
   always begin #(half) sig = ~sig; end
   always begin #(20.0) sig2 = ~sig2; end            // 25 MHz -> 2500 edges per gate: saturates 8 bit counter
   int errors = 0;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
-  endtask
-  task automatic expect_edges(input real f_mhz);
-    int e; e = int'(f_mhz * 100.0);               // edges in 100 us
-    half = 500.0 / f_mhz; #2000; @(posedge v); @(posedge v); #1;
-    check(cnt >= e - 1 && cnt <= e + 1 && !ov, $sformatf("%f MHz: count %0d exp %0d", f_mhz, cnt, e));
-  endtask
+  // test tasks: tests/frequency_counter_tests.sv
+  `include "frequency_counter_tests.sv"
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("frequency_counter_tb.vcd"); $dumpvars(0, frequency_counter_tb); end
     repeat (3) @(posedge clk); rst_n = 1; en = 1;

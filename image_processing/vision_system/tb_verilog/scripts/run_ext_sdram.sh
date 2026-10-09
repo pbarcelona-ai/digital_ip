@@ -3,7 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p work
 
-iverilog -g2012 -s tb_ext_sdram -o work/tb_ext_sdram.vvp \
+iverilog -g2012 -I tests -s tb_ext_sdram -o work/tb_ext_sdram.vvp \
   ../include/barrel_pkg.sv ../include/distortion_model_pkg.sv tb_ext_sdram.sv \
   ../ip/fixed_recip/src/fixed_recip.sv ../ip/mulq/src/mulq_s.sv \
   ../ip/coord_gen/src/coord_gen.sv ../ip/bilinear/src/bilinear.sv ../ip/bicubic/src/bicubic.sv \

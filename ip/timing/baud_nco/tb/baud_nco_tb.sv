@@ -7,6 +7,7 @@
 //   against a real-valued model, including random back pressure on tready.
 //   Prints TEST PASSED on success. Use +vcd to dump sim/baud_nco_tb.vcd
 //   for Surfer.
+//   The test tasks are in tests/baud_nco_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module baud_nco_tb;
@@ -35,24 +36,9 @@ module baud_nco_tb;
     .baud_tick_o(baud_tick), .sq_o(sq));
 
   int errors = 0;
-  task automatic check(input bit cond, input string msg);
-    if (!cond) begin errors++; $display("ERROR @%0t: %s", $time, msg); end
-  endtask
 
-  task automatic axil_write(input [7:0] a, input [31:0] d);
-    @(posedge aclk); #1;
-    awaddr = a; awvalid = 1; wdata = d; wstrb = 4'hF; wvalid = 1; bready = 1;
-    fork
-      begin wait (awready); @(posedge aclk); #1 awvalid = 0; end
-      begin wait (wready);  @(posedge aclk); #1 wvalid = 0;  end
-    join
-    wait (bvalid); @(posedge aclk); #1;
-  endtask
-  task automatic axil_read(input [7:0] a, output [31:0] d);
-    @(posedge aclk); #1; araddr = a; arvalid = 1; rready = 1;
-    wait (arready); @(posedge aclk); #1 arvalid = 0;
-    wait (rvalid); d = rdata; @(posedge aclk); #1;
-  endtask
+  // test tasks: tests/baud_nco_tests.sv
+  `include "baud_nco_tests.sv"
 
   // Count baud ticks
   int tick_count;

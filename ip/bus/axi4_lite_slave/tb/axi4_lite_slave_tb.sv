@@ -7,6 +7,7 @@
 //   user SLVERR on write and read, DECERR for an unmapped address,
 //   READ_WAIT mode with a delayed read data valid, and back-to-back random
 //   accesses checked against a model. Prints TEST PASSED on success.
+//   The test tasks are in tests/axi4_lite_slave_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module axi4_lite_slave_tb;
@@ -28,9 +29,8 @@ module axi4_lite_slave_tb;
     if (pend != 0) begin pend <= pend - 1; if (pend == 1) rd_valid <= 1; end
     if (rd_en) begin rdd <= regs[ra[5:2]]; rd_err <= (ra == 8'h3C); pend <= rd_delay; end
   end
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
-  endtask
+  // test tasks: tests/axi4_lite_slave_tests.sv
+  `include "axi4_lite_slave_tests.sv"
   logic [31:0] rd; logic [31:0] model [0:15];
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("axi4_lite_slave_tb.vcd"); $dumpvars(0, axi4_lite_slave_tb); end

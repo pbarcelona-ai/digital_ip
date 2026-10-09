@@ -90,17 +90,8 @@ module tb_ext_frame_buffer;
     end
   end
 
-  task automatic write_pixel(input logic [ADDR_W-1:0] address, input logic [PIX_W-1:0] value);
-    begin
-      @(negedge clk);
-      wr_en = 1'b1;
-      wr_addr = address;
-      wr_data = value;
-      do @(posedge clk); while (!wr_ready);
-      @(negedge clk);
-      wr_en = 1'b0;
-    end
-  endtask
+  // test tasks: tests/ext_frame_buffer_tests.sv
+  `include "ext_frame_buffer_tests.sv"
 
   initial begin
     repeat (3) @(negedge clk);

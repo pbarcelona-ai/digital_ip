@@ -7,14 +7,12 @@
 //   component sums, pixel count and clipped-pixel count; every frame_done
 //   pulse is checked against the next completed frame, the last one being
 //   reported through flush_i. Prints TEST PASSED on success.
+//   The test tasks are in tests/isp_stats_tests.sv (`included).
 // Date: 2026-10-01
 `timescale 1ns/1ps
 module isp_stats_tb;
   logic clk = 0, rst_n = 0; always #5 clk = ~clk;
   int errors = 0;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; if (errors < 30) $display("ERROR @%0t: %s", $time, m); end
-  endtask
 
   logic [7:0] thr; logic flush; logic [23:0] d; logic u, v, r;
   logic [39:0] sr_, sg, sb; logic [31:0] np, nc, nf; logic done;
@@ -39,17 +37,8 @@ module isp_stats_tb;
     ndone++;
   end
 
-  // Drive npix accepted pixels; tuser on the first one
-  task automatic frame(input int npix);
-    int n; n = 0;
-    while (n < npix) begin
-      v <= ($urandom_range(3) != 0); r <= ($urandom_range(3) != 0); u <= (n == 0);
-      d <= {8'($urandom_range(255)), 8'($urandom_range(255)), 8'($urandom_range(255))};
-      @(posedge clk);
-      if (v && r) n++;
-    end
-    v <= 0; u <= 0;
-  endtask
+  // test tasks: tests/isp_stats_tests.sv
+  `include "isp_stats_tests.sv"
 
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("isp_stats_tb.vcd"); $dumpvars(0, isp_stats_tb); end

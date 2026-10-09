@@ -12,6 +12,9 @@
 //                                                    -> csi2_tx  -> MIPI CSI-2 (processor)
 //   vid_timing_gen drives axis_to_video (genlock to the camera) and hdmi_tx;
 //   isp_stats taps the linear RGB after the CCM for AE / AWB software.
+//   eof_in_o / eof_out_o pulse at the end of every frame leaving
+//   csi2_raw_unpack (first stage) / entering axis_to_video (last stage),
+//   e.g. for a frame counter.
 //
 //   Every function can be bypassed (BYPASS register, applied at the next
 //   frame start): black level, white balance, defect correction, demosaic
@@ -170,6 +173,11 @@ module video_pipeline #(
   input  logic                ins_s_axis_tvalid,
   output logic                ins_s_axis_tready,
 `endif
+  // End-of-frame markers (pix_clk pulses, e.g. for a frame counter): the last pixel of a frame
+  // leaving csi2_raw_unpack (first ISP stage, FRAME_SIZE height) / entering axis_to_video (last
+  // stream stage, VTG v active height)
+  output logic                eof_in_o,
+  output logic                eof_out_o,
   output logic                stats_done_o       // pulse: new statistics available
 );
 `ifndef VP_CONFIGURATION_SV
@@ -468,6 +476,28 @@ module video_pipeline #(
     .hs_pol_i(regs[43*32 + 0]), .vs_pol_i(regs[43*32 + 1]),
     .lock_en_i(lock_en), .src_ready_i(src_ready), .lock_max_i(regs[44*32 +: 16]),
     .de_o(de), .hs_o(hs), .vs_o(vs), .x_o(vx), .y_o(vy), .sof_o(sof), .eol_o(eol), .vblank_o(vbl), .waiting_o(waiting));
+
+  // ================================================================ end-of-frame markers
+  // Line count from the SOF beat (tuser); the tlast of line height - 1 ends the frame.
+  logic [15:0] ln_in, ln_out;
+  wire  [15:0] ln_in_c  = u_u ? 16'd0 : ln_in;
+  wire  [15:0] ln_out_c = o_u ? 16'd0 : ln_out;
+  always_ff @(posedge clk) begin
+    if (!rst_n) begin ln_in <= '0; ln_out <= '0; eof_in_o <= 1'b0; eof_out_o <= 1'b0; end
+    else begin
+      eof_in_o <= 1'b0; eof_out_o <= 1'b0;
+      if (u_v && u_r) begin
+        if (!u_l)                ln_in <= ln_in_c;
+        else if (ln_in_c == fh - 16'd1) begin ln_in <= '0; eof_in_o <= 1'b1; end
+        else                     ln_in <= ln_in_c + 16'd1;
+      end
+      if (o_v && o_r) begin
+        if (!o_l)                ln_out <= ln_out_c;
+        else if (ln_out_c == v_act - 16'd1) begin ln_out <= '0; eof_out_o <= 1'b1; end
+        else                     ln_out <= ln_out_c + 16'd1;
+      end
+    end
+  end
 
   logic [23:0] v_rgb; logic v_de, v_hs, v_vs, locked, underflow;
   axis_to_video #(.PIX_W(24), .FIFO_DEPTH(OUT_FIFO)) u_out (.clk, .rst_n, .tpg_en_i(tpg),

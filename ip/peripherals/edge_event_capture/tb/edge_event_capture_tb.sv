@@ -6,6 +6,7 @@
 //   filtering of short glitches, pending flags with write-1-to-clear,
 //   event counter, timestamped AXI-Stream event records, drop counter on
 //   FIFO overflow and the irq output. Prints TEST PASSED on success.
+//   The test tasks are in tests/edge_event_capture_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module edge_event_capture_tb;
@@ -25,9 +26,8 @@ module edge_event_capture_tb;
     .sig_i(sig), .rise_o, .fall_o, .irq_o(irq),
     .m_axis_tdata(m_tdata), .m_axis_tvalid(m_tvalid), .m_axis_tready(m_tready), .m_axis_tlast(m_tlast));
   int errors = 0; logic [31:0] rd;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
-  endtask
+  // test tasks: tests/edge_event_capture_tests.sv
+  `include "edge_event_capture_tests.sv"
   logic [TS_W+2*W-1:0] ev_q[$], e0, e1;
   always @(posedge aclk) if (m_tvalid && m_tready) ev_q.push_back(m_tdata);
   initial begin

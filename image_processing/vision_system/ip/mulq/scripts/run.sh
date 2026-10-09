@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.."
 
 DEFS=""
 [ "${VCD:-0}" = "1" ] && DEFS="-DDUMP_VCD"
-iverilog -g2012 $DEFS -o tb_mulq.vvp src/mulq_s.sv tb/tb_mulq.sv
+iverilog -g2012 -I tb/tests $DEFS -o tb_mulq.vvp src/mulq_s.sv tb/tb_mulq.sv
 vvp tb_mulq.vvp
 
 # Optional waveform viewing (see ../../synth/view_waves.sh): VCD=1 dumps

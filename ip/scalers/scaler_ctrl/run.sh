@@ -104,7 +104,7 @@ cd "$TB_DIR"
 if ! iverilog -g2012 -Wall -Wno-timescale -Wno-implicit-dimensions -Wno-portbind \
        -Wno-sensitivity-entire-array -Wno-sensitivity-entire-vector \
        -DTB_MAX_W="$MAX_W" -DTB_MAX_H="$MAX_H" ${DEFS[@]+"${DEFS[@]}"} \
-       -I "$ROOT/scalers/scaler_tb_lib/src" -s "tb_${IP}" -o "$SIM_DIR/sim.vvp" -f build.f \
+       -I "$ROOT/scalers/scaler_tb_lib/src" -I "$HERE/tb/tests" -s "tb_${IP}" -o "$SIM_DIR/sim.vvp" -f build.f \
        > "$SIM_DIR/build.log" 2>&1; then
   cat "$SIM_DIR/build.log"
   echo "run.sh: compile FAILED" >&2

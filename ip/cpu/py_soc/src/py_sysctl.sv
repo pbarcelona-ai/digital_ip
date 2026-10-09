@@ -7,10 +7,14 @@
 //   0x04 BOOT_STATUS [0] boot done [1] boot error [6:4] boot error code
 //   0x08 CYCLES      free-running clock counter (wraps at 2**32)
 //   0x0C ID          32'h5059_0100 ("PY", version 1.0)
-//   Clock - aclk only. Reset - aresetn (system reset) for the bus and
-//   counter, por_n (external reset) for RESET_CAUSE. Latency - register
-//   access through axi4_lite_slave, 2-3 clocks. Errors - accesses beyond
-//   0x0C return DECERR.
+//   0x10 CORE_RESET  [0] 1 = release the reset of the logic outside py_soc
+//        (core_rst_n_o high); reset value 0 = held in reset. Cleared by every
+//        system reset (external or watchdog), so the firmware releases it
+//        again after each boot, once the CPU is initialised.
+//   Clock - aclk only. Reset - aresetn (system reset) for the bus, counter
+//   and CORE_RESET, por_n (external reset) for RESET_CAUSE. Latency -
+//   register access through axi4_lite_slave, 2-3 clocks. Errors - accesses
+//   beyond 0x10 return DECERR.
 // Date: 2026-10-01
 module py_sysctl (
   input  logic        aclk,
@@ -20,6 +24,7 @@ module py_sysctl (
   input  logic        boot_done_i,
   input  logic        boot_err_i,
   input  logic [2:0]  boot_err_code_i,
+  output logic        core_rst_n_o, // CORE_RESET[0]: reset of the logic outside py_soc (0 = in reset)
   // AXI4-Lite slave
   input  logic [7:0]  s_axil_awaddr,
   input  logic        s_axil_awvalid,
@@ -42,7 +47,7 @@ module py_sysctl (
   localparam logic [31:0] ID = 32'h5059_0100;
 
   logic wr_en, rd_en; logic [7:0] wr_addr, rd_addr; logic [31:0] wr_data, rd_data; logic [3:0] wr_strb;
-  axi4_lite_slave #(.ADDR_W(8), .READ_WAIT(0), .MAP_WORDS(4)) u_slv (
+  axi4_lite_slave #(.ADDR_W(8), .READ_WAIT(0), .MAP_WORDS(5)) u_slv (
     .aclk, .aresetn,
     .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready, .s_axil_wdata, .s_axil_wstrb, .s_axil_wvalid, .s_axil_wready,
     .s_axil_bresp, .s_axil_bvalid, .s_axil_bready, .s_axil_araddr, .s_axil_arvalid, .s_axil_arready,
@@ -56,8 +61,14 @@ module py_sysctl (
     if (!por_n) cause <= 2'b01;
     else begin
       if (wdt_reset_i) cause[1] <= 1'b1;
-      else if (aresetn && wr_en && wr_addr[3:2] == 2'd0) cause <= cause & ~wr_data[1:0];
+      else if (aresetn && wr_en && wr_addr[4:2] == 3'd0) cause <= cause & ~wr_data[1:0];
     end
+  end
+
+  // Core logic reset release, written by the firmware
+  always_ff @(posedge aclk) begin
+    if (!aresetn)                              core_rst_n_o <= 1'b0;
+    else if (wr_en && wr_addr[4:2] == 3'd4)    core_rst_n_o <= wr_data[0];
   end
 
   logic [31:0] cycles;
@@ -67,11 +78,12 @@ module py_sysctl (
   end
 
   always_comb begin
-    case (rd_addr[3:2])
-      2'd0:    rd_data = {30'd0, cause};
-      2'd1:    rd_data = {25'd0, boot_err_code_i, 2'd0, boot_err_i, boot_done_i};
-      2'd2:    rd_data = cycles;
-      default: rd_data = ID;
+    case (rd_addr[4:2])
+      3'd0:    rd_data = {30'd0, cause};
+      3'd1:    rd_data = {25'd0, boot_err_code_i, 2'd0, boot_err_i, boot_done_i};
+      3'd2:    rd_data = cycles;
+      3'd3:    rd_data = ID;
+      default: rd_data = {31'd0, core_rst_n_o};
     endcase
   end
 endmodule

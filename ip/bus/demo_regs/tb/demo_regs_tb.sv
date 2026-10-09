@@ -8,6 +8,7 @@
 //   and cleared by software, W1S set by software and cleared by hardware,
 //   the per-register write pulses and the error response for an address
 //   beyond the map. Prints TEST PASSED on success.
+//   The test tasks are in tests/demo_regs_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module demo_regs_tb;
@@ -21,7 +22,8 @@ module demo_regs_tb;
     .s_axil_araddr, .s_axil_arvalid, .s_axil_arready, .s_axil_rdata, .s_axil_rresp, .s_axil_rvalid, .s_axil_rready,
     .id_i, .id_wr_o, .ctrl_o, .ctrl_wr_o, .status_o, .status_set_i, .status_wr_o, .thresh_o, .thresh_wr_o, .count_i, .count_wr_o, .trig_o, .trig_clr_i, .trig_wr_o);
   int errors = 0, pulses = 0; logic [31:0] rd;
-  task automatic check(input bit c, input string m); if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end endtask
+  // test tasks: tests/demo_regs_tests.sv
+  `include "demo_regs_tests.sv"
   always @(posedge aclk) if (ctrl_wr_o) pulses++;
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("demo_regs_tb.vcd"); $dumpvars(0, demo_regs_tb); end

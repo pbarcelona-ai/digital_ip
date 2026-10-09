@@ -7,15 +7,13 @@
 //   only apply at the next frame), with random input gaps and output
 //   back-pressure. Every component, tuser and tlast is checked. Prints
 //   TEST PASSED on success.
+//   The test tasks are in tests/isp_gamma_tests.sv (`included).
 // Date: 2026-10-01
 `timescale 1ns/1ps
 module isp_gamma_tb;
   localparam int IW = 10, OW = 8, MAXP = 2048;
   logic clk = 0, rst_n = 0; always #5 clk = ~clk;
   int errors = 0;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; if (errors < 30) $display("ERROR @%0t: %s", $time, m); end
-  endtask
 
   logic by, we; logic [IW-1:0] wa; logic [OW-1:0] wd;
   logic [3*IW-1:0] sd; logic [3*OW-1:0] md; logic sl, su, sv, sr, ml, mu, mv, mr;
@@ -33,30 +31,8 @@ module isp_gamma_tb;
     nout++;
   end
 
-  task automatic load(input int curve);
-    for (int a = 0; a < (1 << IW); a++) begin
-      lut[a] = (curve == 1) ? OW'($rtoi(255.0 * ((a / 1023.0) ** (1.0 / 2.2)) + 0.5)) : OW'(255 - (a >> 2));
-      @(posedge clk); we <= 1; wa <= a; wd <= lut[a];
-    end
-    @(posedge clk); we <= 0;
-  endtask
-
-  task automatic frame(input int w, input int h, input bit bypass);
-    W = w; nout = 0; by = bypass;
-    for (int n = 0; n < w * h; n++) begin
-      img[n] = {IW'($urandom_range(1023)), IW'($urandom_range(1023)), IW'(n % 1024)};
-      for (int k = 0; k < 3; k++) exp_px[n][k*OW +: OW] = bypass ? OW'(img[n][k*IW +: IW] >> 2) : lut[img[n][k*IW +: IW]];
-    end
-    for (int n = 0; n < w * h; n++) begin
-      while ($urandom_range(99) < gap_pct) begin sv <= 0; @(posedge clk); end
-      sd <= img[n]; su <= (n == 0); sl <= (n % w == w - 1); sv <= 1;
-      @(posedge clk); while (!sr) @(posedge clk);
-      if (n == w * h / 2) by <= ~bypass;
-    end
-    sv <= 0;
-    repeat (20) @(posedge clk);
-    check(nout == w * h, $sformatf("%0d pixels out of %0d", nout, w * h));
-  endtask
+  // test tasks: tests/isp_gamma_tests.sv
+  `include "isp_gamma_tests.sv"
 
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("isp_gamma_tb.vcd"); $dumpvars(0, isp_gamma_tb); end

@@ -7,6 +7,7 @@
 //   from hardware and clear by software (including a simultaneous set),
 //   W1S behaviour, write pulses and DECERR beyond the last register.
 //   Prints TEST PASSED on success.
+//   The test tasks are in tests/axi4_lite_regs_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module axi4_lite_regs_tb;
@@ -28,9 +29,8 @@ module axi4_lite_regs_tb;
     .hw_i(hw), .hw_set_i(hws), .reg_o(r), .wr_pulse_o(wp));
   int errors = 0, pulses = 0; logic [31:0] rd;
   always @(posedge aclk) if (|wp) pulses++;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
-  endtask
+  // test tasks: tests/axi4_lite_regs_tests.sv
+  `include "axi4_lite_regs_tests.sv"
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("axi4_lite_regs_tb.vcd"); $dumpvars(0, axi4_lite_regs_tb); end
     repeat (4) @(posedge aclk); aresetn = 1; repeat (2) @(posedge aclk);

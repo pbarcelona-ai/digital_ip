@@ -6,6 +6,7 @@
 //   are checked with directed boundary addresses and 20000 random
 //   addresses against a behavioral range model (hit, miss). Prints TEST
 //   PASSED on success.
+//   The test tasks are in tests/axi4_lite_decoder_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module axi4_lite_decoder_tb;
@@ -21,10 +22,8 @@ module axi4_lite_decoder_tb;
     if (x >= 32'h4000_0100 && x < 32'h4000_0200) return {1'b0, 3'b100};
     return 4'b1000;
   endfunction
-  task automatic t(input logic [31:0] x);
-    logic [3:0] e; a = x; #1; e = model(x);
-    if ({miss, sel} !== ((e[3]) ? {1'b1, 3'b000} : {1'b0, e[2:0]}) || multi) begin errors++; $display("ERROR addr %h: sel %b miss %b exp %b", x, sel, miss, e); end
-  endtask
+  // test tasks: tests/axi4_lite_decoder_tests.sv
+  `include "axi4_lite_decoder_tests.sv"
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("axi4_lite_decoder_tb.vcd"); $dumpvars(0, axi4_lite_decoder_tb); end
     t(32'h1000_0FFF); t(32'h1000_1000); t(32'h1000_1FFF); t(32'h1000_2000); t(32'h2000_FFFF); t(32'h2001_0000);

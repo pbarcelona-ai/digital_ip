@@ -8,6 +8,7 @@
 //   that a coefficient change applies to later samples, saturation
 //   flagging, and reset clearing of the delay line. Prints TEST PASSED on
 //   success.
+//   The test tasks are in tests/fir_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module fir_tb;
@@ -18,19 +19,8 @@ module fir_tb;
   int errors = 0, nout = 0, nsat = 0;
   logic signed [CW-1:0] cm [T]; longint zm [T];               // model state (transposed form, same as the DUT)
   logic signed [OW-1:0] expq[$]; bit satq[$];
-  task automatic setc(input int k, input int v); @(posedge clk); #1 cwe = 1; cidx = k; cval = v; @(posedge clk); #1 cwe = 0; cm[k] = v; endtask
-  task automatic push(input int x);
-    longint acc, r, pr [T];
-    for (int k = 0; k < T; k++) pr[k] = x * cm[k];
-    acc = pr[0] + zm[0];
-    for (int k = 0; k < T - 2; k++) zm[k] = pr[k+1] + zm[k+1];
-    zm[T-2] = pr[T-1];
-    r = (acc + (1 << (SH - 1))) >>> SH;
-    if (r > 32767) begin expq.push_back(16'sh7FFF); satq.push_back(1); end
-    else if (r < -32768) begin expq.push_back(16'sh8000); satq.push_back(1); end
-    else begin expq.push_back(r[15:0]); satq.push_back(0); end
-  endtask
-  task automatic sample(input int x); @(posedge clk); #1 vi = 1; din = x; push(x); @(posedge clk); #1 vi = 0; endtask
+  // test tasks: tests/fir_tests.sv
+  `include "fir_tests.sv"
   always @(posedge clk) if (rst_n && vo) begin
     logic signed [OW-1:0] e; bit es; e = expq.pop_front(); es = satq.pop_front(); nout++; if (es) nsat++;
     if (dout !== e || sat !== es) begin errors++; $display("ERROR out %0d exp %0d sat %b/%b", dout, e, sat, es); end

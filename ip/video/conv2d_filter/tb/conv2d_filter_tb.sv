@@ -9,15 +9,13 @@
 //   back-pressure, two frame sizes, and a kernel written in the middle of a
 //   frame (that frame keeps the old kernel, the next one uses the new one).
 //   Every output pixel is compared with conv2d_ref. Prints TEST PASSED.
+//   The test tasks are in tests/conv2d_filter_tests.sv (`included).
 // Date: 2026-10-08
 `timescale 1ns/1ps
 module conv2d_filter_tb;
   localparam int N = 5, C = 3, CW = 8, MAXW = 32, MAXH = 16, NN = N * N;
   logic clk = 0, rst_n = 0; always #5 clk = ~clk;
   int errors = 0;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; if (errors < 30) $display("ERROR @%0t: %s", $time, m); end
-  endtask
   initial begin #50ms; $display("ERROR: timeout"); $display("TEST FAILED"); $finish; end
 
   logic [7:0] s_axil_awaddr, s_axil_araddr; logic s_axil_awvalid, s_axil_awready, s_axil_wvalid, s_axil_wready;
@@ -37,14 +35,6 @@ module conv2d_filter_tb;
     .m_tdata(md), .m_tlast(ml), .m_tuser(mu), .m_tvalid(mv), .m_tready(mr));
   conv2d_ref #(.N(N), .C(C), .CW(CW), .MAXW(MAXW), .MAXH(MAXH)) mdl ();
 
-  task automatic wr(input int a, input int d); bfm.write(8'(a), 32'(d)); endtask
-  task automatic rd(input int a, output logic [31:0] d); bfm.read(8'(a), d); endtask
-
-  // Program a kernel (registers and model)
-  task automatic program_kernel(input logic [25*32-1:0] kp, input int sh);
-    for (int i = 0; i < NN; i++) wr(16'h40 + 4 * i, kp[i*32 +: 32]);
-    wr(16'h08, sh);
-  endtask
   function automatic logic [25*32-1:0] random_kernel();
     logic [25*32-1:0] kp; kp = '0;
     for (int i = 0; i < NN; i++) kp[i*32 +: 32] = 32'($urandom_range(600) - 300);
@@ -52,29 +42,8 @@ module conv2d_filter_tb;
   endfunction
 
   int W = 13, H = 9;
-  task automatic new_image();
-    for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) begin
-      logic [23:0] p; p = {8'($urandom), 8'(x * 19 + y * 7), 8'((x < W / 2) ? 8'd0 : 8'd255)};
-      if ($urandom_range(9) == 0) p = $urandom;
-      vid.img[y][x] = p; mdl.img[y][x] = p;
-    end
-  endtask
-  // Stream one frame and compare it with the model's current kernel
-  task automatic run_frame(input string what);
-    int f0, bad; f0 = vid.frames; vid.ow = W; vid.oh = H;
-    vid.send(W, H);
-    while (vid.frames < f0 + 1) @(posedge clk);
-    mdl.run(W, H); compare(what);
-  endtask
-  task automatic compare(input string what);
-    int bad; bad = 0;
-    for (int y = 0; y < H; y++) for (int x = 0; x < W; x++)
-      if (vid.out[y][x] !== mdl.out[y][x]) begin
-        if (bad < 3) $display("  %s (%0d,%0d): %h expected %h", what, x, y, vid.out[y][x], mdl.out[y][x]);
-        bad++;
-      end
-    check(bad == 0, $sformatf("%s: %0d pixels differ", what, bad));
-  endtask
+  // test tasks: tests/conv2d_filter_tests.sv
+  `include "conv2d_filter_tests.sv"
 
   initial begin
     logic [31:0] v; logic [25*32-1:0] ka, kb; int sa, sb;

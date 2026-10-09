@@ -9,14 +9,14 @@
 //   TERC4 (all 16 codes distinct, none a control token) and guard band
 //   symbols are checked against the HDMI tables. Prints TEST PASSED on
 //   success.
+//   The test tasks are in tests/tmds_encoder_tests.sv (`included).
 // Date: 2026-10-01
 `timescale 1ns/1ps
 module tmds_encoder_tb;
   logic clk = 0, rst_n = 0; always #5 clk = ~clk;
   int errors = 0;
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; if (errors < 30) $display("ERROR @%0t: %s", $time, m); end
-  endtask
+  // test tasks: tests/tmds_encoder_tests.sv
+  `include "tmds_encoder_tests.sv"
 
   logic [1:0] mode, c; logic [7:0] d; logic [3:0] t; logic [9:0] g, q;
   tmds_encoder dut (.clk, .rst_n, .mode_i(mode), .d_i(d), .c_i(c), .t_i(t), .g_i(g), .q_o(q));

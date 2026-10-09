@@ -6,6 +6,7 @@
 //   f_out = tuning * f_clk / 2^W, the accumulator against a reference
 //   model, phase offset, load, clock enable gating and the Nyquist flag.
 //   Prints TEST PASSED on success.
+//   The test tasks are in tests/nco_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module nco_tb;
@@ -21,9 +22,8 @@ module nco_tb;
     if (co) carries++;
   end
   always @(negedge clk) if (rst_n && ph !== mph) begin errors++; $display("ERROR phase %h exp %h", ph, mph); end
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
-  endtask
+  // test tasks: tests/nco_tests.sv
+  `include "nco_tests.sv"
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("nco_tb.vcd"); $dumpvars(0, nco_tb); end
     repeat (3) @(posedge clk); rst_n = 1;

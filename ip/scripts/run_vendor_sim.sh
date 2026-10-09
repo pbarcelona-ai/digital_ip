@@ -21,13 +21,15 @@ mkdir -p "$OUT"
 SRCS=(); while IFS= read -r file; do [ -n "$file" ] && SRCS+=("$file"); done < <(filelist "$IP")
 case " ${SRCS[*]} " in *ip_axil_regs.sv*) ;; *) SRCS+=("$REPO/shared/src/common/ip_axil_regs.sv") ;; esac
 TB_SRCS=(); while IFS= read -r file; do [ -n "$file" ] && TB_SRCS+=("$file"); done < <(filelist "$IP" tb/scripts/build.f)
+# test tasks: tb/tests/<name>_tests.sv next to every testbench file compiled (`included)
+TB_INC=(+incdir+"$IPDIR/tb/tests"); for f in "${TB_SRCS[@]}"; do [ -d "$(dirname "$f")/tests" ] && TB_INC+=(+incdir+"$(dirname "$f")/tests"); done
 
 case "$SIM" in
   vcs)
     VCS_BIN="${VCS_BIN:-vcs}"
     command -v "$VCS_BIN" >/dev/null || { echo "vcs not found (set VCS_BIN)" >&2; exit 2; }
     VCS_FLAGS_ARR=(); read -r -a VCS_FLAGS_ARR <<< "${VCS_FLAGS:-}"
-    "$VCS_BIN" -full64 -sverilog -top "$TB" -o "$OUT/$TB.simv" \
+    "$VCS_BIN" -full64 -sverilog -top "$TB" -o "$OUT/$TB.simv" "${TB_INC[@]}" \
       "${VCS_FLAGS_ARR[@]}" "${SRCS[@]}" "${TB_SRCS[@]}" > "$OUT/build.log" 2>&1 \
       || { tail -40 "$OUT/build.log"; exit 1; }
     (cd "$OUT" && "./$TB.simv" "${ARGS[@]}") | tee "$OUT/sim.log"
@@ -39,7 +41,7 @@ case "$SIM" in
     command -v "$VSIM_BIN" >/dev/null || { echo "$SIM vsim not found (set VSIM_BIN)" >&2; exit 2; }
     (cd "$OUT" && "$VLIB_BIN" work)
     VLOG_FLAGS_ARR=(); read -r -a VLOG_FLAGS_ARR <<< "${VLOG_FLAGS:-}"
-    "$VLOG_BIN" -sv -work "$OUT/work" "${VLOG_FLAGS_ARR[@]}" \
+    "$VLOG_BIN" -sv -work "$OUT/work" "${TB_INC[@]}" "${VLOG_FLAGS_ARR[@]}" \
       "${SRCS[@]}" "${TB_SRCS[@]}" > "$OUT/build.log" 2>&1 \
       || { tail -40 "$OUT/build.log"; exit 1; }
     VSIM_FLAGS_ARR=(); read -r -a VSIM_FLAGS_ARR <<< "${VSIM_FLAGS:-}"
@@ -73,12 +75,14 @@ mkdir -p "$OUT"
 SRCS=(); while IFS= read -r file; do [ -n "$file" ] && SRCS+=("$file"); done < <(filelist "$IP")
 case " ${SRCS[*]} " in *ip_axil_regs.sv*) ;; *) SRCS+=("$REPO/shared/src/common/ip_axil_regs.sv") ;; esac
 TB_SRCS=(); while IFS= read -r file; do [ -n "$file" ] && TB_SRCS+=("$file"); done < <(filelist "$IP" tb/scripts/build.f)
+# test tasks: tb/tests/<name>_tests.sv next to every testbench file compiled (`included)
+TB_INC=(+incdir+"$IPDIR/tb/tests"); for f in "${TB_SRCS[@]}"; do [ -d "$(dirname "$f")/tests" ] && TB_INC+=(+incdir+"$(dirname "$f")/tests"); done
 case "$SIM" in
   vcs)
     VCS_BIN="${VCS_BIN:-vcs}"
     command -v "$VCS_BIN" >/dev/null || { echo "vcs not found (set VCS_BIN)" >&2; exit 2; }
     VCS_FLAGS_ARR=(); read -r -a VCS_FLAGS_ARR <<< "${VCS_FLAGS:-}"
-    "$VCS_BIN" -full64 -sverilog -top "$TB" -o "$OUT/$TB.simv" \
+    "$VCS_BIN" -full64 -sverilog -top "$TB" -o "$OUT/$TB.simv" "${TB_INC[@]}" \
       "${VCS_FLAGS_ARR[@]}" "${SRCS[@]}" "${TB_SRCS[@]}" > "$OUT/build.log" 2>&1 \
       || { tail -40 "$OUT/build.log"; exit 1; }
     (cd "$OUT" && "./$TB.simv" "${ARGS[@]}") | tee "$OUT/sim.log"
@@ -90,7 +94,7 @@ case "$SIM" in
     command -v "$VSIM_BIN" >/dev/null || { echo "$SIM vsim not found (set VSIM_BIN)" >&2; exit 2; }
     (cd "$OUT" && "$VLIB_BIN" work)
     VLOG_FLAGS_ARR=(); read -r -a VLOG_FLAGS_ARR <<< "${VLOG_FLAGS:-}"
-    "$VLOG_BIN" -sv -work "$OUT/work" "${VLOG_FLAGS_ARR[@]}" \
+    "$VLOG_BIN" -sv -work "$OUT/work" "${TB_INC[@]}" "${VLOG_FLAGS_ARR[@]}" \
       "${SRCS[@]}" "${TB_SRCS[@]}" > "$OUT/build.log" 2>&1 \
       || { tail -40 "$OUT/build.log"; exit 1; }
     VSIM_FLAGS_ARR=(); read -r -a VSIM_FLAGS_ARR <<< "${VSIM_FLAGS:-}"

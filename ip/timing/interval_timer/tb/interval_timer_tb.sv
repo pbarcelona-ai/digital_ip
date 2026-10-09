@@ -5,6 +5,7 @@
 //   event spacing for auto-reload and one-shot operation with and without
 //   a prescaler, stop and restart, the remaining counter and the refusal
 //   of a zero interval. Prints TEST PASSED on success.
+//   The test tasks are in tests/interval_timer_tests.sv (`included).
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module interval_timer_tb;
@@ -13,11 +14,8 @@ module interval_timer_tb;
   interval_timer #(.WIDTH(16), .PRES_W(4)) dut (.clk, .rst_n, .start_i(start), .stop_i(stop), .auto_i(auto), .interval_i(iv), .prescale_i(ps), .running_o(run), .tick_o(tick), .remaining_o(rem), .err_o(err));
   int errors = 0, cyc = 0, ev = 0;
   always @(posedge clk) begin cyc++; if (tick) ev++; end
-  task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
-  endtask
-  task automatic pulse_start(); @(posedge clk); #1 start = 1; @(posedge clk); #1 start = 0; endtask
-  task automatic pulse_stop(); @(posedge clk); #1 stop = 1; @(posedge clk); #1 stop = 0; endtask
+  // test tasks: tests/interval_timer_tests.sv
+  `include "interval_timer_tests.sv"
   int t0, t1, t2;
   initial begin
     if ($test$plusargs("vcd")) begin $dumpfile("interval_timer_tb.vcd"); $dumpvars(0, interval_timer_tb); end
