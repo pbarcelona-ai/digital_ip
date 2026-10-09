@@ -16,8 +16,11 @@
     bit aw_done = 0, w_done = 0;
     int delay = $urandom_range(3, 0);
     @(negedge clk);
-    awaddr = ADDR_W'(a); wdata = d; wstrb = s;
-    awvalid = (order != 2); wvalid = (order != 1);
+    awaddr = ADDR_W'(a);
+    wdata = d;
+    wstrb = s;
+    awvalid = (order != 2);
+    wvalid = (order != 1);
     while (!(aw_done && w_done)) begin
       @(posedge clk);
       if (awvalid && awready) aw_done = 1;
@@ -33,9 +36,13 @@
     end
     repeat ($urandom_range(3, 0)) @(negedge clk);   // late bready
     bready = 1;
-    do @(posedge clk); while (!bvalid);
+    do @(posedge clk);
+    while (!bvalid);
     checks++;
-    if (bresp !== 2'b00) begin errors++; $display("ERROR: bresp"); end
+    if (bresp !== 2'b00) begin
+      errors++;
+      $display("ERROR: bresp");
+    end
     @(negedge clk) bready = 0;
     for (int b = 0; b < 4; b++) if (s[b]) model[a >> 2][b*8 +: 8] = d[b*8 +: 8];
   endtask
@@ -44,16 +51,25 @@
   // and must equal the model
   task automatic rd(input int a);
     logic [31:0] d0;
-    @(negedge clk); araddr = ADDR_W'(a); arvalid = 1;
-    do @(posedge clk); while (!arready);
-    @(negedge clk); arvalid = 0;
-    wait (rvalid); d0 = rdata;
+    @(negedge clk);
+    araddr = ADDR_W'(a);
+    arvalid = 1;
+    do @(posedge clk);
+    while (!arready);
+    @(negedge clk);
+    arvalid = 0;
+    wait (rvalid);
+    d0 = rdata;
     repeat ($urandom_range(3, 0)) begin       // rdata must stay stable
       @(negedge clk);
-      if (rdata !== d0 || !rvalid) begin errors++; $display("ERROR: R channel unstable"); end
+      if (rdata !== d0 || !rvalid) begin
+        errors++;
+        $display("ERROR: R channel unstable");
+      end
     end
     @(negedge clk) rready = 1;
-    do @(posedge clk); while (!rvalid);
+    do @(posedge clk);
+    while (!rvalid);
     checks++;
     if (rdata !== model[a >> 2] || rresp !== 2'b00) begin
       errors++;

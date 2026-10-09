@@ -71,15 +71,25 @@ module dma_rd_engine #(
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      state <= S_IDLE; addr_q <= '0; left <= '0; blen <= '0; done_o <= 1'b0; err_o <= 1'b0;
+      state <= S_IDLE;
+      addr_q <= '0;
+      left <= '0;
+      blen <= '0;
+      done_o <= 1'b0;
+      err_o <= 1'b0;
     end else begin
       done_o <= 1'b0;
       case (state)
         S_IDLE: if (start_i) begin
-          addr_q <= addr_i; left <= nwords_i; err_o <= 1'b0;
+          addr_q <= addr_i;
+          left <= nwords_i;
+          err_o <= 1'b0;
           state <= state_t'((nwords_i == 24'd0) ? S_DONE : S_CALC);
         end
-        S_CALC: begin blen <= 9'(cap1); state <= S_AR; end
+        S_CALC: begin
+          blen <= 9'(cap1);
+          state <= S_AR;
+        end
         S_AR: if (m_axi_arready) begin
           addr_q <= addr_q + ADDR_W'({blen, 2'b00});
           left   <= left - 24'(blen);
@@ -89,7 +99,10 @@ module dma_rd_engine #(
           if (m_axi_rresp != 2'b00) err_o <= 1'b1;
           if (m_axi_rlast) state <= state_t'((left == 24'd0) ? S_DONE : S_CALC);
         end
-        S_DONE: begin done_o <= 1'b1; state <= S_IDLE; end
+        S_DONE: begin
+          done_o <= 1'b1;
+          state <= S_IDLE;
+        end
         default: state <= S_IDLE;
       endcase
     end

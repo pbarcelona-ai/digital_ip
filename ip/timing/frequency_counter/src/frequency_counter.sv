@@ -28,23 +28,50 @@ module frequency_counter #(
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
   if (COUNT_W < 2 || GATE_W < 2) begin : g_bad $error("frequency_counter: widths must be >= 2"); end
   logic s_sync, s_prev, rise;
-  bit_sync #(.STAGES(2)) u_sync (.clk, .rst_n, .d_i(sig_i), .q_o(s_sync));
+  bit_sync #(.STAGES(2)) u_sync (
+    .clk,
+    .rst_n,
+    .d_i(sig_i),
+    .q_o(s_sync)
+  );
   always_ff @(posedge clk) begin
-    if (!rst_n) begin s_prev <= 1'b0; rise <= 1'b0; end
-    else begin s_prev <= s_sync; rise <= s_sync & ~s_prev; end
+    if (!rst_n) begin
+      s_prev <= 1'b0;
+      rise <= 1'b0;
+    end
+    else begin
+      s_prev <= s_sync;
+      rise <= s_sync & ~s_prev;
+    end
   end
-  logic [GATE_W-1:0] gcnt; logic [COUNT_W-1:0] ecnt; logic sat;
+  logic [GATE_W-1:0] gcnt;
+  logic [COUNT_W-1:0] ecnt;
+  logic sat;
   always_ff @(posedge clk) begin
     if (!rst_n || !en_i || gate_clks_i == '0) begin
-      gcnt <= '0; ecnt <= '0; valid_o <= 1'b0; sat <= 1'b0; if (!rst_n) begin count_o <= '0; over_o <= 1'b0; end
+      gcnt <= '0;
+      ecnt <= '0;
+      valid_o <= 1'b0;
+      sat <= 1'b0;
+      if (!rst_n) begin
+        count_o <= '0;
+        over_o <= 1'b0;
+      end
     end else begin
       valid_o <= 1'b0;
       if (gcnt == gate_clks_i - 1'b1) begin
-        count_o <= ecnt + ((rise && ecnt != '1) ? 1'b1 : 1'b0); over_o <= sat | (rise && ecnt == '1);
-        valid_o <= 1'b1; gcnt <= '0; ecnt <= '0; sat <= 1'b0;
+        count_o <= ecnt + ((rise && ecnt != '1) ? 1'b1 : 1'b0);
+        over_o <= sat | (rise && ecnt == '1);
+        valid_o <= 1'b1;
+        gcnt <= '0;
+        ecnt <= '0;
+        sat <= 1'b0;
       end else begin
         gcnt <= gcnt + 1'b1;
-        if (rise) begin if (ecnt == '1) sat <= 1'b1; else ecnt <= ecnt + 1'b1; end
+        if (rise) begin
+          if (ecnt == '1) sat <= 1'b1;
+          else ecnt <= ecnt + 1'b1;
+        end
       end
     end
   end

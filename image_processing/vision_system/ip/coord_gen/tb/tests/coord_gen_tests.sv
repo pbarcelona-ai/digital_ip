@@ -90,7 +90,9 @@
                      cfg.h11, cfg.h12, cfg.h13, cfg.h21, cfg.h22, cfg.h23, cfg.h31, cfg.h32,
                      x, y, exp_sx, exp_sy);
 
-      in_x <= x[COORD_W-1:0]; in_y <= y[COORD_W-1:0]; in_valid <= 1'b1;
+      in_x <= x[COORD_W-1:0];
+      in_y <= y[COORD_W-1:0];
+      in_valid <= 1'b1;
       @(posedge clk);
       in_valid <= 1'b0;
       wait_cycles = 0;
@@ -104,8 +106,10 @@
         $display("[%s] (%0d,%0d) FAIL: out_valid not asserted within timeout", label, x, y);
         total_fail = total_fail + 1;
       end else begin
-        diff_x = longint'(out_sx_q16) - exp_sx; if (diff_x < 0) diff_x = -diff_x;
-        diff_y = longint'(out_sy_q16) - exp_sy; if (diff_y < 0) diff_y = -diff_y;
+        diff_x = longint'(out_sx_q16) - exp_sx;
+        if (diff_x < 0) diff_x = -diff_x;
+        diff_y = longint'(out_sy_q16) - exp_sy;
+        if (diff_y < 0) diff_y = -diff_y;
         // small tolerance for reciprocal-divider rounding (this
         // testbench's recip_ref is an exact integer divide; the RTL uses
         // an iterative approximation elsewhere in the design -- coord_gen

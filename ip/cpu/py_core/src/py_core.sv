@@ -117,7 +117,8 @@ module py_core #(
   logic signed [VW-1:0] alu_r;
   logic                alu_cmp;           // 1: result is a bool
   always_comb begin
-    alu_r = '0; alu_cmp = 1'b0;
+    alu_r = '0;
+    alu_cmp = 1'b0;
     case (op)
       OP_BINARY_ADD:    alu_r = a + b;
       OP_BINARY_SUB:    alu_r = a - b;
@@ -126,12 +127,30 @@ module py_core #(
       OP_BINARY_XOR:    alu_r = a ^ b;
       OP_BINARY_LSHIFT: alu_r = a <<< shamt;
       OP_BINARY_RSHIFT: alu_r = a >>> shamt;
-      OP_COMPARE_LT:    begin alu_cmp = 1'b1; alu_r[0] = a <  b; end
-      OP_COMPARE_EQ:    begin alu_cmp = 1'b1; alu_r[0] = a == b; end
-      OP_COMPARE_NE:    begin alu_cmp = 1'b1; alu_r[0] = a != b; end
-      OP_COMPARE_GT:    begin alu_cmp = 1'b1; alu_r[0] = a >  b; end
-      OP_COMPARE_LE:    begin alu_cmp = 1'b1; alu_r[0] = a <= b; end
-      OP_COMPARE_GE:    begin alu_cmp = 1'b1; alu_r[0] = a >= b; end
+      OP_COMPARE_LT:    begin
+        alu_cmp = 1'b1;
+        alu_r[0] = a <  b;
+      end
+      OP_COMPARE_EQ:    begin
+        alu_cmp = 1'b1;
+        alu_r[0] = a == b;
+      end
+      OP_COMPARE_NE:    begin
+        alu_cmp = 1'b1;
+        alu_r[0] = a != b;
+      end
+      OP_COMPARE_GT:    begin
+        alu_cmp = 1'b1;
+        alu_r[0] = a >  b;
+      end
+      OP_COMPARE_LE:    begin
+        alu_cmp = 1'b1;
+        alu_r[0] = a <= b;
+      end
+      OP_COMPARE_GE:    begin
+        alu_cmp = 1'b1;
+        alu_r[0] = a >= b;
+      end
       default: ;
     endcase
   end
@@ -161,47 +180,106 @@ module py_core #(
   assign m_axil_wstrb = 4'hF;
 
   task automatic trap(input trap_e c);
-    trap_cause_o <= c; trap_pc_o <= ipc; trap_op_o <= op; trap_o <= 1'b1; pc <= ipc; st <= S_TRAP;
+    trap_cause_o <= c;
+    trap_pc_o <= ipc;
+    trap_op_o <= op;
+    trap_o <= 1'b1;
+    pc <= ipc;
+    st <= S_TRAP;
   endtask
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      st <= S_IDLE; pc <= '0; ipc <= '0; op <= '0; arg <= '0; nargs <= '0; sp <= '0;
-      done_o <= 1'b0; result_o <= PY_NONE; trap_o <= 1'b0; trap_cause_o <= TRAP_NONE; trap_pc_o <= '0; trap_op_o <= '0;
-      m_axil_awvalid <= 1'b0; m_axil_wvalid <= 1'b0; m_axil_bready <= 1'b0; m_axil_arvalid <= 1'b0; m_axil_rready <= 1'b0;
-      m_axil_awaddr <= '0; m_axil_wdata <= '0; m_axil_araddr <= '0; aw_done <= 1'b0; w_done <= 1'b0;
-      ie <= 1'b0; in_irq <= 1'b0; vec_set <= 1'b0; irq_vec <= '0; saved_sp <= '0; irq_fp <= '0; fp <= '0;
+      st <= S_IDLE;
+      pc <= '0;
+      ipc <= '0;
+      op <= '0;
+      arg <= '0;
+      nargs <= '0;
+      sp <= '0;
+      done_o <= 1'b0;
+      result_o <= PY_NONE;
+      trap_o <= 1'b0;
+      trap_cause_o <= TRAP_NONE;
+      trap_pc_o <= '0;
+      trap_op_o <= '0;
+      m_axil_awvalid <= 1'b0;
+      m_axil_wvalid <= 1'b0;
+      m_axil_bready <= 1'b0;
+      m_axil_arvalid <= 1'b0;
+      m_axil_rready <= 1'b0;
+      m_axil_awaddr <= '0;
+      m_axil_wdata <= '0;
+      m_axil_araddr <= '0;
+      aw_done <= 1'b0;
+      w_done <= 1'b0;
+      ie <= 1'b0;
+      in_irq <= 1'b0;
+      vec_set <= 1'b0;
+      irq_vec <= '0;
+      saved_sp <= '0;
+      irq_fp <= '0;
+      fp <= '0;
       for (int i = 0; i < N_GLOBALS; i++) globals[i] <= PY_NONE;
     end else begin
       case (st)
         // start_i also abandons a pending trap
         S_IDLE, S_DONE, S_TRAP: if (start_i) begin
-          pc <= '0; sp <= '0; done_o <= 1'b0; trap_o <= 1'b0; trap_cause_o <= TRAP_NONE; st <= S_FETCH;
-          ie <= 1'b0; in_irq <= 1'b0; vec_set <= 1'b0; fp <= '0;
+          pc <= '0;
+          sp <= '0;
+          done_o <= 1'b0;
+          trap_o <= 1'b0;
+          trap_cause_o <= TRAP_NONE;
+          st <= S_FETCH;
+          ie <= 1'b0;
+          in_irq <= 1'b0;
+          vec_set <= 1'b0;
+          fp <= '0;
           for (int i = 0; i < N_GLOBALS; i++) globals[i] <= PY_NONE;
         end else if (st == S_TRAP && resume_i) begin
-          trap_o <= 1'b0; trap_cause_o <= TRAP_NONE; pc <= resume_pc_i; st <= S_FETCH;
+          trap_o <= 1'b0;
+          trap_cause_o <= TRAP_NONE;
+          pc <= resume_pc_i;
+          st <= S_FETCH;
         end
         // code_addr_o = pc is presented here; data arrives next clock.
         // An interrupt redirects pc and fetches again from the vector.
         S_FETCH: begin
           if (take_irq) begin
-            rstk[fp] <= pc; saved_sp <= sp; in_irq <= 1'b1; irq_fp <= fp + 1'b1; fp <= fp + 1'b1; pc <= irq_vec;
+            rstk[fp] <= pc;
+            saved_sp <= sp;
+            in_irq <= 1'b1;
+            irq_fp <= fp + 1'b1;
+            fp <= fp + 1'b1;
+            pc <= irq_vec;
           end else begin
-            ipc <= pc; pc <= pc + 1'b1; arg <= '0; st <= S_OP;
+            ipc <= pc;
+            pc <= pc + 1'b1;
+            arg <= '0;
+            st <= S_OP;
           end
         end
         S_OP: begin
-          op <= code_data_i; nargs <= op_args(code_data_i);
-          if (op_args(code_data_i) != 0) begin pc <= pc + 1'b1; st <= S_ARG0; end
+          op <= code_data_i;
+          nargs <= op_args(code_data_i);
+          if (op_args(code_data_i) != 0) begin
+            pc <= pc + 1'b1;
+            st <= S_ARG0;
+          end
           else st <= S_EXEC;
         end
         S_ARG0: begin
           arg[7:0] <= code_data_i;
-          if (nargs == 2) begin pc <= pc + 1'b1; st <= S_ARG1; end
+          if (nargs == 2) begin
+            pc <= pc + 1'b1;
+            st <= S_ARG1;
+          end
           else st <= S_EXEC;
         end
-        S_ARG1: begin arg[15:8] <= code_data_i; st <= S_EXEC; end
+        S_ARG1: begin
+          arg[15:8] <= code_data_i;
+          st <= S_EXEC;
+        end
 
         S_EXEC: begin
           st <= S_FETCH;                                   // default: next instruction
@@ -243,11 +321,14 @@ module py_core #(
               else if (op == OP_STORE_FAST && arg[7:0] >= N_LOCALS) trap(TRAP_INDEX);
               else if (op == OP_STORE_GLOBAL && arg[7:0] >= N_GLOBALS) trap(TRAP_INDEX);
               else begin
-                if (op == OP_STORE_FAST) locals[lidx] <= tos; else globals[arg[7:0]] <= tos;
+                if (op == OP_STORE_FAST) locals[lidx] <= tos;
+                else globals[arg[7:0]] <= tos;
                 sp <= sp - 1'b1;
               end
             end
-            OP_POP_TOP: if (sp == 0) trap(TRAP_STACK); else sp <= sp - 1'b1;
+            OP_POP_TOP:
+              if (sp == 0) trap(TRAP_STACK);
+              else sp <= sp - 1'b1;
             OP_JUMP: pc <= arg[CODE_AW-1:0];
             OP_POP_JUMP_IF_FALSE, OP_POP_JUMP_IF_TRUE: begin
               if (sp == 0) trap(TRAP_STACK);
@@ -263,8 +344,12 @@ module py_core #(
               else if (!is_small(tos) || !is_small(tos1)) trap(TRAP_TYPE);
               else if (!addr_ok || !data_ok) trap(TRAP_OVERFLOW);
               else begin
-                m_axil_awaddr <= a[31:0]; m_axil_wdata <= b[31:0];
-                m_axil_awvalid <= 1'b1; m_axil_wvalid <= 1'b1; aw_done <= 1'b0; w_done <= 1'b0;
+                m_axil_awaddr <= a[31:0];
+                m_axil_wdata <= b[31:0];
+                m_axil_awvalid <= 1'b1;
+                m_axil_wvalid <= 1'b1;
+                aw_done <= 1'b0;
+                w_done <= 1'b0;
                 st <= S_WR;
               end
             end
@@ -272,52 +357,95 @@ module py_core #(
               if (sp == 0) trap(TRAP_STACK);
               else if (!is_small(tos)) trap(TRAP_TYPE);
               else if (!raddr_ok) trap(TRAP_OVERFLOW);
-              else begin m_axil_araddr <= b[31:0]; m_axil_arvalid <= 1'b1; st <= S_RD; end
+              else begin
+                m_axil_araddr <= b[31:0];
+                m_axil_arvalid <= 1'b1;
+                st <= S_RD;
+              end
             end
-            OP_SET_IRQ_VECTOR: begin irq_vec <= arg[CODE_AW-1:0]; vec_set <= 1'b1; end
+            OP_SET_IRQ_VECTOR: begin
+              irq_vec <= arg[CODE_AW-1:0];
+              vec_set <= 1'b1;
+            end
             OP_IRQ_ENABLE:     ie <= 1'b1;
             OP_IRQ_DISABLE:    ie <= 1'b0;
             OP_RETURN_FROM_IRQ: begin
               if (!in_irq || fp != irq_fp) trap(TRAP_IRQ_STATE);
-              else begin pc <= rstk[fp-1'b1]; fp <= fp - 1'b1; sp <= saved_sp; in_irq <= 1'b0; end
+              else begin
+                pc <= rstk[fp-1'b1];
+                fp <= fp - 1'b1;
+                sp <= saved_sp;
+                in_irq <= 1'b0;
+              end
             end
             OP_CALL: begin
               if (frame_full) trap(TRAP_STACK);
-              else begin rstk[fp] <= pc; fp <= fp + 1'b1; pc <= arg[CODE_AW-1:0]; end
+              else begin
+                rstk[fp] <= pc;
+                fp <= fp + 1'b1;
+                pc <= arg[CODE_AW-1:0];
+              end
             end
             OP_RETURN: begin
               if (fp == 0 || (in_irq && fp == irq_fp)) trap(TRAP_FRAME);
-              else begin pc <= rstk[fp-1'b1]; fp <= fp - 1'b1; end
+              else begin
+                pc <= rstk[fp-1'b1];
+                fp <= fp - 1'b1;
+              end
             end
             OP_RETURN_VALUE: begin
               if (sp == 0) trap(TRAP_STACK);
-              else begin result_o <= tos; sp <= sp - 1'b1; done_o <= 1'b1; st <= S_DONE; end
+              else begin
+                result_o <= tos;
+                sp <= sp - 1'b1;
+                done_o <= 1'b1;
+                st <= S_DONE;
+              end
             end
             default: trap(TRAP_ILLEGAL);
           endcase
         end
 
-        S_CONST: begin stk[sp] <= const_data_i; sp <= sp + 1'b1; st <= S_FETCH; end
+        S_CONST: begin
+          stk[sp] <= const_data_i;
+          sp <= sp + 1'b1;
+          st <= S_FETCH;
+        end
 
         S_WR: begin
-          if (m_axil_awvalid && m_axil_awready) begin m_axil_awvalid <= 1'b0; aw_done <= 1'b1; end
-          if (m_axil_wvalid  && m_axil_wready)  begin m_axil_wvalid  <= 1'b0; w_done  <= 1'b1; end
+          if (m_axil_awvalid && m_axil_awready) begin
+            m_axil_awvalid <= 1'b0;
+            aw_done <= 1'b1;
+          end
+          if (m_axil_wvalid  && m_axil_wready)  begin
+            m_axil_wvalid  <= 1'b0;
+            w_done  <= 1'b1;
+          end
           if ((aw_done || (m_axil_awvalid && m_axil_awready)) && (w_done || (m_axil_wvalid && m_axil_wready)))
             m_axil_bready <= 1'b1;
           if (m_axil_bready && m_axil_bvalid) begin
             m_axil_bready <= 1'b0;
             if (m_axil_bresp != 2'b00) trap(TRAP_BUS);
-            else begin sp <= sp - 2'd2; st <= S_FETCH; end
+            else begin
+              sp <= sp - 2'd2;
+              st <= S_FETCH;
+            end
           end
         end
 
         // Read data is unsigned: any 32-bit register value is a small int
         S_RD: begin
-          if (m_axil_arvalid && m_axil_arready) begin m_axil_arvalid <= 1'b0; m_axil_rready <= 1'b1; end
+          if (m_axil_arvalid && m_axil_arready) begin
+            m_axil_arvalid <= 1'b0;
+            m_axil_rready <= 1'b1;
+          end
           if (m_axil_rready && m_axil_rvalid) begin
             m_axil_rready <= 1'b0;
             if (m_axil_rresp != 2'b00) trap(TRAP_BUS);
-            else begin stk[sp-1] <= mk_small({1'b0, m_axil_rdata}); st <= S_FETCH; end
+            else begin
+              stk[sp-1] <= mk_small({1'b0, m_axil_rdata});
+              st <= S_FETCH;
+            end
           end
         end
         default: st <= S_IDLE;

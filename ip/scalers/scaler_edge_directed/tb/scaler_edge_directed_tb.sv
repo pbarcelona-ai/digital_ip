@@ -89,15 +89,40 @@ module tb_scaler_edge_directed;
     end
     if (edge_en && d1 + thresh < d2) begin
       mode_cnt[1]++;
-      if (x >= y) begin w[0] = (one - x) * one; w[1] = (x - y) * one; w[2] = 0; w[3] = y * one; end
-      else        begin w[0] = (one - y) * one; w[1] = 0; w[2] = (y - x) * one; w[3] = x * one; end
+      if (x >= y) begin
+        w[0] = (one - x) * one;
+        w[1] = (x - y) * one;
+        w[2] = 0;
+        w[3] = y * one;
+      end
+      else        begin
+        w[0] = (one - y) * one;
+        w[1] = 0;
+        w[2] = (y - x) * one;
+        w[3] = x * one;
+      end
     end else if (edge_en && d2 + thresh < d1) begin
       mode_cnt[2]++;
-      if (x + y <= one) begin w[0] = (one - x - y) * one; w[1] = x * one; w[2] = y * one; w[3] = 0; end
-      else              begin w[0] = 0; w[1] = (one - y) * one; w[2] = (one - x) * one; w[3] = (x + y - one) * one; end
+      if (x + y <= one) begin
+        w[0] = (one - x - y) * one;
+        w[1] = x * one;
+        w[2] = y * one;
+        w[3] = 0;
+      end
+      else              begin
+        w[0] = 0;
+        w[1] = (one - y) * one;
+        w[2] = (one - x) * one;
+        w[3] = (x + y - one) * one;
+      end
     end else begin
       mode_cnt[0]++;
-      begin w[0] = (one - x) * (one - y); w[1] = x * (one - y); w[2] = (one - x) * y; w[3] = x * y; end
+      begin
+        w[0] = (one - x) * (one - y);
+        w[1] = x * (one - y);
+        w[2] = (one - x) * y;
+        w[3] = x * y;
+      end
     end
     // sanity: the weights of every case must sum to ONE^2
     if (w[0] + w[1] + w[2] + w[3] != one * one) $display("ERROR: golden weights");
@@ -124,12 +149,16 @@ module tb_scaler_edge_directed;
     end else begin
       // generated images: standard sweep plus IP-specific tests
       run_standard_suite();
-      thresh = 0;   run_test(20, 16, 45, 37, 1);
-      thresh = 200; run_test(20, 16, 45, 37, 0);
-      edge_en = 0;  run_test(20, 16, 45, 37, 1);   // must equal bilinear
+      thresh = 0;
+      run_test(20, 16, 45, 37, 1);
+      thresh = 200;
+      run_test(20, 16, 45, 37, 0);
+      edge_en = 0; // must equal bilinear
+      run_test(20, 16, 45, 37, 1);
       $display("coverage: bilinear=%0d diag1=%0d diag2=%0d", mode_cnt[0], mode_cnt[1], mode_cnt[2]);
       if (mode_cnt[1] == 0 || mode_cnt[2] == 0) begin
-        errors++; $display("ERROR: edge modes not covered");
+        errors++;
+        $display("ERROR: edge modes not covered");
       end
     end
     finish_report();

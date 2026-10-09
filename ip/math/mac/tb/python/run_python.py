@@ -57,6 +57,10 @@ def simulator_config():
 
 def main() -> None:
     simulator, build_args = simulator_config()
+    # scripts/run_cov.sh sets COV_DIR: Verilator coverage, one data file per case
+    cov_dir = os.environ.get("COV_DIR") if simulator == "verilator" else None
+    if cov_dir:
+        build_args = [*build_args, "--coverage"]
     for case, parameters in CASES.items():
         build_dir = BUILD_ROOT / case
         runner = get_runner(simulator)
@@ -75,6 +79,7 @@ def main() -> None:
             build_dir=build_dir,
             test_dir=TEST_DIR,
             extra_env={"MAC_CASE": case},
+            plusargs=[f"+verilator+coverage+file+{cov_dir}/mac_cocotb_{case}.dat"] if cov_dir else [],
         )
 
 

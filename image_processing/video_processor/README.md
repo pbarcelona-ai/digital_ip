@@ -45,6 +45,7 @@ serializers) in more detail.
 
 ```
 make sim       # system test: firmware boot, camera -> ISP -> vision_system -> HDMI / LVDS
+make cov       # sim + ip-test with Verilator code coverage -> build/coverage/summary.txt
 make ip-test   # full video_pipeline system test (bit-exact ISP model, every output)
 make synth     # Yosys -> build/yosys
 make diagram   # re-render the diagrams

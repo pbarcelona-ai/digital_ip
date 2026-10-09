@@ -51,7 +51,8 @@ module i2c_bit_ctrl (
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      scl_sq <= 2'b11; sda_sq <= 2'b11;
+      scl_sq <= 2'b11;
+      sda_sq <= 2'b11;
     end else begin
       scl_sq <= {scl_sq[0], scl_i};
       sda_sq <= {sda_sq[0], sda_i};
@@ -60,18 +61,29 @@ module i2c_bit_ctrl (
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      state <= S_IDLE; tmr <= '0; cmd_q <= '0; din_q <= 1'b0;
-      scl_low_o <= 1'b0; sda_low_o <= 1'b0;
-      done_o <= 1'b0; dout_o <= 1'b0; arb_lost_o <= 1'b0;
+      state <= S_IDLE;
+      tmr <= '0;
+      cmd_q <= '0;
+      din_q <= 1'b0;
+      scl_low_o <= 1'b0;
+      sda_low_o <= 1'b0;
+      done_o <= 1'b0;
+      dout_o <= 1'b0;
+      arb_lost_o <= 1'b0;
     end else begin
       done_o     <= 1'b0;
       arb_lost_o <= 1'b0;
       if (abort_i) begin                         // release everything
-        state <= S_IDLE; scl_low_o <= 1'b0; sda_low_o <= 1'b0;
+        state <= S_IDLE;
+        scl_low_o <= 1'b0;
+        sda_low_o <= 1'b0;
       end else begin
         case (state)
           S_IDLE: if (cmd_valid) begin
-            cmd_q <= cmd; din_q <= din; state <= S_P0; tmr <= div_i;
+            cmd_q <= cmd;
+            din_q <= din;
+            state <= S_P0;
+            tmr <= div_i;
             // Phase 0 action: set up SDA while SCL is low
             case (cmd)
               C_START: sda_low_o <= 1'b0;        // release SDA (SCL low)
@@ -82,27 +94,34 @@ module i2c_bit_ctrl (
           end
           S_P0: begin
             if (tmr_zero) begin                  // phase 1: release SCL
-              state <= S_P1; tmr <= div_i; scl_low_o <= 1'b0;
+              state <= S_P1;
+              tmr <= div_i;
+              scl_low_o <= 1'b0;
             end else tmr <= tmr - 16'd1;
           end
           S_P1: begin
             if (!scl_s) tmr <= div_i;            // wait for SCL high (stretch)
             else if (tmr_zero) begin             // phase 2: SCL high
-              state <= S_P2; tmr <= div_i;
+              state <= S_P2;
+              tmr <= div_i;
               if (cmd_q == C_START) sda_low_o <= 1'b1;   // START condition
               if (cmd_q == C_STOP)  sda_low_o <= 1'b0;   // STOP condition
             end else tmr <= tmr - 16'd1;
           end
           S_P2: begin
             if (tmr_zero) begin                  // sample at end of high time
-              state <= S_P3; tmr <= div_i;
+              state <= S_P3;
+              tmr <= div_i;
               dout_o <= sda_s;
               if (cmd_q == C_WR && din_q && !sda_s) arb_lost_o <= 1'b1;
               if (cmd_q != C_STOP) scl_low_o <= 1'b1;    // phase 3: SCL low
             end else tmr <= tmr - 16'd1;
           end
           S_P3: begin
-            if (tmr_zero) begin state <= S_IDLE; done_o <= 1'b1; end
+            if (tmr_zero) begin
+              state <= S_IDLE;
+              done_o <= 1'b1;
+            end
             else tmr <= tmr - 16'd1;
           end
           default: state <= S_IDLE;

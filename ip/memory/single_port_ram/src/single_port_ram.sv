@@ -31,7 +31,7 @@ module single_port_ram #(
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
   if (DEPTH < 2 || WIDTH < 1) begin : g_bad $error("single_port_ram: bad DEPTH/WIDTH"); end
   if (MODE < 0 || MODE > 2) begin : g_badm $error("single_port_ram: MODE must be 0..2"); end
-  if (BYTE_EN && (WIDTH % 8) != 0) begin : g_badb $error("single_port_ram: BYTE_EN needs WIDTH % 8 == 0"); end
+  if (BYTE_EN && (WIDTH % 8) != 0) begin : g_badb $error("single_port_ram: BYTE_EN needs WIDTH %% 8 == 0"); end
   logic [WIDTH-1:0] mem [0:DEPTH-1];
   if (INIT_ZERO) begin : g_init
     initial for (int i = 0; i < DEPTH; i++) mem[i] = '0;

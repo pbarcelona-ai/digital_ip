@@ -122,7 +122,7 @@ The reference testbench checks the following; the new testbench must cover at le
 ```text
 Self-checking testbench for hdmi_tx. A vid_timing_gen
 drives a small mode whose pixels are a function of (x, y, frame); the
-TMDS output goes to hdmi_sink_model, which decodes it independently.
+TMDS output goes to hdmi_bfm, which decodes it independently.
 DVI mode: frames must arrive pixel-exact with correct geometry and no
 HDMI-only symbols. HDMI mode (both sync polarities): every line must
 have its preamble and guard band, one AVI InfoFrame data island per

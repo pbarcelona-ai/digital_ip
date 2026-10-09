@@ -81,13 +81,29 @@ module axil_split #(
 
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      wst <= W_COLLECT; aw_held <= 0; w_held <= 0; aw_sent <= 0; w_sent <= 0; wsel <= 0;
-      awaddr_q <= '0; wdata_q <= '0; wstrb_q <= '0; s_bvalid <= 0; s_bresp <= '0;
+      wst <= W_COLLECT;
+      aw_held <= 0;
+      w_held <= 0;
+      aw_sent <= 0;
+      w_sent <= 0;
+      wsel <= 0;
+      awaddr_q <= '0;
+      wdata_q <= '0;
+      wstrb_q <= '0;
+      s_bvalid <= 0;
+      s_bresp <= '0;
     end else begin
       case (wst)
         W_COLLECT: begin
-          if (s_awvalid && s_awready) begin aw_held <= 1; awaddr_q <= s_awaddr; end
-          if (s_wvalid && s_wready)   begin w_held <= 1; wdata_q <= s_wdata; wstrb_q <= s_wstrb; end
+          if (s_awvalid && s_awready) begin
+            aw_held <= 1;
+            awaddr_q <= s_awaddr;
+          end
+          if (s_wvalid && s_wready)   begin
+            w_held <= 1;
+            wdata_q <= s_wdata;
+            wstrb_q <= s_wstrb;
+          end
           if ((aw_held || (s_awvalid && s_awready)) && (w_held || (s_wvalid && s_wready))) begin
             wst     <= W_ISSUE;
             wsel    <= aw_held ? awaddr_q[SEL_BIT] : s_awaddr[SEL_BIT];
@@ -141,8 +157,12 @@ module axil_split #(
 
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      rst_q <= R_IDLE; rsel <= 0; araddr_q <= '0;
-      s_rvalid <= 0; s_rdata <= '0; s_rresp <= '0;
+      rst_q <= R_IDLE;
+      rsel <= 0;
+      araddr_q <= '0;
+      s_rvalid <= 0;
+      s_rdata <= '0;
+      s_rresp <= '0;
     end else begin
       case (rst_q)
         R_IDLE: if (s_arvalid) begin

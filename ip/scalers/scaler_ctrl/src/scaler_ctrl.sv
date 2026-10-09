@@ -127,14 +127,32 @@ module scaler_ctrl #(
   logic [3:0]        reg_wstrb;
 
   axil_regbus #(.ADDR_W(ADDR_W), .DATA_W(32)) u_axil (
-    .clk, .rst_n,
-    .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready,
-    .s_axil_wdata,  .s_axil_wstrb,   .s_axil_wvalid, .s_axil_wready,
-    .s_axil_bresp,  .s_axil_bvalid,  .s_axil_bready,
-    .s_axil_araddr, .s_axil_arvalid, .s_axil_arready,
-    .s_axil_rdata,  .s_axil_rresp,   .s_axil_rvalid, .s_axil_rready,
-    .reg_wr, .reg_waddr, .reg_wdata, .reg_wstrb,
-    .reg_rd, .reg_raddr, .reg_rdata
+    .clk,
+    .rst_n,
+    .s_axil_awaddr,
+    .s_axil_awvalid,
+    .s_axil_awready,
+    .s_axil_wdata,
+    .s_axil_wstrb,
+    .s_axil_wvalid,
+    .s_axil_wready,
+    .s_axil_bresp,
+    .s_axil_bvalid,
+    .s_axil_bready,
+    .s_axil_araddr,
+    .s_axil_arvalid,
+    .s_axil_arready,
+    .s_axil_rdata,
+    .s_axil_rresp,
+    .s_axil_rvalid,
+    .s_axil_rready,
+    .reg_wr,
+    .reg_waddr,
+    .reg_wdata,
+    .reg_wstrb,
+    .reg_rd,
+    .reg_raddr,
+    .reg_rdata
   );
 
   // Addresses at or above EXT_BASE belong to the IP-specific registers
@@ -172,8 +190,10 @@ module scaler_ctrl #(
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       enable     <= 1'b0;
-      cfg_in_w   <= 16'd1;  cfg_in_h  <= 16'd1;
-      cfg_out_w  <= 16'd1;  cfg_out_h <= 16'd1;
+      cfg_in_w   <= 16'd1;
+      cfg_in_h  <= 16'd1;
+      cfg_out_w  <= 16'd1;
+      cfg_out_h <= 16'd1;
       cfg_step_x <= 32'h1_0000;
       cfg_step_y <= 32'h1_0000;
       cfg_offs_x <= '0;
@@ -191,8 +211,14 @@ module scaler_ctrl #(
             if (reg_wdata[3]) st_eol_err <= 1'b0;
           end
           // IN_SIZE / OUT_SIZE / STEP / OFFS
-          6'h02: begin cfg_in_w  <= reg_wdata[15:0]; cfg_in_h  <= reg_wdata[31:16]; end
-          6'h03: begin cfg_out_w <= reg_wdata[15:0]; cfg_out_h <= reg_wdata[31:16]; end
+          6'h02: begin
+            cfg_in_w  <= reg_wdata[15:0];
+            cfg_in_h  <= reg_wdata[31:16];
+          end
+          6'h03: begin
+            cfg_out_w <= reg_wdata[15:0];
+            cfg_out_h <= reg_wdata[31:16];
+          end
           6'h04: cfg_step_x <= reg_wdata;
           6'h05: cfg_step_y <= reg_wdata;
           6'h06: cfg_offs_x <= reg_wdata;
@@ -386,8 +412,14 @@ module scaler_ctrl #(
               end else begin
                 // advance to the next pixel position (raster order)
                 started <= 1'b1;
-                if (last_x) begin cx <= '0;         cy <= py + 16'd1; end
-                else        begin cx <= px + 16'd1; cy <= py;         end
+                if (last_x) begin
+                  cx <= '0;
+                  cy <= py + 16'd1;
+                end
+                else        begin
+                  cx <= px + 16'd1;
+                  cy <= py;
+                end
               end
             end
           end else if (!enable && !started) begin

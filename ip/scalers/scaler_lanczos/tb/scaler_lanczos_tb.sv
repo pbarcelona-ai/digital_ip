@@ -115,7 +115,8 @@ module tb_scaler_lanczos;
     axil_check(12'h024, 32'h4C41_4E43);     // IP_ID "LANC"
     axil_check(12'h040, {8'(COEF_FRAC), 8'(COEF_W), 8'(PHASE_BITS), 8'(TAPS)});
     check_default_tables();
-    kind = KERNEL_LANCZOS; kpa = 3.0;                   // Lanczos-3
+    kind = KERNEL_LANCZOS; // Lanczos-3
+    kpa = 3.0;
     if (use_file) begin
       run_file_suite();              // +IMG=<file.ppm>
     end else if (quick) begin
@@ -124,7 +125,8 @@ module tb_scaler_lanczos;
       // generated images: standard sweep plus IP-specific tests
       run_standard_suite();
       run_test(16, 12, 33, 31, 2);                        // ringing/overshoot -> clamp
-      aa = 0; run_test(40, 30, 21, 15, 1);
+      aa = 0;
+      run_test(40, 30, 21, 15, 1);
     end
     finish_report();
   end

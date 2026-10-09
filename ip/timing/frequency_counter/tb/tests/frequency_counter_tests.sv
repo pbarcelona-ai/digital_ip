@@ -11,11 +11,19 @@
 // Date: 2026-10-08
 // ***************
   task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
+    if (!c) begin
+      errors++;
+      $display("ERROR @%0t: %s", $time, m);
+    end
   endtask
 
   task automatic expect_edges(input real f_mhz);
-    int e; e = int'(f_mhz * 100.0);               // edges in 100 us
-    half = 500.0 / f_mhz; #2000; @(posedge v); @(posedge v); #1;
+    int e; // edges in 100 us
+    e = int'(f_mhz * 100.0);
+    half = 500.0 / f_mhz;
+    #2000;
+    @(posedge v);
+    @(posedge v);
+    #1;
     check(cnt >= e - 1 && cnt <= e + 1 && !ov, $sformatf("%f MHz: count %0d exp %0d", f_mhz, cnt, e));
   endtask

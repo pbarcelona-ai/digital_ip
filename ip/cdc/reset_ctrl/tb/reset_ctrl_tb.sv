@@ -19,20 +19,38 @@ module reset_ctrl_tb;
   always #(CLK_PERIOD/2) aclk = ~aclk;
 
   // AXI-Lite signals
-  logic [7:0] awaddr, araddr; logic awvalid, awready, wvalid, wready;
-  logic [31:0] wdata, rdata; logic [3:0] wstrb; logic [1:0] bresp, rresp;
+  logic [7:0] awaddr, araddr;
+  logic awvalid, awready, wvalid, wready;
+  logic [31:0] wdata, rdata;
+  logic [3:0] wstrb;
+  logic [1:0] bresp, rresp;
   logic bvalid, bready, arvalid, arready, rvalid, rready;
-  logic [NUM_OUT-1:0] rst_o; logic bus_rst_n;
+  logic [NUM_OUT-1:0] rst_o;
+  logic bus_rst_n;
 
   ip_reset_sync_top #(.NUM_OUT(NUM_OUT), .HOLD_DEFAULT(HOLD)) dut (
-    .aclk, .arst_i,
-    .s_axil_awaddr(awaddr), .s_axil_awvalid(awvalid), .s_axil_awready(awready),
-    .s_axil_wdata(wdata), .s_axil_wstrb(wstrb), .s_axil_wvalid(wvalid),
-    .s_axil_wready(wready), .s_axil_bresp(bresp), .s_axil_bvalid(bvalid),
-    .s_axil_bready(bready), .s_axil_araddr(araddr), .s_axil_arvalid(arvalid),
-    .s_axil_arready(arready), .s_axil_rdata(rdata), .s_axil_rresp(rresp),
-    .s_axil_rvalid(rvalid), .s_axil_rready(rready),
-    .rst_o, .bus_rst_n_o(bus_rst_n));
+    .aclk,
+    .arst_i,
+    .s_axil_awaddr(awaddr),
+    .s_axil_awvalid(awvalid),
+    .s_axil_awready(awready),
+    .s_axil_wdata(wdata),
+    .s_axil_wstrb(wstrb),
+    .s_axil_wvalid(wvalid),
+    .s_axil_wready(wready),
+    .s_axil_bresp(bresp),
+    .s_axil_bvalid(bvalid),
+    .s_axil_bready(bready),
+    .s_axil_araddr(araddr),
+    .s_axil_arvalid(arvalid),
+    .s_axil_arready(arready),
+    .s_axil_rdata(rdata),
+    .s_axil_rresp(rresp),
+    .s_axil_rvalid(rvalid),
+    .s_axil_rready(rready),
+    .rst_o,
+    .bus_rst_n_o(bus_rst_n)
+  );
 
   int errors = 0;
 
@@ -49,13 +67,22 @@ module reset_ctrl_tb;
 
   initial begin
     if ($test$plusargs("vcd")) begin
-      $dumpfile("reset_ctrl_tb.vcd"); $dumpvars(0, reset_ctrl_tb);
+      $dumpfile("reset_ctrl_tb.vcd");
+      $dumpvars(0, reset_ctrl_tb);
     end
-    awvalid = 0; wvalid = 0; bready = 0; arvalid = 0; rready = 0;
-    awaddr = 0; araddr = 0; wdata = 0; wstrb = 0;
+    awvalid = 0;
+    wvalid = 0;
+    bready = 0;
+    arvalid = 0;
+    rready = 0;
+    awaddr = 0;
+    araddr = 0;
+    wdata = 0;
+    wstrb = 0;
 
     // ---- Test 1: power-up async reset and synchronous release ----
-    arst_i = 0; #3;                       // asserted before any clock edge
+    arst_i = 0; // asserted before any clock edge
+    #3;
     check(rst_o == '0, "outputs not asserted asynchronously");
     #47 arst_i = 1;                       // release (active low input)
     repeat (3) @(posedge aclk);
@@ -66,7 +93,8 @@ module reset_ctrl_tb;
 
     // ---- Test 2: sub-clock glitch is stretched to >= HOLD cycles ----
     #(CLK_PERIOD*3 + 2.5);
-    arst_i = 0; #1.0 arst_i = 1;          // 1 ns glitch
+    arst_i = 0; // 1 ns glitch
+    #1.0 arst_i = 1;
     #0.1 check(rst_o == '0, "glitch not caught asynchronously");
     measure_low();
     check(low_cycles >= HOLD, $sformatf("glitch pulse %0d < HOLD %0d", low_cycles, HOLD));
@@ -86,7 +114,8 @@ module reset_ctrl_tb;
     axil_read(8'h0C, rd);
     check(rd >= 1, "event counter should have counted the glitch");
     begin
-      logic [31:0] cnt0; cnt0 = rd;
+      logic [31:0] cnt0;
+      cnt0 = rd;
       // ---- Test 4: software reset ----
       axil_write(8'h00, 32'd1);
       wait (rst_o[0] == 1'b0);
@@ -110,5 +139,9 @@ module reset_ctrl_tb;
   end
 
   // Watchdog
-  initial begin #2_000_000; $display("TEST FAILED (timeout)"); $finish; end
+  initial begin
+    #2_000_000;
+    $display("TEST FAILED (timeout)");
+    $finish;
+  end
 endmodule

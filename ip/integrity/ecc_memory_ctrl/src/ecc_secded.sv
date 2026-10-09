@@ -28,10 +28,15 @@ module ecc_encoder #(
   if (DATA_W < 4) begin : g_bad $error("ecc_encoder: DATA_W must be >= 4"); end
   localparam int N = DATA_W + R;
   always_comb begin
-    int j; logic par;
-    code_o = '0; j = 0;
+    int j;
+    logic par;
+    code_o = '0;
+    j = 0;
     for (int pos = 1; pos <= N; pos++) begin
-      if ((pos & (pos - 1)) != 0) begin code_o[pos] = data_i[j]; j = j + 1; end
+      if ((pos & (pos - 1)) != 0) begin
+        code_o[pos] = data_i[j];
+        j = j + 1;
+      end
     end
     for (int p = 0; p < R; p++) begin
       par = 1'b0;
@@ -58,7 +63,9 @@ module ecc_decoder #(
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
   if (DATA_W < 4) begin : g_bad $error("ecc_decoder: DATA_W must be >= 4"); end
   localparam int N = DATA_W + R;
-  logic [CODE_W-1:0] cw; logic [R-1:0] syn; logic ovr;
+  logic [CODE_W-1:0] cw;
+  logic [R-1:0] syn;
+  logic ovr;
   always_comb begin
     int j;
     syn = '0;
@@ -68,22 +75,33 @@ module ecc_decoder #(
     end
     ovr = ^code_i;                                      // overall parity of the whole word
     cw = code_i;
-    sec_o = 1'b0; ded_o = 1'b0;
+    sec_o = 1'b0;
+    ded_o = 1'b0;
     if (syn == '0 && !ovr) begin end                    // clean
     else if (ovr) begin                                 // odd number of errors: assume one
       sec_o = 1'b1;
       if (syn != '0) begin
         if (32'(syn) <= N) cw[syn] = ~cw[syn];
-        else begin sec_o = 1'b0; ded_o = 1'b1; end      // syndrome points outside the word
+        else begin // syndrome points outside the word
+          sec_o = 1'b0;
+          ded_o = 1'b1;
+        end
       end                                               // syn == 0: the overall parity bit itself flipped
     end else begin ded_o = 1'b1; end                    // even, nonzero syndrome: two errors
-    j = 0; data_o = '0;
+    j = 0;
+    data_o = '0;
     for (int pos = 1; pos <= N; pos++) begin
-      if ((pos & (pos - 1)) != 0) begin data_o[j] = cw[pos]; j = j + 1; end
+      if ((pos & (pos - 1)) != 0) begin
+        data_o[j] = cw[pos];
+        j = j + 1;
+      end
     end
     if (ded_o) begin                                    // give back the raw data bits
       j = 0;
-      for (int pos = 1; pos <= N; pos++) if ((pos & (pos - 1)) != 0) begin data_o[j] = code_i[pos]; j = j + 1; end
+      for (int pos = 1; pos <= N; pos++) if ((pos & (pos - 1)) != 0) begin
+        data_o[j] = code_i[pos];
+        j = j + 1;
+      end
     end
   end
   assign syndrome_o = syn;

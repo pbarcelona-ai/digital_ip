@@ -97,7 +97,10 @@ module tb_scaler_trilinear;
     int la = lod_reg >> 8, f = lod_reg & 255, lb;
     int np = 1 << alog2;
     logic [PIX_W-1:0] r;
-    if (la >= LEVELS - 1) begin la = LEVELS - 1; f = 0; end
+    if (la >= LEVELS - 1) begin
+      la = LEVELS - 1;
+      f = 0;
+    end
     lb = (la + 1 > LEVELS - 1) ? LEVELS - 1 : la + 1;
     for (int c = 0; c < CHANNELS; c++) begin
       int sum = 0;
@@ -136,8 +139,10 @@ module tb_scaler_trilinear;
       run_standard_suite();
       run_test(MAX_W, MAX_H, 7, 5, 1);             // ~7x downscale, deep levels
       run_test(45, 39, 11, 13, 2);                 // odd sizes, fractional LOD
-      lod_override = 9 << 8; run_test(20, 16, 9, 7, 0);   // LOD beyond top level
-      lod_override = 384;    run_test(20, 16, 9, 7, 1);   // explicit 1.5
+      lod_override = 9 << 8; // LOD beyond top level
+      run_test(20, 16, 9, 7, 0);
+      lod_override = 384; // explicit 1.5
+      run_test(20, 16, 9, 7, 1);
       lod_override = -1;
     end
     finish_report();

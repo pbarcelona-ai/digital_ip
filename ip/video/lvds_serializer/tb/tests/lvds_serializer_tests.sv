@@ -11,32 +11,45 @@
 // Date: 2026-10-08
 // ***************
   task automatic check(input bit c, input string m);
-    if (!c) begin errors++; if (errors < 30) $display("ERROR @%0t: %s", $time, m); end
+    if (!c) begin
+      errors++;
+      if (errors < 30) $display("ERROR @%0t: %s", $time, m);
+    end
   endtask
 
   task automatic run(input bit d2);
-    int off, first, k0, matched;
-    dual = d2; ser_half = d2 ? 2.0 : 1.0;
-    nsent = 0; nb = 0; ph = 0; prst_n = 0; srst_n = 0; stb = 0; words = '0;
-    #100; prst_n = 1; srst_n = 1;
+    int first, k0, matched;
+    dual = d2;
+    ser_half = d2 ? 2.0 : 1.0;
+    nsent = 0;
+    ph = 0;
+    prst_n = 0;
+    srst_n = 0;
+    stb = 0;
+    words = '0;
+    #100;
+    rx.word_q.delete();
+    rx.words = 0;
+    rx.clk_errors = 0;
+    rx.since = -1;
+    prst_n = 1;
+    srst_n = 1;
     #(NS * (d2 ? 28 : 14) - 400);
-    off = -1;
-    for (int i = 0; i < 60 && off < 0; i++) begin
-      logic [6:0] w; for (int b = 0; b < 7; b++) w[6 - b] = bits[i + b][4];
-      if (w == 7'b1100011 && bits[i + 7][4] == 1'b1 && bits[i + 6][4] == 1'b1) off = i;
-    end
-    check(off >= 0, "clock pattern not found");
-    first = -1; matched = 0;
-    for (int k = 0; off >= 0 && k < (nb - off) / 7 - 1; k++) begin
-      logic [27:0] w; logic [6:0] c;
-      for (int b = 0; b < 7; b++) begin
-        for (int l = 0; l < 4; l++) w[7*l + 6 - b] = bits[off + 7*k + b][l];
-        c[6 - b] = bits[off + 7*k + b][4];
+    check(rx.words > 0, "clock pattern not found");
+    check(rx.clk_errors == 0, $sformatf("%0d clock lane words other than 1100011", rx.clk_errors));
+    // find the first sent word in the recovered stream, then compare the rest in order
+    first = -1;
+    matched = 0;
+    for (int k = 0; k < rx.word_q.size(); k++) begin
+      if (first < 0) begin
+        for (int j = 0; j < 10; j++) if (sent[j] == rx.word_q[k]) begin
+          first = j;
+          k0 = k;
+        end
       end
-      check(c == 7'b1100011, $sformatf("clock word %0d = %b", k, c));
-      if (first < 0) begin for (int j = 0; j < 10; j++) if (sent[j] == w) begin first = j; k0 = k; end end
       else if (first + (k - k0) < NS) begin
-        check(w == sent[first + (k - k0)], $sformatf("%s word %0d = %h exp %h", d2 ? "dual" : "single", first + (k - k0), w, sent[first + (k - k0)]));
+        check(rx.word_q[k] == sent[first + (k - k0)], $sformatf("%s word %0d = %h exp %h", d2 ? "dual" : "single",
+              first + (k - k0), rx.word_q[k], sent[first + (k - k0)]));
         matched++;
       end
     end

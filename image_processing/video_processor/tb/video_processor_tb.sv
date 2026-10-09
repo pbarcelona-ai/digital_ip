@@ -9,12 +9,12 @@
 //   the CPU system; the core logic (video) stays in reset until the CPU has
 //   booted, passed its self-test and written SYSCTL CORE_RESET
 //   (core_rst_n_o, checked by test_core_reset). Board models:
-//     - spi_flash_model holding the firmware image and string table (pyc.py);
-//     - camera module: sensor CCI register model (i2c_slave_model, address
-//       0x36 on I2C 0) and a CSI-2 RAW10 source (csi2_lane_driver) that
+//     - spi_flash_bfm holding the firmware image and string table (pyc.py);
+//     - camera module: sensor CCI register model (i2c_bfm, address
+//       0x36 on I2C 0) and a CSI-2 RAW10 source (csi2_bfm) that
 //       streams 32x24 frames only after the firmware releases its reset
 //       (GPIO0[0]) and writes "stream on" (register 0x01 = 1);
-//     - I2C EEPROM (i2c_slave_model, 0x50 on I2C 1); UART, SPI and GPIO
+//     - I2C EEPROM (i2c_bfm, 0x50 on I2C 1); UART, SPI and GPIO
 //       looped back (txd -> rxd, MOSI -> MISO, gpio_o -> gpio_i) for the
 //       firmware's peripheral self-test; GPIO0[31] = +quick strap (the
 //       firmware then skips the register dumps); GPIO0[30] = image
@@ -24,7 +24,7 @@
 //     - UART 0 receiver: decodes the report at UART_BAUD, writes it to
 //       cpu_bootup.txt and echoes each line as "UART0| ...";
 //     - HDMI: tmds_serializer lanes deserialised on the TMDS clock lane and
-//       decoded by hdmi_sink_model; LVDS link A deserialised on the clock
+//       decoded by hdmi_bfm; LVDS link A deserialised on the clock
 //       lane and decoded as single-link VESA 24 bpp. Their serial clocks and
 //       the camera stop after the video checks (the report runs on);
 //     - image test: 4 colour and 4 monochrome images (frame_c_<n>_input.ppm,
@@ -55,23 +55,46 @@ module video_processor_tb;
   // HDMI / LVDS serial clocks: run from the firmware's video set-up (stage 4, after the CPU
   // initialisation) until the video checks are done; the camera stops with them (speeds up the report)
   bit ser_run = 0, cam_run = 1;
-  initial begin while (g(G_stage) < 4) @(posedge cpu_clk); ser_run = 1; end
-  initial forever if (ser_run) #0.7 tmds_ser_clk = ~tmds_ser_clk; else @(ser_run);   // exactly 10x
-  initial forever if (ser_run) #1   lvds_ser_clk = ~lvds_ser_clk; else @(ser_run);   // exactly 7x
+  initial begin
+    while (g(G_stage) < 4) @(posedge cpu_clk);
+    ser_run = 1;
+  end
+  initial forever // exactly 10x
+    if (ser_run) #0.7 tmds_ser_clk = ~tmds_ser_clk;
+    else @(ser_run);
+  initial forever // exactly 7x
+    if (ser_run) #1   lvds_ser_clk = ~lvds_ser_clk;
+    else @(ser_run);
   always #4   byte_clk = ~byte_clk;                  // 125 MHz D-PHY byte clock (RX and TX)
   localparam int UART_BAUD = 6_250_000;              // report speed: the UART allows baud * 16 <= f_clk / 2
   localparam int MIN_PASS = 27;                      // [PASS] lines the firmware report must contain
   int errors = 0;
-  initial begin #150ms; $display("ERROR: simulation timeout (firmware stage %0d)", g(G_stage)); $display("TEST FAILED"); $finish; end
+  initial begin
+    #150ms;
+    $display("ERROR: simulation timeout (firmware stage %0d)", g(G_stage));
+    $display("TEST FAILED");
+    $finish;
+  end
 
   // ---------------- DUT ----------------
-  logic fl_sclk, fl_cs_n, fl_mosi, fl_miso; int fl_wip;
-  logic [1:0] uart_txd, scl_o, scl_t, sda_o, sda_t, spi_sclk, spi_mosi; logic [3:0] spi_cs_n;
-  logic [95:0] gpio_o, gpio_t; logic boot_done, boot_err, trap, wdt_reset, sdone, core_rst_n;
-  logic [15:0] cam_d; logic [1:0] cam_v;
-  logic [3:0] tmds_ser; logic [4:0] lvds_a_ser, lvds_b_ser;
-  logic [15:0] dsi_d, ctx_d; logic [1:0] dsi_v, ctx_v; logic dsi_req, ctx_req;
-  wire  [63:0] sdram_dq; wire sd_clk, sd_cke, sd_cs_n, sd_ras_n, sd_cas_n, sd_we_n; wire [12:0] sd_a; wire [1:0] sd_ba; wire [7:0] sd_dqm;
+  logic fl_sclk, fl_cs_n, fl_mosi, fl_miso;
+  int fl_wip;
+  logic [1:0] uart_txd, scl_o, scl_t, sda_o, sda_t, spi_sclk, spi_mosi;
+  logic [3:0] spi_cs_n;
+  logic [95:0] gpio_o, gpio_t;
+  logic boot_done, boot_err, trap, wdt_reset, sdone, core_rst_n;
+  logic [15:0] cam_d;
+  logic [1:0] cam_v;
+  logic [3:0] tmds_ser;
+  logic [4:0] lvds_a_ser, lvds_b_ser;
+  logic [15:0] dsi_d, ctx_d;
+  logic [1:0] dsi_v, ctx_v;
+  logic dsi_req, ctx_req;
+  wire  [63:0] sdram_dq;
+  wire sd_clk, sd_cke, sd_cs_n, sd_ras_n, sd_cas_n, sd_we_n;
+  wire [12:0] sd_a;
+  wire [1:0] sd_ba;
+  wire [7:0] sd_dqm;
   tri1 sda0, scl0, sda1, scl1;
   wire quick_strap = $test$plusargs("quick");
   bit  mono_sel = 1;                                 // image format pin (GPIO0[30]): 1 monochrome, 0 colour
@@ -80,52 +103,109 @@ module video_processor_tb;
   video_processor #(.NLANES(2), .MAX_W(64), .CSI_FIFO(256), .OUT_FIFO(512),
                     .CPU_HZ(200_000_000), .UART_BAUD(UART_BAUD), .I2C_HZ(2_000_000), .SPI_HZ(10_000_000),
                     .FLASH_CLKDIV(3)) dut (
-    .arst_n, .cpu_clk, .pix_clk,
-    .flash_sclk_o(fl_sclk), .flash_cs_n_o(fl_cs_n), .flash_mosi_o(fl_mosi), .flash_miso_i(fl_miso),
-    .uart_txd_o(uart_txd), .uart_rxd_i(uart_txd),
-    .i2c_scl_i({scl1, scl0}), .i2c_scl_o(scl_o), .i2c_scl_t(scl_t),
-    .i2c_sda_i({sda1, sda0}), .i2c_sda_o(sda_o), .i2c_sda_t(sda_t),
-    .spi_sclk_o(spi_sclk), .spi_mosi_o(spi_mosi), .spi_miso_i(spi_mosi), .spi_cs_n_o(spi_cs_n),
-    .gpio_i({gpio_o[95:32], quick_strap, mono_sel, seq_active, gpio_o[28:0]}), .gpio_o, .gpio_t, .ext_irq_i(1'b0),
-    .boot_done_o(boot_done), .boot_err_o(boot_err), .cpu_trap_o(trap), .wdt_reset_o(wdt_reset),
+    .arst_n,
+    .cpu_clk,
+    .pix_clk,
+    .flash_sclk_o(fl_sclk),
+    .flash_cs_n_o(fl_cs_n),
+    .flash_mosi_o(fl_mosi),
+    .flash_miso_i(fl_miso),
+    .uart_txd_o(uart_txd),
+    .uart_rxd_i(uart_txd),
+    .i2c_scl_i({scl1, scl0}),
+    .i2c_scl_o(scl_o),
+    .i2c_scl_t(scl_t),
+    .i2c_sda_i({sda1, sda0}),
+    .i2c_sda_o(sda_o),
+    .i2c_sda_t(sda_t),
+    .spi_sclk_o(spi_sclk),
+    .spi_mosi_o(spi_mosi),
+    .spi_miso_i(spi_mosi),
+    .spi_cs_n_o(spi_cs_n),
+    .gpio_i({gpio_o[95:32], quick_strap, mono_sel, seq_active, gpio_o[28:0]}),
+    .gpio_o,
+    .gpio_t,
+    .ext_irq_i(1'b0),
+    .boot_done_o(boot_done),
+    .boot_err_o(boot_err),
+    .cpu_trap_o(trap),
+    .wdt_reset_o(wdt_reset),
     .core_rst_n_o(core_rst_n),
 `ifdef VP_CSI2_RX
-    .byte_clk, .cam_lane_data_i(cam_d), .cam_lane_valid_i(cam_v),
+    .byte_clk,
+    .cam_lane_data_i(cam_d),
+    .cam_lane_valid_i(cam_v),
 `endif
 `ifdef VP_HDMI
-    .tmds_ser_clk, .tmds_serial_o(tmds_ser),
+    .tmds_ser_clk,
+    .tmds_serial_o(tmds_ser),
 `endif
 `ifdef VP_LVDS
-    .lvds_ser_clk, .lvds_a_serial_o(lvds_a_ser), .lvds_b_serial_o(lvds_b_ser),
+    .lvds_ser_clk,
+    .lvds_a_serial_o(lvds_a_ser),
+    .lvds_b_serial_o(lvds_b_ser),
 `endif
 `ifdef VP_MIPI_TX
     .tx_byte_clk(byte_clk),
 `endif
 `ifdef VP_DSI
-    .dsi_lane_data_o(dsi_d), .dsi_lane_valid_o(dsi_v), .dsi_hs_req_o(dsi_req), .dsi_tx_ready_i(1'b0),
+    .dsi_lane_data_o(dsi_d),
+    .dsi_lane_valid_o(dsi_v),
+    .dsi_hs_req_o(dsi_req),
+    .dsi_tx_ready_i(1'b0),
 `endif
 `ifdef VP_CSI2_TX
-    .csitx_lane_data_o(ctx_d), .csitx_lane_valid_o(ctx_v), .csitx_hs_req_o(ctx_req), .csitx_tx_ready_i(1'b0),
+    .csitx_lane_data_o(ctx_d),
+    .csitx_lane_valid_o(ctx_v),
+    .csitx_hs_req_o(ctx_req),
+    .csitx_tx_ready_i(1'b0),
 `endif
 `ifdef VP_VISION
-    .sdram_clk(sd_clk), .sdram_cke(sd_cke), .sdram_cs_n(sd_cs_n), .sdram_ras_n(sd_ras_n), .sdram_cas_n(sd_cas_n),
-    .sdram_we_n(sd_we_n), .sdram_a(sd_a), .sdram_ba(sd_ba), .sdram_dqm(sd_dqm), .sdram_dq(sdram_dq),
+    .sdram_clk(sd_clk),
+    .sdram_cke(sd_cke),
+    .sdram_cs_n(sd_cs_n),
+    .sdram_ras_n(sd_ras_n),
+    .sdram_cas_n(sd_cas_n),
+    .sdram_we_n(sd_we_n),
+    .sdram_a(sd_a),
+    .sdram_ba(sd_ba),
+    .sdram_dqm(sd_dqm),
+    .sdram_dq(sdram_dq),
 `endif
     .stats_done_o(sdone));
 `ifndef VP_HDMI
   assign tmds_ser = '0;
 `endif
 `ifndef VP_LVDS
-  assign lvds_a_ser = '0; assign lvds_b_ser = '0;
+  assign lvds_a_ser = '0;
+  assign lvds_b_ser = '0;
 `endif
 
   // ---------------- board: flash, I2C, camera ----------------
-  spi_flash_model flash (.sclk(fl_sclk), .cs_n(fl_cs_n), .mosi(fl_mosi), .miso(fl_miso), .wip_cycles(fl_wip));
-  assign sda0 = sda_t[0] ? 1'bz : sda_o[0];  assign scl0 = scl_t[0] ? 1'bz : scl_o[0];
-  assign sda1 = sda_t[1] ? 1'bz : sda_o[1];  assign scl1 = scl_t[1] ? 1'bz : scl_o[1];
-  i2c_slave_model #(.ADDR(7'h36)) sensor_cci (.sda(sda0), .scl(scl0));
-  i2c_slave_model #(.ADDR(7'h50)) eeprom (.sda(sda1), .scl(scl1));
-  csi2_lane_driver #(.NL(2)) cam (.clk(byte_clk), .lane_data(cam_d), .lane_valid(cam_v));
+  spi_flash_bfm flash (
+    .sclk(fl_sclk),
+    .cs_n(fl_cs_n),
+    .mosi(fl_mosi),
+    .miso(fl_miso),
+    .wip_cycles(fl_wip)
+  );
+  assign sda0 = sda_t[0] ? 1'bz : sda_o[0];
+  assign scl0 = scl_t[0] ? 1'bz : scl_o[0];
+  assign sda1 = sda_t[1] ? 1'bz : sda_o[1];
+  assign scl1 = scl_t[1] ? 1'bz : scl_o[1];
+  i2c_bfm #(.ADDR(7'h36)) sensor_cci (
+    .sda(sda0),
+    .scl(scl0)
+  );
+  i2c_bfm #(.ADDR(7'h50)) eeprom (
+    .sda(sda1),
+    .scl(scl1)
+  );
+  csi2_bfm #(.NL(2)) cam (
+    .clk(byte_clk),
+    .lane_data(cam_d),
+    .lane_valid(cam_v)
+  );
 
   int raw [H][W];
   initial for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) raw[y][x] = 64 + ((37 * x + 91 * y + 13 * x * y) % 900);
@@ -133,7 +213,9 @@ module video_processor_tb;
   // vision_system's Q16.16 coordinate arithmetic may round a sample by 1 LSB (its own regression
   // accepts max error 1): its output is checked within 1 of this.
   function automatic logic [23:0] ex(input int x, input int y);
-    logic [7:0] v; v = 8'(raw[y][x] >> 2); return {v, v, v};
+    logic [7:0] v;
+    v = 8'(raw[y][x] >> 2);
+    return {v, v, v};
   endfunction
 
   // ---------------- image test: inputs, frame labels, module output taps ----------------
@@ -147,19 +229,29 @@ module video_processor_tb;
   logic [23:0] out_img [NT][NIMG][H][W];             // first complete frame of each image at each tap
   bit   tap_saved [NT][NIMG];
   int   tap_x [NT], tap_y [NT], tap_lab [NT], tap_done_lab [NT];
-  int   lq [NT][16]; int lq_w [NT], lq_r [NT];       // label FIFO towards each tap
+  int   lq [NT][16]; // label FIFO towards each tap
+  int lq_w [NT], lq_r [NT];
   bit   img_mode = 0;                                // camera: 0 live raw[][] frames, 1 the image sequence
   bit   img_go = 0;                                  // image sequence: start sending (pipeline empty)
   int   img_next = 0;                                // next image of the sequence
   string img_in_dir = "input_images", img_out_dir = "output_images";
   initial for (int t = 0; t < NT; t++) begin
-    tap_x[t] = 0; tap_y[t] = 2 * H; tap_lab[t] = -1; tap_done_lab[t] = -1; lq_w[t] = 0; lq_r[t] = 0;
+    tap_x[t] = 0;
+    tap_y[t] = 2 * H;
+    tap_lab[t] = -1;
+    tap_done_lab[t] = -1;
+    lq_w[t] = 0;
+    lq_r[t] = 0;
     for (int i = 0; i < NIMG; i++) tap_saved[t][i] = 0;
   end
 
   // Camera control registers 0x20-0x21: frame gap in ns (end of one frame to the start of the next),
   // power-on value 1280; applied after every frame end packet, in byte clocks (8 ns)
-  initial begin #1; sensor_cci.mem[8'h20] = 8'h05; sensor_cci.mem[8'h21] = 8'h00; end
+  initial begin
+    #1;
+    sensor_cci.mem[8'h20] = 8'h05;
+    sensor_cci.mem[8'h21] = 8'h00;
+  end
   function automatic int frame_gap_ns();
     return {sensor_cci.mem[8'h20], sensor_cci.mem[8'h21]};
   endfunction
@@ -172,87 +264,113 @@ module video_processor_tb;
     while (cam_run) begin
       int lab;
       if (!img_mode) lab = -1;                         // live: the synthetic raw[][] image
-      else if (img_go && img_next < NIMG) begin lab = img_next; img_next++; end
+      else if (img_go && img_next < NIMG) begin
+        lab = img_next;
+        img_next++;
+      end
       else lab = -2;                                   // waiting for the start, or sequence sent: idle
       if (lab == -2) @(posedge byte_clk);
       else begin
         lq_push(T_UNPACK, lab);                        // label of this frame, in camera order
-        cam.gap = 4; cam.csi_pay.delete(); cam.csi_packet(2'd0, 6'h00, 16'(cam_frames + 1)); cam.send_pkt();
+        cam.gap = 4;
+        cam.csi_pay.delete();
+        cam.csi_packet(2'd0, 6'h00, 16'(cam_frames + 1));
+        cam.send_pkt();
         for (int y = 0; y < H; y++) begin
-          cam.csi_px.delete(); for (int x = 0; x < W; x++) cam.csi_px.push_back(lab < 0 ? 10'(raw[y][x]) : sensor_px(lab, x, y));
+          cam.csi_px.delete();
+          for (int x = 0; x < W; x++) cam.csi_px.push_back(lab < 0 ? 10'(raw[y][x]) : sensor_px(lab, x, y));
           cam.csi_pack_raw10();
           cam.csi_packet(2'd0, 6'h2B, 16'(cam.csi_pay.size()));
-          cam.gap = 110; cam.send_pkt();
+          cam.gap = 110;
+          cam.send_pkt();
         end
         // last line sent: the next image's format goes to the pin now, the firmware reprograms the
         // ISP during the frame gap; after the last image the sequence ends
         if (img_mode && img_next < NIMG) mono_sel = (img_next >= 4);
         if (img_mode && lab == NIMG - 1) seq_active = 0;
-        cam.csi_pay.delete(); cam.csi_packet(2'd0, 6'h01, 16'(cam_frames + 1));
-        cam.gap = (frame_gap_ns() + 7) / 8; cam.send_pkt();
+        cam.csi_pay.delete();
+        cam.csi_packet(2'd0, 6'h01, 16'(cam_frames + 1));
+        cam.gap = (frame_gap_ns() + 7) / 8;
+        cam.send_pkt();
         cam_frames++;
       end
     end
   end
 
-  // ---------------- HDMI: deserialise (LSB first) and decode ----------------
-  logic [9:0] tsr [4]; logic [9:0] tw0 = 0, tw1 = 0, tw2 = 0; logic trclk = 0; int tcnt = 0, tlocks = 0;
-  always @(posedge tmds_ser_clk) begin
-    for (int c = 0; c < 4; c++) tsr[c] = {tmds_ser[c], tsr[c][9:1]};
-    if (tsr[3] == 10'b0000011111) begin tw0 <= tsr[0]; tw1 <= tsr[1]; tw2 <= tsr[2]; tcnt = 0; tlocks++; end
-    else tcnt++;
-    trclk <= (tcnt >= 4 && tcnt < 9);
-  end
+  // ---------------- HDMI: TMDS lanes -> tmds_bfm (deserialise, LSB first) -> hdmi_bfm (decode) ----------------
+  logic [9:0] tw0, tw1, tw2;
+  logic trclk, tlocked;
+  tmds_bfm tmds (
+    .ser_clk(tmds_ser_clk),
+    .lanes(tmds_ser),
+    .ch0(tw0),
+    .ch1(tw1),
+    .ch2(tw2),
+    .sym_clk(trclk),
+    .locked(tlocked)
+  );
 `ifdef VP_HDMI
-  wire sink_en = tlocks > 20;
+  wire sink_en = tlocked;
 `else
   wire sink_en = 1'b0;
 `endif
-  hdmi_sink_model #(.MAXW(64), .MAXH(32)) sink (.clk(trclk), .en(sink_en), .ch0(tw0), .ch1(tw1), .ch2(tw2));
+  hdmi_bfm #(.MAXW(64), .MAXH(32)) sink (
+    .clk(trclk),
+    .en(sink_en),
+    .ch0(tw0),
+    .ch1(tw1),
+    .ch2(tw2)
+  );
 
-  // ---------------- LVDS link A: deserialise (bit 6 first) and decode VESA 24 bpp ----------------
-  logic [6:0] lsr [5]; logic [27:0] lw = 0; int lcnt = 0, llocks = 0; logic lrclk = 0;
-  always @(posedge lvds_ser_clk) begin
-    for (int c = 0; c < 5; c++) lsr[c] = {lsr[c][5:0], lvds_a_ser[c]};
-    if (lsr[4] == 7'b1100011) begin lw <= {lsr[3], lsr[2], lsr[1], lsr[0]}; lcnt = 0; llocks++; end
-    else lcnt++;
-    lrclk <= (lcnt >= 2 && lcnt < 5);
-  end
-  logic [23:0] lv_frame [H][W]; int lv_x = 0, lv_y = 0, lv_frames = 0; bit lv_vs_q = 0;
-  always @(posedge lrclk) if (llocks > 20) begin
-    logic [6:0] l0, l1, l2, l3; logic [7:0] r, g, b;
-    l0 = lw[6:0]; l1 = lw[13:7]; l2 = lw[20:14]; l3 = lw[27:21];
-    r = {l3[1], l3[0], l0[5:0]}; g = {l3[3], l3[2], l1[4:0], l0[6]}; b = {l3[5], l3[4], l2[3:0], l1[6:5]};
-    if (l2[5] && !lv_vs_q) begin if (lv_y == H) lv_frames++; lv_y = 0; lv_x = 0; end
-    lv_vs_q = l2[5];
-    if (l2[6]) begin if (lv_y < H && lv_x < W) lv_frame[lv_y][lv_x] = {b, g, r}; lv_x++; end
-    else if (lv_x != 0) begin lv_x = 0; lv_y++; if (lv_y == H) display_done(T_LVDS); end
-  end
+  // ---------------- LVDS link A: lvds_bfm (deserialise bit 6 first, decode VESA 24 bpp) ----------------
+  lvds_bfm #(.NDATA(4), .MAXW(W), .MAXH(H)) lvds (
+    .ser_clk(lvds_ser_clk),
+    .lanes(lvds_a_ser)
+  );
+  always @(lvds.frame_done) display_done(T_LVDS);
 
   // ---------------- firmware globals and traps ----------------
   function automatic longint g(input int idx);
-    logic [33:0] v; v = dut.u_cpu.u_core.globals[idx];
+    logic [33:0] v;
+    v = dut.u_cpu.u_core.globals[idx];
     return v[0] ? longint'($signed(v) >>> 1) : -999;
   endfunction
   longint last_stage = -1;
   always @(posedge cpu_clk) if (arst_n) begin
-    if (g(G_stage) != last_stage) begin last_stage = g(G_stage); $display("[%t] firmware stage %0d", $realtime, last_stage); end
-    if (trap) begin $display("ERROR @%0t: core trap (see build/fw/video_proc.lst)", $time); $display("TEST FAILED"); $finish; end
+    if (g(G_stage) != last_stage) begin
+      last_stage = g(G_stage);
+      $display("[%t] firmware stage %0d", $realtime, last_stage);
+    end
+    if (trap) begin
+      $display("ERROR @%0t: core trap (see build/fw/video_proc.lst)", $time);
+      $display("TEST FAILED");
+      $finish;
+    end
   end
 
   // ---------------- vision_system output capture (all frames must be identical: static scene) ----------------
-  logic [23:0] vs_frame [H][W]; logic [23:0] exp_img [H][W];
-  int vs_x = 0, vs_y = 0, vs_frames = 0, vs_changes = 0; bit vs_diff = 0;
+  logic [23:0] vs_frame [H][W];
+  logic [23:0] exp_img [H][W];
+  int vs_x = 0, vs_y = 0, vs_frames = 0, vs_changes = 0;
+  bit vs_diff = 0;
 `ifdef VP_VISION
   always @(posedge pix_clk) if (dut.vr_v && dut.vr_r) begin
-    if (dut.vr_u) begin vs_x = 0; vs_y = 0; vs_diff = 0; end
+    if (dut.vr_u) begin
+      vs_x = 0;
+      vs_y = 0;
+      vs_diff = 0;
+    end
     if (vs_y < H && vs_x < W) begin
       if (vs_frames > 0 && vs_frame[vs_y][vs_x] !== dut.vr_d) vs_diff = 1;
       vs_frame[vs_y][vs_x] = dut.vr_d;
     end
     if (dut.vr_l) begin
-      vs_x = 0; vs_y++;
-      if (vs_y == H) begin if (vs_diff && vs_frames > 0) vs_changes++; vs_frames++; end
+      vs_x = 0;
+      vs_y++;
+      if (vs_y == H) begin
+        if (vs_diff && vs_frames > 0) vs_changes++;
+        vs_frames++;
+      end
     end else vs_x++;
   end
 `endif
@@ -283,41 +401,46 @@ module video_processor_tb;
 
   // ---------------- UART 0 receiver: the firmware report -> cpu_bootup.txt ----------------
   localparam real UART_BIT = 1.0e9 / UART_BAUD;      // ns
-  int uart_fd, uart_lines = 0, uart_pass = 0, uart_fail = 0; bit uart_end = 0; string uart_line = "";
+  int uart_fd, uart_lines = 0, uart_pass = 0, uart_fail = 0;
+  bit uart_end = 0;
+  string uart_line = "";
   int rep_first = -1, rep_last = -1, rep_lines = 0;  // last frame counts the CPU reported (section 7)
   string eof_first_txt = "  EOF first stage (interrupt 13): frame count ";
   string eof_last_txt  = "  EOF last stage  (interrupt 14): frame count ";
+  uart_bfm #(.BIT_NS(UART_BIT)) uart0 (                // receiver on UART 0 (its rxd is the loopback)
+    .txd(),
+    .rxd(uart_txd[0])
+  );
   initial begin
-    logic [7:0] ch;
+    uart0.rx_en = 0;
     uart_fd = $fopen("cpu_bootup.txt", "w");
     wait (boot_done);                                  // the line is idle (high) from here
-    forever begin
-      @(negedge uart_txd[0]);
-      #(UART_BIT * 1.5);
-      for (int i = 0; i < 8; i++) begin ch[i] = uart_txd[0]; #(UART_BIT); end
-      if (ch == 8'h0A) begin
-        $fwrite(uart_fd, "%s\n", uart_line); $fflush(uart_fd);
-        $display("UART0| %s", uart_line);
-        uart_lines++;
-        if (uart_line.len() >= 8 && uart_line.substr(0, 7) == "  [PASS]") uart_pass++;
-        if (uart_line.len() >= 8 && uart_line.substr(0, 7) == "  [FAIL]") uart_fail++;
-        if (uart_line == "END OF REPORT") uart_end = 1;
-        // "  EOF first / last stage (interrupt 13 / 14): frame count <n>" (the CPU's frame count reports)
-        if (uart_line.len() > eof_first_txt.len() && uart_line.substr(0, eof_first_txt.len() - 1) == eof_first_txt) begin
-          void'($sscanf(uart_line.substr(eof_first_txt.len(), uart_line.len() - 1), "%d", rep_first)); rep_lines++;
-        end
-        if (uart_line.len() > eof_last_txt.len() && uart_line.substr(0, eof_last_txt.len() - 1) == eof_last_txt) begin
-          void'($sscanf(uart_line.substr(eof_last_txt.len(), uart_line.len() - 1), "%d", rep_last)); rep_lines++;
-        end
-        uart_line = "";
-      end else if (ch != 8'h0D) begin
-        uart_line = $sformatf("%s%c", uart_line, ch);
-      end
+    uart0.rx_en = 1;
+  end
+  always @(uart0.line_done) begin
+    uart_line = uart0.last_line;
+    $fwrite(uart_fd, "%s\n", uart_line);
+    $fflush(uart_fd);
+    $display("UART0| %s", uart_line);
+    uart_lines++;
+    if (uart_line.len() >= 8 && uart_line.substr(0, 7) == "  [PASS]") uart_pass++;
+    if (uart_line.len() >= 8 && uart_line.substr(0, 7) == "  [FAIL]") uart_fail++;
+    if (uart_line == "END OF REPORT") uart_end = 1;
+    // "  EOF first / last stage (interrupt 13 / 14): frame count <n>" (the CPU's frame count reports)
+    if (uart_line.len() > eof_first_txt.len() && uart_line.substr(0, eof_first_txt.len() - 1) == eof_first_txt) begin
+      void'($sscanf(uart_line.substr(eof_first_txt.len(), uart_line.len() - 1), "%d", rep_first));
+      rep_lines++;
+    end
+    if (uart_line.len() > eof_last_txt.len() && uart_line.substr(0, eof_last_txt.len() - 1) == eof_last_txt) begin
+      void'($sscanf(uart_line.substr(eof_last_txt.len(), uart_line.len() - 1), "%d", rep_last));
+      rep_lines++;
     end
   end
 
   // ---------------- tests ----------------
-  logic [23:0] px, pe; bit pok; int pd;
+  logic [23:0] px, pe;
+  bit pok;
+  int pd;
   `include "video_processor_tests.sv"
 
   initial begin
@@ -328,7 +451,8 @@ module video_processor_tb;
     $readmemh(`FW_HEX, flash.mem);
     repeat (5) @(posedge cpu_clk);
     #3 arst_n = 1;
-    sink.hdmi = 1; sink.vs_active = 1;
+    sink.hdmi = 1;
+    sink.vs_active = 1;
     test_boot();
     test_core_reset();
     test_firmware();
@@ -338,11 +462,37 @@ module video_processor_tb;
     test_lvds();
     test_adapter();
     test_images();                                     // 4 colour + 4 monochrome images, every module output saved
-    ser_run = 0; cam_run = 0;                          // video checked: stop the serial clocks and the camera
+    ser_run = 0; // video checked: stop the serial clocks and the camera
+    cam_run = 0;
     $display("[%t] video checks done; serial clocks and camera stopped, waiting for the report", $realtime);
     test_uart_report();
     $fclose(uart_fd);
-    if (errors == 0) $display("TEST PASSED"); else $display("TEST FAILED (%0d errors)", errors);
+    if (errors == 0) $display("TEST PASSED");
+    else $display("TEST FAILED (%0d errors)", errors);
     $finish;
+  end
+
+  // ---------------- waveform dump ----------------
+  // +vcd writes video_processor_tb.vcd (scripts/run_sim.sh --vcd / --wave, make wave). A whole run is
+  // long: +vcd_start_us=<n> / +vcd_stop_us=<n> limit the dump to a window of simulated time.
+  initial if ($test$plusargs("vcd")) begin
+    int t_on, t_off;
+    t_on = 0;
+    t_off = 0;
+    void'($value$plusargs("vcd_start_us=%d", t_on));
+    void'($value$plusargs("vcd_stop_us=%d", t_off));
+    $dumpfile("video_processor_tb.vcd");
+    if (t_on > 0) begin
+      $dumpvars(0, video_processor_tb);
+      $dumpoff;
+      #(t_on * 1us);
+      $dumpon;
+    end
+    else $dumpvars(0, video_processor_tb);
+    if (t_off > t_on) begin
+      #((t_off - t_on) * 1us);
+      $dumpoff;
+      $dumpflush;
+    end
   end
 endmodule

@@ -37,7 +37,19 @@ module tb_bilinear;
   logic valid_out;
   logic [PIX_W-1:0] pixel_out;
 
-  bilinear dut (.clk, .rst_n, .valid_in, .fx, .fy, .tl, .tr, .bl, .br, .valid_out, .pixel_out);
+  bilinear dut (
+    .clk,
+    .rst_n,
+    .valid_in,
+    .fx,
+    .fy,
+    .tl,
+    .tr,
+    .bl,
+    .br,
+    .valid_out,
+    .pixel_out
+  );
 
   always #5 clk = ~clk;
 
@@ -61,8 +73,15 @@ module tb_bilinear;
   `include "bilinear_tests.sv"
 
   initial begin
-    checks = 0; fails = 0;
-    valid_in = 0; fx = 0; fy = 0; tl = 0; tr = 0; bl = 0; br = 0;
+    checks = 0;
+    fails = 0;
+    valid_in = 0;
+    fx = 0;
+    fy = 0;
+    tl = 0;
+    tr = 0;
+    bl = 0;
+    br = 0;
     repeat (3) @(posedge clk);
     rst_n = 1;
     repeat (2) @(posedge clk);
@@ -93,8 +112,13 @@ module tb_bilinear;
     // Edge E: valid_in was only a 1-cycle pulse, so valid_out falls back
     //         to 0 right after edge E.
     @(posedge clk);   // edge A
-    tl <= 24'h123456; tr <= 24'h123456; bl <= 24'h123456; br <= 24'h123456;
-    fx <= 8'd0; fy <= 8'd0; valid_in <= 1'b1;
+    tl <= 24'h123456;
+    tr <= 24'h123456;
+    bl <= 24'h123456;
+    br <= 24'h123456;
+    fx <= 8'd0;
+    fy <= 8'd0;
+    valid_in <= 1'b1;
     @(posedge clk);   // edge B
     valid_in <= 1'b0;   // single 1-cycle pulse, no more valid_in after this
     #1;

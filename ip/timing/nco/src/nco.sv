@@ -36,10 +36,19 @@ module nco #(
   assign sum       = {1'b0, acc} + {1'b0, tuning_i};
   assign nyquist_o = tuning_i[PHASE_W-1];
   always_ff @(posedge clk) begin
-    if (!rst_n) begin acc <= '0; carry_o <= 1'b0; phase_o <= '0; end
-    else if (sync_load_i) begin acc <= phase_load_i; carry_o <= 1'b0; phase_o <= phase_load_i + phase_off_i; end
+    if (!rst_n) begin
+      acc <= '0;
+      carry_o <= 1'b0;
+      phase_o <= '0;
+    end
+    else if (sync_load_i) begin
+      acc <= phase_load_i;
+      carry_o <= 1'b0;
+      phase_o <= phase_load_i + phase_off_i;
+    end
     else if (ce_i) begin
-      acc <= sum[PHASE_W-1:0]; carry_o <= sum[PHASE_W];
+      acc <= sum[PHASE_W-1:0];
+      carry_o <= sum[PHASE_W];
       phase_o <= sum[PHASE_W-1:0] + phase_off_i;
     end else carry_o <= 1'b0;
   end

@@ -76,46 +76,93 @@ module usb_fs_sie_top #(
   logic [5:0]      wr_pulse;
   logic [31:0]     wr_data;
   usb_axil_regs #(.ADDR_W(8), .NREG(6), .RESET_VALS(RSTV)) u_regs (
-    .aclk, .aresetn,
-    .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready,
-    .s_axil_wdata, .s_axil_wstrb, .s_axil_wvalid, .s_axil_wready,
-    .s_axil_bresp, .s_axil_bvalid, .s_axil_bready,
-    .s_axil_araddr, .s_axil_arvalid, .s_axil_arready,
-    .s_axil_rdata, .s_axil_rresp, .s_axil_rvalid, .s_axil_rready,
-    .reg_o(regs), .wr_pulse_o(wr_pulse), .wr_data_o(wr_data), .rd_i(rd));
+    .aclk,
+    .aresetn,
+    .s_axil_awaddr,
+    .s_axil_awvalid,
+    .s_axil_awready,
+    .s_axil_wdata,
+    .s_axil_wstrb,
+    .s_axil_wvalid,
+    .s_axil_wready,
+    .s_axil_bresp,
+    .s_axil_bvalid,
+    .s_axil_bready,
+    .s_axil_araddr,
+    .s_axil_arvalid,
+    .s_axil_arready,
+    .s_axil_rdata,
+    .s_axil_rresp,
+    .s_axil_rvalid,
+    .s_axil_rready,
+    .reg_o(regs),
+    .wr_pulse_o(wr_pulse),
+    .wr_data_o(wr_data),
+    .rd_i(rd)
+  );
 
   wire enable = regs[0];
   assign usb_pullup_o = regs[1];
 
   // ---- Receiver ----
-  logic [7:0] rx_data; logic rx_valid, rx_last, rx_err;
+  logic [7:0] rx_data;
+  logic rx_valid, rx_last, rx_err;
   logic rx_active, rx_good, rx_bad, rx_reset, tx_busy;
   logic [1:0] line;
   usb_fs_rx #(.CLK_HZ(CLK_HZ)) u_rx (
-    .clk(aclk), .rst_n(aresetn), .enable_i(enable & ~tx_busy),
-    .dp_i(usb_dp_i), .dm_i(usb_dm_i),
-    .data_o(rx_data), .valid_o(rx_valid), .last_o(rx_last), .err_o(rx_err),
-    .active_o(rx_active), .good_o(rx_good), .bad_o(rx_bad), .reset_o(rx_reset),
-    .line_o(line));
+    .clk(aclk),
+    .rst_n(aresetn),
+    .enable_i(enable & ~tx_busy),
+    .dp_i(usb_dp_i),
+    .dm_i(usb_dm_i),
+    .data_o(rx_data),
+    .valid_o(rx_valid),
+    .last_o(rx_last),
+    .err_o(rx_err),
+    .active_o(rx_active),
+    .good_o(rx_good),
+    .bad_o(rx_bad),
+    .reset_o(rx_reset),
+    .line_o(line)
+  );
 
   logic rxf_ready, rxf_user;
   logic [LW-1:0] rxf_lvl, txf_lvl;
   usb_axis_fifo #(.DATA_W(8), .DEPTH(FIFO_DEPTH)) u_rxf (
-    .clk(aclk), .rst_n(aresetn),
-    .s_tdata(rx_data), .s_tlast(rx_last), .s_tuser(rx_err),
-    .s_tvalid(rx_valid), .s_tready(rxf_ready),
-    .m_tdata(m_axis_tdata), .m_tlast(m_axis_tlast), .m_tuser(m_axis_tuser),
-    .m_tvalid(m_axis_tvalid), .m_tready(m_axis_tready), .level_o(rxf_lvl));
+    .clk(aclk),
+    .rst_n(aresetn),
+    .s_tdata(rx_data),
+    .s_tlast(rx_last),
+    .s_tuser(rx_err),
+    .s_tvalid(rx_valid),
+    .s_tready(rxf_ready),
+    .m_tdata(m_axis_tdata),
+    .m_tlast(m_axis_tlast),
+    .m_tuser(m_axis_tuser),
+    .m_tvalid(m_axis_tvalid),
+    .m_tready(m_axis_tready),
+    .level_o(rxf_lvl)
+  );
 
   // ---- Transmitter with whole-packet gating ----
-  logic [7:0] tx_data; logic tx_valid, tx_last, tx_user, tx_pop;
+  logic [7:0] tx_data;
+  logic tx_valid, tx_last, tx_user, tx_pop;
   logic tx_done, txf_ready_unused;
   usb_axis_fifo #(.DATA_W(8), .DEPTH(FIFO_DEPTH)) u_txf (
-    .clk(aclk), .rst_n(aresetn),
-    .s_tdata(s_axis_tdata), .s_tlast(s_axis_tlast), .s_tuser(1'b0),
-    .s_tvalid(s_axis_tvalid), .s_tready(s_axis_tready),
-    .m_tdata(tx_data), .m_tlast(tx_last), .m_tuser(tx_user),
-    .m_tvalid(tx_valid), .m_tready(tx_pop), .level_o(txf_lvl));
+    .clk(aclk),
+    .rst_n(aresetn),
+    .s_tdata(s_axis_tdata),
+    .s_tlast(s_axis_tlast),
+    .s_tuser(1'b0),
+    .s_tvalid(s_axis_tvalid),
+    .s_tready(s_axis_tready),
+    .m_tdata(tx_data),
+    .m_tlast(tx_last),
+    .m_tuser(tx_user),
+    .m_tvalid(tx_valid),
+    .m_tready(tx_pop),
+    .level_o(txf_lvl)
+  );
 
   // Count complete packets in the TX FIFO (written tlast minus popped tlast)
   logic [15:0] pkts;
@@ -127,18 +174,32 @@ module usb_fs_sie_top #(
   end
 
   usb_fs_tx #(.CLK_HZ(CLK_HZ)) u_tx (
-    .clk(aclk), .rst_n(aresetn), .enable_i(enable), .bus_busy_i(rx_active),
-    .s_data(tx_data), .s_valid(tx_valid), .s_last(tx_last),
-    .pkt_avail_i(pkts != 16'd0), .s_ready(tx_pop),
-    .dp_o(usb_dp_o), .dm_o(usb_dm_o), .oe_o(usb_oe_o),
-    .busy_o(tx_busy), .pkt_done_o(tx_done));
+    .clk(aclk),
+    .rst_n(aresetn),
+    .enable_i(enable),
+    .bus_busy_i(rx_active),
+    .s_data(tx_data),
+    .s_valid(tx_valid),
+    .s_last(tx_last),
+    .pkt_avail_i(pkts != 16'd0),
+    .s_ready(tx_pop),
+    .dp_o(usb_dp_o),
+    .dm_o(usb_dm_o),
+    .oe_o(usb_oe_o),
+    .busy_o(tx_busy),
+    .pkt_done_o(tx_done)
+  );
 
   // ---- Status flags and counters ----
   logic f_reset, f_ovf;
   logic [31:0] c_good, c_bad, c_tx;
   always_ff @(posedge aclk) begin
     if (!aresetn) begin
-      f_reset <= 1'b0; f_ovf <= 1'b0; c_good <= '0; c_bad <= '0; c_tx <= '0;
+      f_reset <= 1'b0;
+      f_ovf <= 1'b0;
+      c_good <= '0;
+      c_bad <= '0;
+      c_tx <= '0;
     end else begin
       if (rx_reset) f_reset <= 1'b1;
       if (rx_valid & ~rxf_ready) f_ovf <= 1'b1;         // byte dropped

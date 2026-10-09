@@ -8,5 +8,10 @@
 // Date: 2026-10-08
 // ***************
   task automatic tone(input real f_mhz, input int n);
-    tw = $rtoi(f_mhz / 100.0 * 4294967296.0); @(posedge clk); #1 en = 1; repeat (n) @(posedge clk); #1 en = 0; repeat (IT + 10) @(posedge clk);
+    tw = $rtoi(f_mhz / 100.0 * 4294967296.0);
+    @(posedge clk);
+    #1 en = 1;
+    repeat (n) @(posedge clk);
+    #1 en = 0;
+    repeat (IT + 10) @(posedge clk);
   endtask

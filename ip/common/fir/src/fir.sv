@@ -57,15 +57,24 @@ module fir #(
     if (!rst_n) begin
       for (int k = 0; k < TAPS; k++) coef[k] <= '0;
       for (int k = 0; k < TAPS-1; k++) z[k] <= '0;
-      valid_o <= 1'b0; data_o <= '0; sat_o <= 1'b0;
+      valid_o <= 1'b0;
+      data_o <= '0;
+      sat_o <= 1'b0;
     end else begin
       if (coef_we_i) coef[coef_idx_i] <= coef_i;
-      valid_o <= valid_i; sat_o <= 1'b0;
+      valid_o <= valid_i;
+      sat_o <= 1'b0;
       if (valid_i) begin
         for (int k = 0; k < TAPS-2; k++) z[k] <= prod[k+1] + z[k+1];
         z[TAPS-2] <= prod[TAPS-1];
-        if (y_sh > MAXV) begin data_o <= MAXV[OUT_W-1:0]; sat_o <= 1'b1; end
-        else if (y_sh < MINV) begin data_o <= MINV[OUT_W-1:0]; sat_o <= 1'b1; end
+        if (y_sh > MAXV) begin
+          data_o <= MAXV[OUT_W-1:0];
+          sat_o <= 1'b1;
+        end
+        else if (y_sh < MINV) begin
+          data_o <= MINV[OUT_W-1:0];
+          sat_o <= 1'b1;
+        end
         else data_o <= y_sh[OUT_W-1:0];
       end
     end

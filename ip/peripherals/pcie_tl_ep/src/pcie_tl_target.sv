@@ -152,13 +152,30 @@ module pcie_tl_target #(
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      cstate <= C_IDLE; c_k <= '0; cpl_valid <= 1'b0; cpl_dw <= '0; cpl_last <= 1'b0;
-      c_status <= '0; c_data <= 1'b0; c_cfg <= 1'b0; c_len <= '0; c_bytes <= '0;
-      c_low <= '0; c_req <= '0; c_tag <= '0; c_cfgdata <= '0; c_ptr <= '0;
-      c_issued <= '0; c_taken <= '0; rd_pend <= 1'b0;
+      cstate <= C_IDLE;
+      c_k <= '0;
+      cpl_valid <= 1'b0;
+      cpl_dw <= '0;
+      cpl_last <= 1'b0;
+      c_status <= '0;
+      c_data <= 1'b0;
+      c_cfg <= 1'b0;
+      c_len <= '0;
+      c_bytes <= '0;
+      c_low <= '0;
+      c_req <= '0;
+      c_tag <= '0;
+      c_cfgdata <= '0;
+      c_ptr <= '0;
+      c_issued <= '0;
+      c_taken <= '0;
+      rd_pend <= 1'b0;
     end else begin
       if (cpl_valid & cpl_ready) cpl_valid <= 1'b0;
-      if (issue) begin c_ptr <= c_ptr + 1'b1; c_issued <= c_issued + 10'd1; end
+      if (issue) begin
+        c_ptr <= c_ptr + 1'b1;
+        c_issued <= c_issued + 10'd1;
+      end
       if (issue)        rd_pend <= 1'b1;             // data valid next cycle
       else if (consume) rd_pend <= 1'b0;
       case (cstate)
@@ -169,10 +186,14 @@ module pcie_tl_target #(
           c_len     <= tgt_cfg ? 10'd1 : len;
           c_bytes   <= (hit || tgt_cfg) ? (tgt_cfg ? 12'd4 : byte_cnt) : 12'd4;
           c_low     <= tgt_cfg ? 7'd0 : low_addr;
-          c_req     <= req_id;  c_tag <= tag;
+          c_req     <= req_id;
+          c_tag <= tag;
           c_cfgdata <= cfg_rd;
-          c_ptr     <= ram_base; c_issued <= '0; c_taken <= '0;
-          c_k       <= '0; rd_pend <= 1'b0;
+          c_ptr     <= ram_base;
+          c_issued <= '0;
+          c_taken <= '0;
+          c_k       <= '0;
+          rd_pend <= 1'b0;
           cstate    <= C_RUN;
         end
         C_RUN: if (out_free) begin
@@ -181,24 +202,31 @@ module pcie_tl_target #(
               cpl_dw <= {(c_data ? 3'b010 : 3'b000), 5'b01010, 1'b0, 3'b000,
                          4'b0000, 1'b0, 1'b0, 2'b00, 2'b00,
                          (c_data ? c_len : 10'd0)};
-              cpl_valid <= 1'b1; cpl_last <= 1'b0; c_k <= 2'd1;
+              cpl_valid <= 1'b1;
+              cpl_last <= 1'b0;
+              c_k <= 2'd1;
             end
             2'd1: begin                              // DW1: completer, status
               cpl_dw <= {cpl_id, c_status, 1'b0, c_bytes};
-              cpl_valid <= 1'b1; c_k <= 2'd2;
+              cpl_valid <= 1'b1;
+              c_k <= 2'd2;
             end
             2'd2: begin                              // DW2: requester, tag
               cpl_dw <= {c_req, c_tag, 1'b0, c_low};
               cpl_valid <= 1'b1;
               cpl_last  <= ~c_data;
-              if (c_data) c_k <= 2'd3; else cstate <= C_IDLE;
+              if (c_data) c_k <= 2'd3;
+              else cstate <= C_IDLE;
             end
             default: begin                           // data DWs
               if (c_cfg) begin
-                cpl_dw <= c_cfgdata; cpl_valid <= 1'b1; cpl_last <= 1'b1;
+                cpl_dw <= c_cfgdata;
+                cpl_valid <= 1'b1;
+                cpl_last <= 1'b1;
                 cstate <= C_IDLE;
               end else if (rd_pend) begin
-                cpl_dw <= ram_q; cpl_valid <= 1'b1;
+                cpl_dw <= ram_q;
+                cpl_valid <= 1'b1;
                 cpl_last <= (c_taken == c_len - 10'd1);
                 c_taken <= c_taken + 10'd1;
                 if (c_taken == c_len - 10'd1) cstate <= C_IDLE;
@@ -222,43 +250,81 @@ module pcie_tl_target #(
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      rstate <= R_H0; fmt <= '0; ttype <= '0; len <= 10'd1; req_id <= '0; tag <= '0;
-      first_be <= '0; last_be <= '0; addr_hi <= '0; addr_lo <= '0; dw_cnt <= '0;
-      cfg_reg <= '0; hdr_last <= 1'b0; command <= '0; bar0 <= '0; cpl_id <= '0;
-      tgt_ram <= 1'b0; tgt_str <= 1'b0; tgt_cfg <= 1'b0; hit <= 1'b0;
-      c_start <= 1'b0; ram_we <= 1'b0; ram_be <= '0; ram_wa <= '0; ram_wd <= '0;
-      str_dw <= '0; str_last <= 1'b0; str_valid <= 1'b0;
-      p_rx_tlp <= 1'b0; p_mwr <= 1'b0; p_mrd <= 1'b0; p_cfg <= 1'b0; p_ur <= 1'b0;
+      rstate <= R_H0;
+      fmt <= '0;
+      ttype <= '0;
+      len <= 10'd1;
+      req_id <= '0;
+      tag <= '0;
+      first_be <= '0;
+      last_be <= '0;
+      addr_hi <= '0;
+      addr_lo <= '0;
+      dw_cnt <= '0;
+      cfg_reg <= '0;
+      hdr_last <= 1'b0;
+      command <= '0;
+      bar0 <= '0;
+      cpl_id <= '0;
+      tgt_ram <= 1'b0;
+      tgt_str <= 1'b0;
+      tgt_cfg <= 1'b0;
+      hit <= 1'b0;
+      c_start <= 1'b0;
+      ram_we <= 1'b0;
+      ram_be <= '0;
+      ram_wa <= '0;
+      ram_wd <= '0;
+      str_dw <= '0;
+      str_last <= 1'b0;
+      str_valid <= 1'b0;
+      p_rx_tlp <= 1'b0;
+      p_mwr <= 1'b0;
+      p_mrd <= 1'b0;
+      p_cfg <= 1'b0;
+      p_ur <= 1'b0;
     end else begin
-      c_start <= 1'b0; ram_we <= 1'b0;
-      p_rx_tlp <= 1'b0; p_mwr <= 1'b0; p_mrd <= 1'b0; p_cfg <= 1'b0; p_ur <= 1'b0;
+      c_start <= 1'b0;
+      ram_we <= 1'b0;
+      p_rx_tlp <= 1'b0;
+      p_mwr <= 1'b0;
+      p_mrd <= 1'b0;
+      p_cfg <= 1'b0;
+      p_ur <= 1'b0;
       if (str_valid & str_ready) str_valid <= 1'b0;
       case (rstate)
         R_H0: if (rx_valid) begin
-          fmt <= rx_dw[31:29]; ttype <= rx_dw[28:24];
+          fmt <= rx_dw[31:29];
+          ttype <= rx_dw[28:24];
           len <= rx_dw[9:0];                              // 0 means 1024
           p_rx_tlp <= 1'b1;
           if (!rx_last) rstate <= R_H1;                   // runt TLP ignored
         end
         R_H1: if (rx_valid) begin
-          req_id <= rx_dw[31:16]; tag <= rx_dw[15:8];
-          last_be <= rx_dw[7:4]; first_be <= rx_dw[3:0];
+          req_id <= rx_dw[31:16];
+          tag <= rx_dw[15:8];
+          last_be <= rx_dw[7:4];
+          first_be <= rx_dw[3:0];
           rstate <= rstate_t'(rx_last ? R_H0 : R_H2);
         end
         R_H2: if (rx_valid) begin
-          dw_cnt <= '0; hdr_last <= rx_last;
+          dw_cnt <= '0;
+          hdr_last <= rx_last;
           if (fmt[0]) begin                               // 4DW: address high
             addr_hi <= rx_dw;
             rstate  <= rstate_t'(rx_last ? R_H0 : R_H3);
           end else begin                                  // 3DW: address / cfg
-            addr_hi <= 32'd0; addr_lo <= {rx_dw[31:2], 2'b00};
+            addr_hi <= 32'd0;
+            addr_lo <= {rx_dw[31:2], 2'b00};
             cfg_reg <= rx_dw[7:2];
             if (ttype == 5'b00100) cpl_id <= rx_dw[31:16];   // cfg: bus/dev/fn
             rstate  <= R_DEC;
           end
         end
         R_H3: if (rx_valid) begin
-          addr_lo <= {rx_dw[31:2], 2'b00}; hdr_last <= rx_last; rstate <= R_DEC;
+          addr_lo <= {rx_dw[31:2], 2'b00};
+          hdr_last <= rx_last;
+          rstate <= R_DEC;
         end
         // Decode step (rx stalled): start completions when the sequencer is free
         R_DEC: begin
@@ -267,25 +333,39 @@ module pcie_tl_target #(
               if (!c_busy) begin
                 tgt_cfg <= 1'b0;
                 hit     <= addr_hit && !sel_str && len_ok;
-                c_start <= 1'b1; p_mrd <= 1'b1;
+                c_start <= 1'b1;
+                p_mrd <= 1'b1;
                 p_ur    <= ~(addr_hit && !sel_str && len_ok);
                 rstate  <= R_H0;
               end
             end else begin                                 // memory write
-              tgt_cfg <= 1'b0; tgt_ram <= addr_hit && !sel_str;
-              tgt_str <= addr_hit && sel_str; p_mwr <= 1'b1;
+              tgt_cfg <= 1'b0;
+              tgt_ram <= addr_hit && !sel_str;
+              tgt_str <= addr_hit && sel_str;
+              p_mwr <= 1'b1;
               rstate  <= rstate_t'(hdr_last ? R_H0 : (addr_hit ? R_DATA : R_DROP));
             end
           end else if (ttype == 5'b00100 && !fmt[0]) begin   // config type 0
             if (!c_busy) begin
-              tgt_cfg <= 1'b1; tgt_ram <= 1'b0; tgt_str <= 1'b0; hit <= 1'b0;
-              c_start <= 1'b1; p_cfg <= 1'b1;
+              tgt_cfg <= 1'b1;
+              tgt_ram <= 1'b0;
+              tgt_str <= 1'b0;
+              hit <= 1'b0;
+              c_start <= 1'b1;
+              p_cfg <= 1'b1;
               rstate  <= rstate_t'((fmt[1] && !hdr_last) ? R_DATA : R_H0);
             end
           end else begin                                   // unsupported type
-            tgt_cfg <= 1'b0; tgt_ram <= 1'b0; tgt_str <= 1'b0; hit <= 1'b0;
+            tgt_cfg <= 1'b0;
+            tgt_ram <= 1'b0;
+            tgt_str <= 1'b0;
+            hit <= 1'b0;
             if (!fmt[1] && ttype[4:3] == 2'b00) begin      // non-posted: UR
-              if (!c_busy) begin c_start <= 1'b1; p_ur <= 1'b1; rstate <= R_H0; end
+              if (!c_busy) begin
+                c_start <= 1'b1;
+                p_ur <= 1'b1;
+                rstate <= R_H0;
+              end
             end else rstate <= rstate_t'(hdr_last ? R_H0 : R_DROP);   // posted: drop
           end
         end
@@ -300,9 +380,14 @@ module pcie_tl_target #(
               for (int b = 0; b < 4; b++)
                 if (first_be[b]) bar0[b*8 +: 8] <= rx_dw[b*8 +: 8];
           end else if (tgt_ram) begin
-            ram_we <= 1'b1; ram_wa <= wr_word; ram_be <= wr_be; ram_wd <= rx_dw;
+            ram_we <= 1'b1;
+            ram_wa <= wr_word;
+            ram_be <= wr_be;
+            ram_wd <= rx_dw;
           end else if (tgt_str) begin
-            str_dw <= rx_dw; str_last <= rx_last; str_valid <= 1'b1;
+            str_dw <= rx_dw;
+            str_last <= rx_last;
+            str_valid <= 1'b1;
           end
           dw_cnt <= dw_cnt + 10'd1;
           if (rx_last) rstate <= R_H0;

@@ -1,2 +1,2 @@
-../video_tb_lib/csi2_lane_driver.sv
+../../shared/tb/lib/csi2_bfm.sv
 tb/csi2_rx_tb.sv

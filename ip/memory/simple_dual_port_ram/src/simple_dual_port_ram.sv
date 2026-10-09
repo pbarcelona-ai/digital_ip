@@ -29,7 +29,7 @@ module simple_dual_port_ram #(
 );
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
   if (DEPTH < 2 || WIDTH < 1) begin : g_bad $error("simple_dual_port_ram: bad DEPTH/WIDTH"); end
-  if (BYTE_EN && (WIDTH % 8) != 0) begin : g_badb $error("simple_dual_port_ram: BYTE_EN needs WIDTH % 8 == 0"); end
+  if (BYTE_EN && (WIDTH % 8) != 0) begin : g_badb $error("simple_dual_port_ram: BYTE_EN needs WIDTH %% 8 == 0"); end
   logic [WIDTH-1:0] mem [0:DEPTH-1];
   wire rc = ASYNC ? rclk : wclk;
   always_ff @(posedge wclk) if (we_i) begin

@@ -11,13 +11,23 @@
 // Date: 2026-10-08
 // ***************
   task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
+    if (!c) begin
+      errors++;
+      $display("ERROR @%0t: %s", $time, m);
+    end
   endtask
 
   // measure over two consecutive start pulses
   task automatic meas(output int period, output int width);
-    int t0, t1, hi; hi = 0;
-    @(posedge st); t0 = cyc;
-    do begin @(posedge clk); #1 hi += p; end while (!st || cyc == t0);
-    period = cyc - t0; width = hi;
+    int t0, t1, hi;
+    hi = 0;
+    @(posedge st);
+    t0 = cyc;
+    do begin
+      @(posedge clk);
+      #1 hi += p;
+    end
+    while (!st || cyc == t0);
+    period = cyc - t0;
+    width = hi;
   endtask

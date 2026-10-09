@@ -66,13 +66,15 @@ cd "$OUT"                                   # VCD files land here
 iverilog -g2012 -Wall -Wno-timescale $TB_INC -s "$TB" -o "$TB.vvp" $SRCS ${EXTRA:-} $TB_SRCS
 ARGS=""; [ "$VCD" = 1 ] && ARGS="+vcd"
 vvp -n "$TB.vvp" $ARGS | tee "$TB.log"
+if [ "$WAVE" = 1 ]; then                    # also (especially) when the test failed
+  VF="$OUT/$TB.vcd"; [ -f "$VF" ] || VF="$(ls -1t "$OUT"/*.vcd 2>/dev/null | head -1 || true)"
+  if [ -z "$VF" ]; then echo "[$IP] no VCD written (does $TB dump on +vcd?)"
+  elif command -v surfer >/dev/null 2>&1; then echo "[$IP] opening $VF in Surfer"; nohup surfer "$VF" > "$OUT/surfer.log" 2>&1 &
+  else echo "surfer not found; install from https://surfer-project.org and open $VF"; fi
+fi
 grep -q "TEST PASSED" "$TB.log" || { echo "[$IP] SIMULATION FAILED"; exit 1; }
 echo "[$IP] PASSED"
 if [[ -f "$IPDIR/tb/python/run_python.py" ]]; then
   PYTHON_SIM="${PYTHON_SIM:-${PYTHON_SIMULATOR:-verilator}}" python3 "$IPDIR/tb/python/run_python.py"
 fi
-if [ "$WAVE" = 1 ]; then
-  VF="$(ls -1 "$OUT"/*.vcd 2>/dev/null | head -1 || true)"
-  if command -v surfer >/dev/null 2>&1 && [ -n "$VF" ]; then surfer "$VF" &
-  else echo "surfer not found; install from https://surfer-project.org and open $OUT/*.vcd"; fi
-fi
+

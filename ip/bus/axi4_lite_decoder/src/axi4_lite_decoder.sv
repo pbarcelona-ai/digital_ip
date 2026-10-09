@@ -32,7 +32,11 @@ module axi4_lite_decoder #(
   for (genvar i = 0; i < NSLAVE; i++) begin : g_ci
     for (genvar j = i + 1; j < NSLAVE; j++) begin : g_cj
       if (((BASE[i*ADDR_W +: ADDR_W] ^ BASE[j*ADDR_W +: ADDR_W]) & MASK[i*ADDR_W +: ADDR_W] & MASK[j*ADDR_W +: ADDR_W]) == '0) begin : g_ov
-        $error("axi4_lite_decoder: regions %0d and %0d overlap", i, j);
+        $error(
+        "axi4_lite_decoder: regions %0d and %0d overlap",
+        i,
+        j
+      );
       end
     end
   end
@@ -40,7 +44,10 @@ module axi4_lite_decoder #(
   always_comb begin
     for (int i = 0; i < NSLAVE; i++) hit[i] = ((addr_i & MASK[i*ADDR_W +: ADDR_W]) == BASE[i*ADDR_W +: ADDR_W]);
     sel_o = '0;
-    for (int i = NSLAVE-1; i >= 0; i--) if (hit[i]) begin sel_o = '0; sel_o[i] = 1'b1; end
+    for (int i = NSLAVE-1; i >= 0; i--) if (hit[i]) begin
+      sel_o = '0;
+      sel_o[i] = 1'b1;
+    end
   end
   assign miss_o  = ~|hit;
   assign multi_o = ($countones(hit) > 1);

@@ -56,20 +56,37 @@ module cic #(
   localparam logic signed [BW-1:0] MINV = -(BW'(1) <<< (OUT_W - 1));
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      for (int k = 0; k < N; k++) begin integ[k] <= '0; comb_d[k] <= '0; end
-      cnt <= '0; r_lat <= RB'(1); valid_o <= 1'b0; data_o <= '0; sat_o <= 1'b0; r_err_o <= 1'b0;
+      for (int k = 0; k < N; k++) begin
+        integ[k] <= '0;
+        comb_d[k] <= '0;
+      end
+      cnt <= '0;
+      r_lat <= RB'(1);
+      valid_o <= 1'b0;
+      data_o <= '0;
+      sat_o <= 1'b0;
+      r_err_o <= 1'b0;
     end else begin
-      valid_o <= 1'b0; sat_o <= 1'b0; r_err_o <= 1'b0;
+      valid_o <= 1'b0;
+      sat_o <= 1'b0;
+      r_err_o <= 1'b0;
       if (valid_i) begin
         integ[0] <= integ[0] + BW'(data_i);
         for (int k = 1; k < N; k++) integ[k] <= integ[k] + integ[k-1];
         if (cnt == '0 && (r_i == 0 || r_i > RMAX)) r_err_o <= 1'b1;
         if (last) begin
-          cnt <= '0; r_lat <= r_use;
+          cnt <= '0;
+          r_lat <= r_use;
           for (int k = 0; k < N; k++) comb_d[k] <= comb_v[k];
           valid_o <= 1'b1;
-          if (sh_res > MAXV) begin data_o <= MAXV[OUT_W-1:0]; sat_o <= 1'b1; end
-          else if (sh_res < MINV) begin data_o <= MINV[OUT_W-1:0]; sat_o <= 1'b1; end
+          if (sh_res > MAXV) begin
+            data_o <= MAXV[OUT_W-1:0];
+            sat_o <= 1'b1;
+          end
+          else if (sh_res < MINV) begin
+            data_o <= MINV[OUT_W-1:0];
+            sat_o <= 1'b1;
+          end
           else data_o <= sh_res[OUT_W-1:0];
         end else begin
           cnt <= cnt + 1'b1;

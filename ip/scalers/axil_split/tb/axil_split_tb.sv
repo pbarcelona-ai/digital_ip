@@ -27,15 +27,43 @@ module tb_axil_split;
   logic [3:0]  m_bresp, m_rresp;
 
   axil_split #(.ADDR_W(ADDR_W), .SEL_BIT(SEL)) dut (
-    .clk, .rst_n,
-    .s_awaddr(awaddr), .s_awvalid(awvalid), .s_awready(awready),
-    .s_wdata(wdata), .s_wstrb(wstrb), .s_wvalid(wvalid), .s_wready(wready),
-    .s_bresp(bresp), .s_bvalid(bvalid), .s_bready(bready),
-    .s_araddr(araddr), .s_arvalid(arvalid), .s_arready(arready),
-    .s_rdata(rdata), .s_rresp(rresp), .s_rvalid(rvalid), .s_rready(rready),
-    .m_awaddr, .m_awvalid, .m_awready, .m_wdata, .m_wstrb, .m_wvalid, .m_wready,
-    .m_bresp, .m_bvalid, .m_bready, .m_araddr, .m_arvalid, .m_arready,
-    .m_rdata, .m_rresp, .m_rvalid, .m_rready);
+    .clk,
+    .rst_n,
+    .s_awaddr(awaddr),
+    .s_awvalid(awvalid),
+    .s_awready(awready),
+    .s_wdata(wdata),
+    .s_wstrb(wstrb),
+    .s_wvalid(wvalid),
+    .s_wready(wready),
+    .s_bresp(bresp),
+    .s_bvalid(bvalid),
+    .s_bready(bready),
+    .s_araddr(araddr),
+    .s_arvalid(arvalid),
+    .s_arready(arready),
+    .s_rdata(rdata),
+    .s_rresp(rresp),
+    .s_rvalid(rvalid),
+    .s_rready(rready),
+    .m_awaddr,
+    .m_awvalid,
+    .m_awready,
+    .m_wdata,
+    .m_wstrb,
+    .m_wvalid,
+    .m_wready,
+    .m_bresp,
+    .m_bvalid,
+    .m_bready,
+    .m_araddr,
+    .m_arvalid,
+    .m_arready,
+    .m_rdata,
+    .m_rresp,
+    .m_rvalid,
+    .m_rready
+  );
 
   // two slaves: axil_regbus + 64-word register file each
   logic [31:0] rf [2][64];
@@ -46,30 +74,65 @@ module tb_axil_split;
     logic [31:0]       reg_wdata, reg_rdata;
     logic [3:0]        reg_wstrb;
     axil_regbus #(.ADDR_W(ADDR_W)) u_slave (
-      .clk, .rst_n,
-      .s_axil_awaddr(m_awaddr[g*ADDR_W +: ADDR_W]), .s_axil_awvalid(m_awvalid[g]), .s_axil_awready(m_awready[g]),
-      .s_axil_wdata(m_wdata[g*32 +: 32]), .s_axil_wstrb(m_wstrb[g*4 +: 4]), .s_axil_wvalid(m_wvalid[g]), .s_axil_wready(m_wready[g]),
-      .s_axil_bresp(m_bresp[g*2 +: 2]), .s_axil_bvalid(m_bvalid[g]), .s_axil_bready(m_bready[g]),
-      .s_axil_araddr(m_araddr[g*ADDR_W +: ADDR_W]), .s_axil_arvalid(m_arvalid[g]), .s_axil_arready(m_arready[g]),
-      .s_axil_rdata(m_rdata[g*32 +: 32]), .s_axil_rresp(m_rresp[g*2 +: 2]), .s_axil_rvalid(m_rvalid[g]), .s_axil_rready(m_rready[g]),
-      .reg_wr, .reg_waddr, .reg_wdata, .reg_wstrb, .reg_rd, .reg_raddr, .reg_rdata);
+      .clk,
+      .rst_n,
+      .s_axil_awaddr(m_awaddr[g*ADDR_W +: ADDR_W]),
+      .s_axil_awvalid(m_awvalid[g]),
+      .s_axil_awready(m_awready[g]),
+      .s_axil_wdata(m_wdata[g*32 +: 32]),
+      .s_axil_wstrb(m_wstrb[g*4 +: 4]),
+      .s_axil_wvalid(m_wvalid[g]),
+      .s_axil_wready(m_wready[g]),
+      .s_axil_bresp(m_bresp[g*2 +: 2]),
+      .s_axil_bvalid(m_bvalid[g]),
+      .s_axil_bready(m_bready[g]),
+      .s_axil_araddr(m_araddr[g*ADDR_W +: ADDR_W]),
+      .s_axil_arvalid(m_arvalid[g]),
+      .s_axil_arready(m_arready[g]),
+      .s_axil_rdata(m_rdata[g*32 +: 32]),
+      .s_axil_rresp(m_rresp[g*2 +: 2]),
+      .s_axil_rvalid(m_rvalid[g]),
+      .s_axil_rready(m_rready[g]),
+      .reg_wr,
+      .reg_waddr,
+      .reg_wdata,
+      .reg_wstrb,
+      .reg_rd,
+      .reg_raddr,
+      .reg_rdata
+    );
     always_ff @(posedge clk) begin
       if (reg_wr) begin
         rf[g][reg_waddr[7:2]] <= reg_wdata;
         wr_cnt[g]++;
         if (reg_waddr[SEL] != 1'(g)) begin
-          errors++; $display("ERROR: slave %0d got a write for address 0x%0h", g, reg_waddr);
+          errors++;
+          $display("ERROR: slave %0d got a write for address 0x%0h", g, reg_waddr);
         end
       end
       if (reg_rd) reg_rdata <= rf[g][reg_raddr[7:2]];
     end
     axil_checker #(.ADDR_W(ADDR_W), .NAME("m_axil")) u_chk (
-      .clk, .rst_n,
-      .awaddr(m_awaddr[g*ADDR_W +: ADDR_W]), .awvalid(m_awvalid[g]), .awready(m_awready[g]),
-      .wdata(m_wdata[g*32 +: 32]), .wstrb(m_wstrb[g*4 +: 4]), .wvalid(m_wvalid[g]), .wready(m_wready[g]),
-      .bresp(m_bresp[g*2 +: 2]), .bvalid(m_bvalid[g]), .bready(m_bready[g]),
-      .araddr(m_araddr[g*ADDR_W +: ADDR_W]), .arvalid(m_arvalid[g]), .arready(m_arready[g]),
-      .rdata(m_rdata[g*32 +: 32]), .rresp(m_rresp[g*2 +: 2]), .rvalid(m_rvalid[g]), .rready(m_rready[g]));
+      .clk,
+      .rst_n,
+      .awaddr(m_awaddr[g*ADDR_W +: ADDR_W]),
+      .awvalid(m_awvalid[g]),
+      .awready(m_awready[g]),
+      .wdata(m_wdata[g*32 +: 32]),
+      .wstrb(m_wstrb[g*4 +: 4]),
+      .wvalid(m_wvalid[g]),
+      .wready(m_wready[g]),
+      .bresp(m_bresp[g*2 +: 2]),
+      .bvalid(m_bvalid[g]),
+      .bready(m_bready[g]),
+      .araddr(m_araddr[g*ADDR_W +: ADDR_W]),
+      .arvalid(m_arvalid[g]),
+      .arready(m_arready[g]),
+      .rdata(m_rdata[g*32 +: 32]),
+      .rresp(m_rresp[g*2 +: 2]),
+      .rvalid(m_rvalid[g]),
+      .rready(m_rready[g])
+    );
   end
 
   logic [31:0] model [2][64];
@@ -77,8 +140,12 @@ module tb_axil_split;
   initial begin
     int nw [2];
     for (int g = 0; g < 2; g++) begin
-      nw[g] = 0; wr_cnt[g] = 0;
-      for (int i = 0; i < 64; i++) begin model[g][i] = 0; rf[g][i] = 0; end
+      nw[g] = 0;
+      wr_cnt[g] = 0;
+      for (int i = 0; i < 64; i++) begin
+        model[g][i] = 0;
+        rf[g][i] = 0;
+      end
     end
     reset_dut();
     for (int i = 0; i < 600; i++) begin
@@ -99,7 +166,10 @@ module tb_axil_split;
     repeat (5) @(posedge clk);
     for (int g = 0; g < 2; g++) begin
       checks++;
-      if (wr_cnt[g] != nw[g]) begin errors++; $display("ERROR: slave %0d writes %0d != %0d", g, wr_cnt[g], nw[g]); end
+      if (wr_cnt[g] != nw[g]) begin
+        errors++;
+        $display("ERROR: slave %0d writes %0d != %0d", g, wr_cnt[g], nw[g]);
+      end
       g_slave_report(g);
     end
     tests = 1;

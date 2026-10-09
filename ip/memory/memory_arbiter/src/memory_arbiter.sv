@@ -54,7 +54,8 @@ module memory_arbiter #(
 
   int arb_idx;
   logic [IW-1:0] last;                   // last granted client
-  logic [IW-1:0] sel; logic sel_v;
+  logic [IW-1:0] sel;
+  logic sel_v;
   // Outstanding read order FIFO
   logic [IW-1:0] ord [0:MAX_OUT-1];
   logic [OW:0]   o_wr, o_rd;
@@ -65,14 +66,21 @@ module memory_arbiter #(
   logic [CLIENTS-1:0] elig;
   always_comb begin
     for (int i = 0; i < CLIENTS; i++) elig[i] = c_req_i[i] & ~(~c_we_i[i] & ord_full);
-    sel = '0; sel_v = 1'b0;
+    sel = '0;
+    sel_v = 1'b0;
     if (PRIORITY == 1) begin
-      for (int i = CLIENTS-1; i >= 0; i--) if (elig[i]) begin sel = IW'(i); sel_v = 1'b1; end
+      for (int i = CLIENTS-1; i >= 0; i--) if (elig[i]) begin
+        sel = IW'(i);
+        sel_v = 1'b1;
+      end
     end else begin
       // first eligible client after 'last', wrapping around
       for (int k = CLIENTS; k >= 1; k--) begin
         arb_idx = (32'(last) + k) % CLIENTS;
-        if (elig[arb_idx]) begin sel = IW'(arb_idx); sel_v = 1'b1; end
+        if (elig[arb_idx]) begin
+          sel = IW'(arb_idx);
+          sel_v = 1'b1;
+        end
       end
     end
   end
@@ -88,14 +96,23 @@ module memory_arbiter #(
   end
 
   always_ff @(posedge clk) begin
-    if (!rst_n) begin last <= '0; o_wr <= '0; o_rd <= '0; err_o <= 1'b0; end
+    if (!rst_n) begin
+      last <= '0;
+      o_wr <= '0;
+      o_rd <= '0;
+      err_o <= 1'b0;
+    end
     else begin
       if (accept) begin
         last <= sel;
-        if (!m_we_o) begin ord[o_wr[OW-1:0]] <= sel; o_wr <= o_wr + 1'b1; end
+        if (!m_we_o) begin
+          ord[o_wr[OW-1:0]] <= sel;
+          o_wr <= o_wr + 1'b1;
+        end
       end
       if (m_rvalid_i) begin
-        if (ord_empty) err_o <= 1'b1; else o_rd <= o_rd + 1'b1;
+        if (ord_empty) err_o <= 1'b1;
+        else o_rd <= o_rd + 1'b1;
       end
       if (clr_err_i) err_o <= 1'b0;
     end

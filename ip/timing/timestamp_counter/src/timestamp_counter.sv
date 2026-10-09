@@ -30,13 +30,22 @@ module timestamp_counter #(
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
   if (WIDTH < 2) begin : g_bad $error("timestamp_counter: WIDTH must be >= 2"); end
   always_ff @(posedge clk) begin
-    if (!rst_n) begin count_o <= '0; capture_o <= '0; cap_valid_o <= 1'b0; wrap_o <= 1'b0; end
+    if (!rst_n) begin
+      count_o <= '0;
+      capture_o <= '0;
+      cap_valid_o <= 1'b0;
+      wrap_o <= 1'b0;
+    end
     else begin
-      wrap_o <= 1'b0; cap_valid_o <= capture_i;
+      wrap_o <= 1'b0;
+      cap_valid_o <= capture_i;
       if (capture_i) capture_o <= count_o;
       if (clear_i) count_o <= '0;
       else if (load_i) count_o <= load_val_i;
-      else if (tick_i) begin count_o <= count_o + 1'b1; wrap_o <= (count_o == '1); end
+      else if (tick_i) begin
+        count_o <= count_o + 1'b1;
+        wrap_o <= (count_o == '1);
+      end
     end
   end
 endmodule

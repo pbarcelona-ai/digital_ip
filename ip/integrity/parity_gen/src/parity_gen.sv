@@ -24,7 +24,10 @@ module parity_gen #(
   if (WIDTH < 1) begin : g_bad $error("parity_gen: WIDTH must be >= 1"); end
   wire p = (^data_i) ^ ODD;
   if (REGISTERED) begin : g_reg
-    always_ff @(posedge clk) begin if (!rst_n) parity_o <= ODD; else parity_o <= p; end
+    always_ff @(posedge clk) begin
+      if (!rst_n) parity_o <= ODD;
+      else parity_o <= p;
+    end
   end else begin : g_comb
     assign parity_o = p;
   end

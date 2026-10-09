@@ -26,12 +26,15 @@ module tmds_encoder (
   localparam logic [1:0] M_CTRL = 2'd0, M_VIDEO = 2'd1, M_TERC4 = 2'd2, M_GUARD = 2'd3;
 
   // ---------------- 8b/10b video coding (DVI 1.0, section 3.2.2)
-  logic [3:0] n1d, n1q; logic [8:0] qm; logic [9:0] qv;
+  logic [3:0] n1d, n1q;
+  logic [8:0] qm;
+  logic [9:0] qv;
   logic signed [5:0] cnt, cnt_n;
   always_comb begin
     logic [8:0] t;                               // transition-minimised word, built bit by bit
     n1d = 4'($countones(d_i));
-    t = '0; t[0] = d_i[0];
+    t = '0;
+    t[0] = d_i[0];
     if (n1d > 4 || (n1d == 4 && d_i[0] == 1'b0)) begin
       for (int i = 1; i < 8; i++) t[i] = ~(t[i-1] ^ d_i[i]);
       t[8] = 1'b0;
@@ -64,26 +67,47 @@ module tmds_encoder (
   endfunction
   function automatic logic [9:0] terc4_sym(input logic [3:0] t);
     case (t)
-      4'h0: terc4_sym = 10'b1010011100;  4'h1: terc4_sym = 10'b1001100011;
-      4'h2: terc4_sym = 10'b1011100100;  4'h3: terc4_sym = 10'b1011100010;
-      4'h4: terc4_sym = 10'b0101110001;  4'h5: terc4_sym = 10'b0100011110;
-      4'h6: terc4_sym = 10'b0110001110;  4'h7: terc4_sym = 10'b0100111100;
-      4'h8: terc4_sym = 10'b1011001100;  4'h9: terc4_sym = 10'b0100111001;
-      4'hA: terc4_sym = 10'b0110011100;  4'hB: terc4_sym = 10'b1011000110;
-      4'hC: terc4_sym = 10'b1010001110;  4'hD: terc4_sym = 10'b1001110001;
-      4'hE: terc4_sym = 10'b0101100011;  default: terc4_sym = 10'b1011000011;
+      4'h0: terc4_sym = 10'b1010011100;
+      4'h1: terc4_sym = 10'b1001100011;
+      4'h2: terc4_sym = 10'b1011100100;
+      4'h3: terc4_sym = 10'b1011100010;
+      4'h4: terc4_sym = 10'b0101110001;
+      4'h5: terc4_sym = 10'b0100011110;
+      4'h6: terc4_sym = 10'b0110001110;
+      4'h7: terc4_sym = 10'b0100111100;
+      4'h8: terc4_sym = 10'b1011001100;
+      4'h9: terc4_sym = 10'b0100111001;
+      4'hA: terc4_sym = 10'b0110011100;
+      4'hB: terc4_sym = 10'b1011000110;
+      4'hC: terc4_sym = 10'b1010001110;
+      4'hD: terc4_sym = 10'b1001110001;
+      4'hE: terc4_sym = 10'b0101100011;
+      default: terc4_sym = 10'b1011000011;
     endcase
   endfunction
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      q_o <= ctrl_sym(2'b00); cnt <= '0;
+      q_o <= ctrl_sym(2'b00);
+      cnt <= '0;
     end else begin
       case (mode_i)
-        M_VIDEO: begin q_o <= qv; cnt <= cnt_n; end
-        M_TERC4: begin q_o <= terc4_sym(t_i); cnt <= '0; end
-        M_GUARD: begin q_o <= g_i; cnt <= '0; end
-        default: begin q_o <= ctrl_sym(c_i); cnt <= '0; end
+        M_VIDEO: begin
+          q_o <= qv;
+          cnt <= cnt_n;
+        end
+        M_TERC4: begin
+          q_o <= terc4_sym(t_i);
+          cnt <= '0;
+        end
+        M_GUARD: begin
+          q_o <= g_i;
+          cnt <= '0;
+        end
+        default: begin
+          q_o <= ctrl_sym(c_i);
+          cnt <= '0;
+        end
       endcase
     end
   end

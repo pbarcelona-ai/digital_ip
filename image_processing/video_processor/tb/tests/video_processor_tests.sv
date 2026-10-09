@@ -23,7 +23,7 @@
 //                         blur_sharpen MODE 3 (blur, then sharpen;
 //                         conv2d_ref) of that output.
 //     test_hdmi           the HDMI image (tmds_serializer lanes deserialised
-//                         and decoded by hdmi_sink_model) equals it exactly;
+//                         and decoded by hdmi_bfm) equals it exactly;
 //                         no HDMI protocol error.
 //     test_lvds           the LVDS link A image (VESA 24 bpp) equals it
 //                         exactly.
@@ -63,7 +63,10 @@
 // Date: 2026-10-08
 
   task automatic check(input bit c, input string m);
-    if (!c) begin errors++; if (errors < 20) $display("ERROR @%0t: %s", $time, m); end
+    if (!c) begin
+      errors++;
+      if (errors < 20) $display("ERROR @%0t: %s", $time, m);
+    end
   endtask
 
   task automatic test_boot();
@@ -103,7 +106,9 @@
   endtask
 
   task automatic test_vision_output();
-    int bad, exact; bad = 0; exact = 0;
+    int bad, exact;
+    bad = 0;
+    exact = 0;
     for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) begin
 `ifdef VP_VISION
       exp_img[y][x] = vs_frame[y][x];
@@ -115,13 +120,18 @@
     check(vs_frames >= 2 && vs_changes == 0,
           $sformatf("vision_system output: %0d frames, %0d differ from the previous one", vs_frames, vs_changes));
     for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) begin
-      px = vs_frame[y][x]; pe = ex(x, y); pok = !$isunknown(px);
+      px = vs_frame[y][x];
+      pe = ex(x, y);
+      pok = !$isunknown(px);
       for (int c = 0; c < 3; c++) begin
         pd = int'(px[8*c +: 8]) - int'(pe[8*c +: 8]);
         if (pd > 1 || pd < -1) pok = 0;
       end
       if (px === pe) exact++;
-      if (!pok) begin if (bad < 4) $display("  vision (%0d,%0d) %h expected %h", x, y, px, pe); bad++; end
+      if (!pok) begin
+        if (bad < 4) $display("  vision (%0d,%0d) %h expected %h", x, y, px, pe);
+        bad++;
+      end
     end
     check(bad == 0, $sformatf("vision_system: %0d pixels differ from the camera image", bad));
     $display("[%t] vision_system output: camera image after ISP, %0d pixels exact, rest within 1 LSB", $realtime, exact);
@@ -130,10 +140,14 @@
 
   task automatic expected_image();
 `ifdef VP_FILTER
-    int changed; changed = 0;
+    int changed;
+    changed = 0;
     for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) mdl.img[y][x] = exp_img[y][x];
-    mdl.set_kernel(conv2d_pkg::blur_kernel(5), conv2d_pkg::blur_shift(5)); mdl.run(W, H); mdl.chain(W, H);
-    mdl.set_kernel(conv2d_pkg::sharpen_kernel(5, 1), conv2d_pkg::blur_shift(5)); mdl.run(W, H);
+    mdl.set_kernel(conv2d_pkg::blur_kernel(5), conv2d_pkg::blur_shift(5));
+    mdl.run(W, H);
+    mdl.chain(W, H);
+    mdl.set_kernel(conv2d_pkg::sharpen_kernel(5, 1), conv2d_pkg::blur_shift(5));
+    mdl.run(W, H);
     for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) begin
       if (mdl.out[y][x] != exp_img[y][x]) changed++;
       exp_img[y][x] = mdl.out[y][x];
@@ -146,12 +160,17 @@
 
   task automatic test_hdmi();
 `ifdef VP_HDMI
-    int f0, bad; f0 = sink.frames;
+    int f0, bad;
+    f0 = sink.frames;
     while (sink.frames < f0 + 2) @(posedge pix_clk);
     bad = 0;
     for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) begin
-      px = sink.frame[y][x]; pe = exp_img[y][x];
-      if (px !== pe) begin if (bad < 4) $display("  HDMI (%0d,%0d) %h expected %h", x, y, px, pe); bad++; end
+      px = sink.frame[y][x];
+      pe = exp_img[y][x];
+      if (px !== pe) begin
+        if (bad < 4) $display("  HDMI (%0d,%0d) %h expected %h", x, y, px, pe);
+        bad++;
+      end
     end
     check(sink.lines == H && sink.line_len == W, $sformatf("HDMI frame %0dx%0d", sink.line_len, sink.lines));
     check(bad == 0, $sformatf("HDMI: %0d pixels differ from the expected image", bad));
@@ -162,12 +181,17 @@
 
   task automatic test_lvds();
 `ifdef VP_LVDS
-    int f0, bad; f0 = lv_frames;
-    while (lv_frames < f0 + 2) @(posedge pix_clk);
+    int f0, bad;
+    f0 = lvds.frames;
+    while (lvds.frames < f0 + 2) @(posedge pix_clk);
     bad = 0;
     for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) begin
-      px = lv_frame[y][x]; pe = exp_img[y][x];
-      if (px !== pe) begin if (bad < 4) $display("  LVDS (%0d,%0d) %h expected %h", x, y, px, pe); bad++; end
+      px = lvds.frame[y][x];
+      pe = exp_img[y][x];
+      if (px !== pe) begin
+        if (bad < 4) $display("  LVDS (%0d,%0d) %h expected %h", x, y, px, pe);
+        bad++;
+      end
     end
     check(bad == 0, $sformatf("LVDS: %0d pixels differ from the expected image", bad));
     $display("[%t] LVDS: %0dx%0d image matches exactly", $realtime, W, H);
@@ -176,8 +200,12 @@
 
   task automatic test_adapter();
 `ifdef VP_VISION
-    $display("camera frames sent %0d, into vision_system %0d, dropped while it was busy %0d", cam_frames,
-             dut.u_vs_adapt.frames_o, dut.u_vs_adapt.drops_o);
+    $display(
+  "camera frames sent %0d, into vision_system %0d, dropped while it was busy %0d",
+  cam_frames,
+  dut.u_vs_adapt.frames_o,
+  dut.u_vs_adapt.drops_o
+);
     check(dut.u_vs_adapt.frames_o >= 2, "vision_system processed fewer than 2 frames");
     check(dut.u_vs_adapt.ret_drops_o == 0, $sformatf("%0d corrected pixels lost (return FIFO full)", dut.u_vs_adapt.ret_drops_o));
 `endif
@@ -250,7 +278,8 @@
   // RAW10 sample of image lab at (x, y): monochrome - the grey value; colour - its RGGB Bayer mosaic
   // (R at even x / even y, B at odd x / odd y, G elsewhere). 8 -> 10 bits repeats the top bits.
   function automatic logic [9:0] sensor_px(input int lab, input int x, input int y);
-    logic [23:0] p; logic [7:0] v;
+    logic [23:0] p;
+    logic [7:0] v;
     p = in_img[lab][y][x];
     if (lab >= 4)                  v = p[7:0];
     else if (x % 2 == 0 && y % 2 == 0) v = p[7:0];
@@ -261,11 +290,15 @@
 
   // ---------------- frame labels: one FIFO per tap, filled by the stage before it
   task automatic lq_push(input int t, input int lab);
-    lq[t][lq_w[t] % 16] = lab; lq_w[t]++;
+    lq[t][lq_w[t] % 16] = lab;
+    lq_w[t]++;
   endtask
   task automatic lq_pop(input int t, output int lab);
     if (lq_r[t] == lq_w[t]) lab = -1;
-    else begin lab = lq[t][lq_r[t] % 16]; lq_r[t]++; end
+    else begin
+      lab = lq[t][lq_r[t] % 16];
+      lq_r[t]++;
+    end
   endtask
 
   // One accepted beat at tap t. At a frame start the frame takes the next label of the tap's FIFO and
@@ -275,12 +308,15 @@
     if (sof) begin
       int lab;
       lq_pop(t, lab);
-      tap_lab[t] = lab; tap_x[t] = 0; tap_y[t] = 0;
+      tap_lab[t] = lab;
+      tap_x[t] = 0;
+      tap_y[t] = 0;
       if (t < T_CSC || t == T_VISION) lq_push(t + 1, lab);
     end
     if (tap_y[t] < H && tap_x[t] < W) tap_img[t][tap_y[t]][tap_x[t]] = p;
     if (last) begin
-      tap_x[t] = 0; tap_y[t]++;
+      tap_x[t] = 0;
+      tap_y[t]++;
       if (tap_y[t] == H) frame_done(t, tap_lab[t]);
     end else tap_x[t]++;
   endtask
@@ -298,14 +334,17 @@
     end
   endtask
 
-  // HDMI / LVDS frame complete (decoded by hdmi_sink_model / the LVDS deserialiser in the testbench):
+  // HDMI / LVDS frame complete (decoded by hdmi_bfm / the LVDS deserialiser in the testbench):
   // it shows the frame blur_sharpen (else vision_system) delivered last
   // (genlock: the next one cannot be complete yet, the output FIFO holds less than a frame)
   task automatic display_done(input int t);
     for (int y = 0; y < H; y++) for (int x = 0; x < W; x++)
-      tap_img[t][y][x] = (t == T_HDMI) ? sink.frame[y][x] : lv_frame[y][x];
+      tap_img[t][y][x] = (t == T_HDMI) ? sink.frame[y][x] : lvds.frame[y][x];
 `ifdef VP_FILTER
-    frame_done(t, tap_done_lab[T_FILTER]);
+    frame_done(
+  t,
+  tap_done_lab[T_FILTER]
+);
 `else
     frame_done(t, tap_done_lab[T_VISION]);
 `endif
@@ -316,7 +355,10 @@
   task automatic ppm_write(input string path, input bit mono);
     int fd;
     fd = $fopen(path, "wb");
-    if (fd == 0) begin check(0, {"cannot write ", path, " (does its directory exist?)"}); return; end
+    if (fd == 0) begin
+      check(0, {"cannot write ", path, " (does its directory exist?)"});
+      return;
+    end
     $fwrite(fd, "%s\n%0d %0d\n255\n", mono ? "P5" : "P6", W, H);
     for (int y = 0; y < H; y++) for (int x = 0; x < W; x++)
       if (mono) $fwrite(fd, "%c", io_img[y][x][7:0]);
@@ -326,14 +368,19 @@
 
   // Next header number (whitespace and # comments skipped); the one character after it is consumed.
   task automatic ppm_num(input int fd, output int v);
-    int c; bit skip;
-    v = 0; skip = 1;
+    int c;
+    bit skip;
+    v = 0;
+    skip = 1;
     while (skip) begin
       c = $fgetc(fd);
       if (c == "#") while (c != "\n" && c != -1) c = $fgetc(fd);
       else if (c != " " && c != "\t" && c != "\n" && c != "\r") skip = 0;
     end
-    while (c >= "0" && c <= "9") begin v = v * 10 + (c - "0"); c = $fgetc(fd); end
+    while (c >= "0" && c <= "9") begin
+      v = v * 10 + (c - "0");
+      c = $fgetc(fd);
+    end
   endtask
 
   // Reads a P5 or P6 file of any size into io_img (nearest-neighbour resampled to W x H; maxval other
@@ -345,15 +392,23 @@
     ok = 0;
     fd = $fopen(path, "rb");
     if (fd == 0) return;
-    c0 = $fgetc(fd); c1 = $fgetc(fd);
+    c0 = $fgetc(fd);
+    c1 = $fgetc(fd);
     if (c0 != "P" || (c1 != "5" && c1 != "6")) begin
-      check(0, {path, ": not a binary PPM (P6) or PGM (P5) file"}); $fclose(fd); return;
+      check(0, {path, ": not a binary PPM (P6) or PGM (P5) file"});
+      $fclose(fd);
+      return;
     end
-    ppm_num(fd, w); ppm_num(fd, h); ppm_num(fd, maxv);
+    ppm_num(fd, w);
+    ppm_num(fd, h);
+    ppm_num(fd, maxv);
     if (w < 1 || h < 1 || maxv < 1 || maxv > 65535) begin
-      check(0, $sformatf("%s: bad header (%0d x %0d, maxval %0d)", path, w, h, maxv)); $fclose(fd); return;
+      check(0, $sformatf("%s: bad header (%0d x %0d, maxval %0d)", path, w, h, maxv));
+      $fclose(fd);
+      return;
     end
-    comp = (c1 == "6") ? 3 : 1; nb = (maxv > 255) ? 2 : 1;
+    comp = (c1 == "6") ? 3 : 1;
+    nb = (maxv > 255) ? 2 : 1;
     ppm_px = new[w * h];
     for (int i = 0; i < w * h; i++) begin
       for (int k = 0; k < comp; k++) begin
@@ -362,7 +417,10 @@
         if (v < 0) v = 0;
         s[k] = 8'((v * 255 + maxv / 2) / maxv);
       end
-      if (comp == 1) begin s[1] = s[0]; s[2] = s[0]; end
+      if (comp == 1) begin
+        s[1] = s[0];
+        s[2] = s[0];
+      end
       if (mono) s[0] = 8'((77 * s[0] + 150 * s[1] + 29 * s[2] + 128) >> 8);
       ppm_px[i] = mono ? {s[0], s[0], s[0]} : {s[2], s[1], s[0]};
     end
@@ -377,20 +435,34 @@
   //   monochrome - grey gradient background, a white disc moving right and down, a black square
   //                moving left.
   task automatic gen_image(input int lab);
-    int n, dx, dy; n = lab % 4;
+    int n, dx, dy;
+    n = lab % 4;
     for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) begin
       logic [7:0] r, g, b;
       if (lab < 4) begin
-        r = 8'(30 + 5 * x); g = 8'(40 + 5 * y); b = 8'(170 - 4 * x);
-        dx = x - (4 + 7 * n); dy = y - (6 + 3 * n);
-        if (dx * dx + dy * dy <= 20) begin r = 235; g = 40; b = 30; end
-        if (x >= 25 - 6 * n && x < 31 - 6 * n && y >= 15 && y < 21) begin r = 30; g = 70; b = 240; end
+        r = 8'(30 + 5 * x);
+        g = 8'(40 + 5 * y);
+        b = 8'(170 - 4 * x);
+        dx = x - (4 + 7 * n);
+        dy = y - (6 + 3 * n);
+        if (dx * dx + dy * dy <= 20) begin
+          r = 235;
+          g = 40;
+          b = 30;
+        end
+        if (x >= 25 - 6 * n && x < 31 - 6 * n && y >= 15 && y < 21) begin
+          r = 30;
+          g = 70;
+          b = 240;
+        end
       end else begin
         r = 8'(60 + 4 * y);
-        dx = x - (5 + 7 * n); dy = y - (5 + 4 * n);
+        dx = x - (5 + 7 * n);
+        dy = y - (5 + 4 * n);
         if (dx * dx + dy * dy <= 16) r = 245;
         if (x >= 26 - 7 * n && x < 31 - 7 * n && y >= 16 && y < 21) r = 15;
-        g = r; b = r;
+        g = r;
+        b = r;
       end
       io_img[y][x] = {b, g, r};
     end
@@ -400,7 +472,9 @@
   // monochrome P5) when it does not exist. Simulators with $system create both directories; with
   // Icarus scripts/run_sim.sh does.
   task automatic load_images();
-    bit ok; string f; int gen;
+    bit ok;
+    string f;
+    int gen;
     gen = 0;
 `ifndef __ICARUS__
     void'($system({"mkdir -p ", img_in_dir, " ", img_out_dir}));
@@ -408,7 +482,11 @@
     for (int lab = 0; lab < NIMG; lab++) begin
       f = {img_in_dir, "/", img_name(lab), "_input.ppm"};
       ppm_read(f, lab >= 4, ok);
-      if (!ok) begin gen_image(lab); ppm_write(f, lab >= 4); gen++; end
+      if (!ok) begin
+        gen_image(lab);
+        ppm_write(f, lab >= 4);
+        gen++;
+      end
       for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) in_img[lab][y][x] = io_img[y][x];
     end
     $display("input images: %0d read from %s/, %0d generated and written there", NIMG - gen, img_in_dir, gen);
@@ -424,34 +502,44 @@
   // the gap before it. Waits until the pipeline has drained, then checks every image that reached each
   // module output. Images dropped by vs_stream_adapter (vision_system busy) are reported, not errors.
   task automatic test_images();
-    realtime t0, tq; bit done; int c0, c1, passed, dropped;
+    realtime t0, tq;
+    bit done;
+    int c0, c1, passed, dropped;
     // stop the live frames and let the pipeline empty (both frame counters still for 300 us), so the
     // counts at the start of the sequence (here and in the CPU) cover exactly the 8 images
     img_mode = 1;
     t0 = $realtime;                                    // the firmware listens for the sequence (section 7)
     while (g(G_stage) < 161 && $realtime - t0 < 40ms) @(posedge cpu_clk);
     check(g(G_stage) >= 161, "image test: firmware is not waiting for the image sequence (stage 161)");
-    c0 = dut.u_frame_cnt.count[0]; c1 = dut.u_frame_cnt.count[1]; t0 = $realtime; tq = $realtime;
+    c0 = dut.u_frame_cnt.count[0];
+    c1 = dut.u_frame_cnt.count[1];
+    t0 = $realtime;
+    tq = $realtime;
     while ($realtime - tq < 300us && $realtime - t0 < 10ms) begin
       repeat (200) @(posedge pix_clk);
       if (dut.u_frame_cnt.count[0] != c0 || dut.u_frame_cnt.count[1] != c1) begin
-        c0 = dut.u_frame_cnt.count[0]; c1 = dut.u_frame_cnt.count[1]; tq = $realtime;
+        c0 = dut.u_frame_cnt.count[0];
+        c1 = dut.u_frame_cnt.count[1];
+        tq = $realtime;
       end
     end
-    seq_active = 1; img_go = 1;
+    seq_active = 1;
+    img_go = 1;
     $display("[%t] image test: %0d images back to back, frame gap %0d ns (GPIO0[29] = 1)", $realtime, NIMG, frame_gap_ns());
     t0 = $realtime;
     while (seq_active && $realtime - t0 < 20ms) @(posedge pix_clk);
     check(!seq_active, "image test: the camera did not send the whole sequence");
     // drain: every saved image complete, or no more frames anywhere (the display's last frame ends
     // after genlock's LOCK_MAX wait)
-    t0 = $realtime; done = 0;
+    t0 = $realtime;
+    done = 0;
     while (!done && $realtime - t0 < 4ms) begin
       repeat (500) @(posedge pix_clk);
       done = 1;
       for (int lab = 0; lab < NIMG; lab++) if (!all_saved(lab)) done = 0;
     end
-    passed = 0; dropped = 0;
+    passed = 0;
+    dropped = 0;
     for (int lab = 0; lab < NIMG; lab++) begin
       for (int t = 0; t <= T_CSC; t++)
         check(tap_saved[t][lab], $sformatf("%s: no frame at the %s output", img_name(lab), tap_name(t)));
@@ -476,16 +564,19 @@
 
   // Checks of image lab at the module outputs (see the description at the top)
   task automatic check_image(input int lab);
-    int bad, colour, d; logic [23:0] p, e;
+    int bad, colour, d;
+    logic [23:0] p, e;
     if (lab >= 4) begin                                // monochrome: ISP bypassed, raw value on R, G, B
       bad = 0;
       for (int y = 0; y < H; y++) for (int x = 0; x < W; x++)
         if (out_img[T_CSC][lab][y][x] !== {3{in_img[lab][y][x][7:0]}}) bad++;
       check(bad == 0, $sformatf("%s: isp_csc output differs from the input image in %0d pixels", img_name(lab), bad));
     end else begin                                     // colour: demosaic keeps the native sample of each pixel
-      bad = 0; colour = 0;
+      bad = 0;
+      colour = 0;
       for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) begin
-        int c; c = (x % 2 == 0 && y % 2 == 0) ? 0 : (x % 2 == 1 && y % 2 == 1) ? 2 : 1;
+        int c;
+        c = (x % 2 == 0 && y % 2 == 0) ? 0 : (x % 2 == 1 && y % 2 == 1) ? 2 : 1;
         p = out_img[T_DEMOSAIC][lab][y][x];
         if (p[8*c +: 8] !== in_img[lab][y][x][8*c +: 8]) bad++;
         if (p[7:0] > p[15:8] + 60 || p[23:16] > p[15:8] + 60) colour++;
@@ -497,15 +588,22 @@
 `ifdef VP_VISION
     bad = 0;                                           // vision_system: identity correction, within 1 LSB
     for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) begin
-      p = out_img[T_VISION][lab][y][x]; e = out_img[T_CSC][lab][y][x];
-      for (int c = 0; c < 3; c++) begin d = int'(p[8*c +: 8]) - int'(e[8*c +: 8]); if (d > 1 || d < -1) bad++; end
+      p = out_img[T_VISION][lab][y][x];
+      e = out_img[T_CSC][lab][y][x];
+      for (int c = 0; c < 3; c++) begin
+        d = int'(p[8*c +: 8]) - int'(e[8*c +: 8]);
+        if (d > 1 || d < -1) bad++;
+      end
     end
     check(bad == 0, $sformatf("%s: vision_system output differs from isp_csc by more than 1 in %0d samples", img_name(lab), bad));
 `endif
 `ifdef VP_FILTER
     for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) mdl.img[y][x] = out_img[T_VISION][lab][y][x];
-    mdl.set_kernel(conv2d_pkg::blur_kernel(5), conv2d_pkg::blur_shift(5)); mdl.run(W, H); mdl.chain(W, H);
-    mdl.set_kernel(conv2d_pkg::sharpen_kernel(5, 1), conv2d_pkg::blur_shift(5)); mdl.run(W, H);
+    mdl.set_kernel(conv2d_pkg::blur_kernel(5), conv2d_pkg::blur_shift(5));
+    mdl.run(W, H);
+    mdl.chain(W, H);
+    mdl.set_kernel(conv2d_pkg::sharpen_kernel(5, 1), conv2d_pkg::blur_shift(5));
+    mdl.run(W, H);
     bad = 0;
     for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) if (out_img[T_FILTER][lab][y][x] !== mdl.out[y][x]) bad++;
     check(bad == 0, $sformatf("%s: blur_sharpen output differs from conv2d_ref in %0d pixels", img_name(lab), bad));

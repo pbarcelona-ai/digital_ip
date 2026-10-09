@@ -59,38 +59,92 @@ module py_stream_port #(
 );
   if (DATA_W < 1 || DATA_W > 24) begin : g_bad $error("py_stream_port: DATA_W must be 1..24"); end
 
-  logic       wr_en, rd_en; logic [7:0] wr_addr, rd_addr; logic [31:0] wr_data, rd_data; logic [3:0] wr_strb;
+  logic       wr_en, rd_en;
+  logic [7:0] wr_addr, rd_addr;
+  logic [31:0] wr_data, rd_data;
+  logic [3:0] wr_strb;
   axi4_lite_slave #(.ADDR_W(8), .READ_WAIT(1), .MAP_WORDS(4)) u_slv (
-    .aclk, .aresetn,
-    .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready, .s_axil_wdata, .s_axil_wstrb, .s_axil_wvalid, .s_axil_wready,
-    .s_axil_bresp, .s_axil_bvalid, .s_axil_bready, .s_axil_araddr, .s_axil_arvalid, .s_axil_arready,
-    .s_axil_rdata, .s_axil_rresp, .s_axil_rvalid, .s_axil_rready,
-    .wr_en_o(wr_en), .wr_addr_o(wr_addr), .wr_data_o(wr_data), .wr_strb_o(wr_strb), .wr_err_i(1'b0),
-    .rd_en_o(rd_en), .rd_addr_o(rd_addr), .rd_data_i(rd_data), .rd_valid_i(rd_en), .rd_err_i(1'b0));
+    .aclk,
+    .aresetn,
+    .s_axil_awaddr,
+    .s_axil_awvalid,
+    .s_axil_awready,
+    .s_axil_wdata,
+    .s_axil_wstrb,
+    .s_axil_wvalid,
+    .s_axil_wready,
+    .s_axil_bresp,
+    .s_axil_bvalid,
+    .s_axil_bready,
+    .s_axil_araddr,
+    .s_axil_arvalid,
+    .s_axil_arready,
+    .s_axil_rdata,
+    .s_axil_rresp,
+    .s_axil_rvalid,
+    .s_axil_rready,
+    .wr_en_o(wr_en),
+    .wr_addr_o(wr_addr),
+    .wr_data_o(wr_data),
+    .wr_strb_o(wr_strb),
+    .wr_err_i(1'b0),
+    .rd_en_o(rd_en),
+    .rd_addr_o(rd_addr),
+    .rd_data_i(rd_data),
+    .rd_valid_i(rd_en),
+    .rd_err_i(1'b0)
+  );
 
   // ---------------- TX FIFO: register writes -> peripheral ----------------
-  logic tx_push, tx_ready, tx_user; logic [$clog2(TX_DEPTH)+1:0] tx_level;
+  logic tx_push, tx_ready, tx_user;
+  logic [$clog2(TX_DEPTH)+1:0] tx_level;
   assign tx_push = wr_en && wr_addr[3:2] == 2'd0;
   ip_axis_fifo #(.DATA_W(DATA_W), .DEPTH(TX_DEPTH)) u_txf (
-    .clk(aclk), .rst_n(aresetn),
-    .s_tdata(wr_data[DATA_W-1:0]), .s_tlast(wr_data[24]), .s_tuser(1'b0), .s_tvalid(tx_push), .s_tready(tx_ready),
-    .m_tdata(m_axis_tdata), .m_tlast(m_axis_tlast), .m_tuser(tx_user), .m_tvalid(m_axis_tvalid), .m_tready(m_axis_tready),
-    .level_o(tx_level));
+    .clk(aclk),
+    .rst_n(aresetn),
+    .s_tdata(wr_data[DATA_W-1:0]),
+    .s_tlast(wr_data[24]),
+    .s_tuser(1'b0),
+    .s_tvalid(tx_push),
+    .s_tready(tx_ready),
+    .m_tdata(m_axis_tdata),
+    .m_tlast(m_axis_tlast),
+    .m_tuser(tx_user),
+    .m_tvalid(m_axis_tvalid),
+    .m_tready(m_axis_tready),
+    .level_o(tx_level)
+  );
 
   // ---------------- RX FIFO: peripheral -> register reads ----------------
-  logic [DATA_W-1:0] rx_data; logic rx_valid, rx_last, rx_pop, rx_user; logic [$clog2(RX_DEPTH)+1:0] rx_level;
+  logic [DATA_W-1:0] rx_data;
+  logic rx_valid, rx_last, rx_pop, rx_user;
+  logic [$clog2(RX_DEPTH)+1:0] rx_level;
   // rd_data is sampled in the same clock as rd_en, so popping then is safe
   assign rx_pop = rd_en && rd_addr[3:2] == 2'd1 && rx_valid;
   ip_axis_fifo #(.DATA_W(DATA_W), .DEPTH(RX_DEPTH)) u_rxf (
-    .clk(aclk), .rst_n(aresetn),
-    .s_tdata(s_axis_tdata), .s_tlast(s_axis_tlast), .s_tuser(1'b0), .s_tvalid(s_axis_tvalid), .s_tready(s_axis_tready),
-    .m_tdata(rx_data), .m_tlast(rx_last), .m_tuser(rx_user), .m_tvalid(rx_valid), .m_tready(rx_pop),
-    .level_o(rx_level));
+    .clk(aclk),
+    .rst_n(aresetn),
+    .s_tdata(s_axis_tdata),
+    .s_tlast(s_axis_tlast),
+    .s_tuser(1'b0),
+    .s_tvalid(s_axis_tvalid),
+    .s_tready(s_axis_tready),
+    .m_tdata(rx_data),
+    .m_tlast(rx_last),
+    .m_tuser(rx_user),
+    .m_tvalid(rx_valid),
+    .m_tready(rx_pop),
+    .level_o(rx_level)
+  );
 
-  logic tx_ovf; logic [2:0] irq_en;
+  logic tx_ovf;
+  logic [2:0] irq_en;
   wire  tx_empty = (tx_level == '0);
   always_ff @(posedge aclk) begin
-    if (!aresetn) begin tx_ovf <= 1'b0; irq_en <= '0; end
+    if (!aresetn) begin
+      tx_ovf <= 1'b0;
+      irq_en <= '0;
+    end
     else begin
       if (tx_push && !tx_ready) tx_ovf <= 1'b1;
       if (wr_en && wr_addr[3:2] == 2'd2 && wr_data[2]) tx_ovf <= 1'b0;

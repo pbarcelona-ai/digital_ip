@@ -140,7 +140,7 @@ The reference testbench checks the following; the new testbench must cover at le
 
 ```text
 Self-checking testbench for dsi_tx on 1, 2 and 4 lanes, each
-decoded by dsi_rx_model (header ECC and checksum checked on every
+decoded by dsi_bfm (header ECC and checksum checked on every
 packet). Commands: with video off, DCS short writes (0x05, 0x15) and a
 DCS long write (0x39) must arrive intact, each followed by EoTp. Video:
 per frame exactly one VSS, every other line an HSS, sync bursts spaced

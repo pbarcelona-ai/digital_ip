@@ -50,12 +50,34 @@ module frame_counter #(
   localparam int NREG = 8 + NCH;                 // 0x00-0x1C control, 0x20+ counters
   localparam int R_IRQ_EN = 2, R_STATUS = 3, R_CLEAR = 4, R_COUNT = 8;
 
-  logic [NREG*32-1:0] regs, rd; logic [NREG-1:0] wr_pulse; logic [31:0] wr_data;
-  ip_axil_regs #(.ADDR_W(8), .NREG(NREG)) u_regs (.aclk(clk), .aresetn(rst_n),
-    .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready, .s_axil_wdata, .s_axil_wstrb, .s_axil_wvalid,
-    .s_axil_wready, .s_axil_bresp, .s_axil_bvalid, .s_axil_bready, .s_axil_araddr, .s_axil_arvalid,
-    .s_axil_arready, .s_axil_rdata, .s_axil_rresp, .s_axil_rvalid, .s_axil_rready,
-    .reg_o(regs), .wr_pulse_o(wr_pulse), .wr_data_o(wr_data), .rd_i(rd));
+  logic [NREG*32-1:0] regs, rd;
+  logic [NREG-1:0] wr_pulse;
+  logic [31:0] wr_data;
+  ip_axil_regs #(.ADDR_W(8), .NREG(NREG)) u_regs (
+    .aclk(clk),
+    .aresetn(rst_n),
+    .s_axil_awaddr,
+    .s_axil_awvalid,
+    .s_axil_awready,
+    .s_axil_wdata,
+    .s_axil_wstrb,
+    .s_axil_wvalid,
+    .s_axil_wready,
+    .s_axil_bresp,
+    .s_axil_bvalid,
+    .s_axil_bready,
+    .s_axil_araddr,
+    .s_axil_arvalid,
+    .s_axil_arready,
+    .s_axil_rdata,
+    .s_axil_rresp,
+    .s_axil_rvalid,
+    .s_axil_rready,
+    .reg_o(regs),
+    .wr_pulse_o(wr_pulse),
+    .wr_data_o(wr_data),
+    .rd_i(rd)
+  );
 
   wire [NCH-1:0] irq_en = regs[R_IRQ_EN*32 +: NCH];
   logic [NCH-1:0] status;

@@ -28,21 +28,49 @@ module tb_bounded_fisheye;
   logic [PIX_W-1:0] s_axis_tdata;
   logic m_axis_tvalid, m_axis_tready, m_axis_tlast, m_axis_tuser;
   logic [PIX_W-1:0] m_axis_tdata;
-  logic [7:0] s_axil_awaddr; logic s_axil_awvalid, s_axil_awready;
-  logic [31:0] s_axil_wdata; logic [3:0] s_axil_wstrb; logic s_axil_wvalid, s_axil_wready;
-  logic [1:0] s_axil_bresp; logic s_axil_bvalid, s_axil_bready;
-  logic [7:0] s_axil_araddr; logic s_axil_arvalid, s_axil_arready;
-  logic [31:0] s_axil_rdata; logic [1:0] s_axil_rresp; logic s_axil_rvalid, s_axil_rready;
+  logic [7:0] s_axil_awaddr;
+  logic s_axil_awvalid, s_axil_awready;
+  logic [31:0] s_axil_wdata;
+  logic [3:0] s_axil_wstrb;
+  logic s_axil_wvalid, s_axil_wready;
+  logic [1:0] s_axil_bresp;
+  logic s_axil_bvalid, s_axil_bready;
+  logic [7:0] s_axil_araddr;
+  logic s_axil_arvalid, s_axil_arready;
+  logic [31:0] s_axil_rdata;
+  logic [1:0] s_axil_rresp;
+  logic s_axil_rvalid, s_axil_rready;
 
   vision_system dut (
-    .clk, .rst_n,
-    .s_axis_tvalid, .s_axis_tready, .s_axis_tdata, .s_axis_tlast, .s_axis_tuser,
-    .m_axis_tvalid, .m_axis_tready, .m_axis_tdata, .m_axis_tlast, .m_axis_tuser,
-    .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready,
-    .s_axil_wdata, .s_axil_wstrb, .s_axil_wvalid, .s_axil_wready,
-    .s_axil_bresp, .s_axil_bvalid, .s_axil_bready,
-    .s_axil_araddr, .s_axil_arvalid, .s_axil_arready,
-    .s_axil_rdata, .s_axil_rresp, .s_axil_rvalid, .s_axil_rready
+    .clk,
+    .rst_n,
+    .s_axis_tvalid,
+    .s_axis_tready,
+    .s_axis_tdata,
+    .s_axis_tlast,
+    .s_axis_tuser,
+    .m_axis_tvalid,
+    .m_axis_tready,
+    .m_axis_tdata,
+    .m_axis_tlast,
+    .m_axis_tuser,
+    .s_axil_awaddr,
+    .s_axil_awvalid,
+    .s_axil_awready,
+    .s_axil_wdata,
+    .s_axil_wstrb,
+    .s_axil_wvalid,
+    .s_axil_wready,
+    .s_axil_bresp,
+    .s_axil_bvalid,
+    .s_axil_bready,
+    .s_axil_araddr,
+    .s_axil_arvalid,
+    .s_axil_arready,
+    .s_axil_rdata,
+    .s_axil_rresp,
+    .s_axil_rvalid,
+    .s_axil_rready
   );
 
   logic [7:0] src_r[];
@@ -63,11 +91,24 @@ module tb_bounded_fisheye;
   `include "bounded_fisheye_tests.sv"
 
   initial begin
-    m_axis_tready<=1'b1; s_axis_tvalid<=1'b0; s_axis_tlast<=1'b0; s_axis_tuser<=1'b0; s_axis_tdata<='0;
-    s_axil_awvalid<=1'b0; s_axil_wvalid<=1'b0; s_axil_bready<=1'b0; s_axil_arvalid<=1'b0; s_axil_rready<=1'b0;
-    rst_n=1'b0; repeat(5) @(posedge clk); rst_n=1'b1; repeat(5) @(posedge clk);
+    m_axis_tready<=1'b1;
+    s_axis_tvalid<=1'b0;
+    s_axis_tlast<=1'b0;
+    s_axis_tuser<=1'b0;
+    s_axis_tdata<='0;
+    s_axil_awvalid<=1'b0;
+    s_axil_wvalid<=1'b0;
+    s_axil_bready<=1'b0;
+    s_axil_arvalid<=1'b0;
+    s_axil_rready<=1'b0;
+    rst_n=1'b0;
+    repeat(5) @(posedge clk);
+    rst_n=1'b1;
+    repeat(5) @(posedge clk);
 
-    W=480; H=480; max_cap=30000;
+    W=480;
+    H=480;
+    max_cap=30000;
     generate_synthetic_chart(W,H,src_r,src_g,src_b);
     cfg = make_remap_cfg(W,H,32'h0000_8000,32'h0000_8000,32'h0001_0000);
 
@@ -76,14 +117,24 @@ module tb_bounded_fisheye;
     axil_write(8'h30, 0);
     axil_write(8'h4C, 1);
     axil_write(8'h2C, 0);
-    axil_write(8'h10, longint'($rtoi(0.15*65536.0))); axil_write(8'h14, longint'($rtoi(0.02*65536.0))); axil_write(8'h18, 0);
-    axil_write(8'h1C, 32'h0000_8000); axil_write(8'h20, 32'h0000_8000); axil_write(8'h24, 32'h0001_0000);
-    axil_write(8'h08, W); axil_write(8'h0C, H);
+    axil_write(8'h10, longint'($rtoi(0.15*65536.0)));
+    axil_write(8'h14, longint'($rtoi(0.02*65536.0)));
+    axil_write(8'h18, 0);
+    axil_write(8'h1C, 32'h0000_8000);
+    axil_write(8'h20, 32'h0000_8000);
+    axil_write(8'h24, 32'h0001_0000);
+    axil_write(8'h08, W);
+    axil_write(8'h0C, H);
 
-    status_val=32'hFFFF_FFFF; i=0;
+    status_val=32'hFFFF_FFFF;
+    i=0;
     while (i<200 && status_val[2]!==1'b0) begin
       axil_read(8'h04, status_val);
-      if (status_val[2]===1'b0) i=200; else begin @(posedge clk); i++; end
+      if (status_val[2]===1'b0) i=200;
+      else begin
+        @(posedge clk);
+        i++;
+      end
     end
 
     // stream_frame_in runs detached (input streaming completes fast and
@@ -101,11 +152,21 @@ module tb_bounded_fisheye;
     join_none
     capture_bounded(W,max_cap);
 
-    max_err=0; mismatches=0;
+    max_err=0;
+    mismatches=0;
     for (i=0;i<max_cap;i++) begin
-      d=int'(cap_r[i])-int'(gold_r[i]); if(d<0) d=-d; if(d>max_err) max_err=d; if(d>1) mismatches++;
-      d=int'(cap_g[i])-int'(gold_g[i]); if(d<0) d=-d; if(d>max_err) max_err=d; if(d>1) mismatches++;
-      d=int'(cap_b[i])-int'(gold_b[i]); if(d<0) d=-d; if(d>max_err) max_err=d; if(d>1) mismatches++;
+      d=int'(cap_r[i])-int'(gold_r[i]);
+      if(d<0) d=-d;
+      if(d>max_err) max_err=d;
+      if(d>1) mismatches++;
+      d=int'(cap_g[i])-int'(gold_g[i]);
+      if(d<0) d=-d;
+      if(d>max_err) max_err=d;
+      if(d>1) mismatches++;
+      d=int'(cap_b[i])-int'(gold_b[i]);
+      if(d<0) d=-d;
+      if(d>max_err) max_err=d;
+      if(d>1) mismatches++;
     end
     $display("fisheye %0dx%0d (bounded to %0d/%0d pixels = %0d full rows): max_err=%0d mismatches=%0d/%0d",
                W,H,max_cap,W*H,max_cap/W, max_err, mismatches, max_cap*3);
@@ -113,4 +174,13 @@ module tb_bounded_fisheye;
     else $display(">>> FAIL <<<");
     $finish;
   end
+
+  // Optional waveform dump: compile with -DDUMP_VCD (the run scripts do this
+  // when VCD=1; SURFER=1 then opens it, see synth/view_waves.sh).
+`ifdef DUMP_VCD
+  initial begin
+    $dumpfile("tb_bounded_fisheye.vcd");
+    $dumpvars(0, tb_bounded_fisheye);
+  end
+`endif
 endmodule

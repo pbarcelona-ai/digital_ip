@@ -12,19 +12,25 @@
 // Date: 2026-10-08
 // ***************
   task automatic check(input bit c, input string m);
-    if (!c) begin errors++; if (errors < 30) $display("ERROR @%0t: %s", $time, m); end
+    if (!c) begin
+      errors++;
+      if (errors < 30) $display("ERROR @%0t: %s", $time, m);
+    end
   endtask
 
   // Wait for nf complete frames at the sink and check each against the source
   task automatic frames(input int nf);
-    int f0; f0 = sink.frames;
+    int f0;
+    f0 = sink.frames;
     repeat (nf) begin
-      int target; target = sink.frames + 1;
+      int target;
+      target = sink.frames + 1;
       while (sink.frames < target) @(posedge clk);
       // The frame just ended was produced while fnum had the value of its sof
       check(sink.lines == VA && sink.line_len == HA, $sformatf("geometry %0dx%0d", sink.line_len, sink.lines));
       begin
-        int ef; ef = -1;
+        int ef;
+        ef = -1;
         // find the frame number that matches pixel (0,0)
         for (int f = fnum - 3; f <= fnum; f++) if (sink.frame[0][0] == pix(0, 0, f)) ef = f;
         check(ef >= 0, "frame number not found");
@@ -38,15 +44,22 @@
   endtask
 
   task automatic start(input bit hdmi, input bit p);
-    en = 0; mode = hdmi; pol = p; sink_en = 0;
+    en = 0;
+    mode = hdmi;
+    pol = p;
+    sink_en = 0;
     repeat (5) @(posedge clk);
-    sink.hdmi = hdmi; sink.vs_active = p;
+    sink.hdmi = hdmi;
+    sink.vs_active = p;
     en = 1;
     repeat (3 * (HA + 86)) @(posedge clk);                       // let the pipeline fill
     sink_en = 1;
     begin                                                          // align to a frame boundary
-      int f0; f0 = sink.frames;
+      int f0;
+      f0 = sink.frames;
       while (sink.frames == f0) @(posedge clk);
     end
-    sink.frames = 0; sink.islands = 0; sink.avi_frames = 0;
+    sink.frames = 0;
+    sink.islands = 0;
+    sink.avi_frames = 0;
   endtask

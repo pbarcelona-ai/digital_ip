@@ -100,16 +100,35 @@ module usb_fs_tx #(
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      state <= T_IDLE; acc <= '0; tick <= 1'b0; sh <= '0; bl <= '0; ones <= '0;
-      j <= 1'b1; crc16 <= 16'hFFFF; crc5 <= 5'h1F; crc_sh <= '0; crc_left <= '0;
-      last_seen <= 1'b0; is_data <= 1'b0; is_tok <= 1'b0; tok_b1 <= 1'b0;
-      pid_full <= '0; dp_o <= 1'b1; dm_o <= 1'b0; oe_o <= 1'b0; pkt_done_o <= 1'b0;
+      state <= T_IDLE;
+      acc <= '0;
+      tick <= 1'b0;
+      sh <= '0;
+      bl <= '0;
+      ones <= '0;
+      j <= 1'b1;
+      crc16 <= 16'hFFFF;
+      crc5 <= 5'h1F;
+      crc_sh <= '0;
+      crc_left <= '0;
+      last_seen <= 1'b0;
+      is_data <= 1'b0;
+      is_tok <= 1'b0;
+      tok_b1 <= 1'b0;
+      pid_full <= '0;
+      dp_o <= 1'b1;
+      dm_o <= 1'b0;
+      oe_o <= 1'b0;
+      pkt_done_o <= 1'b0;
     end else begin
       pkt_done_o <= 1'b0;
       tick <= 1'b0;
       // Bit timer runs only while sending
       if (state != T_IDLE && state != T_DRAIN) begin
-        if (acc_lin >= P) begin acc <= acc_lin - P; tick <= 1'b1; end
+        if (acc_lin >= P) begin
+          acc <= acc_lin - P;
+          tick <= 1'b1;
+        end
         else              acc <= acc_lin;
       end
 
@@ -119,51 +138,76 @@ module usb_fs_tx #(
           is_data   <= (s_data[1:0] == 2'b11);
           is_tok    <= (s_data[1:0] == 2'b01) || (s_data[3:0] == 4'b0100);
           last_seen <= s_last;
-          sh <= 8'h80; bl <= 4'd8; ones <= '0; j <= 1'b1;
-          crc16 <= 16'hFFFF; crc5 <= 5'h1F; tok_b1 <= 1'b0;
+          sh <= 8'h80;
+          bl <= 4'd8;
+          ones <= '0;
+          j <= 1'b1;
+          crc16 <= 16'hFFFF;
+          crc5 <= 5'h1F;
+          tok_b1 <= 1'b0;
           acc <= P - 24'd256;                          // first tick next clock
-          oe_o <= 1'b1; dp_o <= 1'b1; dm_o <= 1'b0;    // start from J
+          oe_o <= 1'b1; // start from J
+          dp_o <= 1'b1;
+          dm_o <= 1'b0;
           state <= T_SYNC;
         end
 
         T_SYNC, T_PID, T_PAY, T_CRC: if (tick) begin
           // Drive the next line state
-          j <= j_next; dp_o <= j_next; dm_o <= ~j_next;
+          j <= j_next;
+          dp_o <= j_next;
+          dm_o <= ~j_next;
           if (stuffing) ones <= '0;
           else begin
             ones <= b_send ? ones + 3'd1 : 3'd0;
             sh   <= {1'b0, sh[7:1]};
             bl   <= bl - 4'd1;
-            if (state == T_PAY) begin crc16 <= crc16_n; crc5 <= crc5_n; end
+            if (state == T_PAY) begin
+              crc16 <= crc16_n;
+              crc5 <= crc5_n;
+            end
             if (state == T_CRC) begin
-              crc_sh <= {1'b0, crc_sh[15:1]}; crc_left <= crc_left - 5'd1;
+              crc_sh <= {1'b0, crc_sh[15:1]};
+              crc_left <= crc_left - 5'd1;
               if (crc_left == 5'd1) state <= T_END;
             end
             if (byte_end) begin
               case (state)
                 T_SYNC: begin
-                  sh <= pid_full; bl <= 4'd8; state <= T_PID;
+                  sh <= pid_full;
+                  bl <= 4'd8;
+                  state <= T_PID;
                 end
                 T_PID: begin
                   if (is_data || is_tok) begin
                     if (last_seen) begin                     // no payload
                       if (is_data) begin
-                        crc_sh <= ~16'hFFFF; crc_left <= 5'd16; state <= T_CRC;
+                        crc_sh <= ~16'hFFFF;
+                        crc_left <= 5'd16;
+                        state <= T_CRC;
                       end else state <= T_END;
                     end else begin
-                      sh <= s_data; last_seen <= s_last; bl <= 4'd8; state <= T_PAY;
+                      sh <= s_data;
+                      last_seen <= s_last;
+                      bl <= 4'd8;
+                      state <= T_PAY;
                     end
                   end else state <= T_END;                   // handshake
                 end
                 T_PAY: begin
                   if (is_tok && tok_b1) begin                // 11th bit sent
-                    crc_sh <= {11'd0, ~crc5_n}; crc_left <= 5'd5; state <= T_CRC;
+                    crc_sh <= {11'd0, ~crc5_n};
+                    crc_left <= 5'd5;
+                    state <= T_CRC;
                   end else if (last_seen) begin
                     if (is_data) begin
-                      crc_sh <= ~crc16_n; crc_left <= 5'd16; state <= T_CRC;
+                      crc_sh <= ~crc16_n;
+                      crc_left <= 5'd16;
+                      state <= T_CRC;
                     end else state <= T_END;                 // short token
                   end else begin
-                    sh <= s_data; last_seen <= s_last;
+                    sh <= s_data;
+                    last_seen <= s_last;
                     bl <= (is_tok) ? 4'd3 : 4'd8;
                     if (is_tok) tok_b1 <= 1'b1;
                   end
@@ -177,15 +221,30 @@ module usb_fs_tx #(
         // After the last bit: insert a stuff bit if needed, then EOP
         T_END: if (tick) begin
           if (ones == 3'd6) begin
-            j <= ~j; dp_o <= ~j; dm_o <= j; ones <= '0;   // stuff a zero
+            j <= ~j; // stuff a zero
+            dp_o <= ~j;
+            dm_o <= j;
+            ones <= '0;
           end else begin
-            dp_o <= 1'b0; dm_o <= 1'b0; state <= T_EOP1;  // SE0
+            dp_o <= 1'b0; // SE0
+            dm_o <= 1'b0;
+            state <= T_EOP1;
           end
         end
-        T_EOP1: if (tick) begin dp_o <= 1'b0; dm_o <= 1'b0; state <= T_EOP2; end
-        T_EOP2: if (tick) begin dp_o <= 1'b1; dm_o <= 1'b0; j <= 1'b1; state <= T_EOP3; end
+        T_EOP1: if (tick) begin
+          dp_o <= 1'b0;
+          dm_o <= 1'b0;
+          state <= T_EOP2;
+        end
+        T_EOP2: if (tick) begin
+          dp_o <= 1'b1;
+          dm_o <= 1'b0;
+          j <= 1'b1;
+          state <= T_EOP3;
+        end
         T_EOP3: if (tick) begin
-          oe_o <= 1'b0; pkt_done_o <= 1'b1;
+          oe_o <= 1'b0;
+          pkt_done_o <= 1'b1;
           state <= tstate_t'(last_seen ? T_IDLE : T_DRAIN);
         end
         T_DRAIN: if (s_valid) begin                        // discard extra bytes

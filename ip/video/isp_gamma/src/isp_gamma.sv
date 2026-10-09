@@ -53,13 +53,19 @@ module isp_gamma #(
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      by_f <= 1'b0; by_q <= 1'b0; lin_q <= '0;
-      m_axis_tvalid <= 1'b0; m_axis_tlast <= 1'b0; m_axis_tuser <= 1'b0;
+      by_f <= 1'b0;
+      by_q <= 1'b0;
+      lin_q <= '0;
+      m_axis_tvalid <= 1'b0;
+      m_axis_tlast <= 1'b0;
+      m_axis_tuser <= 1'b0;
     end else if (en) begin
       if (acc && s_axis_tuser) by_f <= bypass_i;
       by_q <= by;
       for (int k = 0; k < 3; k++) lin_q[k*OUT_W +: OUT_W] <= s_axis_tdata[k*IN_W + IN_W - OUT_W +: OUT_W];
-      m_axis_tvalid <= acc; m_axis_tlast <= s_axis_tlast; m_axis_tuser <= s_axis_tuser;
+      m_axis_tvalid <= acc;
+      m_axis_tlast <= s_axis_tlast;
+      m_axis_tuser <= s_axis_tuser;
     end
   end
   assign m_axis_tdata = by_q ? lin_q : lut_q;

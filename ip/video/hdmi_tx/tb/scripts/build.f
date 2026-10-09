@@ -1,3 +1,3 @@
 ../vid_timing_gen/src/vid_timing_gen.sv
-../video_tb_lib/hdmi_sink_model.sv
+../../shared/tb/lib/hdmi_bfm.sv
 tb/hdmi_tx_tb.sv

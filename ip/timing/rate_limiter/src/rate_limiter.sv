@@ -31,7 +31,8 @@ module rate_limiter #(
 );
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
   if (TOKEN_W < 2 || PERIOD_W < 1) begin : g_bad $error("rate_limiter: bad widths"); end
-  logic [PERIOD_W-1:0] pc; logic [TOKEN_W-1:0] tok;
+  logic [PERIOD_W-1:0] pc;
+  logic [TOKEN_W-1:0] tok;
   wire unlimited = (refill_period_i == '0);
   wire have_tok  = (tok != '0) | unlimited;
   assign m_data_o  = s_data_i;
@@ -40,9 +41,13 @@ module rate_limiter #(
   wire   xfer      = s_valid_i & s_ready_o;
   wire   refill    = (pc >= refill_period_i - 1'b1) & ~unlimited;
   always_ff @(posedge clk) begin
-    if (!rst_n) begin pc <= '0; tok <= burst_i; end
+    if (!rst_n) begin
+      pc <= '0;
+      tok <= burst_i;
+    end
     else begin
-      if (refill || unlimited) pc <= '0; else pc <= pc + 1'b1;
+      if (refill || unlimited) pc <= '0;
+      else pc <= pc + 1'b1;
       case ({refill && tok < burst_i, xfer && !unlimited})
         2'b10: tok <= tok + 1'b1;
         2'b01: tok <= tok - 1'b1;

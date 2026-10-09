@@ -85,9 +85,19 @@ module spi_engine #(
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      state <= S_IDLE; tmr <= '0; edge_cnt <= '0; tx_idx <= '0; rx_idx <= '0;
-      tx_word <= '0; rx_word <= '0; last_q <= 1'b0; cs_active <= 1'b0;
-      sclk_o <= 1'b0; mosi_o <= 1'b0; rx_data <= '0; rx_last <= 1'b0;
+      state <= S_IDLE;
+      tmr <= '0;
+      edge_cnt <= '0;
+      tx_idx <= '0;
+      rx_idx <= '0;
+      tx_word <= '0;
+      rx_word <= '0;
+      last_q <= 1'b0;
+      cs_active <= 1'b0;
+      sclk_o <= 1'b0;
+      mosi_o <= 1'b0;
+      rx_data <= '0;
+      rx_last <= 1'b0;
       rx_valid <= 1'b0;
     end else begin
       rx_valid <= 1'b0;
@@ -96,16 +106,23 @@ module spi_engine #(
         S_IDLE: begin
           sclk_o <= cpol_i;
           if (tx_valid & enable_i) begin              // load word
-            tx_word <= tx_data; last_q <= tx_last;
-            rx_word <= '0; edge_cnt <= '0;
-            tx_idx <= first_idx; rx_idx <= first_idx;
-            state <= S_CS_SETUP; tmr <= div_i;
+            tx_word <= tx_data;
+            last_q <= tx_last;
+            rx_word <= '0;
+            edge_cnt <= '0;
+            tx_idx <= first_idx;
+            rx_idx <= first_idx;
+            state <= S_CS_SETUP;
+            tmr <= div_i;
             cs_active <= 1'b1;
             // CPHA=0: first bit must be valid before the first edge
             if (!cpha_i) mosi_o <= tx_data[first_idx];
           end else if (!cs_active) mosi_o <= 1'b0;
         end
-        S_CS_SETUP: if (tmr_zero) begin state <= S_SHIFT; tmr <= div_i; end
+        S_CS_SETUP: if (tmr_zero) begin
+          state <= S_SHIFT;
+          tmr <= div_i;
+        end
         S_SHIFT: if (tmr_zero) begin
           tmr    <= div_i;
           sclk_o <= ~sclk_o;                          // toggle every half period
@@ -124,12 +141,15 @@ module spi_engine #(
             end
           end
           if (edge_cnt == last_edge) begin
-            state <= S_CS_HOLD; tmr <= div_i;
+            state <= S_CS_HOLD;
+            tmr <= div_i;
           end
         end
         S_CS_HOLD: if (tmr_zero) state <= S_DONE;
         S_DONE: begin
-          rx_data <= rx_word; rx_last <= last_q; rx_valid <= 1'b1;
+          rx_data <= rx_word;
+          rx_last <= last_q;
+          rx_valid <= 1'b1;
           if (last_q) cs_active <= 1'b0;             // end of burst
           state <= S_IDLE;
         end

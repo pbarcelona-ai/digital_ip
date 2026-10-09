@@ -26,8 +26,10 @@
       end
 
       @(posedge clk);
-      operand = op; start = 1;
-      @(posedge clk); start = 0;
+      operand = op;
+      start = 1;
+      @(posedge clk);
+      start = 0;
       wait (done);
 
       checks = checks + 1;

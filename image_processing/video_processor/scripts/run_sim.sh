@@ -9,7 +9,11 @@
 #   build/sim. Fails unless the log contains TEST PASSED.
 # Date: 2026-10-08
 # ***************
-# Usage: scripts/run_sim.sh [--vcd] [--lint] [--quick]
+# Usage: scripts/run_sim.sh [--vcd] [--wave] [--vcd-start=<us>] [--vcd-stop=<us>] [--lint] [--quick]
+#   --vcd    dump build/sim/video_processor_tb.vcd (+vcd). A whole run is long and
+#            the dump large: --vcd-start / --vcd-stop limit it to a window of
+#            simulated time (microseconds)
+#   --wave   --vcd, then open the VCD in the Surfer waveform viewer (pass or fail)
 #   --quick  sets the GPIO0[31] strap: the firmware skips the CPU and video
 #            register dumps (faster). The UART 0 report is saved to build/sim/cpu_bootup.txt.
 # Image test: input images are read from build/sim/input_images/ (the
@@ -26,9 +30,14 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 filelist() { grep -Ev '^\s*(#|$)' "$ROOT/$1" | sed "s#^#$ROOT/#"; }
-VCD=0; LINT=0; QUICK=0
+VCD=0; WAVE=0; LINT=0; QUICK=0; VCDWIN=""
 for a in "$@"; do
-  case "$a" in --vcd) VCD=1;; --lint) LINT=1;; --quick) QUICK=1;; *) echo "unknown option $a"; exit 2;; esac
+  case "$a" in
+    --vcd) VCD=1;; --wave) VCD=1; WAVE=1;; --lint) LINT=1;; --quick) QUICK=1;;
+    --vcd-start=*) VCDWIN="$VCDWIN +vcd_start_us=${a#--vcd-start=}";;
+    --vcd-stop=*)  VCDWIN="$VCDWIN +vcd_stop_us=${a#--vcd-stop=}";;
+    *) echo "unknown option $a"; exit 2;;
+  esac
 done
 SRCS="$(filelist scripts/build.f | tr '\n' ' ')"
 TB_SRCS="$(filelist tb/scripts/build.f | tr '\n' ' ')"
@@ -48,13 +57,20 @@ copy_back() {                                   # results -> build/sim
   rm -f "$OUT"/output_images/*.ppm; cp -p "$WORK"/output_images/*.ppm "$OUT/output_images/" 2>/dev/null || true
   cp -p "$WORK"/*.vcd "$OUT/" 2>/dev/null || true
   [ -n "${SIM_WORK_DIR:-}" ] || rm -rf "$WORK"
+  if [ "$WAVE" = 1 ]; then                      # pass or fail
+    if [ ! -f "$OUT/video_processor_tb.vcd" ]; then echo "[video_processor] no VCD written"
+    elif command -v surfer >/dev/null 2>&1; then
+      echo "[video_processor] opening $OUT/video_processor_tb.vcd in Surfer"
+      nohup surfer "$OUT/video_processor_tb.vcd" > "$OUT/surfer.log" 2>&1 &
+    else echo "surfer not found; install from https://surfer-project.org and open $OUT/video_processor_tb.vcd"; fi
+  fi
 }
 trap copy_back EXIT
 echo "[video_processor] simulating in $WORK (live report: $WORK/cpu_bootup.txt); results -> $OUT"
 cd "$WORK"
-iverilog -g2012 -Wall -Wno-timescale -s video_processor_tb -o video_processor_tb.vvp -I "$FW" -I "$ROOT/tb/tests" -I "$ROOT/../../ip/peripherals/i2c_master/tb/tests" -I "$ROOT/../../ip/peripherals/spi_flash_ctrl/tb/tests" \
+iverilog -g2012 -Wall -Wno-timescale -s video_processor_tb -o video_processor_tb.vvp -I "$FW" -I "$ROOT/tb/tests" \
   -DFW_HEX="\"$FW/video_proc.flash.hex\"" $SRCS $TB_SRCS
-ARGS=""; [ "$VCD" = 1 ] && ARGS="+vcd"; [ "$QUICK" = 1 ] && ARGS="$ARGS +quick"
+ARGS=""; [ "$VCD" = 1 ] && ARGS="+vcd$VCDWIN"; [ "$QUICK" = 1 ] && ARGS="$ARGS +quick"
 vvp -n video_processor_tb.vvp $ARGS | tee video_processor_tb.log
 grep -q "TEST PASSED" video_processor_tb.log || { echo "[video_processor] SIMULATION FAILED"; exit 1; }
 echo "[video_processor] PASSED"

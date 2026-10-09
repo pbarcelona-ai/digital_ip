@@ -30,11 +30,21 @@ module parity_check #(
   if (WIDTH < 1 || CNT_W < 1) begin : g_bad $error("parity_check: bad widths"); end
   wire bad = valid_i & ((^{data_i, parity_i}) ^ ODD);
   always_ff @(posedge clk) begin
-    if (!rst_n) begin err_o <= 1'b0; sticky_o <= 1'b0; err_count_o <= '0; end
+    if (!rst_n) begin
+      err_o <= 1'b0;
+      sticky_o <= 1'b0;
+      err_count_o <= '0;
+    end
     else begin
       err_o <= bad;
-      if (bad) begin sticky_o <= 1'b1; if (err_count_o != '1) err_count_o <= err_count_o + 1'b1; end
-      if (clr_i) begin sticky_o <= 1'b0; err_count_o <= '0; end
+      if (bad) begin
+        sticky_o <= 1'b1;
+        if (err_count_o != '1) err_count_o <= err_count_o + 1'b1;
+      end
+      if (clr_i) begin
+        sticky_o <= 1'b0;
+        err_count_o <= '0;
+      end
     end
   end
 endmodule

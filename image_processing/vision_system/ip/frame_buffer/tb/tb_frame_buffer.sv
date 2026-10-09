@@ -60,9 +60,19 @@ module tb_frame_buffer;
   logic [PIX_W-1:0]  rd_data0, rd_data1, rd_data2, rd_data3;
 
   frame_buffer #(.PIX_W(PIX_W), .DEPTH(DEPTH), .ADDR_W(ADDR_W)) dut (
-    .clk, .wr_en, .wr_addr, .wr_data,
-    .rd_en, .rd_addr0, .rd_addr1, .rd_addr2, .rd_addr3,
-    .rd_data0, .rd_data1, .rd_data2, .rd_data3
+    .clk,
+    .wr_en,
+    .wr_addr,
+    .wr_data,
+    .rd_en,
+    .rd_addr0,
+    .rd_addr1,
+    .rd_addr2,
+    .rd_addr3,
+    .rd_data0,
+    .rd_data1,
+    .rd_data2,
+    .rd_data3
   );
 
   always #5 clk = ~clk;
@@ -71,9 +81,16 @@ module tb_frame_buffer;
   int checks, fails;
 
   initial begin
-    checks = 0; fails = 0;
-    wr_en <= 0; rd_en <= 0; wr_addr <= '0; wr_data <= '0;
-    rd_addr0 <= '0; rd_addr1 <= '0; rd_addr2 <= '0; rd_addr3 <= '0;
+    checks = 0;
+    fails = 0;
+    wr_en <= 0;
+    rd_en <= 0;
+    wr_addr <= '0;
+    wr_data <= '0;
+    rd_addr0 <= '0;
+    rd_addr1 <= '0;
+    rd_addr2 <= '0;
+    rd_addr3 <= '0;
 
     // ---- 1. write a unique pattern to every address ---------------------
     for (int a = 0; a < DEPTH; a++) begin
@@ -127,7 +144,10 @@ module tb_frame_buffer;
     // ---- 3. all 4 ports return IDENTICAL data for the SAME address ------
     @(posedge clk);
     rd_en <= 1;
-    rd_addr0 <= 10; rd_addr1 <= 10; rd_addr2 <= 10; rd_addr3 <= 10;
+    rd_addr0 <= 10;
+    rd_addr1 <= 10;
+    rd_addr2 <= 10;
+    rd_addr3 <= 10;
     @(posedge clk);
     rd_en <= 0;
     #1;
@@ -143,7 +163,8 @@ module tb_frame_buffer;
 
     // ---- 4. read latency is exactly 1 cycle (not 0, not 2) --------------
     @(posedge clk);
-    rd_en <= 1; rd_addr0 <= 20;
+    rd_en <= 1;
+    rd_addr0 <= 20;
     // Same-cycle check: data should NOT have updated yet (still holds
     // whatever was there before this read was issued).
     #1;
@@ -169,10 +190,14 @@ module tb_frame_buffer;
     // ---- 5. simultaneous write(A) + read(B != A): read(B) unaffected ----
     shadow[30] = 24'hABCDEF;
     @(posedge clk);
-    wr_en <= 1; wr_addr <= 30; wr_data <= 24'hABCDEF;
-    rd_en <= 1; rd_addr0 <= 31;   // different address, pre-existing value from step 1
+    wr_en <= 1;
+    wr_addr <= 30;
+    wr_data <= 24'hABCDEF;
+    rd_en <= 1; // different address, pre-existing value from step 1
+    rd_addr0 <= 31;
     @(posedge clk);
-    wr_en <= 0; rd_en <= 0;
+    wr_en <= 0;
+    rd_en <= 0;
     #1;
     checks = checks + 1;
     if (rd_data0 !== shadow[31]) begin
@@ -183,7 +208,8 @@ module tb_frame_buffer;
     end
     // and confirm the write to 30 actually landed
     @(posedge clk);
-    rd_en <= 1; rd_addr0 <= 30;
+    rd_en <= 1;
+    rd_addr0 <= 30;
     @(posedge clk);
     rd_en <= 0;
     #1;

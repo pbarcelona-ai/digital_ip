@@ -34,7 +34,8 @@ module register_file #(
   end
   always_comb begin
     for (int p = 0; p < NRD; p++) begin
-      logic [AW-1:0] ra; ra = raddr_i[p*AW +: AW];
+      logic [AW-1:0] ra;
+      ra = raddr_i[p*AW +: AW];
       if (ZERO_REG0 && ra == '0) rdata_o[p*WIDTH +: WIDTH] = '0;
       else if (BYPASS && we_i && ra == waddr_i) rdata_o[p*WIDTH +: WIDTH] = wdata_i;
       else rdata_o[p*WIDTH +: WIDTH] = regs[ra];

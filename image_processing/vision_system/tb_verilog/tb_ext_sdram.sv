@@ -153,4 +153,13 @@ module tb_ext_sdram;
       end
     join_any
   end
+
+  // Optional waveform dump: compile with -DDUMP_VCD (the run scripts do this
+  // when VCD=1; SURFER=1 then opens it, see synth/view_waves.sh).
+`ifdef DUMP_VCD
+  initial begin
+    $dumpfile("waves.vcd");
+    $dumpvars(0, tb_ext_sdram);
+  end
+`endif
 endmodule

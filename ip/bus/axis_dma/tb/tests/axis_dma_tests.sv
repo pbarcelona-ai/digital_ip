@@ -10,10 +10,14 @@
 // Date: 2026-10-08
 // ***************
   task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
+    if (!c) begin
+      errors++;
+      $display("ERROR @%0t: %s", $time, m);
+    end
   endtask
 
   task automatic wait_done(input int bit_done);
-    do bfm.read(8'h14, rd); while (rd[bit_done] == 0);
+    do bfm.read(8'h14, rd);
+    while (rd[bit_done] == 0);
     bfm.write(8'h14, 32'hF00);
   endtask

@@ -31,16 +31,25 @@ module counter #(
   if (DIRECTION < 0 || DIRECTION > 2) begin : g_bd $error("counter: DIRECTION must be 0..2"); end
   wire down = (DIRECTION == 1) ? 1'b1 : (DIRECTION == 2) ? dir_i : 1'b0;
   always_ff @(posedge clk) begin
-    if (!rst_n) begin count_o <= '0; wrap_o <= 1'b0; end
+    if (!rst_n) begin
+      count_o <= '0;
+      wrap_o <= 1'b0;
+    end
     else begin
       wrap_o <= 1'b0;
       if (load_i) count_o <= (load_val_i > top_i) ? top_i : load_val_i;
       else if (en_i) begin
         if (!down) begin
-          if (count_o >= top_i) begin count_o <= '0; wrap_o <= 1'b1; end
+          if (count_o >= top_i) begin
+            count_o <= '0;
+            wrap_o <= 1'b1;
+          end
           else count_o <= count_o + 1'b1;
         end else begin
-          if (count_o == '0) begin count_o <= top_i; wrap_o <= 1'b1; end
+          if (count_o == '0) begin
+            count_o <= top_i;
+            wrap_o <= 1'b1;
+          end
           else count_o <= count_o - 1'b1;
         end
       end

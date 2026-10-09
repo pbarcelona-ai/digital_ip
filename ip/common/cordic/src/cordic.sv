@@ -91,28 +91,56 @@ module cordic #(
   logic signed [IW-1:0] ys [0:ITER];
   logic        [ZA-1:0] zs [0:ITER];
   logic                 vs [0:ITER];
-  logic signed [IW-1:0] xe, ye, xf, yf; logic [ZA-1:0] zf;
+  logic signed [IW-1:0] xe, ye, xf, yf;
+  logic [ZA-1:0] zf;
   logic signed [IW+17:0] xm, ym;
   always_comb begin
-    xe = IW'(x_i) <<< GUARD; ye = IW'(y_i) <<< GUARD; xf = xe; yf = ye; zf = '0;
+    xe = IW'(x_i) <<< GUARD;
+    ye = IW'(y_i) <<< GUARD;
+    xf = xe;
+    yf = ye;
+    zf = '0;
     if (MODE == 0) begin
       case (z_i[ZW-1:ZW-2])
-        2'd0: begin xf = xe;  yf = ye;  end
-        2'd1: begin xf = -ye; yf = xe;  end
-        2'd2: begin xf = -xe; yf = -ye; end
-        default: begin xf = ye; yf = -xe; end
+        2'd0: begin
+          xf = xe;
+          yf = ye;
+        end
+        2'd1: begin
+          xf = -ye;
+          yf = xe;
+        end
+        2'd2: begin
+          xf = -xe;
+          yf = -ye;
+        end
+        default: begin
+          xf = ye;
+          yf = -xe;
+        end
       endcase
       zf = {2'b00, z_i[ZW-3:0], {ZX{1'b0}}};
     end else begin
-      if (xe < 0) begin xf = -xe; yf = -ye; zf = {1'b1, {(ZA-1){1'b0}}}; end
+      if (xe < 0) begin
+        xf = -xe;
+        yf = -ye;
+        zf = {1'b1, {(ZA-1){1'b0}}};
+      end
     end
     xm = xf * $signed({1'b0, KINV});
     ym = yf * $signed({1'b0, KINV});
   end
   always_ff @(posedge clk) begin
-    if (!rst_n) vs[0] <= 1'b0; else vs[0] <= valid_i;
-    if (MODE == 0) begin xs[0] <= xm >>> 16; ys[0] <= ym >>> 16; end
-    else begin xs[0] <= xf; ys[0] <= yf; end
+    if (!rst_n) vs[0] <= 1'b0;
+    else vs[0] <= valid_i;
+    if (MODE == 0) begin
+      xs[0] <= xm >>> 16;
+      ys[0] <= ym >>> 16;
+    end
+    else begin
+      xs[0] <= xf;
+      ys[0] <= yf;
+    end
     zs[0] <= zf;
   end
   // ---------------- iterations ----------------
@@ -123,31 +151,47 @@ module cordic #(
     wire signed [IW-1:0] ysh = ys[i] >>> i;
     wire [ZA-1:0] at = atan_tab(5'(i));
     always_ff @(posedge clk) begin
-      if (!rst_n) vs[i+1] <= 1'b0; else vs[i+1] <= vs[i];
-      if (dpos) begin xs[i+1] <= xs[i] - ysh; ys[i+1] <= ys[i] + xsh; zs[i+1] <= zs[i] - at; end
-      else      begin xs[i+1] <= xs[i] + ysh; ys[i+1] <= ys[i] - xsh; zs[i+1] <= zs[i] + at; end
+      if (!rst_n) vs[i+1] <= 1'b0;
+      else vs[i+1] <= vs[i];
+      if (dpos) begin
+        xs[i+1] <= xs[i] - ysh;
+        ys[i+1] <= ys[i] + xsh;
+        zs[i+1] <= zs[i] - at;
+      end
+      else      begin
+        xs[i+1] <= xs[i] + ysh;
+        ys[i+1] <= ys[i] - xsh;
+        zs[i+1] <= zs[i] + at;
+      end
     end
   end
   // ---------------- output stage ----------------
   localparam logic signed [IW-1:0] RND = (1 <<< (GUARD - 1));
-  logic signed [IW-1:0] xr, yr; logic signed [IW+17:0] mm;
+  logic signed [IW-1:0] xr, yr;
+  logic signed [IW+17:0] mm;
   logic signed [WIDTH-1:0] maxv, minv;
-  assign maxv = {1'b0, {(WIDTH-1){1'b1}}}; assign minv = {1'b1, {(WIDTH-1){1'b0}}};
+  assign maxv = {1'b0, {(WIDTH-1){1'b1}}};
+  assign minv = {1'b1, {(WIDTH-1){1'b0}}};
   always_comb begin
-    xr = (xs[ITER] + RND) >>> GUARD; yr = (ys[ITER] + RND) >>> GUARD;
+    xr = (xs[ITER] + RND) >>> GUARD;
+    yr = (ys[ITER] + RND) >>> GUARD;
     mm = xs[ITER] * $signed({1'b0, KINV});
   end
   logic signed [IW+17:0] mmr;
   always_comb mmr = (mm + (1 <<< (16 + GUARD - 1))) >>> (16 + GUARD);
   always_ff @(posedge clk) begin
-    if (!rst_n) valid_o <= 1'b0; else valid_o <= vs[ITER];
+    if (!rst_n) valid_o <= 1'b0;
+    else valid_o <= vs[ITER];
     if (MODE == 0) begin
       x_o <= (xr > IW'(maxv)) ? maxv : (xr < IW'(minv)) ? minv : xr[WIDTH-1:0];
       y_o <= (yr > IW'(maxv)) ? maxv : (yr < IW'(minv)) ? minv : yr[WIDTH-1:0];
-      mag_o <= '0; z_o <= '0;
+      mag_o <= '0;
+      z_o <= '0;
     end else begin
       mag_o <= (mmr < 0) ? '0 : mmr[WIDTH:0];
-      z_o   <= (zs[ITER] + (1 << (ZX - 1))) >> ZX; x_o <= '0; y_o <= '0;
+      z_o   <= (zs[ITER] + (1 << (ZX - 1))) >> ZX;
+      x_o <= '0;
+      y_o <= '0;
     end
   end
 endmodule

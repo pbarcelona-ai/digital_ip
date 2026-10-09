@@ -17,12 +17,19 @@
 // Date: 2026-10-08
 // ***************
   task automatic check(input bit c, input string m);
-    if (!c) begin errors++; if (errors < 30) $display("ERROR @%0t: %s", $time, m); end
+    if (!c) begin
+      errors++;
+      if (errors < 30) $display("ERROR @%0t: %s", $time, m);
+    end
   endtask
 
-  task automatic wr(input int a, input int d); bfm.write(8'(a), 32'(d)); endtask
+  task automatic wr(input int a, input int d);
+    bfm.write(8'(a), 32'(d));
+  endtask
 
-  task automatic rd(input int a, output logic [31:0] d); bfm.read(8'(a), d); endtask
+  task automatic rd(input int a, output logic [31:0] d);
+    bfm.read(8'(a), d);
+  endtask
 
   // Program a kernel (registers and model)
   task automatic program_kernel(input logic [25*32-1:0] kp, input int sh);
@@ -32,22 +39,29 @@
 
   task automatic new_image();
     for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) begin
-      logic [23:0] p; p = {8'($urandom), 8'(x * 19 + y * 7), 8'((x < W / 2) ? 8'd0 : 8'd255)};
+      logic [23:0] p;
+      p = {8'($urandom), 8'(x * 19 + y * 7), 8'((x < W / 2) ? 8'd0 : 8'd255)};
       if ($urandom_range(9) == 0) p = $urandom;
-      vid.img[y][x] = p; mdl.img[y][x] = p;
+      vid.img[y][x] = p;
+      mdl.img[y][x] = p;
     end
   endtask
 
   // Stream one frame and compare it with the model's current kernel
   task automatic run_frame(input string what);
-    int f0, bad; f0 = vid.frames; vid.ow = W; vid.oh = H;
+    int f0, bad;
+    f0 = vid.frames;
+    vid.ow = W;
+    vid.oh = H;
     vid.send(W, H);
     while (vid.frames < f0 + 1) @(posedge clk);
-    mdl.run(W, H); compare(what);
+    mdl.run(W, H);
+    compare(what);
   endtask
 
   task automatic compare(input string what);
-    int bad; bad = 0;
+    int bad;
+    bad = 0;
     for (int y = 0; y < H; y++) for (int x = 0; x < W; x++)
       if (vid.out[y][x] !== mdl.out[y][x]) begin
         if (bad < 3) $display("  %s (%0d,%0d): %h expected %h", what, x, y, vid.out[y][x], mdl.out[y][x]);

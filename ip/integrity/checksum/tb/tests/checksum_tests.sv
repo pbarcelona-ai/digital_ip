@@ -11,9 +11,24 @@
 // Date: 2026-10-08
 // ***************
   task automatic run();
-    @(posedge clk); #1 init = 1; @(posedge clk); #1 init = 0;
-    for (int i = 0; i < msg.size(); i++) begin @(posedge clk); #1 v = 1; b = msg[i]; end
-    @(posedge clk); #1 v = 0; @(posedge clk); #1;
+    @(posedge clk);
+    #1 init = 1;
+    @(posedge clk);
+    #1 init = 0;
+    for (int i = 0; i < msg.size(); i++) begin
+      @(posedge clk);
+      #1 v = 1;
+      b = msg[i];
+    end
+    @(posedge clk);
+    #1 v = 0;
+    @(posedge clk);
+    #1;
   endtask
 
-  task automatic check(input bit c_, input string m); if (!c_) begin errors++; $display("ERROR mode %0d: %s", MODE, m); end endtask
+  task automatic check(input bit c_, input string m);
+    if (!c_) begin
+      errors++;
+      $display("ERROR mode %0d: %s", MODE, m);
+    end
+  endtask

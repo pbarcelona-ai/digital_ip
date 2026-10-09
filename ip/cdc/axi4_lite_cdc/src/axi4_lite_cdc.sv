@@ -67,9 +67,12 @@ module axi4_lite_cdc #(
   typedef enum logic [2:0] {S_IDLE, S_WAIT, S_BRESP, S_RRESP} s_state_t;
   s_state_t ss;
   logic aw_seen, w_seen;
-  logic [ADDR_W-1:0] req_addr; logic [31:0] req_wdata; logic [3:0] req_wstrb;
+  logic [ADDR_W-1:0] req_addr;
+  logic [31:0] req_wdata;
+  logic [3:0] req_wstrb;
   logic req_is_wr, req_tog;
-  logic [31:0] rsp_rdata; logic [1:0] rsp_resp;    // driven by dest domain
+  logic [31:0] rsp_rdata; // driven by dest domain
+  logic [1:0] rsp_resp;
   logic ack_tog_sync, ack_prev;
   logic ack_tog;                       // driven by the destination side below
 
@@ -77,38 +80,78 @@ module axi4_lite_cdc #(
   assign s_axil_wready  = (ss == S_IDLE) & ~w_seen;
   assign s_axil_arready = (ss == S_IDLE) & ~aw_seen & ~w_seen;
 
-  cdc_sync_bit u_ack_sync (.clk(s_clk), .d_i(ack_tog), .q_o(ack_tog_sync));
+  cdc_sync_bit u_ack_sync (
+    .clk(s_clk),
+    .d_i(ack_tog),
+    .q_o(ack_tog_sync)
+  );
 
   always_ff @(posedge s_clk) begin
     if (!s_rst_n) begin
-      ss <= S_IDLE; aw_seen <= 1'b0; w_seen <= 1'b0; req_tog <= 1'b0; ack_prev <= 1'b0;
-      s_axil_bvalid <= 1'b0; s_axil_rvalid <= 1'b0; req_is_wr <= 1'b0;
-      req_addr <= '0; req_wdata <= '0; req_wstrb <= '0; s_axil_bresp <= '0;
-      s_axil_rdata <= '0; s_axil_rresp <= '0;
+      ss <= S_IDLE;
+      aw_seen <= 1'b0;
+      w_seen <= 1'b0;
+      req_tog <= 1'b0;
+      ack_prev <= 1'b0;
+      s_axil_bvalid <= 1'b0;
+      s_axil_rvalid <= 1'b0;
+      req_is_wr <= 1'b0;
+      req_addr <= '0;
+      req_wdata <= '0;
+      req_wstrb <= '0;
+      s_axil_bresp <= '0;
+      s_axil_rdata <= '0;
+      s_axil_rresp <= '0;
     end else begin
       case (ss)
         S_IDLE: begin
-          if (s_axil_awvalid & s_axil_awready) begin aw_seen <= 1'b1; req_addr <= s_axil_awaddr; end
+          if (s_axil_awvalid & s_axil_awready) begin
+            aw_seen <= 1'b1;
+            req_addr <= s_axil_awaddr;
+          end
           if (s_axil_wvalid & s_axil_wready) begin
-            w_seen <= 1'b1; req_wdata <= s_axil_wdata; req_wstrb <= s_axil_wstrb; end
+            w_seen <= 1'b1;
+            req_wdata <= s_axil_wdata;
+            req_wstrb <= s_axil_wstrb;
+            end
           if ((aw_seen | (s_axil_awvalid & s_axil_awready)) &
               (w_seen  | (s_axil_wvalid  & s_axil_wready ))) begin
             // Wait one cycle so request registers are settled, then toggle
-            ss <= S_WAIT; req_is_wr <= 1'b1;
+            ss <= S_WAIT;
+            req_is_wr <= 1'b1;
           end else if (s_axil_arvalid & s_axil_arready) begin
-            req_addr <= s_axil_araddr; req_is_wr <= 1'b0; ss <= S_WAIT;
+            req_addr <= s_axil_araddr;
+            req_is_wr <= 1'b0;
+            ss <= S_WAIT;
           end
         end
         S_WAIT: begin
           if (req_tog == ack_prev) begin req_tog <= ~req_tog; end   // launch request
           else if (ack_tog_sync != ack_prev) begin                  // acknowledged
-            ack_prev <= ack_tog_sync; aw_seen <= 1'b0; w_seen <= 1'b0;
-            if (req_is_wr) begin s_axil_bvalid <= 1'b1; s_axil_bresp <= rsp_resp; ss <= S_BRESP; end
-            else begin s_axil_rvalid <= 1'b1; s_axil_rdata <= rsp_rdata; s_axil_rresp <= rsp_resp; ss <= S_RRESP; end
+            ack_prev <= ack_tog_sync;
+            aw_seen <= 1'b0;
+            w_seen <= 1'b0;
+            if (req_is_wr) begin
+              s_axil_bvalid <= 1'b1;
+              s_axil_bresp <= rsp_resp;
+              ss <= S_BRESP;
+            end
+            else begin
+              s_axil_rvalid <= 1'b1;
+              s_axil_rdata <= rsp_rdata;
+              s_axil_rresp <= rsp_resp;
+              ss <= S_RRESP;
+            end
           end
         end
-        S_BRESP: if (s_axil_bready) begin s_axil_bvalid <= 1'b0; ss <= S_IDLE; end
-        S_RRESP: if (s_axil_rready) begin s_axil_rvalid <= 1'b0; ss <= S_IDLE; end
+        S_BRESP: if (s_axil_bready) begin
+          s_axil_bvalid <= 1'b0;
+          ss <= S_IDLE;
+        end
+        S_RRESP: if (s_axil_rready) begin
+          s_axil_rvalid <= 1'b0;
+          ss <= S_IDLE;
+        end
         default: ss <= S_IDLE;
       endcase
     end
@@ -119,7 +162,11 @@ module axi4_lite_cdc #(
   d_state_t ds;
   logic req_tog_sync, req_prev;
   logic aw_done, w_done;
-  cdc_sync_bit u_req_sync (.clk(m_clk), .d_i(req_tog), .q_o(req_tog_sync));
+  cdc_sync_bit u_req_sync (
+    .clk(m_clk),
+    .d_i(req_tog),
+    .q_o(req_tog_sync)
+  );
 
   assign m_axil_awaddr  = req_addr;
   assign m_axil_araddr  = req_addr;
@@ -133,12 +180,19 @@ module axi4_lite_cdc #(
 
   always_ff @(posedge m_clk) begin
     if (!m_rst_n) begin
-      ds <= D_IDLE; req_prev <= 1'b0; ack_tog <= 1'b0; aw_done <= 1'b0; w_done <= 1'b0;
-      rsp_rdata <= '0; rsp_resp <= '0;
+      ds <= D_IDLE;
+      req_prev <= 1'b0;
+      ack_tog <= 1'b0;
+      aw_done <= 1'b0;
+      w_done <= 1'b0;
+      rsp_rdata <= '0;
+      rsp_resp <= '0;
     end else begin
       case (ds)
         D_IDLE: if (req_tog_sync != req_prev) begin
-          req_prev <= req_tog_sync; aw_done <= 1'b0; w_done <= 1'b0;
+          req_prev <= req_tog_sync;
+          aw_done <= 1'b0;
+          w_done <= 1'b0;
           ds <= d_state_t'(req_is_wr ? D_WR : D_RD);
         end
         D_WR: begin
@@ -147,10 +201,20 @@ module axi4_lite_cdc #(
           if ((aw_done | (m_axil_awvalid & m_axil_awready)) & (w_done | (m_axil_wvalid & m_axil_wready)))
             ds <= D_WRESP;
         end
-        D_WRESP: if (m_axil_bvalid) begin rsp_resp <= m_axil_bresp; ds <= D_ACK; end
+        D_WRESP: if (m_axil_bvalid) begin
+          rsp_resp <= m_axil_bresp;
+          ds <= D_ACK;
+        end
         D_RD: if (m_axil_arready) ds <= D_RRESP;
-        D_RRESP: if (m_axil_rvalid) begin rsp_rdata <= m_axil_rdata; rsp_resp <= m_axil_rresp; ds <= D_ACK; end
-        D_ACK: begin ack_tog <= ~ack_tog; ds <= D_IDLE; end
+        D_RRESP: if (m_axil_rvalid) begin
+          rsp_rdata <= m_axil_rdata;
+          rsp_resp <= m_axil_rresp;
+          ds <= D_ACK;
+        end
+        D_ACK: begin
+          ack_tog <= ~ack_tog;
+          ds <= D_IDLE;
+        end
         default: ds <= D_IDLE;
       endcase
     end

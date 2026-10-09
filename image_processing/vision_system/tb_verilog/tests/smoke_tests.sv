@@ -31,7 +31,9 @@
                      cfg.h11, cfg.h12, cfg.h13, cfg.h21, cfg.h22, cfg.h23, cfg.h31, cfg.h32,
                      x, y, exp_sx, exp_sy);
 
-      in_x <= x[COORD_W-1:0]; in_y <= y[COORD_W-1:0]; in_valid <= 1'b1;
+      in_x <= x[COORD_W-1:0];
+      in_y <= y[COORD_W-1:0];
+      in_valid <= 1'b1;
       @(posedge clk);
       in_valid <= 1'b0;
       // Poll for out_valid rather than a fixed cycle count -- the fast
@@ -49,8 +51,10 @@
         $display("[%s] (%0d,%0d) FAIL: out_valid not asserted within timeout", label, x, y);
         total_fail = total_fail + 1;
       end else begin
-        diff_x = longint'(out_sx_q16) - exp_sx; if (diff_x < 0) diff_x = -diff_x;
-        diff_y = longint'(out_sy_q16) - exp_sy; if (diff_y < 0) diff_y = -diff_y;
+        diff_x = longint'(out_sx_q16) - exp_sx;
+        if (diff_x < 0) diff_x = -diff_x;
+        diff_y = longint'(out_sy_q16) - exp_sy;
+        if (diff_y < 0) diff_y = -diff_y;
         if (diff_x <= 4 && diff_y <= 4) begin
           $display("[%s] (%0d,%0d) PASS  sx=%0d (exp %0d, d=%0d)  sy=%0d (exp %0d, d=%0d)",
                      label, x, y, out_sx_q16, exp_sx, diff_x, out_sy_q16, exp_sy, diff_y);

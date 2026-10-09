@@ -11,21 +11,53 @@
 // Date: 2026-10-01
 `timescale 1ns/1ps
 module isp_stats_tb;
-  logic clk = 0, rst_n = 0; always #5 clk = ~clk;
+  logic clk = 0, rst_n = 0;
+  always #5 clk = ~clk;
   int errors = 0;
 
-  logic [7:0] thr; logic flush; logic [23:0] d; logic u, v, r;
-  logic [39:0] sr_, sg, sb; logic [31:0] np, nc, nf; logic done;
-  isp_stats #(.CW(8)) dut (.clk, .rst_n, .sat_thr_i(thr), .flush_i(flush), .tdata(d), .tuser(u), .tvalid(v), .tready(r),
-    .sum_r_o(sr_), .sum_g_o(sg), .sum_b_o(sb), .pixels_o(np), .clipped_o(nc), .frames_o(nf), .frame_done_o(done));
+  logic [7:0] thr;
+  logic flush;
+  logic [23:0] d;
+  logic u, v, r;
+  logic [39:0] sr_, sg, sb;
+  logic [31:0] np, nc, nf;
+  logic done;
+  isp_stats #(.CW(8)) dut (
+    .clk,
+    .rst_n,
+    .sat_thr_i(thr),
+    .flush_i(flush),
+    .tdata(d),
+    .tuser(u),
+    .tvalid(v),
+    .tready(r),
+    .sum_r_o(sr_),
+    .sum_g_o(sg),
+    .sum_b_o(sb),
+    .pixels_o(np),
+    .clipped_o(nc),
+    .frames_o(nf),
+    .frame_done_o(done)
+  );
 
   // Expected totals per frame, filled by the monitor from accepted beats
   localparam int NF = 6;
-  longint er [NF], eg [NF], eb [NF]; int ep [NF], ec [NF];
+  longint er [NF], eg [NF], eb [NF];
+  int ep [NF], ec [NF];
   int cur = -1, ndone = 0;
   always @(posedge clk) if (rst_n && v && r) begin
-    if (u) begin cur++; er[cur] = 0; eg[cur] = 0; eb[cur] = 0; ep[cur] = 0; ec[cur] = 0; end
-    er[cur] += d[7:0]; eg[cur] += d[15:8]; eb[cur] += d[23:16]; ep[cur]++;
+    if (u) begin
+      cur++;
+      er[cur] = 0;
+      eg[cur] = 0;
+      eb[cur] = 0;
+      ep[cur] = 0;
+      ec[cur] = 0;
+    end
+    er[cur] += d[7:0];
+    eg[cur] += d[15:8];
+    eb[cur] += d[23:16];
+    ep[cur]++;
     if (d[7:0] >= thr || d[15:8] >= thr || d[23:16] >= thr) ec[cur]++;
   end
   always @(posedge clk) if (rst_n && done) begin
@@ -41,15 +73,32 @@ module isp_stats_tb;
   `include "isp_stats_tests.sv"
 
   initial begin
-    if ($test$plusargs("vcd")) begin $dumpfile("isp_stats_tb.vcd"); $dumpvars(0, isp_stats_tb); end
-    v = 0; r = 0; u = 0; d = 0; flush = 0; thr = 8'd240;
-    repeat (4) @(posedge clk); rst_n = 1; repeat (2) @(posedge clk);
-    for (int f = 0; f < NF; f++) begin frame(150 + 53 * f); repeat ($urandom_range(5)) @(posedge clk); end
-    @(posedge clk); flush <= 1; @(posedge clk); flush <= 0;
+    if ($test$plusargs("vcd")) begin
+      $dumpfile("isp_stats_tb.vcd");
+      $dumpvars(0, isp_stats_tb);
+    end
+    v = 0;
+    r = 0;
+    u = 0;
+    d = 0;
+    flush = 0;
+    thr = 8'd240;
+    repeat (4) @(posedge clk);
+    rst_n = 1;
+    repeat (2) @(posedge clk);
+    for (int f = 0; f < NF; f++) begin
+      frame(150 + 53 * f);
+      repeat ($urandom_range(5)) @(posedge clk);
+    end
+    @(posedge clk);
+    flush <= 1;
+    @(posedge clk);
+    flush <= 0;
     repeat (4) @(posedge clk);
     check(ndone == NF, $sformatf("%0d frame_done pulses, exp %0d", ndone, NF));
     $display("%0d frames checked (sums, pixel and clip counts, frame counter)", ndone);
-    if (errors == 0) $display("TEST PASSED"); else $display("TEST FAILED (%0d errors)", errors);
+    if (errors == 0) $display("TEST PASSED");
+    else $display("TEST FAILED (%0d errors)", errors);
     $finish;
   end
 endmodule

@@ -65,6 +65,8 @@ module i2c_top #(
   if (FIFO_DEPTH < 2 || (FIFO_DEPTH & (FIFO_DEPTH - 1)) != 0) begin : g_chk_fd $error("%m: FIFO_DEPTH must be a power of two >= 2"); end
 
 `ifndef SYNTHESIS
+  // verification-only checks: excluded from code coverage
+  // verilator coverage_off
   // ---- immediate assertions (simulation only; skipped by synthesis) ----
   logic ip_chk_b_q, ip_chk_r_q;
   always @(posedge aclk) begin
@@ -75,8 +77,12 @@ module i2c_top #(
       assert (s_axil_rresp == 2'b00 || s_axil_rresp == 2'b10) else $error("%m: reserved RRESP value");
       if (ip_chk_b_q) assert (s_axil_bvalid) else $error("%m: BVALID dropped before BREADY");
       if (ip_chk_r_q) assert (s_axil_rvalid) else $error("%m: RVALID dropped before RREADY");
-    end else begin ip_chk_b_q <= 1'b0; ip_chk_r_q <= 1'b0; end
+    end else begin
+      ip_chk_b_q <= 1'b0;
+      ip_chk_r_q <= 1'b0;
+    end
   end
+  // verilator coverage_on
 `endif
 
   localparam int DIV_DEF = (CLK_HZ / (4 * SCL_HZ)) - 1;
@@ -88,13 +94,30 @@ module i2c_top #(
   logic [4:0]      wr_pulse;
   logic [31:0]     wr_data;
   ip_axil_regs #(.ADDR_W(8), .NREG(5), .RESET_VALS(RSTV)) u_regs (
-    .aclk, .aresetn,
-    .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready,
-    .s_axil_wdata, .s_axil_wstrb, .s_axil_wvalid, .s_axil_wready,
-    .s_axil_bresp, .s_axil_bvalid, .s_axil_bready,
-    .s_axil_araddr, .s_axil_arvalid, .s_axil_arready,
-    .s_axil_rdata, .s_axil_rresp, .s_axil_rvalid, .s_axil_rready,
-    .reg_o(regs), .wr_pulse_o(wr_pulse), .wr_data_o(wr_data), .rd_i(rd));
+    .aclk,
+    .aresetn,
+    .s_axil_awaddr,
+    .s_axil_awvalid,
+    .s_axil_awready,
+    .s_axil_wdata,
+    .s_axil_wstrb,
+    .s_axil_wvalid,
+    .s_axil_wready,
+    .s_axil_bresp,
+    .s_axil_bvalid,
+    .s_axil_bready,
+    .s_axil_araddr,
+    .s_axil_arvalid,
+    .s_axil_arready,
+    .s_axil_rdata,
+    .s_axil_rresp,
+    .s_axil_rvalid,
+    .s_axil_rready,
+    .reg_o(regs),
+    .wr_pulse_o(wr_pulse),
+    .wr_data_o(wr_data),
+    .rd_i(rd)
+  );
 
   // Start pulse: a CTRL write with bit 1 set (uses the freshly written bits)
   logic start_p;
@@ -104,23 +127,43 @@ module i2c_top #(
   end
 
   // Write data FIFO
-  logic [7:0] txf_data; logic txf_valid, txf_ready, txf_last, txf_user;
+  logic [7:0] txf_data;
+  logic txf_valid, txf_ready, txf_last, txf_user;
   logic [LW-1:0] txf_lvl, rxf_lvl;
   ip_axis_fifo #(.DATA_W(8), .DEPTH(FIFO_DEPTH)) u_txf (
-    .clk(aclk), .rst_n(aresetn),
-    .s_tdata(s_axis_tdata), .s_tlast(s_axis_tlast), .s_tuser(1'b0),
-    .s_tvalid(s_axis_tvalid), .s_tready(s_axis_tready),
-    .m_tdata(txf_data), .m_tlast(txf_last), .m_tuser(txf_user),
-    .m_tvalid(txf_valid), .m_tready(txf_ready), .level_o(txf_lvl));
+    .clk(aclk),
+    .rst_n(aresetn),
+    .s_tdata(s_axis_tdata),
+    .s_tlast(s_axis_tlast),
+    .s_tuser(1'b0),
+    .s_tvalid(s_axis_tvalid),
+    .s_tready(s_axis_tready),
+    .m_tdata(txf_data),
+    .m_tlast(txf_last),
+    .m_tuser(txf_user),
+    .m_tvalid(txf_valid),
+    .m_tready(txf_ready),
+    .level_o(txf_lvl)
+  );
 
   // Read data FIFO
-  logic [7:0] rx_data; logic rx_valid, rx_ready, rx_last, rxf_user;
+  logic [7:0] rx_data;
+  logic rx_valid, rx_ready, rx_last, rxf_user;
   ip_axis_fifo #(.DATA_W(8), .DEPTH(FIFO_DEPTH)) u_rxf (
-    .clk(aclk), .rst_n(aresetn),
-    .s_tdata(rx_data), .s_tlast(rx_last), .s_tuser(1'b0),
-    .s_tvalid(rx_valid), .s_tready(rx_ready),
-    .m_tdata(m_axis_tdata), .m_tlast(m_axis_tlast), .m_tuser(rxf_user),
-    .m_tvalid(m_axis_tvalid), .m_tready(m_axis_tready), .level_o(rxf_lvl));
+    .clk(aclk),
+    .rst_n(aresetn),
+    .s_tdata(rx_data),
+    .s_tlast(rx_last),
+    .s_tuser(1'b0),
+    .s_tvalid(rx_valid),
+    .s_tready(rx_ready),
+    .m_tdata(m_axis_tdata),
+    .m_tlast(m_axis_tlast),
+    .m_tuser(rxf_user),
+    .m_tvalid(m_axis_tvalid),
+    .m_tready(m_axis_tready),
+    .level_o(rxf_lvl)
+  );
 
   // Sequencer and bit engine
   logic        bc_valid, bc_din, bc_abort, bc_done, bc_dout, bc_arb, bc_busy;
@@ -128,19 +171,51 @@ module i2c_top #(
   logic        busy, done_p, nack_p, arb_p, scl_low, sda_low;
 
   i2c_master_fsm u_fsm (
-    .clk(aclk), .rst_n(aresetn), .enable_i(regs[0]), .start_i(start_p),
-    .rw_i(regs[2]), .nostop_i(regs[3]), .addr_i(regs[32 +: 7]),
+    .clk(aclk),
+    .rst_n(aresetn),
+    .enable_i(regs[0]),
+    .start_i(start_p),
+    .rw_i(regs[2]),
+    .nostop_i(regs[3]),
+    .addr_i(regs[32 +: 7]),
     .len_i(regs[64 +: 16]),
-    .s_tdata(txf_data), .s_tvalid(txf_valid), .s_tready(txf_ready),
-    .m_tdata(rx_data), .m_tvalid(rx_valid), .m_tlast(rx_last), .m_tready(rx_ready),
-    .bc_valid, .bc_cmd, .bc_din, .bc_abort, .bc_done, .bc_dout, .bc_arb,
-    .busy_o(busy), .done_o(done_p), .nack_o(nack_p), .arb_o(arb_p));
+    .s_tdata(txf_data),
+    .s_tvalid(txf_valid),
+    .s_tready(txf_ready),
+    .m_tdata(rx_data),
+    .m_tvalid(rx_valid),
+    .m_tlast(rx_last),
+    .m_tready(rx_ready),
+    .bc_valid,
+    .bc_cmd,
+    .bc_din,
+    .bc_abort,
+    .bc_done,
+    .bc_dout,
+    .bc_arb,
+    .busy_o(busy),
+    .done_o(done_p),
+    .nack_o(nack_p),
+    .arb_o(arb_p)
+  );
 
   i2c_bit_ctrl u_bit (
-    .clk(aclk), .rst_n(aresetn), .div_i(regs[96 +: 16]),
-    .cmd_valid(bc_valid), .cmd(bc_cmd), .din(bc_din), .abort_i(bc_abort),
-    .done_o(bc_done), .dout_o(bc_dout), .arb_lost_o(bc_arb), .busy_o(bc_busy),
-    .scl_i, .sda_i, .scl_low_o(scl_low), .sda_low_o(sda_low));
+    .clk(aclk),
+    .rst_n(aresetn),
+    .div_i(regs[96 +: 16]),
+    .cmd_valid(bc_valid),
+    .cmd(bc_cmd),
+    .din(bc_din),
+    .abort_i(bc_abort),
+    .done_o(bc_done),
+    .dout_o(bc_dout),
+    .arb_lost_o(bc_arb),
+    .busy_o(bc_busy),
+    .scl_i,
+    .sda_i,
+    .scl_low_o(scl_low),
+    .sda_low_o(sda_low)
+  );
 
   assign scl_o = 1'b0;
   assign sda_o = 1'b0;
@@ -151,7 +226,9 @@ module i2c_top #(
   logic f_done, f_nack, f_arb;
   always_ff @(posedge aclk) begin
     if (!aresetn) begin
-      f_done <= 1'b0; f_nack <= 1'b0; f_arb <= 1'b0;
+      f_done <= 1'b0;
+      f_nack <= 1'b0;
+      f_arb <= 1'b0;
     end else begin
       if (done_p) f_done <= 1'b1;
       if (nack_p) f_nack <= 1'b1;

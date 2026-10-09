@@ -47,7 +47,10 @@ module i2s #(
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
   if (WORD_W < 2 || WORD_W > 32) begin : g_bad $error("i2s: WORD_W must be 2..32"); end
   localparam int PW = $clog2(2 * WORD_W);
-  logic [7:0] hc; logic [PW-1:0] pos, nq; logic [WORD_W-1:0] txl, txr, rxl, rxr; logic synced;
+  logic [7:0] hc;
+  logic [PW-1:0] pos, nq;
+  logic [WORD_W-1:0] txl, txr, rxl, rxr;
+  logic synced;
   wire [7:0] half = (bclk_half_i == 0) ? 8'd1 : bclk_half_i;
   wire toggle = (hc >= half - 1'b1);
   wire fall = toggle & bclk_o;                // BCLK 1 -> 0 at this clock edge
@@ -64,19 +67,40 @@ module i2s #(
   end
   always_ff @(posedge clk) begin
     if (!rst_n || !en_i) begin
-      hc <= '0; bclk_o <= 1'b0; lrck_o <= 1'b0; sd_o <= 1'b0; pos <= PW'(2 * WORD_W - 1); nq <= '0;
-      txl <= '0; txr <= '0; rxl <= '0; rxr <= '0; rx_left_o <= '0; rx_right_o <= '0; rx_valid_o <= 1'b0; synced <= 1'b0;
-      tx_ready_o <= 1'b0; underrun_o <= 1'b0;
+      hc <= '0;
+      bclk_o <= 1'b0;
+      lrck_o <= 1'b0;
+      sd_o <= 1'b0;
+      pos <= PW'(2 * WORD_W - 1);
+      nq <= '0;
+      txl <= '0;
+      txr <= '0;
+      rxl <= '0;
+      rxr <= '0;
+      rx_left_o <= '0;
+      rx_right_o <= '0;
+      rx_valid_o <= 1'b0;
+      synced <= 1'b0;
+      tx_ready_o <= 1'b0;
+      underrun_o <= 1'b0;
     end else begin
-      rx_valid_o <= 1'b0; tx_ready_o <= 1'b0; underrun_o <= 1'b0;
-      if (toggle) begin hc <= '0; bclk_o <= ~bclk_o; end else hc <= hc + 1'b1;
+      rx_valid_o <= 1'b0;
+      tx_ready_o <= 1'b0;
+      underrun_o <= 1'b0;
+      if (toggle) begin
+        hc <= '0;
+        bclk_o <= ~bclk_o;
+      end else hc <= hc + 1'b1;
       if (fall) begin
         sd_o   <= bit_now;
         lrck_o <= (pos >= wm1) && !last_pos;                 // right slot starts after bit WORD_W-1
         nq     <= pos;
         if (last_pos) begin
-          pos <= '0; txl <= tx_valid_i ? tx_left_i : '0; txr <= tx_valid_i ? tx_right_i : '0;
-          tx_ready_o <= tx_valid_i; underrun_o <= ~tx_valid_i;
+          pos <= '0;
+          txl <= tx_valid_i ? tx_left_i : '0;
+          txr <= tx_valid_i ? tx_right_i : '0;
+          tx_ready_o <= tx_valid_i;
+          underrun_o <= ~tx_valid_i;
         end else pos <= pos + 1'b1;
       end
       if (rise) begin                                         // sample the bit put on the line at the previous falling edge
@@ -84,7 +108,11 @@ module i2s #(
         else                  rxr <= {rxr[WORD_W-2:0], sd_i};
         if (nq == PW'(2 * WORD_W - 1)) begin
           synced <= 1'b1;
-          if (synced) begin rx_left_o <= rxl; rx_right_o <= {rxr[WORD_W-2:0], sd_i}; rx_valid_o <= 1'b1; end
+          if (synced) begin
+            rx_left_o <= rxl;
+            rx_right_o <= {rxr[WORD_W-2:0], sd_i};
+            rx_valid_o <= 1'b1;
+          end
         end
       end
     end

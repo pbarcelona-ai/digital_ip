@@ -80,7 +80,8 @@ module blur_sharpen #(
   localparam logic [conv2d_pkg::KMAX*32-1:0] K_SHARP = conv2d_pkg::sharpen_kernel(N, AMOUNT);
 
   function automatic logic [NREG*32-1:0] reset_vals();
-    logic [NREG*32-1:0] v; v = '0;
+    logic [NREG*32-1:0] v;
+    v = '0;
     v[2*32 +: 32] = {RESET_H, RESET_W};
     v[3*32 +: 32] = 32'(conv2d_pkg::blur_shift(N));
     v[4*32 +: 32] = 32'(conv2d_pkg::blur_shift(N));
@@ -92,16 +93,37 @@ module blur_sharpen #(
   endfunction
 
   logic [NREG*32-1:0] regs, rd;
-  ip_axil_regs #(.ADDR_W(9), .NREG(NREG), .RESET_VALS(reset_vals())) u_regs (.aclk(clk), .aresetn(rst_n),
-    .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready, .s_axil_wdata, .s_axil_wstrb, .s_axil_wvalid, .s_axil_wready,
-    .s_axil_bresp, .s_axil_bvalid, .s_axil_bready, .s_axil_araddr, .s_axil_arvalid, .s_axil_arready,
-    .s_axil_rdata, .s_axil_rresp, .s_axil_rvalid, .s_axil_rready,
-    .reg_o(regs), .wr_pulse_o(), .wr_data_o(), .rd_i(rd));
+  ip_axil_regs #(.ADDR_W(9), .NREG(NREG), .RESET_VALS(reset_vals())) u_regs (
+    .aclk(clk),
+    .aresetn(rst_n),
+    .s_axil_awaddr,
+    .s_axil_awvalid,
+    .s_axil_awready,
+    .s_axil_wdata,
+    .s_axil_wstrb,
+    .s_axil_wvalid,
+    .s_axil_wready,
+    .s_axil_bresp,
+    .s_axil_bvalid,
+    .s_axil_bready,
+    .s_axil_araddr,
+    .s_axil_arvalid,
+    .s_axil_arready,
+    .s_axil_rdata,
+    .s_axil_rresp,
+    .s_axil_rvalid,
+    .s_axil_rready,
+    .reg_o(regs),
+    .wr_pulse_o(),
+    .wr_data_o(),
+    .rd_i(rd)
+  );
 
   // ---------------- kernels selected by MODE ----------------
   logic [KW-1:0] k_blur, k_sharp, k_id;
   always_comb begin
-    k_id = '0; k_id[((N / 2) * N + N / 2) * COEF_W +: COEF_W] = COEF_W'(1);
+    k_id = '0;
+    k_id[((N / 2) * N + N / 2) * COEF_W +: COEF_W] = COEF_W'(1);
     for (int i = 0; i < NN; i++) begin
       k_blur[i*COEF_W +: COEF_W]  = regs[(R_BLUR + i)*32 +: COEF_W];
       k_sharp[i*COEF_W +: COEF_W] = regs[(R_SHARP + i)*32 +: COEF_W];
@@ -119,8 +141,12 @@ module blur_sharpen #(
   // ---------------- per-frame copies ----------------
   // A: taken when a frame enters stage 1; B: stage 2's part of A, taken
   // when the same frame enters stage 2 (stage 1 is still on that frame).
-  logic [KW-1:0] a_k1, a_k2, b_k2; logic [4:0] a_sh1, a_sh2, b_sh2; logic [31:0] a_size, b_size; logic [2:0] a_mode;
-  logic [C*CW-1:0] x_d; logic x_l, x_u, x_v, x_r;
+  logic [KW-1:0] a_k1, a_k2, b_k2;
+  logic [4:0] a_sh1, a_sh2, b_sh2;
+  logic [31:0] a_size, b_size;
+  logic [2:0] a_mode;
+  logic [C*CW-1:0] x_d;
+  logic x_l, x_u, x_v, x_r;
   wire sof1 = s_axis_tvalid && s_axis_tready && s_axis_tuser;
   wire sof2 = x_v && x_r && x_u;
   logic w1, w2;                                   // stage waits between frames (isp_window)
@@ -128,26 +154,66 @@ module blur_sharpen #(
   wire [31:0] size2 = (w2 && x_v && x_u) ? a_size : b_size;
   always_ff @(posedge clk) begin
     if (!rst_n || sof1) begin
-      a_k1 <= k1; a_sh1 <= sh1; a_k2 <= k2; a_sh2 <= sh2; a_size <= regs[2*32 +: 32]; a_mode <= mode;
+      a_k1 <= k1;
+      a_sh1 <= sh1;
+      a_k2 <= k2;
+      a_sh2 <= sh2;
+      a_size <= regs[2*32 +: 32];
+      a_mode <= mode;
     end
     if (!rst_n || sof2) begin
-      b_k2 <= rst_n ? a_k2 : k2; b_sh2 <= rst_n ? a_sh2 : sh2; b_size <= rst_n ? a_size : regs[2*32 +: 32];
+      b_k2 <= rst_n ? a_k2 : k2;
+      b_sh2 <= rst_n ? a_sh2 : sh2;
+      b_size <= rst_n ? a_size : regs[2*32 +: 32];
     end
   end
 
   // ---------------- the two stages ----------------
   logic [15:0] frames;
   conv2d_core #(.N(N), .C(C), .CW(CW), .COEF_W(COEF_W), .MAX_W(MAX_W), .BORDER(BORDER)) u_stage1 (
-    .clk, .rst_n, .width_i(size1[15:0]), .height_i(size1[31:16]), .coef_i(a_k1), .shift_i(a_sh1),
-    .s_axis_tdata, .s_axis_tlast, .s_axis_tuser, .s_axis_tvalid, .s_axis_tready,
-    .m_axis_tdata(x_d), .m_axis_tlast(x_l), .m_axis_tuser(x_u), .m_axis_tvalid(x_v), .m_axis_tready(x_r), .frame_o(),
-    .sof_wait_o(w1));
+    .clk,
+    .rst_n,
+    .width_i(size1[15:0]),
+    .height_i(size1[31:16]),
+    .coef_i(a_k1),
+    .shift_i(a_sh1),
+    .s_axis_tdata,
+    .s_axis_tlast,
+    .s_axis_tuser,
+    .s_axis_tvalid,
+    .s_axis_tready,
+    .m_axis_tdata(x_d),
+    .m_axis_tlast(x_l),
+    .m_axis_tuser(x_u),
+    .m_axis_tvalid(x_v),
+    .m_axis_tready(x_r),
+    .frame_o(),
+    .sof_wait_o(w1)
+  );
   conv2d_core #(.N(N), .C(C), .CW(CW), .COEF_W(COEF_W), .MAX_W(MAX_W), .BORDER(BORDER)) u_stage2 (
-    .clk, .rst_n, .width_i(size2[15:0]), .height_i(size2[31:16]), .coef_i(b_k2), .shift_i(b_sh2),
-    .s_axis_tdata(x_d), .s_axis_tlast(x_l), .s_axis_tuser(x_u), .s_axis_tvalid(x_v), .s_axis_tready(x_r),
-    .m_axis_tdata, .m_axis_tlast, .m_axis_tuser, .m_axis_tvalid, .m_axis_tready, .frame_o(), .sof_wait_o(w2));
+    .clk,
+    .rst_n,
+    .width_i(size2[15:0]),
+    .height_i(size2[31:16]),
+    .coef_i(b_k2),
+    .shift_i(b_sh2),
+    .s_axis_tdata(x_d),
+    .s_axis_tlast(x_l),
+    .s_axis_tuser(x_u),
+    .s_axis_tvalid(x_v),
+    .s_axis_tready(x_r),
+    .m_axis_tdata,
+    .m_axis_tlast,
+    .m_axis_tuser,
+    .m_axis_tvalid,
+    .m_axis_tready,
+    .frame_o(),
+    .sof_wait_o(w2)
+  );
   wire out_sof = m_axis_tvalid && m_axis_tready && m_axis_tuser;
-  always_ff @(posedge clk) if (!rst_n) frames <= '0; else if (out_sof) frames <= frames + 1'b1;
+  always_ff @(posedge clk)
+    if (!rst_n) frames <= '0;
+    else if (out_sof) frames <= frames + 1'b1;
 
   always_comb begin
     rd = regs;

@@ -31,37 +31,86 @@ module tb_scaler_ctrl;
   logic [PIX_W-1:0] s_tdata = '0;
   logic s_tvalid = 0, s_tuser = 0, s_tlast = 0;
   wire  s_tready;
-  logic fb_we, gen_start; logic [15:0] fb_wx, fb_wy; logic [PIX_W-1:0] fb_wdata;
+  logic fb_we, gen_start;
+  logic [15:0] fb_wx, fb_wy;
+  logic [PIX_W-1:0] fb_wdata;
   logic gen_done = 0;
   logic [15:0] in_w, in_h, out_w, out_h;
-  logic [31:0] step_x, step_y; logic signed [31:0] offs_x, offs_y;
+  logic [31:0] step_x, step_y;
+  logic signed [31:0] offs_x, offs_y;
   logic fb_wbuf, gen_buf;
-  logic ext_wr, ext_rd; logic [ADDR_W-1:0] ext_waddr, ext_raddr;
+  logic ext_wr, ext_rd;
+  logic [ADDR_W-1:0] ext_waddr, ext_raddr;
   logic [31:0] ext_wdata, ext_rdata;
 
   // Device under test (distinct IP_ID/CAPS values to check the RO regs)
   scaler_ctrl #(.PIX_W(PIX_W), .ADDR_W(ADDR_W), .MAX_W(MAX_W), .MAX_H(MAX_H),
                 .IP_ID(32'hCAFE_0001), .CAPS(32'h1234_5678), .NBUF(`TB_NBUF)) dut (
-    .clk, .rst_n,
-    .s_axil_awaddr(awaddr), .s_axil_awvalid(awvalid), .s_axil_awready(awready),
-    .s_axil_wdata(wdata), .s_axil_wstrb(wstrb), .s_axil_wvalid(wvalid), .s_axil_wready(wready),
-    .s_axil_bresp(bresp), .s_axil_bvalid(bvalid), .s_axil_bready(bready),
-    .s_axil_araddr(araddr), .s_axil_arvalid(arvalid), .s_axil_arready(arready),
-    .s_axil_rdata(rdata), .s_axil_rresp(rresp), .s_axil_rvalid(rvalid), .s_axil_rready(rready),
-    .s_axis_tdata(s_tdata), .s_axis_tvalid(s_tvalid), .s_axis_tready(s_tready),
-    .s_axis_tuser(s_tuser), .s_axis_tlast(s_tlast),
-    .fb_we, .fb_wx, .fb_wy, .fb_wdata, .fb_wbuf, .gen_buf, .gen_start, .gen_done,
-    .lb_nxt_y(32'sd0), .lb_nxt_v(1'b0), .lb_o_y(32'sd0), .lb_o_v(1'b0),
-    .lb_a_y(32'sd0), .lb_a_v(1'b0), .lb_hold(),
-    .cfg_in_w(in_w), .cfg_in_h(in_h), .cfg_out_w(out_w), .cfg_out_h(out_h),
-    .cfg_step_x(step_x), .cfg_step_y(step_y), .cfg_offs_x(offs_x), .cfg_offs_y(offs_y),
-    .ext_wr, .ext_waddr, .ext_wdata, .ext_rd, .ext_raddr, .ext_rdata);
+    .clk,
+    .rst_n,
+    .s_axil_awaddr(awaddr),
+    .s_axil_awvalid(awvalid),
+    .s_axil_awready(awready),
+    .s_axil_wdata(wdata),
+    .s_axil_wstrb(wstrb),
+    .s_axil_wvalid(wvalid),
+    .s_axil_wready(wready),
+    .s_axil_bresp(bresp),
+    .s_axil_bvalid(bvalid),
+    .s_axil_bready(bready),
+    .s_axil_araddr(araddr),
+    .s_axil_arvalid(arvalid),
+    .s_axil_arready(arready),
+    .s_axil_rdata(rdata),
+    .s_axil_rresp(rresp),
+    .s_axil_rvalid(rvalid),
+    .s_axil_rready(rready),
+    .s_axis_tdata(s_tdata),
+    .s_axis_tvalid(s_tvalid),
+    .s_axis_tready(s_tready),
+    .s_axis_tuser(s_tuser),
+    .s_axis_tlast(s_tlast),
+    .fb_we,
+    .fb_wx,
+    .fb_wy,
+    .fb_wdata,
+    .fb_wbuf,
+    .gen_buf,
+    .gen_start,
+    .gen_done,
+    .lb_nxt_y(32'sd0),
+    .lb_nxt_v(1'b0),
+    .lb_o_y(32'sd0),
+    .lb_o_v(1'b0),
+    .lb_a_y(32'sd0),
+    .lb_a_v(1'b0),
+    .lb_hold(),
+    .cfg_in_w(in_w),
+    .cfg_in_h(in_h),
+    .cfg_out_w(out_w),
+    .cfg_out_h(out_h),
+    .cfg_step_x(step_x),
+    .cfg_step_y(step_y),
+    .cfg_offs_x(offs_x),
+    .cfg_offs_y(offs_y),
+    .ext_wr,
+    .ext_waddr,
+    .ext_wdata,
+    .ext_rd,
+    .ext_raddr,
+    .ext_rdata
+  );
 
   // ---------------- IP-side models
   // IP register bus model: records writes, returns 0xA500_0000 | addr
-  logic [31:0] ext_last_waddr, ext_last_wdata; int ext_wr_cnt = 0;
+  logic [31:0] ext_last_waddr, ext_last_wdata;
+  int ext_wr_cnt = 0;
   always_ff @(posedge clk) begin
-    if (ext_wr) begin ext_last_waddr <= 32'(ext_waddr); ext_last_wdata <= ext_wdata; ext_wr_cnt++; end
+    if (ext_wr) begin
+      ext_last_waddr <= 32'(ext_waddr);
+      ext_last_wdata <= ext_wdata;
+      ext_wr_cnt++;
+    end
     if (ext_rd) ext_rdata <= 32'hA500_0000 | 32'(ext_raddr);
   end
 
@@ -74,12 +123,17 @@ module tb_scaler_ctrl;
   bit               write_after_start = 0;
   always @(posedge clk) begin
     if (fb_we) begin
-      fb[fb_wy][fb_wx] <= fb_wdata; fb_cnt[fb_wy][fb_wx]++; n_writes++;
+      fb[fb_wy][fb_wx] <= fb_wdata;
+      fb_cnt[fb_wy][fb_wx]++;
+      n_writes++;
       fbp[fb_wbuf][fb_wy][fb_wx] <= fb_wdata;
       if (n_starts > 0) write_after_start = 1;
     end
     if (gen_start) n_starts++;
-    if (`TB_NBUF == 1 && dut.state == 2 && s_tready) begin errors++; $display("ERROR: tready during GENERATE"); end
+    if (`TB_NBUF == 1 && dut.state == 2 && s_tready) begin
+      errors++;
+      $display("ERROR: tready during GENERATE");
+    end
   end
 
   // send a frame; returns expected pixel values in exp
@@ -115,21 +169,28 @@ module tb_scaler_ctrl;
     axil_check(12'h028, 32'h1234_5678);
     axil_check(12'h02C, {16'(MAX_H), 16'(MAX_W)});
     // read/write
-    axil_write(12'h00C, 32'h0123_0456); axil_check(12'h00C, 32'h0123_0456);
-    axil_write(12'h010, 32'h0002_8000); axil_check(12'h010, 32'h0002_8000);
-    axil_write(12'h014, 32'h0000_C000); axil_check(12'h014, 32'h0000_C000);
-    axil_write(12'h018, 32'hFFFF_C000); axil_check(12'h018, 32'hFFFF_C000);
-    axil_write(12'h01C, 32'h0000_2000); axil_check(12'h01C, 32'h0000_2000);
+    axil_write(12'h00C, 32'h0123_0456);
+    axil_check(12'h00C, 32'h0123_0456);
+    axil_write(12'h010, 32'h0002_8000);
+    axil_check(12'h010, 32'h0002_8000);
+    axil_write(12'h014, 32'h0000_C000);
+    axil_check(12'h014, 32'h0000_C000);
+    axil_write(12'h018, 32'hFFFF_C000);
+    axil_check(12'h018, 32'hFFFF_C000);
+    axil_write(12'h01C, 32'h0000_2000);
+    axil_check(12'h01C, 32'h0000_2000);
     checks++;
     if (out_w != 16'h0456 || out_h != 16'h0123 || offs_x != -32'sh4000) begin
-      errors++; $display("ERROR: cfg outputs");
+      errors++;
+      $display("ERROR: cfg outputs");
     end
     // extension bus
     axil_write(12'h044, 32'hDEAD_BEEF);
     axil_write(16'h2abc, 32'h0000_1234);
     checks++;
     if (ext_wr_cnt != 2 || ext_last_waddr != 32'h2abc || ext_last_wdata != 32'h1234) begin
-      errors++; $display("ERROR: ext write forwarding");
+      errors++;
+      $display("ERROR: ext write forwarding");
     end
     axil_check(12'h040, 32'hA500_0040);
     axil_check(16'h1ffc, 32'hA500_1ffc);

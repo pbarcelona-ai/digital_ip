@@ -48,11 +48,27 @@ logic [31:0]        ctrl_bits  = '0;
 // the programmed output size.
 int chk_in_w = 0, chk_in_h = 0;
 axis_checker #(.DATA_W(PIX_W), .NAME("s_axis"), .CHECK_FRAMING(1'b0)) u_axis_in_chk (
-  .clk, .rst_n, .tvalid(s_tvalid), .tready(s_tready), .tdata(s_tdata), .tuser(s_tuser),
-  .tlast(s_tlast), .frame_w(chk_in_w), .frame_h(chk_in_h));
+  .clk,
+  .rst_n,
+  .tvalid(s_tvalid),
+  .tready(s_tready),
+  .tdata(s_tdata),
+  .tuser(s_tuser),
+  .tlast(s_tlast),
+  .frame_w(chk_in_w),
+  .frame_h(chk_in_h)
+);
 axis_checker #(.DATA_W(PIX_W), .NAME("m_axis"), .CHECK_FRAMING(1'b1)) u_axis_out_chk (
-  .clk, .rst_n, .tvalid(m_tvalid), .tready(m_tready), .tdata(m_tdata), .tuser(m_tuser),
-  .tlast(m_tlast), .frame_w(out_w), .frame_h(out_h));
+  .clk,
+  .rst_n,
+  .tvalid(m_tvalid),
+  .tready(m_tready),
+  .tdata(m_tdata),
+  .tuser(m_tuser),
+  .tlast(m_tlast),
+  .frame_w(out_w),
+  .frame_h(out_h)
+);
 
 // ------------------------------------------------------------------ buffering monitor
 // Measures what the frame-store mode promises:
@@ -116,10 +132,12 @@ task automatic buffering_report();
            mode, mon_overlap, (mon_lat_max < 0) ? 0 : mon_lat_min, mon_lat_max);
 `ifdef TB_LINE_BUF
   if (!`TB_LINE_BUF && !`TB_PINGPONG && mon_strict_overlap && mon_overlap != 0) begin
-    errors++; $display("ERROR: single frame buffer accepted input while generating");
+    errors++;
+    $display("ERROR: single frame buffer accepted input while generating");
   end
   if ((`TB_LINE_BUF || `TB_PINGPONG) && fcov_multi > 0 && mon_overlap == 0) begin
-    errors++; $display("ERROR: no capture/generation overlap in %s mode", mode);
+    errors++;
+    $display("ERROR: no capture/generation overlap in %s mode", mode);
   end
 `endif
 endtask
@@ -136,8 +154,12 @@ initial for (int i = 0; i < 4; i++) fcov_pattern[i] = 0;
 
 task automatic sample_feature_cov(input int iw, input int ih, input int ow, input int oh,
                                   input int pattern, input int junk, input int nframes);
-  if (ow > iw) fcov_x_up++; else if (ow < iw) fcov_x_down++; else fcov_x_same++;
-  if (oh > ih) fcov_y_up++; else if (oh < ih) fcov_y_down++; else fcov_y_same++;
+  if (ow > iw) fcov_x_up++;
+  else if (ow < iw) fcov_x_down++;
+  else fcov_x_same++;
+  if (oh > ih) fcov_y_up++;
+  else if (oh < ih) fcov_y_down++;
+  else fcov_y_same++;
   if ((ow > iw && oh < ih) || (ow < iw && oh > ih)) fcov_mixed++;
   if (ow == 2 * iw && oh == 2 * ih) fcov_int2x++;
   if ((ow % iw) != 0 && (iw % ow) != 0) fcov_nonint++;
@@ -147,8 +169,10 @@ task automatic sample_feature_cov(input int iw, input int ih, input int ow, inpu
   if (iw == MAX_W && ih == MAX_H) fcov_in_max++;
   if (junk > 0) fcov_junk++;
   if (nframes > 1) fcov_multi++;
-  if (valid_pct == 100 && ready_pct == 100) fcov_fullrate++; else fcov_backpressure++;
-  if (pattern < 0) fcov_file++; else if (pattern < 4) fcov_pattern[pattern]++;
+  if (valid_pct == 100 && ready_pct == 100) fcov_fullrate++;
+  else fcov_backpressure++;
+  if (pattern < 0) fcov_file++;
+  else if (pattern < 4) fcov_pattern[pattern]++;
 endtask
 
 function automatic int feature_bins_hit();
@@ -273,17 +297,21 @@ task automatic read_ppm(input string fname);
   int fd, c0, c1, mv, v, hi, lo;
   fd = $fopen(fname, "rb");
   if (fd == 0) begin
-    $display("TB_RESULT: FAIL (cannot open +IMG=%s)", fname); $finish;
+    $display("TB_RESULT: FAIL (cannot open +IMG=%s)", fname);
+    $finish;
   end
-  c0 = $fgetc(fd); c1 = $fgetc(fd);
+  c0 = $fgetc(fd);
+  c1 = $fgetc(fd);
   if (c0 != 8'h50 || c1 != 8'h36) begin
-    $display("TB_RESULT: FAIL (%s is not a binary PPM / P6 file)", fname); $finish;
+    $display("TB_RESULT: FAIL (%s is not a binary PPM / P6 file)", fname);
+    $finish;
   end
   file_w = ppm_read_int(fd);
   file_h = ppm_read_int(fd);
   mv     = ppm_read_int(fd);
   if (file_w < 1 || file_h < 1 || mv < 1 || mv > 65535) begin
-    $display("TB_RESULT: FAIL (bad PPM header in %s)", fname); $finish;
+    $display("TB_RESULT: FAIL (bad PPM header in %s)", fname);
+    $finish;
   end
   if (file_w > MAX_W || file_h > MAX_H) begin
     $display("TB_RESULT: FAIL (%s is %0dx%0d but the testbench MAX is %0dx%0d; recompile with TB_MAX_W / TB_MAX_H defines, e.g. iverilog -DTB_MAX_W=%0d -DTB_MAX_H=%0d)",
@@ -294,9 +322,14 @@ task automatic read_ppm(input string fname);
     for (int x = 0; x < file_w; x++)
       for (int c = 0; c < 3; c++) begin
         if (mv < 256) v = $fgetc(fd);
-        else begin hi = $fgetc(fd); lo = $fgetc(fd); v = (hi << 8) | lo; end
+        else begin
+          hi = $fgetc(fd);
+          lo = $fgetc(fd);
+          v = (hi << 8) | lo;
+        end
         if (v < 0) begin
-          $display("TB_RESULT: FAIL (unexpected end of file in %s)", fname); $finish;
+          $display("TB_RESULT: FAIL (unexpected end of file in %s)", fname);
+          $finish;
         end
         if (mv != ppm_maxval())
           v = int'((longint'(v) * ppm_maxval() + mv / 2) / mv);
@@ -353,7 +386,8 @@ task automatic tb_init(input string name);
   if ($value$plusargs("OUT_H=%d", file_out_h)) ;
   if ($value$plusargs("IMG=%s", img_file)) begin
     if (CHANNELS != 3) begin
-      $display("TB_RESULT: FAIL (+IMG requires CHANNELS == 3)"); $finish;
+      $display("TB_RESULT: FAIL (+IMG requires CHANNELS == 3)");
+      $finish;
     end
     use_file = 1'b1;
     read_ppm(img_file);
@@ -386,8 +420,12 @@ task automatic send_beat(input logic [PIX_W-1:0] d, input bit user, input bit la
     s_tvalid = 1'b0;
     @(negedge clk);
   end
-  s_tvalid = 1'b1; s_tdata = d; s_tuser = user; s_tlast = last;
-  do @(posedge clk); while (!s_tready);
+  s_tvalid = 1'b1;
+  s_tdata = d;
+  s_tuser = user;
+  s_tlast = last;
+  do @(posedge clk);
+  while (!s_tready);
 endtask
 
 // junk > 0 sends that many beats without SOF first (must be dropped)
@@ -398,7 +436,9 @@ task automatic send_frame(input int junk = 0);
     for (int x = 0; x < in_w; x++)
       send_beat(img[y][x], (x == 0 && y == 0), (x == in_w - 1));
   @(negedge clk);
-  s_tvalid = 1'b0; s_tuser = 1'b0; s_tlast = 1'b0;
+  s_tvalid = 1'b0;
+  s_tuser = 1'b0;
+  s_tlast = 1'b0;
 endtask
 
 // Receive one output frame with random tready (ready_pct). Every beat
@@ -420,14 +460,18 @@ task automatic recv_frame();
       exp = golden_pixel(ox, oy);
       checks++;
       if (m_tdata !== exp || m_tuser !== (n == 0) || m_tlast !== (ox == out_w - 1)) begin
-        errors++; bad++;
+        errors++;
+        bad++;
         if (bad <= 8)
           $display("ERROR: out(%0d,%0d) got 0x%0h user=%0b last=%0b exp 0x%0h user=%0b last=%0b",
                    ox, oy, m_tdata, m_tuser, m_tlast, exp, (n == 0), (ox == out_w - 1));
       end
       if (fd != 0) ppm_put_pixel(fd, m_tdata);
       n++;
-      if (ox == out_w - 1) begin ox = 0; oy++; end else ox++;
+      if (ox == out_w - 1) begin
+        ox = 0;
+        oy++;
+      end else ox++;
     end
   end
   if (fd != 0) $fclose(fd);
@@ -471,7 +515,10 @@ task automatic run_test(input int iw, input int ih, input int ow, input int oh,
   int e0 = errors;
   tests++;
   sample_feature_cov(iw, ih, ow, oh, pattern, junk, nframes);
-  in_w = iw; in_h = ih; out_w = ow; out_h = oh;
+  in_w = iw;
+  in_h = ih;
+  out_w = ow;
+  out_h = oh;
   reg_step_x = calc_step(iw, ow);
   reg_step_y = calc_step(ih, oh);
   reg_offs_x = calc_offs(reg_step_x);
@@ -493,7 +540,8 @@ task automatic run_test(input int iw, input int ih, input int ow, input int oh,
     axil_write(12'h01C, reg_offs_y);
     axil_check(12'h018, reg_offs_x);
   end else if (ow != iw || oh != ih) begin
-    errors++; $display("ERROR: filter testbench asked for %0dx%0d -> %0dx%0d", iw, ih, ow, oh);
+    errors++;
+    $display("ERROR: filter testbench asked for %0dx%0d -> %0dx%0d", iw, ih, ow, oh);
   end
   ip_configure();
   axil_write(12'h004, 32'hE);           // clear sticky status
@@ -520,14 +568,24 @@ task automatic run_test(input int iw, input int ih, input int ow, input int oh,
   // EOL_ERR; FRAME_CNT must have advanced by one
   axil_read(12'h004, st);
   checks++;
-  if (!st[1]) begin errors++; $display("ERROR: FRAME_DONE not set (status 0x%0h)", st); end
-  if (st[2] !== (junk > 0)) begin
-    errors++; $display("ERROR: SOF_ERR=%0b expected %0b", st[2], (junk > 0));
+  if (!st[1]) begin
+    errors++;
+    $display("ERROR: FRAME_DONE not set (status 0x%0h)", st);
   end
-  if (st[3]) begin errors++; $display("ERROR: EOL_ERR set"); end
+  if (st[2] !== (junk > 0)) begin
+    errors++;
+    $display("ERROR: SOF_ERR=%0b expected %0b", st[2], (junk > 0));
+  end
+  if (st[3]) begin
+    errors++;
+    $display("ERROR: EOL_ERR set");
+  end
   axil_read(12'h020, fc1);
   checks++;
-  if (fc1 != fc0 + nframes) begin errors++; $display("ERROR: FRAME_CNT %0d -> %0d", fc0, fc1); end
+  if (fc1 != fc0 + nframes) begin
+    errors++;
+    $display("ERROR: FRAME_CNT %0d -> %0d", fc0, fc1);
+  end
 
   axil_write(12'h000, 32'h0);           // disable -> back to idle
   axil_write(12'h004, 32'hE);
@@ -551,15 +609,20 @@ task automatic run_filter_suite();
   run_test(2, 2, 2, 2, 0);
   run_test(MAX_W, MAX_H, MAX_W, MAX_H, 1, 3);  // max size + junk before SOF
   run_test(20, 16, 20, 16, 3);                 // flat
-  valid_pct = 100; ready_pct = 100;            // full rate
+  valid_pct = 100; // full rate
+  ready_pct = 100;
   run_test(24, 18, 24, 18, 1);
-  valid_pct = 100; ready_pct = 40;             // heavy output back-pressure
+  valid_pct = 100; // heavy output back-pressure
+  ready_pct = 40;
   run_test(31, 23, 31, 23, 0);
-  valid_pct = 80;  ready_pct = 70;
+  valid_pct = 80;
+  ready_pct = 70;
   run_test(19, 7, 19, 7, 2, 0, 3);             // 3 back-to-back frames
-  valid_pct = 100; ready_pct = 100;
+  valid_pct = 100;
+  ready_pct = 100;
   run_test(9, 5, 9, 5, 0, 0, 4);               // back-to-back at full rate
-  valid_pct = 80;  ready_pct = 70;
+  valid_pct = 80;
+  ready_pct = 70;
 endtask
 
 // Standard sweep of size combinations used by every IP testbench
@@ -587,8 +650,10 @@ task automatic run_standard_suite();
   run_test(1, 1, 5, 3, 3);                // degenerate source
   run_test(7, 5, 1, 1, 0);                // single output pixel
   run_test(MAX_W, MAX_H, MAX_W, MAX_H, 1, 3);  // max size + junk before SOF
-  valid_pct = 100; ready_pct = 100;       // full-rate streaming
+  valid_pct = 100; // full-rate streaming
+  ready_pct = 100;
   run_test(24, 18, 41, 31, 1);
-  valid_pct = 80;  ready_pct = 70;
+  valid_pct = 80;
+  ready_pct = 70;
   run_test(20, 14, 9, 23, 0, 0, 3);       // 3 back-to-back frames: input
 endtask                                   // back-pressure while generating

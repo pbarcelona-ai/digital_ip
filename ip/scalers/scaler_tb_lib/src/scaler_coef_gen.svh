@@ -28,7 +28,8 @@ function automatic real kernel_eval(input int kind, input real pa, input real pb
   r  = 0.0;
   if (kind == KERNEL_CUBIC) begin
     // piecewise cubic, support |x| < 2
-    B = pa; C = pb;
+    B = pa;
+    C = pb;
     if (ax < 1.0)
       r = ((12.0 - 9.0*B - 6.0*C) * ax*ax*ax + (-18.0 + 12.0*B + 6.0*C) * ax*ax
            + (6.0 - 2.0*B)) / 6.0;

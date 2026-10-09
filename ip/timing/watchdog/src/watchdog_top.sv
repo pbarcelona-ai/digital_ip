@@ -47,6 +47,8 @@ module watchdog_top #(
   if (RESET_CYCLES < 1) begin : g_chk_rc $error("%m: RESET_CYCLES must be >= 1"); end
 
 `ifndef SYNTHESIS
+  // verification-only checks: excluded from code coverage
+  // verilator coverage_off
   // ---- immediate assertions (simulation only; skipped by synthesis) ----
   logic ip_chk_b_q, ip_chk_r_q;
   always @(posedge aclk) begin
@@ -57,16 +59,44 @@ module watchdog_top #(
       assert (s_axil_rresp == 2'b00 || s_axil_rresp == 2'b10) else $error("%m: reserved RRESP value");
       if (ip_chk_b_q) assert (s_axil_bvalid) else $error("%m: BVALID dropped before BREADY");
       if (ip_chk_r_q) assert (s_axil_rvalid) else $error("%m: RVALID dropped before RREADY");
-    end else begin ip_chk_b_q <= 1'b0; ip_chk_r_q <= 1'b0; end
+    end else begin
+      ip_chk_b_q <= 1'b0;
+      ip_chk_r_q <= 1'b0;
+    end
   end
+  // verilator coverage_on
 `endif
 
   localparam logic [32*8-1:0] RSTV = {32'd0, 32'd0, 32'd0, 32'd0, 32'd0, 32'd0, 32'd1000, 32'd0};
-  logic [8*32-1:0] regs, rd; logic [7:0] wr_pulse; logic [31:0] wr_data;
+  logic [8*32-1:0] regs, rd;
+  logic [7:0] wr_pulse;
+  logic [31:0] wr_data;
   // CTRL bits: lock is write-once, en cannot be cleared once locked
   ip_axil_regs #(.ADDR_W(8), .NREG(8), .RESET_VALS(RSTV)) u_regs (
-.aclk, .aresetn, .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready, .s_axil_wdata, .s_axil_wstrb, .s_axil_wvalid, .s_axil_wready, .s_axil_bresp, .s_axil_bvalid, .s_axil_bready, .s_axil_araddr, .s_axil_arvalid, .s_axil_arready, .s_axil_rdata, .s_axil_rresp, .s_axil_rvalid, .s_axil_rready,
-    .reg_o(regs), .wr_pulse_o(wr_pulse), .wr_data_o(wr_data), .rd_i(rd));
+    .aclk,
+    .aresetn,
+    .s_axil_awaddr,
+    .s_axil_awvalid,
+    .s_axil_awready,
+    .s_axil_wdata,
+    .s_axil_wstrb,
+    .s_axil_wvalid,
+    .s_axil_wready,
+    .s_axil_bresp,
+    .s_axil_bvalid,
+    .s_axil_bready,
+    .s_axil_araddr,
+    .s_axil_arvalid,
+    .s_axil_arready,
+    .s_axil_rdata,
+    .s_axil_rresp,
+    .s_axil_rvalid,
+    .s_axil_rready,
+    .reg_o(regs),
+    .wr_pulse_o(wr_pulse),
+    .wr_data_o(wr_data),
+    .rd_i(rd)
+  );
 
   logic [31:0] cnt;                 // watchdog counter (prescaled ticks)
   logic lock_q, en_q;
@@ -76,19 +106,35 @@ module watchdog_top #(
 
   // Enable/lock handling: once locked, en stays as it was
   always_ff @(posedge aclk) begin
-    if (!aresetn) begin lock_q <= 1'b0; en_q <= 1'b0; end
+    if (!aresetn) begin
+      lock_q <= 1'b0;
+      en_q <= 1'b0;
+    end
     else if (wr_pulse[0]) begin
-      if (!lock_q) begin en_q <= wr_data[0]; lock_q <= wr_data[2]; end
+      if (!lock_q) begin
+        en_q <= wr_data[0];
+        lock_q <= wr_data[2];
+      end
       else en_q <= en_q;                       // writes ignored after lock
     end
   end
 
   // Prescaler
-  logic [31:0] pcnt; logic tick;
+  logic [31:0] pcnt;
+  logic tick;
   always_ff @(posedge aclk) begin
-    if (!aresetn || !en_q) begin pcnt <= '0; tick <= 1'b0; end
-    else if (pcnt >= presc) begin pcnt <= '0; tick <= 1'b1; end
-    else begin pcnt <= pcnt + 32'd1; tick <= 1'b0; end
+    if (!aresetn || !en_q) begin
+      pcnt <= '0;
+      tick <= 1'b0;
+    end
+    else if (pcnt >= presc) begin
+      pcnt <= '0;
+      tick <= 1'b1;
+    end
+    else begin
+      pcnt <= pcnt + 32'd1;
+      tick <= 1'b0;
+    end
   end
 
   // Kick decode
@@ -98,22 +144,31 @@ module watchdog_top #(
   wire kick_early = kick_good & win_en & (cnt < win_open);
   wire kick_ok    = kick_good & ~kick_early;
 
-  logic pre_f, exp_f, early_f, key_f; logic [7:0] rst_cnt;
+  logic pre_f, exp_f, early_f, key_f;
+  logic [7:0] rst_cnt;
   logic expire_now;
   assign expire_now = tick & (cnt >= timeout);
 
   always_ff @(posedge aclk) begin
     if (!aresetn) begin
-      cnt <= '0; pre_f <= 1'b0; exp_f <= 1'b0; early_f <= 1'b0; key_f <= 1'b0;
-      rst_cnt <= '0; wdt_reset_o <= 1'b0;
+      cnt <= '0;
+      pre_f <= 1'b0;
+      exp_f <= 1'b0;
+      early_f <= 1'b0;
+      key_f <= 1'b0;
+      rst_cnt <= '0;
+      wdt_reset_o <= 1'b0;
     end else begin
       if (wdt_reset_o) begin
-        if (rst_cnt == 8'd0) wdt_reset_o <= 1'b0; else rst_cnt <= rst_cnt - 8'd1;
+        if (rst_cnt == 8'd0) wdt_reset_o <= 1'b0;
+        else rst_cnt <= rst_cnt - 8'd1;
       end
       if (!en_q) cnt <= '0;
       else if (kick_ok) cnt <= '0;
       else if (kick_early | expire_now) begin
-        cnt <= '0; wdt_reset_o <= 1'b1; rst_cnt <= 8'(RESET_CYCLES - 1);
+        cnt <= '0;
+        wdt_reset_o <= 1'b1;
+        rst_cnt <= 8'(RESET_CYCLES - 1);
       end
       else if (tick) cnt <= cnt + 32'd1;
       if (en_q && tick && cnt >= pretmo && pretmo != 32'd0) pre_f <= 1'b1;

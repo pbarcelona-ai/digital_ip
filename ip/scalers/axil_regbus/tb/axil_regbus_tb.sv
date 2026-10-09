@@ -15,16 +15,19 @@
 module tb_axil_regbus;
   localparam int ADDR_W = 8;              // 64 word registers
 
-  logic clk = 0; always #5 clk = ~clk;    // 100 MHz clock
+  logic clk = 0; // 100 MHz clock
+  always #5 clk = ~clk;
   logic rst_n = 0;
   int   errors = 0, checks = 0;           // result counters
 
   // AXI4-Lite master side (driven by the tasks below)
   logic [ADDR_W-1:0] awaddr = '0, araddr = '0;
   logic awvalid = 0, wvalid = 0, bready = 0, arvalid = 0, rready = 0;
-  logic [31:0] wdata = '0; logic [3:0] wstrb = '0;
+  logic [31:0] wdata = '0;
+  logic [3:0] wstrb = '0;
   wire awready, wready, bvalid, arready, rvalid;
-  wire [1:0] bresp, rresp; wire [31:0] rdata;
+  wire [1:0] bresp, rresp;
+  wire [31:0] rdata;
 
   // register bus side
   logic              reg_wr, reg_rd;
@@ -34,18 +37,56 @@ module tb_axil_regbus;
 
   // Device under test
   axil_regbus #(.ADDR_W(ADDR_W)) dut (
-    .clk, .rst_n,
-    .s_axil_awaddr(awaddr), .s_axil_awvalid(awvalid), .s_axil_awready(awready),
-    .s_axil_wdata(wdata), .s_axil_wstrb(wstrb), .s_axil_wvalid(wvalid), .s_axil_wready(wready),
-    .s_axil_bresp(bresp), .s_axil_bvalid(bvalid), .s_axil_bready(bready),
-    .s_axil_araddr(araddr), .s_axil_arvalid(arvalid), .s_axil_arready(arready),
-    .s_axil_rdata(rdata), .s_axil_rresp(rresp), .s_axil_rvalid(rvalid), .s_axil_rready(rready),
-    .reg_wr, .reg_waddr, .reg_wdata, .reg_wstrb, .reg_rd, .reg_raddr, .reg_rdata);
+    .clk,
+    .rst_n,
+    .s_axil_awaddr(awaddr),
+    .s_axil_awvalid(awvalid),
+    .s_axil_awready(awready),
+    .s_axil_wdata(wdata),
+    .s_axil_wstrb(wstrb),
+    .s_axil_wvalid(wvalid),
+    .s_axil_wready(wready),
+    .s_axil_bresp(bresp),
+    .s_axil_bvalid(bvalid),
+    .s_axil_bready(bready),
+    .s_axil_araddr(araddr),
+    .s_axil_arvalid(arvalid),
+    .s_axil_arready(arready),
+    .s_axil_rdata(rdata),
+    .s_axil_rresp(rresp),
+    .s_axil_rvalid(rvalid),
+    .s_axil_rready(rready),
+    .reg_wr,
+    .reg_waddr,
+    .reg_wdata,
+    .reg_wstrb,
+    .reg_rd,
+    .reg_raddr,
+    .reg_rdata
+  );
 
   // AXI4-Lite protocol checker + coverage on the DUT port
   axil_checker #(.ADDR_W(ADDR_W), .NAME("s_axil")) u_axil_chk (
-    .clk, .rst_n, .awaddr, .awvalid, .awready, .wdata, .wstrb, .wvalid, .wready,
-    .bresp, .bvalid, .bready, .araddr, .arvalid, .arready, .rdata, .rresp, .rvalid, .rready);
+    .clk,
+    .rst_n,
+    .awaddr,
+    .awvalid,
+    .awready,
+    .wdata,
+    .wstrb,
+    .wvalid,
+    .wready,
+    .bresp,
+    .bvalid,
+    .bready,
+    .araddr,
+    .arvalid,
+    .arready,
+    .rdata,
+    .rresp,
+    .rvalid,
+    .rready
+  );
 
   // register file on the simple bus (registered read, as required)
   logic [31:0] rf [64];
@@ -72,24 +113,45 @@ module tb_axil_regbus;
   // then compare the number of bus pulses with the transactions issued
   initial begin
     int nw, nr;
-    nw = 0; nr = 0;
-    for (int i = 0; i < 64; i++) begin model[i] = 0; rf[i] = 0; end
-    repeat (4) @(posedge clk); rst_n = 1;
-    for (int i = 0; i < 64; i++) begin wr(i * 4, $urandom, 4'hF); nw++; end
+    nw = 0;
+    nr = 0;
+    for (int i = 0; i < 64; i++) begin
+      model[i] = 0;
+      rf[i] = 0;
+    end
+    repeat (4) @(posedge clk);
+    rst_n = 1;
+    for (int i = 0; i < 64; i++) begin
+      wr(i * 4, $urandom, 4'hF);
+      nw++;
+    end
     for (int i = 0; i < 2000; i++) begin
       int a;
       a = $urandom_range(63, 0) * 4;
-      if ($urandom_range(1, 0)) begin wr(a, $urandom, 4'($urandom_range(15, 0))); nw++; end
-      else begin rd(a); nr++; end
+      if ($urandom_range(1, 0)) begin
+        wr(a, $urandom, 4'($urandom_range(15, 0)));
+        nw++;
+      end
+      else begin
+        rd(a);
+        nr++;
+      end
     end
     repeat (5) @(posedge clk);
     checks += 2;
-    if (n_wr != nw) begin errors++; $display("ERROR: reg_wr pulses %0d != writes %0d", n_wr, nw); end
-    if (n_rd != nr) begin errors++; $display("ERROR: reg_rd pulses %0d != reads %0d", n_rd, nr); end
+    if (n_wr != nw) begin
+      errors++;
+      $display("ERROR: reg_wr pulses %0d != writes %0d", n_wr, nw);
+    end
+    if (n_rd != nr) begin
+      errors++;
+      $display("ERROR: reg_rd pulses %0d != reads %0d", n_rd, nr);
+    end
     u_axil_chk.report();
     checks++;
     if (u_axil_chk.errors + u_axil_chk.sva_errors != 0) begin
-      errors++; $display("ERROR: AXI-Lite protocol assertion failures");
+      errors++;
+      $display("ERROR: AXI-Lite protocol assertion failures");
     end
     if (errors == 0) $display("TB_RESULT: PASS  checks=%0d", checks);
     else             $display("TB_RESULT: FAIL  checks=%0d errors=%0d", checks, errors);

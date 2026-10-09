@@ -45,19 +45,31 @@ module axis_async_bridge #(
   // Local reset synchronizers: async assert, synchronous release
   logic [1:0] s_rs, m_rs;
   always_ff @(posedge s_clk or negedge s_rst_n)
-    if (!s_rst_n) s_rs <= 2'b00; else s_rs <= {s_rs[0], 1'b1};
+    if (!s_rst_n) s_rs <= 2'b00;
+    else s_rs <= {s_rs[0], 1'b1};
   always_ff @(posedge m_clk or negedge m_rst_n)
-    if (!m_rst_n) m_rs <= 2'b00; else m_rs <= {m_rs[0], 1'b1};
+    if (!m_rst_n) m_rs <= 2'b00;
+    else m_rs <= {m_rs[0], 1'b1};
 
-  logic [W-1:0] wd, rd; logic wready, rvalid;
+  logic [W-1:0] wd, rd;
+  logic wready, rvalid;
   logic [$clog2(DEPTH):0] wl;
   assign wd = {s_axis_tuser, s_axis_tlast, s_axis_tkeep, s_axis_tdata};
   assign s_axis_tready = wready & s_rs[1];
 
   async_fifo #(.DATA_W(W), .DEPTH(DEPTH)) u_fifo (
-    .wclk(s_clk), .wrst_n(s_rs[1]), .wdata(wd), .wvalid(s_axis_tvalid & s_rs[1]),
-    .wready(wready), .wlevel_o(wl),
-    .rclk(m_clk), .rrst_n(m_rs[1]), .rdata(rd), .rvalid(rvalid), .rready(m_axis_tready));
+    .wclk(s_clk),
+    .wrst_n(s_rs[1]),
+    .wdata(wd),
+    .wvalid(s_axis_tvalid & s_rs[1]),
+    .wready(wready),
+    .wlevel_o(wl),
+    .rclk(m_clk),
+    .rrst_n(m_rs[1]),
+    .rdata(rd),
+    .rvalid(rvalid),
+    .rready(m_axis_tready)
+  );
 
   assign {m_axis_tuser, m_axis_tlast, m_axis_tkeep, m_axis_tdata} = rd;
   assign m_axis_tvalid = rvalid;

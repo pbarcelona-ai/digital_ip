@@ -50,38 +50,58 @@ module async_fifo #(
   assign wbin_n  = wbin + {{AW{1'b0}}, wen};
   assign wgray_n = (wbin_n >> 1) ^ wbin_n;
   always_ff @(posedge wclk) begin
-    if (!wrst_n) begin wbin <= '0; wgray <= '0; wfull <= 1'b0; end
+    if (!wrst_n) begin
+      wbin <= '0;
+      wgray <= '0;
+      wfull <= 1'b0;
+    end
     else begin
-      wbin <= wbin_n; wgray <= wgray_n;
+      wbin <= wbin_n;
+      wgray <= wgray_n;
       // full: next write gray equals read gray with the two MSBs inverted
       wfull <= (wgray_n == {~rgray_s2[AW:AW-1], rgray_s2[AW-2:0]});
     end
   end
   always_ff @(posedge wclk) if (wen) mem[wbin[AW-1:0]] <= wdata;
   always_ff @(posedge wclk) begin
-    if (!wrst_n) begin rgray_s1 <= '0; rgray_s2 <= '0; end
-    else begin rgray_s1 <= rgray; rgray_s2 <= rgray_s1; end
+    if (!wrst_n) begin
+      rgray_s1 <= '0;
+      rgray_s2 <= '0;
+    end
+    else begin
+      rgray_s1 <= rgray;
+      rgray_s2 <= rgray_s1;
+    end
   end
   assign wready = ~wfull;
 
   // ---------------- read domain ----------------
   (* async_reg = "true" *) logic [AW:0] wgray_s1, wgray_s2;   // write gray in rclk
   logic rempty;
-  logic [DATA_W-1:0] mem_q, o_q; logic mem_q_vld, o_vld;
+  logic [DATA_W-1:0] mem_q, o_q;
+  logic mem_q_vld, o_vld;
   wire move  = mem_q_vld & (~o_vld | rready);
   wire rd_en = ~rempty & (~mem_q_vld | move);
   assign rbin_n  = rbin + {{AW{1'b0}}, rd_en};
   assign rgray_n = (rbin_n >> 1) ^ rbin_n;
   always_ff @(posedge rclk) begin
     if (!rrst_n) begin
-      rbin <= '0; rgray <= '0; rempty <= 1'b1; mem_q_vld <= 1'b0; o_vld <= 1'b0;
-      wgray_s1 <= '0; wgray_s2 <= '0;
+      rbin <= '0;
+      rgray <= '0;
+      rempty <= 1'b1;
+      mem_q_vld <= 1'b0;
+      o_vld <= 1'b0;
+      wgray_s1 <= '0;
+      wgray_s2 <= '0;
     end else begin
-      wgray_s1 <= wgray; wgray_s2 <= wgray_s1;
-      rbin <= rbin_n; rgray <= rgray_n;
+      wgray_s1 <= wgray;
+      wgray_s2 <= wgray_s1;
+      rbin <= rbin_n;
+      rgray <= rgray_n;
       rempty <= (rgray_n == wgray_s2);
       mem_q_vld <= rd_en | (mem_q_vld & ~move);
-      if (move) o_vld <= 1'b1; else if (o_vld & rready) o_vld <= 1'b0;
+      if (move) o_vld <= 1'b1;
+      else if (o_vld & rready) o_vld <= 1'b0;
     end
   end
   always_ff @(posedge rclk) if (rd_en) mem_q <= mem[rbin[AW-1:0]];

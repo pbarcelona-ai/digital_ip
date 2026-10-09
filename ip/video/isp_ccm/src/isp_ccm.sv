@@ -43,10 +43,12 @@ module isp_ccm #(
 
   // Stage 1: products
   logic signed [MW-1:0] p [3][3];
-  logic [3*PW-1:0] d1; logic v1, l1, u1, b1;
+  logic [3*PW-1:0] d1;
+  logic v1, l1, u1, b1;
   // Stage 2: sums
   logic signed [SW-1:0] sum [3];
-  logic [3*PW-1:0] d2; logic v2, l2, u2, b2;
+  logic [3*PW-1:0] d2;
+  logic v2, l2, u2, b2;
 
   function automatic logic [PW-1:0] clamp(input logic signed [SW-1:0] x);
     if (x < 0)                                 clamp = '0;
@@ -56,20 +58,42 @@ module isp_ccm #(
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      by_f <= 1'b0; v1 <= 1'b0; v2 <= 1'b0; l1 <= 1'b0; l2 <= 1'b0; u1 <= 1'b0; u2 <= 1'b0; b1 <= 1'b0; b2 <= 1'b0;
-      d1 <= '0; d2 <= '0;
-      m_axis_tvalid <= 1'b0; m_axis_tdata <= '0; m_axis_tlast <= 1'b0; m_axis_tuser <= 1'b0;
+      by_f <= 1'b0;
+      v1 <= 1'b0;
+      v2 <= 1'b0;
+      l1 <= 1'b0;
+      l2 <= 1'b0;
+      u1 <= 1'b0;
+      u2 <= 1'b0;
+      b1 <= 1'b0;
+      b2 <= 1'b0;
+      d1 <= '0;
+      d2 <= '0;
+      m_axis_tvalid <= 1'b0;
+      m_axis_tdata <= '0;
+      m_axis_tlast <= 1'b0;
+      m_axis_tuser <= 1'b0;
     end else if (en) begin
       if (acc && s_axis_tuser) by_f <= bypass_i;
       for (int i = 0; i < 3; i++) for (int j = 0; j < 3; j++)
         p[i][j] <= $signed({1'b0, s_axis_tdata[j*PW +: PW]}) * $signed(coef_i[(3*i + j)*16 +: 16]);
-      d1 <= s_axis_tdata; v1 <= acc; l1 <= s_axis_tlast; u1 <= s_axis_tuser; b1 <= by;
+      d1 <= s_axis_tdata;
+      v1 <= acc;
+      l1 <= s_axis_tlast;
+      u1 <= s_axis_tuser;
+      b1 <= by;
 
       for (int i = 0; i < 3; i++)
         sum[i] <= ((SW'(p[i][0]) + SW'(p[i][1]) + SW'(p[i][2]) + SW'(512)) >>> 10) + SW'($signed(off_i[i*16 +: 16]));
-      d2 <= d1; v2 <= v1; l2 <= l1; u2 <= u1; b2 <= b1;
+      d2 <= d1;
+      v2 <= v1;
+      l2 <= l1;
+      u2 <= u1;
+      b2 <= b1;
 
-      m_axis_tvalid <= v2; m_axis_tlast <= l2; m_axis_tuser <= u2;
+      m_axis_tvalid <= v2;
+      m_axis_tlast <= l2;
+      m_axis_tuser <= u2;
       m_axis_tdata  <= b2 ? d2 : {clamp(sum[2]), clamp(sum[1]), clamp(sum[0])};
     end
   end

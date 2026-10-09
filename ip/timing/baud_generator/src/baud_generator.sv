@@ -38,15 +38,25 @@ module baud_generator #(
     $error("baud_generator: BAUD*OVERSAMPLE not reachable from CLK_HZ");
   end
   if (OVERSAMPLE < 1) begin : g_bo $error("baud_generator: OVERSAMPLE must be >= 1"); end
-  logic [ACC_W-1:0] acc; logic [ACC_W:0] sum; logic [$clog2(OVERSAMPLE > 1 ? OVERSAMPLE : 2)-1:0] osc;
+  logic [ACC_W-1:0] acc;
+  logic [ACC_W:0] sum;
+  logic [$clog2(OVERSAMPLE > 1 ? OVERSAMPLE : 2)-1:0] osc;
   assign sum = {1'b0, acc} + {1'b0, use_reg_i ? inc_i : INC_NOM};
   always_ff @(posedge clk) begin
     if (!rst_n || !en_i || sync_i) begin
-      acc <= '0; tick_os_o <= 1'b0; tick_baud_o <= 1'b0; osc <= '0;
+      acc <= '0;
+      tick_os_o <= 1'b0;
+      tick_baud_o <= 1'b0;
+      osc <= '0;
     end else begin
-      acc <= sum[ACC_W-1:0]; tick_os_o <= sum[ACC_W]; tick_baud_o <= 1'b0;
+      acc <= sum[ACC_W-1:0];
+      tick_os_o <= sum[ACC_W];
+      tick_baud_o <= 1'b0;
       if (sum[ACC_W]) begin
-        if (osc == OVERSAMPLE - 1) begin osc <= '0; tick_baud_o <= 1'b1; end
+        if (osc == OVERSAMPLE - 1) begin
+          osc <= '0;
+          tick_baud_o <= 1'b1;
+        end
         else osc <= osc + 1'b1;
       end
     end

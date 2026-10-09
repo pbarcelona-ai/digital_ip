@@ -1,3 +1,4 @@
+../../shared/tb/lib/spi_bfm.sv
 tb/spi_master_tb.sv
 ../../shared/tb/lib/axil_bfm.sv
 ../../shared/tb/lib/axi4_mem_model.sv

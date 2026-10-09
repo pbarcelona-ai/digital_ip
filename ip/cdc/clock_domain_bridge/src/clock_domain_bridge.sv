@@ -36,20 +36,45 @@ module clock_domain_bridge #(
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
   if (STAGES < 2) begin : g_bs $error("clock_domain_bridge: STAGES must be >= 2"); end
   if (DATA_W < 1) begin : g_bw $error("clock_domain_bridge: DATA_W must be >= 1"); end
-  logic [DATA_W-1:0] hold; logic req_tog, ack_tog, ack_s, req_s;
-  bit_sync #(.STAGES(STAGES)) u_ack (.clk(s_clk), .rst_n(s_rst_n), .d_i(ack_tog), .q_o(ack_s));
+  logic [DATA_W-1:0] hold;
+  logic req_tog, ack_tog, ack_s, req_s;
+  bit_sync #(.STAGES(STAGES)) u_ack (
+    .clk(s_clk),
+    .rst_n(s_rst_n),
+    .d_i(ack_tog),
+    .q_o(ack_s)
+  );
   assign s_ready_o = (req_tog == ack_s);
   always_ff @(posedge s_clk) begin
-    if (!s_rst_n) begin req_tog <= 1'b0; hold <= '0; end
-    else if (s_valid_i & s_ready_o) begin hold <= s_data_i; req_tog <= ~req_tog; end
+    if (!s_rst_n) begin
+      req_tog <= 1'b0;
+      hold <= '0;
+    end
+    else if (s_valid_i & s_ready_o) begin
+      hold <= s_data_i;
+      req_tog <= ~req_tog;
+    end
   end
-  bit_sync #(.STAGES(STAGES)) u_req (.clk(m_clk), .rst_n(m_rst_n), .d_i(req_tog), .q_o(req_s));
+  bit_sync #(.STAGES(STAGES)) u_req (
+    .clk(m_clk),
+    .rst_n(m_rst_n),
+    .d_i(req_tog),
+    .q_o(req_s)
+  );
   always_ff @(posedge m_clk) begin
-    if (!m_rst_n) begin m_valid_o <= 1'b0; m_data_o <= '0; ack_tog <= 1'b0; end
+    if (!m_rst_n) begin
+      m_valid_o <= 1'b0;
+      m_data_o <= '0;
+      ack_tog <= 1'b0;
+    end
     else if (!m_valid_o) begin
-      if (req_s != ack_tog) begin m_valid_o <= 1'b1; m_data_o <= hold; end
+      if (req_s != ack_tog) begin
+        m_valid_o <= 1'b1;
+        m_data_o <= hold;
+      end
     end else if (m_ready_i) begin
-      m_valid_o <= 1'b0; ack_tog <= ~ack_tog;
+      m_valid_o <= 1'b0;
+      ack_tog <= ~ack_tog;
     end
   end
 endmodule

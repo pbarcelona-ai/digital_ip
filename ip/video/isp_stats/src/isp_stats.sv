@@ -33,7 +33,9 @@ module isp_stats #(
   output logic [31:0]     frames_o,
   output logic            frame_done_o
 );
-  logic [39:0] ar, ag, ab; logic [31:0] np, nc; logic active;
+  logic [39:0] ar, ag, ab;
+  logic [31:0] np, nc;
+  logic active;
   wire beat = tvalid && tready;
   wire [CW-1:0] r = tdata[0 +: CW], g = tdata[CW +: CW], b = tdata[2*CW +: CW];
   wire clip = (r >= sat_thr_i) || (g >= sat_thr_i) || (b >= sat_thr_i);
@@ -41,17 +43,42 @@ module isp_stats #(
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      ar <= '0; ag <= '0; ab <= '0; np <= '0; nc <= '0; active <= 1'b0;
-      sum_r_o <= '0; sum_g_o <= '0; sum_b_o <= '0; pixels_o <= '0; clipped_o <= '0; frames_o <= '0; frame_done_o <= 1'b0;
+      ar <= '0;
+      ag <= '0;
+      ab <= '0;
+      np <= '0;
+      nc <= '0;
+      active <= 1'b0;
+      sum_r_o <= '0;
+      sum_g_o <= '0;
+      sum_b_o <= '0;
+      pixels_o <= '0;
+      clipped_o <= '0;
+      frames_o <= '0;
+      frame_done_o <= 1'b0;
     end else begin
       frame_done_o <= close;
       if (close) begin
-        sum_r_o <= ar; sum_g_o <= ag; sum_b_o <= ab; pixels_o <= np; clipped_o <= nc; frames_o <= frames_o + 1'b1;
+        sum_r_o <= ar;
+        sum_g_o <= ag;
+        sum_b_o <= ab;
+        pixels_o <= np;
+        clipped_o <= nc;
+        frames_o <= frames_o + 1'b1;
       end
       if (beat && tuser) begin                 // first pixel of a frame starts new totals
-        ar <= 40'(r); ag <= 40'(g); ab <= 40'(b); np <= 32'd1; nc <= 32'(clip); active <= 1'b1;
+        ar <= 40'(r);
+        ag <= 40'(g);
+        ab <= 40'(b);
+        np <= 32'd1;
+        nc <= 32'(clip);
+        active <= 1'b1;
       end else if (beat && active) begin
-        ar <= ar + r; ag <= ag + g; ab <= ab + b; np <= np + 1'b1; nc <= nc + clip;
+        ar <= ar + r;
+        ag <= ag + g;
+        ab <= ab + b;
+        np <= np + 1'b1;
+        nc <= nc + clip;
       end else if (flush_i) active <= 1'b0;
     end
   end

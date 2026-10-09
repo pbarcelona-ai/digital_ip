@@ -27,12 +27,22 @@ package py_core_pkg;
   localparam pyval_t PY_FALSE = 34'h0_0000_0006;
   localparam pyval_t PY_TRUE  = 34'h0_0000_000A;
 
-  function automatic logic is_small(input pyval_t v); is_small = v[0]; endfunction
-  function automatic pyval_t mk_small(input logic signed [VW-2:0] i); mk_small = {i, 1'b1}; endfunction
-  function automatic logic signed [VW-1:0] small_val(input pyval_t v); small_val = $signed(v) >>> 1; endfunction
+  function automatic logic is_small(input pyval_t v);
+    is_small = v[0];
+  endfunction
+  function automatic pyval_t mk_small(input logic signed [VW-2:0] i);
+    mk_small = {i, 1'b1};
+  endfunction
+  function automatic logic signed [VW-1:0] small_val(input pyval_t v);
+    small_val = $signed(v) >>> 1;
+  endfunction
   // A VW-bit integer fits in a small int when its top two bits agree
-  function automatic logic fits_small(input logic signed [VW-1:0] i); fits_small = i[VW-1] == i[VW-2]; endfunction
-  function automatic pyval_t mk_bool(input logic b); mk_bool = b ? PY_TRUE : PY_FALSE; endfunction
+  function automatic logic fits_small(input logic signed [VW-1:0] i);
+    fits_small = i[VW-1] == i[VW-2];
+  endfunction
+  function automatic pyval_t mk_bool(input logic b);
+    mk_bool = b ? PY_TRUE : PY_FALSE;
+  endfunction
 
   // ---------------- opcodes ----------------
   typedef enum logic [7:0] {

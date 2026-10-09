@@ -14,7 +14,8 @@
 
 `timescale 1ns/1ps
 module tb_scaler_dda;
-  logic clk = 0; always #5 clk = ~clk;    // 100 MHz clock
+  logic clk = 0; // 100 MHz clock
+  always #5 clk = ~clk;
   // DUT ports (connected by name)
   logic rst_n = 0, start = 0, adv = 0, hold = 0;
   logic [15:0] out_w, out_h;
@@ -32,7 +33,8 @@ module tb_scaler_dda;
 
   // Main sequence: two fixed cases, then 40 random configurations
   initial begin
-    repeat (3) @(posedge clk); rst_n = 1;
+    repeat (3) @(posedge clk);
+    rst_n = 1;
     run(1, 1, 32'h10000, 32'h10000, 0, 0, 0);
     run(7, 3, 32'h8000, 32'h18000, -32'sh4000, 32'sh4000, 30);
     for (int i = 0; i < 40; i++)

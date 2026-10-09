@@ -11,6 +11,7 @@
   task automatic drive(input logic signed [31:0] x, input logic signed [31:0] y);
     begin
       @(posedge clk);
-      a <= x; b <= y;
+      a <= x;
+      b <= y;
     end
   endtask

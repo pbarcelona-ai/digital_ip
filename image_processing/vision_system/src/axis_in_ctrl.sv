@@ -69,8 +69,12 @@ module axis_in_ctrl #(
 
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      addr_cnt <= '0; col_cnt <= '0; row_cnt <= '0;
-      active <= 1'b0; frame_done <= 1'b0; err_line_len <= 1'b0;
+      addr_cnt <= '0;
+      col_cnt <= '0;
+      row_cnt <= '0;
+      active <= 1'b0;
+      frame_done <= 1'b0;
+      err_line_len <= 1'b0;
     end else begin
       frame_done <= 1'b0;
       if (wr_en) begin

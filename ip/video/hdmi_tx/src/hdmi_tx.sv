@@ -51,12 +51,22 @@ module hdmi_tx (
   assign tmds_clk_o = 10'b0000011111;
 
   // ---------------- look-ahead delay line: index 0 = what is output now
-  logic [23:0] rgb_d [D+1]; logic [D:0] de_d, hs_d, vs_d;
+  logic [23:0] rgb_d [D+1];
+  logic [D:0] de_d, hs_d, vs_d;
   always_ff @(posedge clk) begin
-    rgb_d[0] <= rgb_i; de_d[0] <= de_i; hs_d[0] <= hs_i; vs_d[0] <= vs_i;
-    for (int k = 1; k <= D; k++) begin rgb_d[k] <= rgb_d[k-1]; de_d[k] <= de_d[k-1]; hs_d[k] <= hs_d[k-1]; vs_d[k] <= vs_d[k-1]; end
+    rgb_d[0] <= rgb_i;
+    de_d[0] <= de_i;
+    hs_d[0] <= hs_i;
+    vs_d[0] <= vs_i;
+    for (int k = 1; k <= D; k++) begin
+      rgb_d[k] <= rgb_d[k-1];
+      de_d[k] <= de_d[k-1];
+      hs_d[k] <= hs_d[k-1];
+      vs_d[k] <= vs_d[k-1];
+    end
   end
-  wire [23:0] rgb0 = rgb_d[D]; wire de0 = de_d[D], hs0 = hs_d[D], vs0 = vs_d[D];
+  wire [23:0] rgb0 = rgb_d[D];
+  wire de0 = de_d[D], hs0 = hs_d[D], vs0 = vs_d[D];
   // de of the pixel k clocks after the current output pixel = de_d[D - k]
   logic [3:0] rise;                            // clocks until the next de, 0 = none within 10
   always_comb begin
@@ -66,12 +76,14 @@ module hdmi_tx (
 
   // ---------------- AVI InfoFrame packet and BCH ECC
   function automatic logic [7:0] bch(input logic [63:0] d, input int nbits);
-    logic [7:0] e; e = 8'd0;
+    logic [7:0] e;
+    e = 8'd0;
     for (int i = 0; i < 64; i++) if (i < nbits) e = (e >> 1) ^ ((e[0] ^ d[i]) ? 8'b1000_0011 : 8'd0);
     bch = e;
   endfunction
   logic [7:0] pb [14];                         // PB0 .. PB13
-  logic [31:0] hdr; logic [63:0] sp [4];
+  logic [31:0] hdr;
+  logic [63:0] sp [4];
   always_comb begin
     logic [7:0] sum;
     for (int i = 0; i < 14; i++) pb[i] = 8'd0;
@@ -82,7 +94,8 @@ module hdmi_tx (
     sum = 8'h82 + 8'h02 + 8'h0D;
     for (int i = 1; i < 14; i++) sum = sum + pb[i];
     pb[0] = 8'h00 - sum;                                  // checksum: all bytes sum to 0
-    hdr[23:0] = 24'h0D_02_82; hdr[31:24] = bch({40'd0, hdr[23:0]}, 24);
+    hdr[23:0] = 24'h0D_02_82;
+    hdr[31:24] = bch({40'd0, hdr[23:0]}, 24);
     for (int k = 0; k < 4; k++) begin
       sp[k] = '0;
       if (k < 2) for (int b = 0; b < 7; b++) sp[k][8*b +: 8] = pb[7*k + b];
@@ -94,14 +107,22 @@ module hdmi_tx (
   logic [5:0] isl;                             // 0 = idle, 1..44 = position + 1
   logic vs0_q;
   wire  vs_lead = (vs0 == vs_pol_i) && (vs0_q != vs_pol_i);
-  logic [31:0] hdr_q; logic [63:0] sp_q [4];
+  logic [31:0] hdr_q;
+  logic [63:0] sp_q [4];
   always_ff @(posedge clk) begin
-    if (!rst_n) begin isl <= '0; vs0_q <= 1'b0; hdr_q <= '0; for (int k = 0; k < 4; k++) sp_q[k] <= '0; end
+    if (!rst_n) begin
+      isl <= '0;
+      vs0_q <= 1'b0;
+      hdr_q <= '0;
+      for (int k = 0; k < 4; k++) sp_q[k] <= '0;
+    end
     else begin
       vs0_q <= vs0;
       if (isl != 0) isl <= (isl == 6'd44) ? 6'd0 : isl + 1'b1;
       else if (hdmi_mode_i && vs_lead && !de0) begin               // this clock is position 0
-        isl <= 6'd2; hdr_q <= hdr; for (int k = 0; k < 4; k++) sp_q[k] <= sp[k];
+        isl <= 6'd2;
+        hdr_q <= hdr;
+        for (int k = 0; k < 4; k++) sp_q[k] <= sp[k];
       end
     end
   end
@@ -111,31 +132,87 @@ module hdmi_tx (
   wire [4:0] pk = 5'(ipos - 6'd10);            // packet clock 0..31
 
   // ---------------- per-channel symbol selection
-  logic [1:0] m0, m1, m2; logic [1:0] c0, c1, c2; logic [3:0] t0, t1, t2; logic [9:0] g0, g1, g2;
+  logic [1:0] m0, m1, m2;
+  logic [1:0] c0, c1, c2;
+  logic [3:0] t0, t1, t2;
+  logic [9:0] g0, g1, g2;
   always_comb begin
-    m0 = M_CTRL; m1 = M_CTRL; m2 = M_CTRL;
-    c0 = {vs0, hs0}; c1 = 2'b00; c2 = 2'b00;
-    t0 = '0; t1 = '0; t2 = '0; g0 = GB_VID_02; g1 = GB_VID_1; g2 = GB_VID_02;
+    m0 = M_CTRL;
+    m1 = M_CTRL;
+    m2 = M_CTRL;
+    c0 = {vs0, hs0};
+    c1 = 2'b00;
+    c2 = 2'b00;
+    t0 = '0;
+    t1 = '0;
+    t2 = '0;
+    g0 = GB_VID_02;
+    g1 = GB_VID_1;
+    g2 = GB_VID_02;
     if (de0) begin
-      m0 = M_VIDEO; m1 = M_VIDEO; m2 = M_VIDEO;
+      m0 = M_VIDEO;
+      m1 = M_VIDEO;
+      m2 = M_VIDEO;
     end else if (hdmi_mode_i && rise != 0 && rise <= 4'd2) begin            // video guard band
-      m0 = M_GUARD; m1 = M_GUARD; m2 = M_GUARD;
+      m0 = M_GUARD;
+      m1 = M_GUARD;
+      m2 = M_GUARD;
     end else if (hdmi_mode_i && rise != 0) begin                            // video preamble
-      c1 = 2'b01; c2 = 2'b00;
+      c1 = 2'b01;
+      c2 = 2'b00;
     end else if (in_isl) begin
-      if (ipos < 6'd8) begin c1 = 2'b01; c2 = 2'b01; end                    // island preamble
+      if (ipos < 6'd8) begin // island preamble
+        c1 = 2'b01;
+        c2 = 2'b01;
+      end
       else if (ipos < 6'd10 || ipos >= 6'd42) begin                         // island guard bands
-        m0 = M_TERC4; t0 = {2'b11, vs0, hs0};
-        m1 = M_GUARD; m2 = M_GUARD; g1 = GB_ISL; g2 = GB_ISL;
+        m0 = M_TERC4;
+        t0 = {2'b11, vs0, hs0};
+        m1 = M_GUARD;
+        m2 = M_GUARD;
+        g1 = GB_ISL;
+        g2 = GB_ISL;
       end else begin                                                        // packet
-        m0 = M_TERC4; m1 = M_TERC4; m2 = M_TERC4;
+        m0 = M_TERC4;
+        m1 = M_TERC4;
+        m2 = M_TERC4;
         t0 = {pk != 0, hdr_q[pk], vs0, hs0};
-        for (int k = 0; k < 4; k++) begin t1[k] = sp_q[k][2*pk]; t2[k] = sp_q[k][2*pk + 1]; end
+        for (int k = 0; k < 4; k++) begin
+          t1[k] = sp_q[k][2*pk];
+          t2[k] = sp_q[k][2*pk + 1];
+        end
       end
     end
   end
 
-  tmds_encoder u_ch0 (.clk, .rst_n, .mode_i(m0), .d_i(rgb0[23:16]), .c_i(c0), .t_i(t0), .g_i(g0), .q_o(tmds0_o));
-  tmds_encoder u_ch1 (.clk, .rst_n, .mode_i(m1), .d_i(rgb0[15:8]),  .c_i(c1), .t_i(t1), .g_i(g1), .q_o(tmds1_o));
-  tmds_encoder u_ch2 (.clk, .rst_n, .mode_i(m2), .d_i(rgb0[7:0]),   .c_i(c2), .t_i(t2), .g_i(g2), .q_o(tmds2_o));
+  tmds_encoder u_ch0 (
+    .clk,
+    .rst_n,
+    .mode_i(m0),
+    .d_i(rgb0[23:16]),
+    .c_i(c0),
+    .t_i(t0),
+    .g_i(g0),
+    .q_o(tmds0_o)
+  );
+  tmds_encoder u_ch1 (
+    .clk,
+    .rst_n,
+    .mode_i(m1),
+    .d_i(rgb0[15:8]),
+    .c_i(c1),
+    .t_i(t1),
+    .g_i(g1),
+    .q_o(tmds1_o)
+  );
+  tmds_encoder u_ch2 (
+    .clk,
+    .rst_n,
+    .mode_i(m2),
+    .d_i(rgb0[7:0]),
+    .c_i(c2),
+    .t_i(t2),
+    .g_i(g2),
+    .q_o(tmds2_o)
+  );
 endmodule

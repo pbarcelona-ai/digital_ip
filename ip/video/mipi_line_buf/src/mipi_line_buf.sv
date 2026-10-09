@@ -39,19 +39,40 @@ module mipi_line_buf #(
 
   // ---------------- storage: buffer b at words b*MAX_W/2 ...
   logic [47:0] mem [2 * (MAX_W / 2)];
-  logic        we; logic [AW:0] waddr; logic [47:0] wdata;
+  logic        we;
+  logic [AW:0] waddr;
+  logic [47:0] wdata;
   always_ff @(posedge pclk) if (we) mem[waddr] <= wdata;
   always_ff @(posedge bclk) rd_data_o <= mem[{rd_buf_i, rd_addr_i}];
 
   // ---------------- buffer release (byte side -> pixel side)
   logic [1:0] freed;
-  pulse_sync u_free0 (.src_clk(bclk), .src_rst_n(brst_n), .pulse_i(done_i && !rd_buf_i), .busy_o(), .drop_o(),
-                      .dst_clk(pclk), .dst_rst_n(prst_n), .pulse_o(freed[0]));
-  pulse_sync u_free1 (.src_clk(bclk), .src_rst_n(brst_n), .pulse_i(done_i &&  rd_buf_i), .busy_o(), .drop_o(),
-                      .dst_clk(pclk), .dst_rst_n(prst_n), .pulse_o(freed[1]));
+  pulse_sync u_free0 (
+    .src_clk(bclk),
+    .src_rst_n(brst_n),
+    .pulse_i(done_i && !rd_buf_i),
+    .busy_o(),
+    .drop_o(),
+    .dst_clk(pclk),
+    .dst_rst_n(prst_n),
+    .pulse_o(freed[0])
+  );
+  pulse_sync u_free1 (
+    .src_clk(bclk),
+    .src_rst_n(brst_n),
+    .pulse_i(done_i &&  rd_buf_i),
+    .busy_o(),
+    .drop_o(),
+    .dst_clk(pclk),
+    .dst_rst_n(prst_n),
+    .pulse_o(freed[1])
+  );
 
   // ---------------- pixel side
-  logic [1:0] free; logic wb, in_line, dropping; logic [15:0] wp; logic [23:0] hold;
+  logic [1:0] free;
+  logic wb, in_line, dropping;
+  logic [15:0] wp;
+  logic [23:0] hold;
   wire  start = px_valid_i && !in_line;
   wire  use_b = free[wb] ? wb : ~wb;             // buffer for a new line
   wire  room  = free[wb] || free[~wb];
@@ -59,20 +80,37 @@ module mipi_line_buf #(
   wire  wr_px = px_valid_i && (start ? room : !dropping) && wp < 16'(MAX_W);
 
   always_comb begin
-    we = 1'b0; waddr = {cur_b, wp[AW:1]}; wdata = {px_i, hold};
+    we = 1'b0;
+    waddr = {cur_b, wp[AW:1]};
+    wdata = {px_i, hold};
     if (wr_px && wp[0]) we = 1'b1;                                   // odd pixel completes a pair
     if (line_end_i && in_line && !dropping && wp[0]) begin             // odd width: last half pair
-      we = 1'b1; waddr = {wb, wp[AW:1]}; wdata = {24'd0, hold};
+      we = 1'b1;
+      waddr = {wb, wp[AW:1]};
+      wdata = {24'd0, hold};
     end
   end
 
   always_ff @(posedge pclk) begin
     if (!prst_n) begin
-      free <= 2'b11; wb <= 1'b0; in_line <= 1'b0; dropping <= 1'b0; wp <= '0; hold <= '0;
-      line_ready_o <= 1'b0; line_buf_o <= 1'b0; line_width_o <= '0; line_drop_o <= 1'b0;
+      free <= 2'b11;
+      wb <= 1'b0;
+      in_line <= 1'b0;
+      dropping <= 1'b0;
+      wp <= '0;
+      hold <= '0;
+      line_ready_o <= 1'b0;
+      line_buf_o <= 1'b0;
+      line_width_o <= '0;
+      line_drop_o <= 1'b0;
     end else begin
-      line_ready_o <= 1'b0; line_drop_o <= 1'b0;
-      if (start) begin in_line <= 1'b1; dropping <= !room; wb <= use_b; end
+      line_ready_o <= 1'b0;
+      line_drop_o <= 1'b0;
+      if (start) begin
+        in_line <= 1'b1;
+        dropping <= !room;
+        wb <= use_b;
+      end
       if (wr_px) begin
         if (!wp[0]) hold <= px_i;
         wp <= wp + 1'b1;
@@ -80,9 +118,13 @@ module mipi_line_buf #(
       if (line_end_i && in_line) begin
         if (dropping) line_drop_o <= 1'b1;
         else if (wp != 0) begin
-          line_ready_o <= 1'b1; line_buf_o <= wb; line_width_o <= wp;
+          line_ready_o <= 1'b1;
+          line_buf_o <= wb;
+          line_width_o <= wp;
         end
-        in_line <= 1'b0; dropping <= 1'b0; wp <= '0;
+        in_line <= 1'b0;
+        dropping <= 1'b0;
+        wp <= '0;
       end
       // a buffer becomes busy when its line is reported, free again when released
       for (int b = 0; b < 2; b++) begin

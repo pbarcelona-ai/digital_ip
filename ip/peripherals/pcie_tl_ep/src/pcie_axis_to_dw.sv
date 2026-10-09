@@ -38,10 +38,17 @@ module pcie_axis_to_dw (
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      vld_q <= 1'b0; phase <= 1'b0; beat_q <= '0; keep_hi_q <= 1'b0; last_q <= 1'b0;
+      vld_q <= 1'b0;
+      phase <= 1'b0;
+      beat_q <= '0;
+      keep_hi_q <= 1'b0;
+      last_q <= 1'b0;
     end else begin
       if (vld_q & dw_ready & ~final_dw) phase <= 1'b1;       // lower DW sent
-      if (final_dw) begin vld_q <= 1'b0; phase <= 1'b0; end
+      if (final_dw) begin
+        vld_q <= 1'b0;
+        phase <= 1'b0;
+      end
       if (s_tvalid & s_tready) begin                          // load new beat
         vld_q     <= 1'b1;
         beat_q    <= s_tdata;

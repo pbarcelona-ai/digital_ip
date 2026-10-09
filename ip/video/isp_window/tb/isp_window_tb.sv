@@ -15,7 +15,8 @@
 `timescale 1ns/1ps
 module isp_window_tb;
   localparam int PW = 10, MAXW = 64, MAXH = 40, NI = 4;
-  logic clk = 0, rst_n = 0; always #5 clk = ~clk;
+  logic clk = 0, rst_n = 0;
+  always #5 clk = ~clk;
   int errors = 0;
 
   logic [PW-1:0] img [MAXH][MAXW];
@@ -31,33 +32,71 @@ module isp_window_tb;
 
   for (genvar g = 0; g < NI; g++) begin : g_w
     localparam int N = (g % 2) ? 5 : 3, R = (N - 1) / 2, BD = g / 2;
-    logic [PW-1:0] sd; logic sl, su, sv, sr;
-    logic [N*N*PW-1:0] w; logic [15:0] wx, wy; logic tl, tu, tv, tr;
+    logic [PW-1:0] sd;
+    logic sl, su, sv, sr;
+    logic [N*N*PW-1:0] w;
+    logic [15:0] wx, wy;
+    logic tl, tu, tv, tr;
     int n, total;
-    isp_window #(.N(N), .PW(PW), .MAX_W(MAXW), .BORDER(BD)) dut (.clk, .rst_n, .width_i(W), .height_i(H),
-      .s_axis_tdata(sd), .s_axis_tlast(sl), .s_axis_tuser(su), .s_axis_tvalid(sv), .s_axis_tready(sr),
-      .m_axis_tdata(w), .m_x(wx), .m_y(wy), .m_axis_tlast(tl), .m_axis_tuser(tu), .m_axis_tvalid(tv), .m_axis_tready(tr));
-    initial begin sv = 0; su = 0; sl = 0; sd = 0; end
+    isp_window #(.N(N), .PW(PW), .MAX_W(MAXW), .BORDER(BD)) dut (
+      .clk,
+      .rst_n,
+      .width_i(W),
+      .height_i(H),
+      .s_axis_tdata(sd),
+      .s_axis_tlast(sl),
+      .s_axis_tuser(su),
+      .s_axis_tvalid(sv),
+      .s_axis_tready(sr),
+      .m_axis_tdata(w),
+      .m_x(wx),
+      .m_y(wy),
+      .m_axis_tlast(tl),
+      .m_axis_tuser(tu),
+      .m_axis_tvalid(tv),
+      .m_axis_tready(tr)
+    );
+    initial begin
+      sv = 0;
+      su = 0;
+      sl = 0;
+      sd = 0;
+    end
     always @(posedge clk) tr <= ($urandom_range(99) >= bp_pct);
     always @(posedge clk) if (rst_n && tv && tr) begin
       int cx, cy;
       if (tu) n = 0;                                 // re-anchor on every start of frame
-      cx = n % W; cy = (n / W) % H;
+      cx = n % W;
+      cy = (n / W) % H;
       check(wx === 16'(cx) && wy === 16'(cy), $sformatf("N%0d B%0d: centre %0d,%0d exp %0d,%0d", N, BD, wx, wy, cx, cy));
       check(tu == (cx == 0 && cy == 0) && tl == (cx == W - 1), $sformatf("N%0d B%0d: tuser/tlast at %0d,%0d", N, BD, cx, cy));
       for (int r = 0; r < N; r++) for (int c = 0; c < N; c++)
         check(w[(r*N + c)*PW +: PW] === img[bidx(cy - R + r, H, BD)][bidx(cx - R + c, W, BD)],
               $sformatf("N%0d B%0d: (%0d,%0d) tap r%0d c%0d", N, BD, cx, cy, r, c));
-      n++; total++;
+      n++;
+      total++;
     end
     task automatic drive(input int frames, input bit stray, input int cut = 0);
-      n = 0; total = 0;
-      if (stray) begin sd <= 10'h3FF; su <= 0; sl <= 0; sv <= 1; @(posedge clk); while (!sr) @(posedge clk); end
+      n = 0;
+      total = 0;
+      if (stray) begin
+        sd <= 10'h3FF;
+        su <= 0;
+        sl <= 0;
+        sv <= 1;
+        @(posedge clk);
+        while (!sr) @(posedge clk);
+      end
       for (int f = 0; f < frames; f++)
         for (int yy = 0; yy < ((f == 0 && cut > 0) ? cut : H); yy++) for (int xx = 0; xx < W; xx++) begin
-          sv <= 0; while ($urandom_range(99) < gap_pct) @(posedge clk);
-          sd <= img[yy][xx]; su <= (xx == 0 && yy == 0); sl <= (xx == W - 1); sv <= 1;
-          @(posedge clk); while (!sr) @(posedge clk);
+          sv <= 0;
+          while ($urandom_range(99) < gap_pct) @(posedge clk);
+          sd <= img[yy][xx];
+          su <= (xx == 0 && yy == 0);
+          sl <= (xx == W - 1);
+          sv <= 1;
+          @(posedge clk);
+          while (!sr) @(posedge clk);
         end
       sv <= 0;
     endtask
@@ -67,16 +106,23 @@ module isp_window_tb;
   `include "isp_window_tests.sv"
 
   initial begin
-    if ($test$plusargs("vcd")) begin $dumpfile("isp_window_tb.vcd"); $dumpvars(0, isp_window_tb); end
-    W = 8; H = 6;
-    repeat (4) @(posedge clk); rst_n = 1; repeat (2) @(posedge clk);
+    if ($test$plusargs("vcd")) begin
+      $dumpfile("isp_window_tb.vcd");
+      $dumpvars(0, isp_window_tb);
+    end
+    W = 8;
+    H = 6;
+    repeat (4) @(posedge clk);
+    rst_n = 1;
+    repeat (2) @(posedge clk);
     run_case(16, 12, 1, 0, 0, 1);       // stray pixel before SOF, no stalls
     run_case(3, 3, 2, 0, 0, 0);         // smallest frame for N = 5 (W, H >= R + 1)
     run_case(23, 9, 2, 30, 30, 0);      // odd width, gaps and back-pressure, back-to-back frames
     run_case(64, 40, 1, 10, 50, 0);     // full MAX_W line, heavy back-pressure
     run_case(5, 31, 1, 50, 0, 0);       // tall and narrow, slow source
     run_cut(20, 14, 6);                 // short frame, then normal frames
-    if (errors == 0) $display("TEST PASSED"); else $display("TEST FAILED (%0d errors)", errors);
+    if (errors == 0) $display("TEST PASSED");
+    else $display("TEST FAILED (%0d errors)", errors);
     $finish;
   end
 endmodule

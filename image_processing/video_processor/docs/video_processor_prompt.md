@@ -390,12 +390,12 @@ window, reporting every step on UART 0. Reset: arst_n (external) resets
 the CPU system; the core logic (video) stays in reset until the CPU has
 booted, passed its self-test and written SYSCTL CORE_RESET
 (core_rst_n_o, checked by test_core_reset). Board models:
-  - spi_flash_model holding the firmware image and string table (pyc.py);
-  - camera module: sensor CCI register model (i2c_slave_model, address
-    0x36 on I2C 0) and a CSI-2 RAW10 source (csi2_lane_driver) that
+  - spi_flash_bfm holding the firmware image and string table (pyc.py);
+  - camera module: sensor CCI register model (i2c_bfm, address
+    0x36 on I2C 0) and a CSI-2 RAW10 source (csi2_bfm) that
     streams 32x24 frames only after the firmware releases its reset
     (GPIO0[0]) and writes "stream on" (register 0x01 = 1);
-  - I2C EEPROM (i2c_slave_model, 0x50 on I2C 1); UART, SPI and GPIO
+  - I2C EEPROM (i2c_bfm, 0x50 on I2C 1); UART, SPI and GPIO
     looped back (txd -> rxd, MOSI -> MISO, gpio_o -> gpio_i) for the
     firmware's peripheral self-test; GPIO0[31] = +quick strap (the
     firmware then skips the register dumps); GPIO0[30] = image
@@ -405,7 +405,7 @@ booted, passed its self-test and written SYSCTL CORE_RESET
   - UART 0 receiver: decodes the report at UART_BAUD, writes it to
     cpu_bootup.txt and echoes each line as "UART0| ...";
   - HDMI: tmds_serializer lanes deserialised on the TMDS clock lane and
-    decoded by hdmi_sink_model; LVDS link A deserialised on the clock
+    decoded by hdmi_bfm; LVDS link A deserialised on the clock
     lane and decoded as single-link VESA 24 bpp. Their serial clocks and
     the camera stop after the video checks (the report runs on);
   - image test: 4 colour and 4 monochrome images (frame_c_<n>_input.ppm,

@@ -32,6 +32,8 @@ make test                                        # all root and scaler simulatio
 make test IP=scaler_nearest                      # one flattened scaler module
 make scaler-test                                 # scaler-only regression
 scripts/run_sim.sh <ip> [--vcd|--wave|--lint]    # outputs under build/sim/<ip>/
+make cov IP=<ip>                                 # code coverage -> build/coverage/<ip>/summary.txt
+make cov                                         # whole regression -> build/coverage/all/summary.txt
 scripts/run_yosys.sh <ip>                        # outputs under build/yosys/<ip>/
 scripts/run_sva.sh                               # concurrent assertions under Verilator
 python3 scripts/regmap_gen.py map.json outdir   # register block + C header + Markdown
@@ -40,6 +42,34 @@ python3 scripts/make_block_diagrams.py --dot-only # generate DOT without Graphvi
 ```
 
 `scripts/ips.csv` lists 75 general-purpose modules plus 17 scaler modules as `name,category,top_module`; each module lives at `<category>/<name>`. RTL and testbench manifest paths are relative to that IP's root. Shared implementation and BFM dependencies are explicit under `shared/`. Scaler modules use the dedicated runners in `tools/` and are grouped under `scalers/`. `--vcd` writes a VCD; `--wave` opens it in Surfer if installed.
+
+## Testbench bus functional models
+
+Protocol partners of the DUTs live in [shared/tb/lib](shared/tb/lib), one `<protocol>_bfm.sv` each, and are used by the IP testbenches and by the system testbenches (`py_soc`, `video_pipeline`, `image_processing/video_processor`) to drive and check the DUT pins:
+
+| BFM | Role | Used by |
+|-----|------|---------|
+| `axil_bfm` | AXI4-Lite manager (optional BREADY / RREADY back pressure) | every register-mapped IP |
+| `uart_bfm` | UART device: transmitter with error injection, receiver with parity / stop checks and text lines | uart, uart_tx, uart_rx, video_processor (firmware report) |
+| `i2c_bfm` | I2C target with a 256-byte memory, clock stretching | i2c_master, py_soc, video_processor (camera CCI, EEPROM) |
+| `spi_bfm` / `spi_master_bfm` | SPI target / SPI controller, all modes | spi_master / spi_slave |
+| `spi_flash_bfm` | SPI NOR flash | spi_flash_ctrl, py_soc, video_processor (boot flash) |
+| `i2s_bfm` | I2S codec (decodes the DUT output, sends its own samples) | i2s |
+| `eth_bfm` | GMII PHY: transmit monitor, loopback with bit-flip injection, frame injection with rx_er | eth_mac_if |
+| `sdio_bfm` | SD card and the pulled-up CMD / DAT bus | sdio_host |
+| `usb_bfm` | USB full-speed host: NRZI / stuffing transmitter, independent decoder | usb_fs_sie |
+| `pcie_bfm` | PCIe root complex at the TLP layer | pcie_tl_ep |
+| `quad_bfm` | incremental encoder (A / B / Z) | quadrature_decoder |
+| `csi2_bfm` | MIPI CSI-2 camera (D-PHY lane driver) | csi2_rx, video_pipeline, video_processor |
+| `dsi_bfm` | MIPI DSI receiver | dsi_tx, video_pipeline |
+| `tmds_bfm` + `hdmi_bfm` | TMDS deserialiser + HDMI / DVI decoder | tmds_serializer, hdmi_tx, video_pipeline, video_processor |
+| `lvds_bfm` | LVDS 7:1 deserialiser + VESA 24 bpp decoder | lvds_serializer, video_processor |
+
+## Code coverage
+
+`make cov` (root, per-IP directory, or `scalers` via `tools/common.mk`) runs the normal testbenches with code coverage. `scripts/run_cov.sh <out_dir> <command...>` wraps any simulation command: the `iverilog` and `vvp` shims in `tools/cov` are put first on `PATH`, so the command's Icarus build is rebuilt with `verilator --binary --timing --coverage` (line, branch, expression, and toggle coverage) without changing any run script. The same mechanism covers `py_soc`, the scaler `run.sh` flows, and the `image_processing` systems (`make cov` there). Verilator cocotb testbenches (`tb/python/run_python.py`) add `--coverage` when `COV_DIR` is set; cocotb under Icarus is not covered.
+
+`tools/cov/cov_report.py` merges every run, combines instances of the same module, leaves testbench files out, and writes `summary.txt`/`summary.csv` (per RTL file), `merged.dat`, `coverage.info` (LCOV: `genhtml coverage.info -o html`), and `annotated/` sources (`%000000` marks lines never hit). With `SIM=vcs` or `SIM=questa`, the vendor runners collect native coverage instead (`COV=1`) and the databases are merged with `urg` / `vcover`; those vendor paths are not validated in this environment.
 
 ## What every IP provides
 

@@ -10,16 +10,25 @@
 // Date: 2026-10-08
 // ***************
   task automatic check(input bit c, input string m);
-    if (!c) begin errors++; if (errors < 30) $display("ERROR @%0t: %s", $time, m); end
+    if (!c) begin
+      errors++;
+      if (errors < 30) $display("ERROR @%0t: %s", $time, m);
+    end
   endtask
 
   task automatic run(input bit y422, input int frames);
-    en = 0; yuv = y422;
+    en = 0;
+    yuv = y422;
     repeat (3000) @(posedge pclk);                 // let the links go idle
-    for (int g = 0; g < 3; g++) begin nframes_rx[g] = 0; nlines[g] = 0; nfe[g] = 0; end
+    for (int g = 0; g < 3; g++) begin
+      nframes_rx[g] = 0;
+      nlines[g] = 0;
+      nfe[g] = 0;
+    end
     en = 1;
     repeat (frames) begin @(posedge vs); end
-    @(posedge vs); en = 0;                         // one more vsync closes the last frame
+    @(posedge vs); // one more vsync closes the last frame
+    en = 0;
     repeat (3000) @(posedge pclk);
     for (int g = 0; g < 3; g++) begin
       check(nframes_rx[g] == frames && nfe[g] == frames && nlines[g] == frames * VA,

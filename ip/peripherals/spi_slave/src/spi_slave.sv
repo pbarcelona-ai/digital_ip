@@ -49,12 +49,33 @@ module spi_slave #(
   if (WORD_BITS < 1 || WORD_BITS > 32) begin : g_bad $error("spi_slave: WORD_BITS must be 1..32"); end
   localparam int CW = $clog2(WORD_BITS + 1);
   logic sclk_s, cs_s, mosi_s, sclk_d, cs_d;
-  bit_sync #(.STAGES(2), .RESET_VAL(1'b1)) u_cs   (.clk, .rst_n, .d_i(cs_n_i), .q_o(cs_s));
-  bit_sync #(.STAGES(2), .RESET_VAL(CPOL)) u_sclk (.clk, .rst_n, .d_i(sclk_i), .q_o(sclk_s));
-  bit_sync #(.STAGES(2)) u_mosi (.clk, .rst_n, .d_i(mosi_i), .q_o(mosi_s));
+  bit_sync #(.STAGES(2), .RESET_VAL(1'b1)) u_cs   (
+    .clk,
+    .rst_n,
+    .d_i(cs_n_i),
+    .q_o(cs_s)
+  );
+  bit_sync #(.STAGES(2), .RESET_VAL(CPOL)) u_sclk (
+    .clk,
+    .rst_n,
+    .d_i(sclk_i),
+    .q_o(sclk_s)
+  );
+  bit_sync #(.STAGES(2)) u_mosi (
+    .clk,
+    .rst_n,
+    .d_i(mosi_i),
+    .q_o(mosi_s)
+  );
   always_ff @(posedge clk) begin
-    if (!rst_n) begin sclk_d <= CPOL; cs_d <= 1'b1; end
-    else begin sclk_d <= sclk_s; cs_d <= cs_s; end
+    if (!rst_n) begin
+      sclk_d <= CPOL;
+      cs_d <= 1'b1;
+    end
+    else begin
+      sclk_d <= sclk_s;
+      cs_d <= cs_s;
+    end
   end
   wire cs_fall = cs_d & ~cs_s;
   wire cs_rise = ~cs_d & cs_s;
@@ -63,7 +84,9 @@ module spi_slave #(
   wire sample  = CPHA ? trail : lead;
   wire shift   = CPHA ? lead : trail;
 
-  logic [WORD_BITS-1:0] tx_word, rx_sr; logic [CW-1:0] scnt; logic miso_r;
+  logic [WORD_BITS-1:0] tx_word, rx_sr;
+  logic [CW-1:0] scnt;
+  logic miso_r;
   assign miso_o    = miso_r;
   assign miso_oe_o = ~cs_s;
   assign active_o  = ~cs_s;
@@ -72,24 +95,42 @@ module spi_slave #(
   endfunction
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      tx_word <= '0; rx_sr <= '0; scnt <= '0; miso_r <= 1'b0; rx_data_o <= '0; rx_valid_o <= 1'b0;
-      tx_ready_o <= 1'b0; frame_end_o <= 1'b0; frame_err_o <= 1'b0; underrun_o <= 1'b0;
+      tx_word <= '0;
+      rx_sr <= '0;
+      scnt <= '0;
+      miso_r <= 1'b0;
+      rx_data_o <= '0;
+      rx_valid_o <= 1'b0;
+      tx_ready_o <= 1'b0;
+      frame_end_o <= 1'b0;
+      frame_err_o <= 1'b0;
+      underrun_o <= 1'b0;
     end else begin
-      rx_valid_o <= 1'b0; tx_ready_o <= 1'b0; frame_end_o <= 1'b0; frame_err_o <= 1'b0; underrun_o <= 1'b0;
+      rx_valid_o <= 1'b0;
+      tx_ready_o <= 1'b0;
+      frame_end_o <= 1'b0;
+      frame_err_o <= 1'b0;
+      underrun_o <= 1'b0;
       if (cs_fall) begin
         scnt <= '0;
-        tx_word <= tx_valid_i ? tx_data_i : '0; tx_ready_o <= tx_valid_i; underrun_o <= ~tx_valid_i;
+        tx_word <= tx_valid_i ? tx_data_i : '0;
+        tx_ready_o <= tx_valid_i;
+        underrun_o <= ~tx_valid_i;
         miso_r <= pick(tx_valid_i ? tx_data_i : '0, '0);
       end else if (cs_rise) begin
-        frame_end_o <= 1'b1; if (scnt != 0) frame_err_o <= 1'b1;
+        frame_end_o <= 1'b1;
+        if (scnt != 0) frame_err_o <= 1'b1;
         scnt <= '0;
       end else begin
         if (sample) begin
           rx_sr <= LSB_FIRST ? {mosi_s, rx_sr[WORD_BITS-1:1]} : {rx_sr[WORD_BITS-2:0], mosi_s};
           if (scnt == WORD_BITS - 1) begin
             rx_data_o <= LSB_FIRST ? {mosi_s, rx_sr[WORD_BITS-1:1]} : {rx_sr[WORD_BITS-2:0], mosi_s};
-            rx_valid_o <= 1'b1; scnt <= '0;
-            tx_word <= tx_valid_i ? tx_data_i : '0; tx_ready_o <= tx_valid_i; underrun_o <= ~tx_valid_i;
+            rx_valid_o <= 1'b1;
+            scnt <= '0;
+            tx_word <= tx_valid_i ? tx_data_i : '0;
+            tx_ready_o <= tx_valid_i;
+            underrun_o <= ~tx_valid_i;
           end else scnt <= scnt + 1'b1;
         end
         if (shift) miso_r <= pick(tx_word, scnt);

@@ -33,13 +33,25 @@ module axis_frame_bfm #(
   int gap_pct = 0, bp_pct = 0, ow = 0, oh = 0, frames = 0, errors = 0, ox = 0, oy = 0, sent = 0;
   bit fdone = 1;                                  // the last frame was complete
   realtime in_sof_t = 0, out_sof_t = 0;
-  initial begin s_tvalid = 0; s_tdata = '0; s_tlast = 0; s_tuser = 0; m_tready = 0; end
+  initial begin
+    s_tvalid = 0;
+    s_tdata = '0;
+    s_tlast = 0;
+    s_tuser = 0;
+    m_tready = 0;
+  end
 
   task automatic send(input int W, input int H);
     for (int y = 0; y < H; y++)
       for (int x = 0; x < W; x++) begin
-        while (gap_pct != 0 && $urandom_range(99) < gap_pct) begin s_tvalid <= 1'b0; @(posedge clk); end
-        s_tdata <= img[y][x]; s_tuser <= (x == 0 && y == 0); s_tlast <= (x == W - 1); s_tvalid <= 1'b1;
+        while (gap_pct != 0 && $urandom_range(99) < gap_pct) begin
+          s_tvalid <= 1'b0;
+          @(posedge clk);
+        end
+        s_tdata <= img[y][x];
+        s_tuser <= (x == 0 && y == 0);
+        s_tlast <= (x == W - 1);
+        s_tvalid <= 1'b1;
         @(posedge clk);
         while (!s_tready) @(posedge clk);
         if (x == 0 && y == 0) in_sof_t = $realtime;
@@ -51,12 +63,31 @@ module axis_frame_bfm #(
   always @(posedge clk) begin
     if (m_tvalid && m_tready) begin
       if (m_tuser) begin
-        if (ox != 0 || (oy != 0 && !fdone)) begin errors++; $display("ERROR @%0t: SOF at (%0d,%0d)", $time, ox, oy); end
-        ox = 0; oy = 0; fdone = 0; out_sof_t = $realtime;
-      end else if (ox == 0 && oy == 0) begin errors++; $display("ERROR @%0t: first pixel without tuser", $time); end
-      if (m_tlast != (ox == ow - 1)) begin errors++; $display("ERROR @%0t: tlast %0b at x=%0d (width %0d)", $time, m_tlast, ox, ow); end
+        if (ox != 0 || (oy != 0 && !fdone)) begin
+          errors++;
+          $display("ERROR @%0t: SOF at (%0d,%0d)", $time, ox, oy);
+        end
+        ox = 0;
+        oy = 0;
+        fdone = 0;
+        out_sof_t = $realtime;
+      end else if (ox == 0 && oy == 0) begin
+        errors++;
+        $display("ERROR @%0t: first pixel without tuser", $time);
+      end
+      if (m_tlast != (ox == ow - 1)) begin
+        errors++;
+        $display("ERROR @%0t: tlast %0b at x=%0d (width %0d)", $time, m_tlast, ox, ow);
+      end
       if (oy < MAXH && ox < MAXW) out[oy][ox] = m_tdata;
-      if (m_tlast) begin ox = 0; oy++; if (oy == oh) begin frames++; fdone = 1; end end
+      if (m_tlast) begin
+        ox = 0;
+        oy++;
+        if (oy == oh) begin
+          frames++;
+          fdone = 1;
+        end
+      end
       else ox++;
     end
     m_tready <= ($urandom_range(99) >= bp_pct);

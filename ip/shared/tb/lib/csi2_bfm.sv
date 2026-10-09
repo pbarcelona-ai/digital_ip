@@ -1,5 +1,5 @@
 // ***************
-// Filename: csi2_lane_driver.sv
+// Filename: csi2_bfm.sv
 // Author: FPGA Cores 4 U
 // Description: Testbench D-PHY lane model. send() distributes the bytes of
 //   one HS burst (bbuf[0 .. blen-1], filled by the testbench) over NL lanes (byte i on lane i mod NL), the way a CSI-2
@@ -17,7 +17,7 @@
 //   queue is ever passed as an argument (iverilog limitation).
 // Date: 2026-10-01
 `timescale 1ns/1ps
-module csi2_lane_driver #(
+module csi2_bfm #(
   parameter int NL = 2
 ) (
   input  logic            clk,
@@ -28,8 +28,12 @@ module csi2_lane_driver #(
   int max_skew = 0, max_junk = 0, gap = 8;
   byte unsigned lbuf [NL][MAXB];
   int llen [NL], skew [NL];
-  byte unsigned bbuf [NL*MAXB]; int blen = 0;     // burst to send
-  initial begin lane_data = '0; lane_valid = '0; end
+  byte unsigned bbuf [NL*MAXB]; // burst to send
+  int blen = 0;
+  initial begin
+    lane_data = '0;
+    lane_valid = '0;
+  end
 
   // ---------------- CSI-2 packet building
   byte unsigned csi_pay[$];                // payload being built
@@ -49,7 +53,8 @@ module csi2_lane_driver #(
   
   // CRC-16 of csi_pay
   function automatic logic [15:0] csi_crc();
-    logic [15:0] c; logic [7:0] v;
+    logic [15:0] c;
+    logic [7:0] v;
     c = 16'hFFFF;
     foreach (csi_pay[i]) begin
       v = csi_pay[i];
@@ -61,14 +66,19 @@ module csi2_lane_driver #(
   // csi_pkt = packet with header {wc, vc, dt}; long packets (dt >= 0x10)
   // carry csi_pay and its CRC. For short packets wc is the data field.
   task automatic csi_packet(input logic [1:0] vc, input logic [5:0] dt, input logic [15:0] wc);
-    logic [23:0] h; logic [15:0] c;
+    logic [23:0] h;
+    logic [15:0] c;
     csi_pkt.delete();
     h = {wc, vc, dt};
-    csi_pkt.push_back(h[7:0]); csi_pkt.push_back(h[15:8]); csi_pkt.push_back(h[23:16]); csi_pkt.push_back({2'b00, csi_ecc(h)});
+    csi_pkt.push_back(h[7:0]);
+    csi_pkt.push_back(h[15:8]);
+    csi_pkt.push_back(h[23:16]);
+    csi_pkt.push_back({2'b00, csi_ecc(h)});
     if (dt >= 6'h10) begin
       foreach (csi_pay[i]) csi_pkt.push_back(csi_pay[i]);
       c = csi_crc();
-      csi_pkt.push_back(c[7:0]); csi_pkt.push_back(c[15:8]);
+      csi_pkt.push_back(c[7:0]);
+      csi_pkt.push_back(c[15:8]);
     end
   endtask
   
@@ -77,8 +87,14 @@ module csi2_lane_driver #(
     logic [9:0] p0, p1, p2, p3;
     csi_pay.delete();
     for (int i = 0; i + 3 < csi_px.size(); i += 4) begin
-      p0 = csi_px[i]; p1 = csi_px[i+1]; p2 = csi_px[i+2]; p3 = csi_px[i+3];
-      csi_pay.push_back(p0[9:2]); csi_pay.push_back(p1[9:2]); csi_pay.push_back(p2[9:2]); csi_pay.push_back(p3[9:2]);
+      p0 = csi_px[i];
+      p1 = csi_px[i+1];
+      p2 = csi_px[i+2];
+      p3 = csi_px[i+3];
+      csi_pay.push_back(p0[9:2]);
+      csi_pay.push_back(p1[9:2]);
+      csi_pay.push_back(p2[9:2]);
+      csi_pay.push_back(p3[9:2]);
       csi_pay.push_back({p3[1:0], p2[1:0], p1[1:0], p0[1:0]});
     end
   endtask
@@ -91,23 +107,41 @@ module csi2_lane_driver #(
 
   task automatic send();
     int len;
-    for (int l = 0; l < NL; l++) begin llen[l] = 0; skew[l] = (max_skew > 0) ? $urandom_range(max_skew) : 0; end
-    for (int i = 0; i < blen; i++) begin lbuf[i % NL][llen[i % NL]] = bbuf[i]; llen[i % NL]++; end
     for (int l = 0; l < NL; l++) begin
-      int j; j = (max_junk > 0) ? $urandom_range(max_junk) : 0;
-      repeat (j) begin lbuf[l][llen[l]] = $urandom_range(255); llen[l]++; end
+      llen[l] = 0;
+      skew[l] = (max_skew > 0) ? $urandom_range(max_skew) : 0;
+    end
+    for (int i = 0; i < blen; i++) begin
+      lbuf[i % NL][llen[i % NL]] = bbuf[i];
+      llen[i % NL]++;
+    end
+    for (int l = 0; l < NL; l++) begin
+      int j;
+      j = (max_junk > 0) ? $urandom_range(max_junk) : 0;
+      repeat (j) begin
+        lbuf[l][llen[l]] = $urandom_range(255);
+        llen[l]++;
+      end
     end
     len = 0;
     for (int l = 0; l < NL; l++) if (skew[l] + llen[l] > len) len = skew[l] + llen[l];
     for (int t = 0; t < len; t++) begin
       @(posedge clk);
       for (int l = 0; l < NL; l++) begin
-        int k; k = t - skew[l];
-        if (k >= 0 && k < llen[l]) begin lane_data[8*l +: 8] <= lbuf[l][k]; lane_valid[l] <= 1'b1; end
-        else begin lane_data[8*l +: 8] <= 8'hxx; lane_valid[l] <= 1'b0; end
+        int k;
+        k = t - skew[l];
+        if (k >= 0 && k < llen[l]) begin
+          lane_data[8*l +: 8] <= lbuf[l][k];
+          lane_valid[l] <= 1'b1;
+        end
+        else begin
+          lane_data[8*l +: 8] <= 8'hxx;
+          lane_valid[l] <= 1'b0;
+        end
       end
     end
-    @(posedge clk); lane_valid <= '0;
+    @(posedge clk);
+    lane_valid <= '0;
     repeat (gap) @(posedge clk);
   endtask
 endmodule

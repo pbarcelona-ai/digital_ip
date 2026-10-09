@@ -74,9 +74,15 @@ module tb_coord_gen;
   logic signed [31:0] out_sx_q16, out_sy_q16;
 
   coord_gen dut (
-    .clk, .rst_n, .cfg,
-    .in_valid, .in_x, .in_y,
-    .out_valid, .out_sx_q16, .out_sy_q16
+    .clk,
+    .rst_n,
+    .cfg,
+    .in_valid,
+    .in_x,
+    .in_y,
+    .out_valid,
+    .out_sx_q16,
+    .out_sy_q16
   );
 
   localparam int COORD_GEN_LATENCY = 23;  // coord_gen.sv's documented pipeline depth
@@ -89,18 +95,29 @@ module tb_coord_gen;
   `include "coord_gen_tests.sv"
 
   initial begin
-    rst_n = 0; in_valid = 0; in_x = '0; in_y = '0;
+    rst_n = 0;
+    in_valid = 0;
+    in_x = '0;
+    in_y = '0;
     cfg = '0;
-    total_checks = 0; total_fail = 0;
+    total_checks = 0;
+    total_fail = 0;
     repeat (5) @(posedge clk);
     rst_n = 1;
     repeat (3) @(posedge clk);
 
     // ---- 1. legacy-equivalent identity (k=p=0, radial model) -----------
-    cfg.cx_pix = 32'sd32 <<< 16; cfg.cy_pix = 32'sd24 <<< 16;
-    cfg.fx_pix = 32'sd40 <<< 16; cfg.fy_pix = 32'sd40 <<< 16;
-    cfg.recip_fx = recip_ref(cfg.fx_pix); cfg.recip_fy = recip_ref(cfg.fy_pix);
-    cfg.k1 = 0; cfg.k2 = 0; cfg.k3 = 0; cfg.p1 = 0; cfg.p2 = 0;
+    cfg.cx_pix = 32'sd32 <<< 16;
+    cfg.cy_pix = 32'sd24 <<< 16;
+    cfg.fx_pix = 32'sd40 <<< 16;
+    cfg.fy_pix = 32'sd40 <<< 16;
+    cfg.recip_fx = recip_ref(cfg.fx_pix);
+    cfg.recip_fy = recip_ref(cfg.fy_pix);
+    cfg.k1 = 0;
+    cfg.k2 = 0;
+    cfg.k3 = 0;
+    cfg.p1 = 0;
+    cfg.p2 = 0;
     cfg.model_sel = MODEL_RADIAL;
     check_point("identity",        0,  0);
     check_point("identity",       50, 30);
@@ -121,9 +138,12 @@ module tb_coord_gen;
     check_point("tangential",     10, 40);
 
     // ---- 4. direct camera-calibration fx/fy/cx/cy, non-power-of-two ----
-    cfg.cx_pix = 32'sd37 <<< 16; cfg.cy_pix = 32'sd29 <<< 16;
-    cfg.fx_pix = 32'sd53 <<< 16; cfg.fy_pix = 32'sd61 <<< 16;   // fx != fy, non-power-of-2
-    cfg.recip_fx = recip_ref(cfg.fx_pix); cfg.recip_fy = recip_ref(cfg.fy_pix);
+    cfg.cx_pix = 32'sd37 <<< 16;
+    cfg.cy_pix = 32'sd29 <<< 16;
+    cfg.fx_pix = 32'sd53 <<< 16; // fx != fy, non-power-of-2
+    cfg.fy_pix = 32'sd61 <<< 16;
+    cfg.recip_fx = recip_ref(cfg.fx_pix);
+    cfg.recip_fy = recip_ref(cfg.fy_pix);
     cfg.k1 = -32'sd6554; // ~-0.1
     cfg.p1 = 32'sd1638;  // ~0.025
     check_point("camera_calib",    0,  0);
@@ -145,9 +165,14 @@ module tb_coord_gen;
 
     // ---- 7. REAL perspective (3x3 homography) ---------------------------
     cfg.model_sel = MODEL_PERSPECTIVE;
-    cfg.h11 = 32'sh0001_199A; cfg.h12 = 32'sd3277;  cfg.h13 = -32'sd65536;
-    cfg.h21 = -32'sd1638;     cfg.h22 = 32'sh0000_F333; cfg.h23 = 32'sd32768;
-    cfg.h31 = 32'sd164;       cfg.h32 = -32'sd82;
+    cfg.h11 = 32'sh0001_199A;
+    cfg.h12 = 32'sd3277;
+    cfg.h13 = -32'sd65536;
+    cfg.h21 = -32'sd1638;
+    cfg.h22 = 32'sh0000_F333;
+    cfg.h23 = 32'sd32768;
+    cfg.h31 = 32'sd164;
+    cfg.h32 = -32'sd82;
     check_point("perspective",     0,  0);
     check_point("perspective",    70, 55);
     check_point("perspective",    12,  8);
@@ -164,12 +189,19 @@ module tb_coord_gen;
     // not just the small (<100) coordinates every other check above
     // uses. Directly caught a real bug: MAX_W/MAX_H were 512, too small
     // for a 720-pixel dimension -- see barrel_pkg.sv and README.
-    cfg.cx_pix = 32'sd240 <<< 16; cfg.cy_pix = 32'sd360 <<< 16;
-    cfg.fx_pix = 32'sd240 <<< 16; cfg.fy_pix = 32'sd360 <<< 16;
-    cfg.recip_fx = recip_ref(cfg.fx_pix); cfg.recip_fy = recip_ref(cfg.fy_pix);
+    cfg.cx_pix = 32'sd240 <<< 16;
+    cfg.cy_pix = 32'sd360 <<< 16;
+    cfg.fx_pix = 32'sd240 <<< 16;
+    cfg.fy_pix = 32'sd360 <<< 16;
+    cfg.recip_fx = recip_ref(cfg.fx_pix);
+    cfg.recip_fy = recip_ref(cfg.fy_pix);
 
     cfg.model_sel = MODEL_RADIAL;
-    cfg.k1 = -32'sd6554; cfg.k2 = 32'sd1311; cfg.k3 = 0; cfg.p1 = 32'sd819; cfg.p2 = -32'sd819;
+    cfg.k1 = -32'sd6554;
+    cfg.k2 = 32'sd1311;
+    cfg.k3 = 0;
+    cfg.p1 = 32'sd819;
+    cfg.p2 = -32'sd819;
     check_point("large_frame_radial",       0,   0);
     check_point("large_frame_radial",     479,   0);
     check_point("large_frame_radial",       0, 719);
@@ -177,7 +209,8 @@ module tb_coord_gen;
     check_point("large_frame_radial",     240, 360);
 
     cfg.model_sel = MODEL_FISHEYE;
-    cfg.p1 = 0; cfg.p2 = 0;
+    cfg.p1 = 0;
+    cfg.p2 = 0;
     check_point("large_frame_fisheye",      0,   0);
     check_point("large_frame_fisheye",    479,   0);
     check_point("large_frame_fisheye",      0, 719);
@@ -190,9 +223,14 @@ module tb_coord_gen;
     check_point("large_frame_panoramic",  479, 719);
 
     cfg.model_sel = MODEL_PERSPECTIVE;
-    cfg.h11 = 32'sh0001_0000; cfg.h12 = 0; cfg.h13 = 0;
-    cfg.h21 = 0; cfg.h22 = 32'sh0001_0000; cfg.h23 = 0;
-    cfg.h31 = 32'sd26; cfg.h32 = -32'sd13;   // small keystone, same order as the full-scale test
+    cfg.h11 = 32'sh0001_0000;
+    cfg.h12 = 0;
+    cfg.h13 = 0;
+    cfg.h21 = 0;
+    cfg.h22 = 32'sh0001_0000;
+    cfg.h23 = 0;
+    cfg.h31 = 32'sd26; // small keystone, same order as the full-scale test
+    cfg.h32 = -32'sd13;
     check_point("large_frame_perspective",  0,   0);
     check_point("large_frame_perspective",479,   0);
     check_point("large_frame_perspective",  0, 719);

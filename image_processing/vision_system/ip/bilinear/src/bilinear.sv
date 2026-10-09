@@ -52,7 +52,10 @@ module bilinear (
     w10A <= ({1'b0,fx})   * (9'd256 - fy);
     w01A <= (9'd256 - fx) * ({1'b0,fy});
     w11A <= ({1'b0,fx})   * ({1'b0,fy});
-    tlA <= tl; trA <= tr; blA <= bl; brA <= br;
+    tlA <= tl;
+    trA <= tr;
+    blA <= bl;
+    brA <= br;
   end
 
   // ---- Stage B1: raw per-channel, per-tap products (registered) --------
@@ -64,12 +67,18 @@ module bilinear (
     else        vB1 <= vA;
   end
   always_ff @(posedge clk) begin
-    prB1[0][0] <= tlA[23:16] * w00A;  prB1[0][1] <= trA[23:16] * w10A;
-    prB1[0][2] <= blA[23:16] * w01A;  prB1[0][3] <= brA[23:16] * w11A;
-    prB1[1][0] <= tlA[15:8]  * w00A;  prB1[1][1] <= trA[15:8]  * w10A;
-    prB1[1][2] <= blA[15:8]  * w01A;  prB1[1][3] <= brA[15:8]  * w11A;
-    prB1[2][0] <= tlA[7:0]   * w00A;  prB1[2][1] <= trA[7:0]   * w10A;
-    prB1[2][2] <= blA[7:0]   * w01A;  prB1[2][3] <= brA[7:0]   * w11A;
+    prB1[0][0] <= tlA[23:16] * w00A;
+    prB1[0][1] <= trA[23:16] * w10A;
+    prB1[0][2] <= blA[23:16] * w01A;
+    prB1[0][3] <= brA[23:16] * w11A;
+    prB1[1][0] <= tlA[15:8]  * w00A;
+    prB1[1][1] <= trA[15:8]  * w10A;
+    prB1[1][2] <= blA[15:8]  * w01A;
+    prB1[1][3] <= brA[15:8]  * w11A;
+    prB1[2][0] <= tlA[7:0]   * w00A;
+    prB1[2][1] <= trA[7:0]   * w10A;
+    prB1[2][2] <= blA[7:0]   * w01A;
+    prB1[2][3] <= brA[7:0]   * w11A;
   end
 
   // ---- Stage B2: sum the four products, round, take the result byte ----

@@ -115,7 +115,9 @@ module tb_scaler_bicubic;
     axil_check(12'h024, 32'h4243_5542);     // IP_ID "BCUB"
     axil_check(12'h040, {8'(COEF_FRAC), 8'(COEF_W), 8'(PHASE_BITS), 8'(TAPS)});
     check_default_tables();
-    kind = KERNEL_CUBIC; kpa = 0.0; kpb = 0.5;          // Catmull-Rom
+    kind = KERNEL_CUBIC; // Catmull-Rom
+    kpa = 0.0;
+    kpb = 0.5;
     if (use_file) begin
       run_file_suite();              // +IMG=<file.ppm>
     end else if (quick) begin
@@ -123,12 +125,16 @@ module tb_scaler_bicubic;
     end else begin
       // generated images: standard sweep plus IP-specific tests
       run_standard_suite();
-      kpa = 1.0/3.0; kpb = 1.0/3.0;                       // Mitchell-Netravali
+      kpa = 1.0/3.0; // Mitchell-Netravali
+      kpb = 1.0/3.0;
       run_test(16, 12, 37, 29, 1);
       run_test(40, 30, 17, 13, 0);
-      kpa = 1.0; kpb = 0.0;                               // cubic B-spline
+      kpa = 1.0; // cubic B-spline
+      kpb = 0.0;
       run_test(20, 16, 31, 23, 2);
-      kpa = 0.0; kpb = 0.75; aa = 0;                      // sharp Keys a=-0.75, no AA
+      kpa = 0.0; // sharp Keys a=-0.75, no AA
+      kpb = 0.75;
+      aa = 0;
       run_test(40, 30, 21, 15, 2);
     end
     finish_report();

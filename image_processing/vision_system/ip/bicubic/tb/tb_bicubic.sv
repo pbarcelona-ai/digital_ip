@@ -39,9 +39,31 @@ module tb_bicubic;
   logic valid_out;
   logic [PIX_W-1:0] pixel_out;
 
-  bicubic dut (.clk, .rst_n, .valid_in, .tx_q16, .ty_q16,
-    .p00,.p01,.p02,.p03,.p10,.p11,.p12,.p13,.p20,.p21,.p22,.p23,.p30,.p31,.p32,.p33,
-    .valid_out, .pixel_out);
+  bicubic dut (
+    .clk,
+    .rst_n,
+    .valid_in,
+    .tx_q16,
+    .ty_q16,
+    .p00,
+    .p01,
+    .p02,
+    .p03,
+    .p10,
+    .p11,
+    .p12,
+    .p13,
+    .p20,
+    .p21,
+    .p22,
+    .p23,
+    .p30,
+    .p31,
+    .p32,
+    .p33,
+    .valid_out,
+    .pixel_out
+  );
 
   always #5 clk = ~clk;
 
@@ -51,8 +73,11 @@ module tb_bicubic;
   `include "bicubic_tests.sv"
 
   initial begin
-    checks = 0; fails = 0;
-    valid_in = 0; tx_q16 = 0; ty_q16 = 0;
+    checks = 0;
+    fails = 0;
+    valid_in = 0;
+    tx_q16 = 0;
+    ty_q16 = 0;
     {p00,p01,p02,p03,p10,p11,p12,p13,p20,p21,p22,p23,p30,p31,p32,p33} = '0;
     repeat (3) @(posedge clk);
     rst_n = 1;
@@ -111,7 +136,9 @@ module tb_bicubic;
     @(posedge clk);   // edge A
     {p00,p01,p02,p03,p10,p11,p12,p13,p20,p21,p22,p23,p30,p31,p32,p33} <= '0;
     p11 <= 24'hAABBCC;
-    tx_q16 <= 0; ty_q16 <= 0; valid_in <= 1'b1;
+    tx_q16 <= 0;
+    ty_q16 <= 0;
+    valid_in <= 1'b1;
     @(posedge clk);   // edge B -- stage 1 samples valid_in here
     valid_in <= 1'b0;
     repeat (BICUBIC_LATENCY - 2) begin   // edges C.. still low

@@ -11,95 +11,19 @@
 // Date: 2026-09-29
 `timescale 1ns/1ps
 
-// ---------------------------------------------------------------
-// Behavioral I2C slave: 256 byte memory, first written byte is the
-// memory pointer, reads are sequential from the pointer.
-// ---------------------------------------------------------------
-module i2c_slave_model #(parameter logic [6:0] ADDR = 7'h50) (
-  inout tri1 sda,
-  inout tri1 scl
-);
-  logic sda_low = 0, scl_low = 0;
-  assign sda = sda_low ? 1'b0 : 1'bz;
-  assign scl = scl_low ? 1'b0 : 1'bz;
-
-  logic [7:0] mem [0:255];
-  logic [7:0] ptr = 0, shreg = 0;
-  int  state = 0, bitcnt = 0;
-  bit  rw = 0, first = 0, m_nack = 0;
-  bit  stretch_en = 0;              // hold SCL low during ack when set
-  int  stretch_ns = 2000;
-
-  localparam int IDLE = 0, ADR = 1, ADR_ACK = 2, WDATA = 3, W_ACK = 4,
-                 RDATA = 5, R_ACK = 6;
-
-  initial for (int i = 0; i < 256; i++) mem[i] = 8'h00;
-
-  // START: SDA falls while SCL high; STOP: SDA rises while SCL high
-  always @(negedge sda) if (scl === 1'b1) begin
-    state = ADR; bitcnt = 0; shreg = 0; sda_low = 0;
-  end
-  always @(posedge sda) if (scl === 1'b1) begin
-    state = IDLE; sda_low = 0;
-  end
-
-  // Sample on rising SCL
-  always @(posedge scl) begin
-    case (state)
-      ADR, WDATA: begin shreg = {shreg[6:0], sda}; bitcnt = bitcnt + 1; end
-      R_ACK: m_nack = sda;
-      default: ;
-    endcase
-  end
-
-  // Drive on falling SCL
-  always @(negedge scl) begin
-    case (state)
-      ADR: if (bitcnt == 8) begin
-        if (shreg[7:1] == ADDR) begin
-          rw = shreg[0]; sda_low = 1; state = ADR_ACK;
-          if (stretch_en) begin scl_low = 1; #(stretch_ns); scl_low = 0; end
-        end else state = IDLE;
-      end
-      ADR_ACK: begin
-        sda_low = 0; bitcnt = 0;
-        if (rw) begin
-          shreg = mem[ptr]; ptr = ptr + 1; state = RDATA;
-          sda_low = ~shreg[7]; shreg = {shreg[6:0], 1'b0}; bitcnt = 1;
-        end else begin state = WDATA; first = 1; end
-      end
-      WDATA: if (bitcnt == 8) begin
-        if (first) begin ptr = shreg; first = 0; end
-        else begin mem[ptr] = shreg; ptr = ptr + 1; end
-        sda_low = 1; state = W_ACK;
-      end
-      W_ACK: begin sda_low = 0; bitcnt = 0; state = WDATA; end
-      RDATA: begin
-        if (bitcnt < 8) begin
-          sda_low = ~shreg[7]; shreg = {shreg[6:0], 1'b0}; bitcnt = bitcnt + 1;
-        end else begin sda_low = 0; state = R_ACK; end
-      end
-      R_ACK: begin
-        if (m_nack) state = IDLE;
-        else begin
-          shreg = mem[ptr]; ptr = ptr + 1; state = RDATA;
-          sda_low = ~shreg[7]; shreg = {shreg[6:0], 1'b0}; bitcnt = 1;
-        end
-      end
-      default: ;
-    endcase
-  end
-endmodule
-
 module i2c_master_tb;
   localparam real CLK_PERIOD = 10.0;        // 100 MHz
   logic aclk = 0, aresetn = 0;
   always #(CLK_PERIOD/2) aclk = ~aclk;
 
-  logic [7:0] awaddr, araddr; logic awvalid, awready, wvalid, wready;
-  logic [31:0] wdata, rdata; logic [3:0] wstrb; logic [1:0] bresp, rresp;
+  logic [7:0] awaddr, araddr;
+  logic awvalid, awready, wvalid, wready;
+  logic [31:0] wdata, rdata;
+  logic [3:0] wstrb;
+  logic [1:0] bresp, rresp;
   logic bvalid, bready, arvalid, arready, rvalid, rready;
-  logic [7:0] s_tdata, m_tdata; logic s_tvalid, s_tready, s_tlast;
+  logic [7:0] s_tdata, m_tdata;
+  logic s_tvalid, s_tready, s_tlast;
   logic m_tvalid, m_tready, m_tlast;
   logic scl_o, scl_t, sda_o, sda_t;
 
@@ -108,19 +32,45 @@ module i2c_master_tb;
   assign scl = scl_t ? 1'bz : scl_o;
 
   i2c_top #(.FIFO_DEPTH(16)) dut (
-    .aclk, .aresetn,
-    .s_axil_awaddr(awaddr), .s_axil_awvalid(awvalid), .s_axil_awready(awready),
-    .s_axil_wdata(wdata), .s_axil_wstrb(wstrb), .s_axil_wvalid(wvalid),
-    .s_axil_wready(wready), .s_axil_bresp(bresp), .s_axil_bvalid(bvalid),
-    .s_axil_bready(bready), .s_axil_araddr(araddr), .s_axil_arvalid(arvalid),
-    .s_axil_arready(arready), .s_axil_rdata(rdata), .s_axil_rresp(rresp),
-    .s_axil_rvalid(rvalid), .s_axil_rready(rready),
-    .s_axis_tdata(s_tdata), .s_axis_tvalid(s_tvalid), .s_axis_tready(s_tready),
-    .s_axis_tlast(s_tlast), .m_axis_tdata(m_tdata), .m_axis_tvalid(m_tvalid),
-    .m_axis_tready(m_tready), .m_axis_tlast(m_tlast),
-    .scl_i(scl), .scl_o, .scl_t, .sda_i(sda), .sda_o, .sda_t);
+    .aclk,
+    .aresetn,
+    .s_axil_awaddr(awaddr),
+    .s_axil_awvalid(awvalid),
+    .s_axil_awready(awready),
+    .s_axil_wdata(wdata),
+    .s_axil_wstrb(wstrb),
+    .s_axil_wvalid(wvalid),
+    .s_axil_wready(wready),
+    .s_axil_bresp(bresp),
+    .s_axil_bvalid(bvalid),
+    .s_axil_bready(bready),
+    .s_axil_araddr(araddr),
+    .s_axil_arvalid(arvalid),
+    .s_axil_arready(arready),
+    .s_axil_rdata(rdata),
+    .s_axil_rresp(rresp),
+    .s_axil_rvalid(rvalid),
+    .s_axil_rready(rready),
+    .s_axis_tdata(s_tdata),
+    .s_axis_tvalid(s_tvalid),
+    .s_axis_tready(s_tready),
+    .s_axis_tlast(s_tlast),
+    .m_axis_tdata(m_tdata),
+    .m_axis_tvalid(m_tvalid),
+    .m_axis_tready(m_tready),
+    .m_axis_tlast(m_tlast),
+    .scl_i(scl),
+    .scl_o,
+    .scl_t,
+    .sda_i(sda),
+    .sda_o,
+    .sda_t
+  );
 
-  i2c_slave_model slave (.sda, .scl);
+  i2c_bfm slave (
+    .sda,
+    .scl
+  );
 
   int errors = 0;
 
@@ -130,26 +80,43 @@ module i2c_master_tb;
   `include "i2c_master_tests.sv"
 
   // Received byte capture
-  byte rx_q[$]; bit last_q[$];
+  byte rx_q[$];
+  bit last_q[$];
   always @(posedge aclk) if (m_tvalid && m_tready) begin
-    rx_q.push_back(m_tdata); last_q.push_back(m_tlast);
+    rx_q.push_back(m_tdata);
+    last_q.push_back(m_tlast);
   end
 
   initial begin
     if ($test$plusargs("vcd")) begin
-      $dumpfile("i2c_master_tb.vcd"); $dumpvars(0, i2c_master_tb);
+      $dumpfile("i2c_master_tb.vcd");
+      $dumpvars(0, i2c_master_tb);
     end
-    awvalid = 0; wvalid = 0; bready = 0; arvalid = 0; rready = 0;
-    awaddr = 0; araddr = 0; wdata = 0; wstrb = 0;
-    s_tdata = 0; s_tvalid = 0; s_tlast = 0; m_tready = 1;
-    repeat (5) @(posedge aclk); aresetn = 1; repeat (2) @(posedge aclk);
+    awvalid = 0;
+    wvalid = 0;
+    bready = 0;
+    arvalid = 0;
+    rready = 0;
+    awaddr = 0;
+    araddr = 0;
+    wdata = 0;
+    wstrb = 0;
+    s_tdata = 0;
+    s_tvalid = 0;
+    s_tlast = 0;
+    m_tready = 1;
+    repeat (5) @(posedge aclk);
+    aresetn = 1;
+    repeat (2) @(posedge aclk);
 
     axil_read(8'h0C, rd);
     check(rd == 32'd249, $sformatf("default DIV %0d (100 kHz at 100 MHz)", rd));
     axil_write(8'h0C, 32'd12);                          // fast bus for sim
 
     // ---- Test 1: write pointer 0x10 then two data bytes ----
-    stream_send(8'h10); stream_send(8'hAA); stream_send(8'h55);
+    stream_send(8'h10);
+    stream_send(8'hAA);
+    stream_send(8'h55);
     i2c_xfer(7'h50, 0, 3, 0);
     check(rd[2] == 0, "unexpected NACK on write");
     check(slave.mem[16] == 8'hAA && slave.mem[17] == 8'h55,
@@ -168,14 +135,16 @@ module i2c_master_tb;
       check(last_q[0] == 0 && last_q[1] == 1, "tlast on final read byte only");
     end
     check(scl === 1'b1 && sda === 1'b1, "bus not idle after read STOP");
-    rx_q.delete(); last_q.delete();
+    rx_q.delete();
+    last_q.delete();
 
     // ---- Test 3: absent slave NACKs the address ----
     i2c_xfer(7'h51, 0, 1, 0);
     check(rd[2] == 1, "NACK flag not set");
     stream_send(8'h00);                       // consume unused byte later
     axil_write(8'h10, 32'hE);
-    axil_read(8'h10, rd); check(rd[3:1] == 0, "W1C did not clear flags");
+    axil_read(8'h10, rd);
+    check(rd[3:1] == 0, "W1C did not clear flags");
     check(scl === 1'b1 && sda === 1'b1, "bus not idle after NACK");
 
     // ---- Test 4: address-only probe (len = 0) ----
@@ -194,5 +163,9 @@ module i2c_master_tb;
     else             $display("TEST FAILED (%0d errors)", errors);
     $finish;
   end
-  initial begin #20_000_000; $display("TEST FAILED (timeout)"); $finish; end
+  initial begin
+    #20_000_000;
+    $display("TEST FAILED (timeout)");
+    $finish;
+  end
 endmodule

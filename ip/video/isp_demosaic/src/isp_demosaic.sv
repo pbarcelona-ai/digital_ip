@@ -39,10 +39,27 @@ module isp_demosaic #(
   output logic            m_axis_tvalid,
   input  logic            m_axis_tready
 );
-  logic [9*PW-1:0] win; logic [15:0] wx, wy; logic wl, wu, wv, wr;
-  isp_window #(.N(3), .PW(PW), .MAX_W(MAX_W), .BORDER(1)) u_win (.clk, .rst_n, .width_i, .height_i,
-    .s_axis_tdata, .s_axis_tlast, .s_axis_tuser, .s_axis_tvalid, .s_axis_tready,
-    .m_axis_tdata(win), .m_x(wx), .m_y(wy), .m_axis_tlast(wl), .m_axis_tuser(wu), .m_axis_tvalid(wv), .m_axis_tready(wr));
+  logic [9*PW-1:0] win;
+  logic [15:0] wx, wy;
+  logic wl, wu, wv, wr;
+  isp_window #(.N(3), .PW(PW), .MAX_W(MAX_W), .BORDER(1)) u_win (
+    .clk,
+    .rst_n,
+    .width_i,
+    .height_i,
+    .s_axis_tdata,
+    .s_axis_tlast,
+    .s_axis_tuser,
+    .s_axis_tvalid,
+    .s_axis_tready,
+    .m_axis_tdata(win),
+    .m_x(wx),
+    .m_y(wy),
+    .m_axis_tlast(wl),
+    .m_axis_tuser(wu),
+    .m_axis_tvalid(wv),
+    .m_axis_tready(wr)
+  );
 
   wire [PW-1:0] nw = win[0*PW +: PW], n = win[1*PW +: PW], ne = win[2*PW +: PW];
   wire [PW-1:0] w  = win[3*PW +: PW], c = win[4*PW +: PW], e  = win[5*PW +: PW];
@@ -51,7 +68,8 @@ module isp_demosaic #(
   wire [PW:0]   hor = e + w + 1, ver = n + s + 1;
   wire [PW-1:0] g4 = crs[PW+1:2], d4 = diag[PW+1:2], h2 = hor[PW:1], v2 = ver[PW:1];
 
-  logic [1:0] cfa_f; logic by_f;
+  logic [1:0] cfa_f;
+  logic by_f;
   wire  [1:0] cfa = wu ? cfa_i : cfa_f;
   wire        by  = wu ? bypass_i : by_f;
   wire  [1:0] color = {wy[0] ^ cfa[1], wx[0] ^ cfa[0]};   // 0 R, 1 Gr, 2 Gb, 3 B
@@ -59,22 +77,52 @@ module isp_demosaic #(
   logic [PW-1:0] r, g, b;
   always_comb begin
     case (color)
-      2'd0:    begin r = c;  g = g4; b = d4; end
-      2'd3:    begin r = d4; g = g4; b = c;  end
-      2'd1:    begin r = h2; g = c;  b = v2; end
-      default: begin r = v2; g = c;  b = h2; end
+      2'd0:    begin
+        r = c;
+        g = g4;
+        b = d4;
+      end
+      2'd3:    begin
+        r = d4;
+        g = g4;
+        b = c;
+      end
+      2'd1:    begin
+        r = h2;
+        g = c;
+        b = v2;
+      end
+      default: begin
+        r = v2;
+        g = c;
+        b = h2;
+      end
     endcase
-    if (by) begin r = c; g = c; b = c; end
+    if (by) begin
+      r = c;
+      g = c;
+      b = c;
+    end
   end
 
   assign wr = !m_axis_tvalid || m_axis_tready;
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      cfa_f <= '0; by_f <= 1'b0;
-      m_axis_tvalid <= 1'b0; m_axis_tdata <= '0; m_axis_tlast <= 1'b0; m_axis_tuser <= 1'b0;
+      cfa_f <= '0;
+      by_f <= 1'b0;
+      m_axis_tvalid <= 1'b0;
+      m_axis_tdata <= '0;
+      m_axis_tlast <= 1'b0;
+      m_axis_tuser <= 1'b0;
     end else if (wv && wr) begin
-      if (wu) begin cfa_f <= cfa_i; by_f <= bypass_i; end
-      m_axis_tvalid <= 1'b1; m_axis_tdata <= {b, g, r}; m_axis_tlast <= wl; m_axis_tuser <= wu;
+      if (wu) begin
+        cfa_f <= cfa_i;
+        by_f <= bypass_i;
+      end
+      m_axis_tvalid <= 1'b1;
+      m_axis_tdata <= {b, g, r};
+      m_axis_tlast <= wl;
+      m_axis_tuser <= wu;
     end else if (m_axis_tready) m_axis_tvalid <= 1'b0;
   end
 endmodule

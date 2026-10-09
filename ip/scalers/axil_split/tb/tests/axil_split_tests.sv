@@ -10,7 +10,16 @@
 // ***************
   task automatic g_slave_report(input int g);
     int e;
-    if (g == 0) begin g_slave[0].u_chk.report(); e = g_slave[0].u_chk.errors + g_slave[0].u_chk.sva_errors; end
-    else        begin g_slave[1].u_chk.report(); e = g_slave[1].u_chk.errors + g_slave[1].u_chk.sva_errors; end
-    if (e != 0) begin errors++; $display("ERROR: protocol errors on slave port %0d", g); end
+    if (g == 0) begin
+      g_slave[0].u_chk.report();
+      e = g_slave[0].u_chk.errors + g_slave[0].u_chk.sva_errors;
+    end
+    else        begin
+      g_slave[1].u_chk.report();
+      e = g_slave[1].u_chk.errors + g_slave[1].u_chk.sva_errors;
+    end
+    if (e != 0) begin
+      errors++;
+      $display("ERROR: protocol errors on slave port %0d", g);
+    end
   endtask

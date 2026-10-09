@@ -71,7 +71,9 @@ module py_boot #(
 
   // ---------------- one bus operation at a time ----------------
   typedef enum logic [1:0] {B_IDLE, B_WR, B_RD} bus_e;
-  bus_e bst; logic op_done, op_err, aw_ok, w_ok; logic [31:0] op_rdata;
+  bus_e bst;
+  logic op_done, op_err, aw_ok, w_ok;
+  logic [31:0] op_rdata;
   assign m_axil_wstrb = 4'hF;
 
   logic [95:0]  hdr;                     // header bytes, byte 0 in [7:0]
@@ -92,32 +94,79 @@ module py_boot #(
   assign err_o  = (st == S_ERR);
 
   always_ff @(posedge clk) begin : p_seq
-    logic do_wr, do_rd; logic [31:0] do_a, do_d;     // bus request from the sequencer, this clock
-    do_wr = 1'b0; do_rd = 1'b0; do_a = '0; do_d = '0;
+    logic do_wr, do_rd; // bus request from the sequencer, this clock
+    logic [31:0] do_a, do_d;
+    do_wr = 1'b0;
+    do_rd = 1'b0;
+    do_a = '0;
+    do_d = '0;
     if (!rst_n) begin
-      st <= S_DIV; bst <= B_IDLE; op_done <= 1'b0; op_err <= 1'b0; op_rdata <= '0; aw_ok <= 1'b0; w_ok <= 1'b0;
-      m_axil_awaddr <= '0; m_axil_wdata <= '0; m_axil_araddr <= '0;
-      m_axil_awvalid <= 1'b0; m_axil_wvalid <= 1'b0; m_axil_bready <= 1'b0; m_axil_arvalid <= 1'b0; m_axil_rready <= 1'b0;
-      hdr <= '0; hcnt <= '0; idx <= '0; payload <= '0; sum <= '0; cbuf <= '0; cbyte <= '0; cidx <= '0; idle_polls <= '0;
-      err_code_o <= '0; code_we_o <= 1'b0; const_we_o <= 1'b0;
-      code_waddr_o <= '0; code_wdata_o <= '0; const_waddr_o <= '0; const_wdata_o <= '0;
+      st <= S_DIV;
+      bst <= B_IDLE;
+      op_done <= 1'b0;
+      op_err <= 1'b0;
+      op_rdata <= '0;
+      aw_ok <= 1'b0;
+      w_ok <= 1'b0;
+      m_axil_awaddr <= '0;
+      m_axil_wdata <= '0;
+      m_axil_araddr <= '0;
+      m_axil_awvalid <= 1'b0;
+      m_axil_wvalid <= 1'b0;
+      m_axil_bready <= 1'b0;
+      m_axil_arvalid <= 1'b0;
+      m_axil_rready <= 1'b0;
+      hdr <= '0;
+      hcnt <= '0;
+      idx <= '0;
+      payload <= '0;
+      sum <= '0;
+      cbuf <= '0;
+      cbyte <= '0;
+      cidx <= '0;
+      idle_polls <= '0;
+      err_code_o <= '0;
+      code_we_o <= 1'b0;
+      const_we_o <= 1'b0;
+      code_waddr_o <= '0;
+      code_wdata_o <= '0;
+      const_waddr_o <= '0;
+      const_wdata_o <= '0;
     end else begin
-      code_we_o <= 1'b0; const_we_o <= 1'b0; op_done <= 1'b0;
+      code_we_o <= 1'b0;
+      const_we_o <= 1'b0;
+      op_done <= 1'b0;
 
       // Bus engine: op_done pulses for one clock with op_err / op_rdata
       case (bst)
         B_WR: begin
-          if (m_axil_awvalid && m_axil_awready) begin m_axil_awvalid <= 1'b0; aw_ok <= 1'b1; end
-          if (m_axil_wvalid  && m_axil_wready)  begin m_axil_wvalid  <= 1'b0; w_ok  <= 1'b1; end
+          if (m_axil_awvalid && m_axil_awready) begin
+            m_axil_awvalid <= 1'b0;
+            aw_ok <= 1'b1;
+          end
+          if (m_axil_wvalid  && m_axil_wready)  begin
+            m_axil_wvalid  <= 1'b0;
+            w_ok  <= 1'b1;
+          end
           if ((aw_ok || (m_axil_awvalid && m_axil_awready)) && (w_ok || (m_axil_wvalid && m_axil_wready))) m_axil_bready <= 1'b1;
           if (m_axil_bready && m_axil_bvalid) begin
-            m_axil_bready <= 1'b0; op_done <= 1'b1; op_err <= (m_axil_bresp != 2'b00); bst <= B_IDLE;
+            m_axil_bready <= 1'b0;
+            op_done <= 1'b1;
+            op_err <= (m_axil_bresp != 2'b00);
+            bst <= B_IDLE;
           end
         end
         B_RD: begin
-          if (m_axil_arvalid && m_axil_arready) begin m_axil_arvalid <= 1'b0; m_axil_rready <= 1'b1; end
+          if (m_axil_arvalid && m_axil_arready) begin
+            m_axil_arvalid <= 1'b0;
+            m_axil_rready <= 1'b1;
+          end
           if (m_axil_rready && m_axil_rvalid) begin
-            m_axil_rready <= 1'b0; op_done <= 1'b1; op_err <= (m_axil_rresp != 2'b00); op_rdata <= m_axil_rdata; bst <= B_IDLE;
+            m_axil_rready <= 1'b0;
+            op_done <= 1'b1;
+            op_err <= (m_axil_rresp != 2'b00);
+            op_rdata <= m_axil_rdata;
+            bst <= B_IDLE;
           end
         end
         default: ;
@@ -126,57 +175,143 @@ module py_boot #(
       // Sequencer: runs when the bus engine is idle. In a write state op_done
       // means that state's write finished; otherwise the write is issued.
       if (op_done && op_err && st != S_DONE && st != S_ERR) begin
-        err_code_o <= 3'd4; st <= S_ERR;
+        err_code_o <= 3'd4;
+        st <= S_ERR;
       end else if (bst == B_IDLE) case (st)
-        S_DIV:   if (op_done) st <= S_ADDR;  else begin do_wr = 1'b1; do_a = F_DIV; do_d = 32'(FLASH_CLKDIV); end
-        S_ADDR:  if (op_done) st <= S_LEN;   else begin do_wr = 1'b1; do_a = F_ADDR; do_d = {8'd0, BOOT_ADDR}; end
-        S_LEN:   if (op_done) st <= S_CMD;   else begin do_wr = 1'b1; do_a = F_LEN; do_d = HDR_BYTES; end
-        S_CMD:   if (op_done) st <= S_HDR;   else begin do_wr = 1'b1; do_a = F_CMD; do_d = CMD_READ; end
+        S_DIV:
+          if (op_done) st <= S_ADDR;
+          else begin
+            do_wr = 1'b1;
+            do_a = F_DIV;
+            do_d = 32'(FLASH_CLKDIV);
+          end
+        S_ADDR:
+          if (op_done) st <= S_LEN;
+          else begin
+            do_wr = 1'b1;
+            do_a = F_ADDR;
+            do_d = {8'd0, BOOT_ADDR};
+          end
+        S_LEN:
+          if (op_done) st <= S_CMD;
+          else begin
+            do_wr = 1'b1;
+            do_a = F_LEN;
+            do_d = HDR_BYTES;
+          end
+        S_CMD:
+          if (op_done) st <= S_HDR;
+          else begin
+            do_wr = 1'b1;
+            do_a = F_CMD;
+            do_d = CMD_READ;
+          end
         S_HDR: begin
           if (op_done) begin
             if (rx_valid) begin
-              hdr <= {rx_byte, hdr[95:8]}; hcnt <= hcnt + 1'b1; idle_polls <= '0;
+              hdr <= {rx_byte, hdr[95:8]};
+              hcnt <= hcnt + 1'b1;
+              idle_polls <= '0;
               if (hcnt == HDR_BYTES - 1) st <= S_CHECK;
-            end else if (idle_polls == 16'hFFFF) begin err_code_o <= 3'd5; st <= S_ERR; end
+            end else if (idle_polls == 16'hFFFF) begin
+              err_code_o <= 3'd5;
+              st <= S_ERR;
+            end
             else idle_polls <= idle_polls + 1'b1;
           end
-          if (!(op_done && rx_valid && hcnt == HDR_BYTES - 1)) begin do_rd = 1'b1; do_a = P_RX; end
+          if (!(op_done && rx_valid && hcnt == HDR_BYTES - 1)) begin
+            do_rd = 1'b1;
+            do_a = P_RX;
+          end
         end
         S_CHECK: begin
-          if (hdr[31:0] != MAGIC) begin err_code_o <= 3'd1; st <= S_ERR; end
-          else if (code_len == 0 || code_len > 2**CODE_AW || const_cnt > 2**CONST_AW) begin err_code_o <= 3'd2; st <= S_ERR; end
-          else begin payload <= code_len + 16'(const_cnt * 5); st <= S_ADDR2; end
+          if (hdr[31:0] != MAGIC) begin
+            err_code_o <= 3'd1;
+            st <= S_ERR;
+          end
+          else if (code_len == 0 || code_len > 2**CODE_AW || const_cnt > 2**CONST_AW) begin
+            err_code_o <= 3'd2;
+            st <= S_ERR;
+          end
+          else begin
+            payload <= code_len + 16'(const_cnt * 5);
+            st <= S_ADDR2;
+          end
         end
-        S_ADDR2: if (op_done) st <= S_LEN2;  else begin do_wr = 1'b1; do_a = F_ADDR; do_d = {8'd0, BOOT_ADDR + 24'(HDR_BYTES)}; end
-        S_LEN2:  if (op_done) st <= S_CMD2;  else begin do_wr = 1'b1; do_a = F_LEN; do_d = {16'd0, payload}; end
-        S_CMD2:  if (op_done) st <= S_DATA;  else begin do_wr = 1'b1; do_a = F_CMD; do_d = CMD_READ; end
+        S_ADDR2:
+          if (op_done) st <= S_LEN2;
+          else begin
+            do_wr = 1'b1;
+            do_a = F_ADDR;
+            do_d = {8'd0, BOOT_ADDR + 24'(HDR_BYTES)};
+          end
+        S_LEN2:
+          if (op_done) st <= S_CMD2;
+          else begin
+            do_wr = 1'b1;
+            do_a = F_LEN;
+            do_d = {16'd0, payload};
+          end
+        S_CMD2:
+          if (op_done) st <= S_DATA;
+          else begin
+            do_wr = 1'b1;
+            do_a = F_CMD;
+            do_d = CMD_READ;
+          end
         S_DATA: begin
           if (op_done) begin
             if (rx_valid) begin
-              sum <= sum + {24'd0, rx_byte}; idx <= idx + 1'b1; idle_polls <= '0;
+              sum <= sum + {24'd0, rx_byte};
+              idx <= idx + 1'b1;
+              idle_polls <= '0;
               if (idx < code_len) begin
-                code_we_o <= 1'b1; code_waddr_o <= idx[CODE_AW-1:0]; code_wdata_o <= rx_byte;
+                code_we_o <= 1'b1;
+                code_waddr_o <= idx[CODE_AW-1:0];
+                code_wdata_o <= rx_byte;
               end else if (cbyte == 3'd4) begin
-                const_we_o <= 1'b1; const_waddr_o <= cidx[CONST_AW-1:0]; const_wdata_o <= {rx_byte[1:0], cbuf};
-                cidx <= cidx + 1'b1; cbyte <= '0;
+                const_we_o <= 1'b1;
+                const_waddr_o <= cidx[CONST_AW-1:0];
+                const_wdata_o <= {rx_byte[1:0], cbuf};
+                cidx <= cidx + 1'b1;
+                cbyte <= '0;
               end else begin
-                cbuf <= {rx_byte, cbuf[31:8]}; cbyte <= cbyte + 1'b1;
+                cbuf <= {rx_byte, cbuf[31:8]};
+                cbyte <= cbyte + 1'b1;
               end
               if (idx == payload - 1'b1) st <= S_SUM;
-            end else if (idle_polls == 16'hFFFF) begin err_code_o <= 3'd5; st <= S_ERR; end
+            end else if (idle_polls == 16'hFFFF) begin
+              err_code_o <= 3'd5;
+              st <= S_ERR;
+            end
             else idle_polls <= idle_polls + 1'b1;
           end
-          if (!(op_done && rx_valid && idx == payload - 1'b1)) begin do_rd = 1'b1; do_a = P_RX; end
+          if (!(op_done && rx_valid && idx == payload - 1'b1)) begin
+            do_rd = 1'b1;
+            do_a = P_RX;
+          end
         end
-        S_SUM: if (sum == hdr[95:64]) st <= S_DONE; else begin err_code_o <= 3'd3; st <= S_ERR; end
+        S_SUM:
+          if (sum == hdr[95:64]) st <= S_DONE;
+          else begin
+            err_code_o <= 3'd3;
+            st <= S_ERR;
+          end
         default: ;                                        // S_DONE / S_ERR: bus released
       endcase
 
       if (do_wr) begin
-        m_axil_awaddr <= do_a; m_axil_wdata <= do_d; m_axil_awvalid <= 1'b1; m_axil_wvalid <= 1'b1;
-        aw_ok <= 1'b0; w_ok <= 1'b0; bst <= B_WR;
+        m_axil_awaddr <= do_a;
+        m_axil_wdata <= do_d;
+        m_axil_awvalid <= 1'b1;
+        m_axil_wvalid <= 1'b1;
+        aw_ok <= 1'b0;
+        w_ok <= 1'b0;
+        bst <= B_WR;
       end else if (do_rd) begin
-        m_axil_araddr <= do_a; m_axil_arvalid <= 1'b1; bst <= B_RD;
+        m_axil_araddr <= do_a;
+        m_axil_arvalid <= 1'b1;
+        bst <= B_RD;
       end
     end
   end

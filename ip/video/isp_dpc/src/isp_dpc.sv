@@ -41,10 +41,27 @@ module isp_dpc #(
   output logic          m_axis_tvalid,
   input  logic          m_axis_tready
 );
-  logic [25*PW-1:0] win; logic [15:0] wx, wy; logic wl, wu, wv, wr;
-  isp_window #(.N(5), .PW(PW), .MAX_W(MAX_W), .BORDER(1)) u_win (.clk, .rst_n, .width_i, .height_i,
-    .s_axis_tdata, .s_axis_tlast, .s_axis_tuser, .s_axis_tvalid, .s_axis_tready,
-    .m_axis_tdata(win), .m_x(wx), .m_y(wy), .m_axis_tlast(wl), .m_axis_tuser(wu), .m_axis_tvalid(wv), .m_axis_tready(wr));
+  logic [25*PW-1:0] win;
+  logic [15:0] wx, wy;
+  logic wl, wu, wv, wr;
+  isp_window #(.N(5), .PW(PW), .MAX_W(MAX_W), .BORDER(1)) u_win (
+    .clk,
+    .rst_n,
+    .width_i,
+    .height_i,
+    .s_axis_tdata,
+    .s_axis_tlast,
+    .s_axis_tuser,
+    .s_axis_tvalid,
+    .s_axis_tready,
+    .m_axis_tdata(win),
+    .m_x(wx),
+    .m_y(wy),
+    .m_axis_tlast(wl),
+    .m_axis_tuser(wu),
+    .m_axis_tvalid(wv),
+    .m_axis_tready(wr)
+  );
 
   function automatic logic [PW-1:0] tap(input int r, input int c);
     tap = win[(r*5 + c)*PW +: PW];
@@ -52,7 +69,9 @@ module isp_dpc #(
 
   logic [PW-1:0] mx, mn, c;
   always_comb begin
-    c = tap(2, 2); mx = '0; mn = '1;
+    c = tap(2, 2);
+    mx = '0;
+    mn = '1;
     for (int r = 0; r < 5; r += 2) for (int k = 0; k < 5; k += 2)
       if (!(r == 2 && k == 2)) begin
         if (tap(r, k) > mx) mx = tap(r, k);
@@ -67,13 +86,19 @@ module isp_dpc #(
   assign wr = !m_axis_tvalid || m_axis_tready;
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      by_f <= 1'b0; corrected_o <= 1'b0;
-      m_axis_tvalid <= 1'b0; m_axis_tdata <= '0; m_axis_tlast <= 1'b0; m_axis_tuser <= 1'b0;
+      by_f <= 1'b0;
+      corrected_o <= 1'b0;
+      m_axis_tvalid <= 1'b0;
+      m_axis_tdata <= '0;
+      m_axis_tlast <= 1'b0;
+      m_axis_tuser <= 1'b0;
     end else begin
       corrected_o <= 1'b0;
       if (wv && wr) begin
         if (wu) by_f <= bypass_i;
-        m_axis_tvalid <= 1'b1; m_axis_tlast <= wl; m_axis_tuser <= wu;
+        m_axis_tvalid <= 1'b1;
+        m_axis_tlast <= wl;
+        m_axis_tuser <= wu;
         m_axis_tdata  <= (by || !(hot || dead)) ? c : (hot ? mx : mn);
         corrected_o   <= !by && (hot || dead);
       end else if (m_axis_tready) m_axis_tvalid <= 1'b0;

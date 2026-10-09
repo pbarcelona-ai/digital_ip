@@ -57,6 +57,8 @@ module ip_axil_regs #(
   if (ADDR_W < 3) begin : g_chk_aw $error("%m: ADDR_W must be >= 3"); end
 
 `ifndef SYNTHESIS
+  // verification-only checks: excluded from code coverage
+  // verilator coverage_off
   // ---- immediate assertions (simulation only; skipped by synthesis) ----
   logic ip_chk_b_q, ip_chk_r_q;
   always @(posedge aclk) begin
@@ -67,8 +69,12 @@ module ip_axil_regs #(
       assert (s_axil_rresp == 2'b00 || s_axil_rresp == 2'b10) else $error("%m: reserved RRESP value");
       if (ip_chk_b_q) assert (s_axil_bvalid) else $error("%m: BVALID dropped before BREADY");
       if (ip_chk_r_q) assert (s_axil_rvalid) else $error("%m: RVALID dropped before RREADY");
-    end else begin ip_chk_b_q <= 1'b0; ip_chk_r_q <= 1'b0; end
+    end else begin
+      ip_chk_b_q <= 1'b0;
+      ip_chk_r_q <= 1'b0;
+    end
   end
+  // verilator coverage_on
 `endif
 
   logic                aw_seen, w_seen;   // channel captured flags

@@ -13,15 +13,19 @@
 #   ./scripts/run_scale_verify.sh            # everything (~25 min)
 #   ./scripts/run_scale_verify.sh fast       # just the 6 full-completion bilinear+radial tests (~11 min)
 #   ./scripts/run_scale_verify.sh bounded    # just the 4 bounded-capture tests (~14 min)
+#   VCD=1 ...  each test dumps <test>.vcd here (large frames: big files);
+#   SURFER=1 (with VCD=1) opens each one in Surfer (../../synth/view_waves.sh)
 set -e
 cd "$(dirname "$0")/.."
 
 MODE="${1:-all}"
+DEFS=""
+[ "${VCD:-0}" = "1" ] && DEFS="-DDUMP_VCD"
 
 build_and_run() {
   local src="$1"
   local vvp="/tmp/$(basename "$src" .sv).vvp"
-  iverilog -g2012 -I tests -o "$vvp" \
+  iverilog -g2012 -I tests $DEFS -o "$vvp" \
     ../include/ppm_io_pkg.sv ../include/golden_model_pkg.sv \
     ../../include/barrel_pkg.sv ../../include/distortion_model_pkg.sv \
     ../../ip/fixed_recip/src/fixed_recip.sv ../../ip/mulq/src/mulq_s.sv ../../ip/coord_gen/src/coord_gen.sv \
@@ -30,6 +34,9 @@ build_and_run() {
     ../../src/vision_system.sv \
     "$src"
   vvp "$vvp"
+  if [ "${VCD:-0}" = "1" ] && [ "${SURFER:-0}" = "1" ]; then
+    ../../synth/view_waves.sh "$(basename "$src" .sv).vcd" &
+  fi
 }
 
 if [ "$MODE" = "all" ] || [ "$MODE" = "fast" ]; then

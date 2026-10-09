@@ -17,14 +17,16 @@ IP_MODULES := axi_checkers axil_regbus axil_split banked_framebuf \
 	scaler_edge_directed scaler_lanczos scaler_mip scaler_nearest scaler_polyphase \
 	scaler_trilinear sharpen_cas spatial_upscaler
 
-.PHONY: all help list test run sim synth synplify gatesim docs diagrams diagram-check clean
+.PHONY: all help list test run sim cov wave synth synplify gatesim docs diagrams diagram-check clean
 all: help
 
 help:
 	@printf '%s\n' \
 	  'Targets: test, sim, synth, synplify, gatesim, docs, diagrams, diagram-check, clean, list' \
 	  'Per-IP: make -C scalers/scaler_bicubic test|sim|synth|gatesim|clean' \
-	  'Common:  make test [IP=scaler_bicubic] [MODE=frame|pingpong|linebuf]' \
+	  'Common:  make test [IP=scaler_bicubic] [MODE=frame|pingpong|linebuf] [VCD=1]' \
+	  '         make cov [IP=scaler_bicubic] [MODE=...]  (Verilator code coverage -> build/coverage/<IP or scalers>)' \
+	  '         make wave IP=scaler_bicubic [RUN_ARGS="+IMG=photo.ppm"]  (VCD, opened in Surfer)' \
 	  '         make sim [IP=scaler_bicubic] [RUN_ARGS="+IMG=photo.ppm"]' \
 	  '         make synth [IP=scaler_bicubic] [SYNTH_ARGS="-p MAX_W=1920"]' \
 	  '         make gatesim IP=scaler_bicubic [GATESIM_ARGS="+QUICK"]' \
@@ -44,11 +46,17 @@ diagram-check:
 	@python3 "$(SCALER_ROOT)/tools/docs/make_block_diagrams.py" --check
 
 ifeq ($(IP),all)
+wave:
+	@echo 'make wave needs one IP: make wave IP=<scaler>' >&2; exit 2
+
 test:
 	@SIM=$(SIM) MODE=$(MODE) VCD=$(VCD) $(SCALER_ROOT)/tools/run_all.sh $(RUN_ARGS)
 
 sim:
 	@SIM=$(SIM) MODE=$(MODE) VCD=$(VCD) $(SCALER_ROOT)/tools/run_all.sh $(RUN_ARGS)
+
+cov:
+	@SIM=$(SIM) MODE=$(MODE) "$(SCALER_ROOT)/scripts/run_cov.sh" "$(SCALER_ROOT)/build/coverage/scalers" $(SCALER_ROOT)/tools/run_all.sh $(RUN_ARGS)
 
 ifeq ($(SYNTH_TOOL),synplify)
 synth:
@@ -62,13 +70,19 @@ clean:
 	@for module in $(IP_MODULES); do \
 	  rm -rf "$(SCALER_ROOT)/scalers/$$module/sim_out" "$(SCALER_ROOT)/scalers/$$module/yosys"; \
 	done
-	@rm -rf "$(SCALER_ROOT)/build/scaler"
+	@rm -rf "$(SCALER_ROOT)/build/scaler" "$(SCALER_ROOT)/build/coverage/scalers"
 else
 test:
-	@NO_VIEW=1 SIM=$(SIM) MODE=$(MODE) $(SCALER_ROOT)/tools/run_all.sh $(IP) $(RUN_ARGS)
+	@NO_VIEW=1 SIM=$(SIM) MODE=$(MODE) VCD=$(VCD) $(SCALER_ROOT)/tools/run_all.sh $(IP) $(RUN_ARGS)
+
+wave:
+	@SIM=$(SIM) "$(SCALER_ROOT)/scripts/run_sim.sh" "$(IP)" --wave $(RUN_ARGS)
 
 sim:
 	@NO_VIEW=1 SIM=$(SIM) MODE=$(MODE) $(SCALER_ROOT)/tools/run_all.sh $(IP) $(RUN_ARGS)
+
+cov:
+	@NO_VIEW=1 SIM=$(SIM) MODE=$(MODE) "$(SCALER_ROOT)/scripts/run_cov.sh" "$(SCALER_ROOT)/build/coverage/$(IP)" $(SCALER_ROOT)/tools/run_all.sh $(IP) $(RUN_ARGS)
 
 ifeq ($(SYNTH_TOOL),synplify)
 synth:

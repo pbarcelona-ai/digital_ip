@@ -29,10 +29,12 @@ module reset_sync #(
   (* async_reg = "true", shreg_extract = "no" *) logic [STAGES-1:0] sr;
   if (ASYNC_ASSERT) begin : g_async
     always_ff @(posedge clk or posedge asserted)
-      if (asserted) sr <= '0; else sr <= {sr[STAGES-2:0], 1'b1};
+      if (asserted) sr <= '0;
+      else sr <= {sr[STAGES-2:0], 1'b1};
   end else begin : g_sync
     always_ff @(posedge clk)
-      if (asserted) sr <= '0; else sr <= {sr[STAGES-2:0], 1'b1};
+      if (asserted) sr <= '0;
+      else sr <= {sr[STAGES-2:0], 1'b1};
   end
   assign rst_o = ACTIVE_LOW_OUT ? sr[STAGES-1] : ~sr[STAGES-1];
 endmodule

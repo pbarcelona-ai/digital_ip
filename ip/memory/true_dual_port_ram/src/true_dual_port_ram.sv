@@ -37,7 +37,8 @@ module true_dual_port_ram #(
   logic [WIDTH-1:0] mem [0:DEPTH-1];
   // The RAM read register has no reset (so the array maps to block RAM); a per-port
   // 'valid' flag, reset synchronously, forces the port output to zero until the first read.
-  logic [WIDTH-1:0] qa, qb; logic va, vb;
+  logic [WIDTH-1:0] qa, qb;
+  logic va, vb;
   always_ff @(posedge clk_a) begin
     if (en_a_i && we_a_i) mem[addr_a_i] <= wdata_a_i;
     if (en_a_i) qa <= mem[addr_a_i];
@@ -47,8 +48,14 @@ module true_dual_port_ram #(
     if (en_b_i && we_b_i) mem[addr_b_i] <= wdata_b_i;
     if (en_b_i) qb <= mem[addr_b_i];
   end
-  always_ff @(posedge clk_a) begin if (!rst_a_n) va <= 1'b0; else if (en_a_i) va <= 1'b1; end
-  always_ff @(posedge cb) begin if (!rst_b_n) vb <= 1'b0; else if (en_b_i) vb <= 1'b1; end
+  always_ff @(posedge clk_a) begin
+    if (!rst_a_n) va <= 1'b0;
+    else if (en_a_i) va <= 1'b1;
+  end
+  always_ff @(posedge cb) begin
+    if (!rst_b_n) vb <= 1'b0;
+    else if (en_b_i) vb <= 1'b1;
+  end
   assign rdata_a_o = va ? qa : '0;
   assign rdata_b_o = vb ? qb : '0;
   assign wr_conflict_o = en_a_i & en_b_i & we_a_i & we_b_i & (addr_a_i == addr_b_i);

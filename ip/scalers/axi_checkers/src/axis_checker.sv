@@ -74,8 +74,12 @@ module axis_checker #(
 
   always @(posedge clk) begin
     if (!rst_n) begin
-      p_valid <= 1'b0; p_hs <= 1'b0; stall_run = 0;
-      fx = 0; fy = 0; in_frame = 1'b0;
+      p_valid <= 1'b0;
+      p_hs <= 1'b0;
+      stall_run = 0;
+      fx = 0;
+      fy = 0;
+      in_frame = 1'b0;
     end else begin
       // ---------------- protocol rules
       if (((^(tvalid)) === 1'bx)) fail("AXIS_X_VALID", "tvalid is X/Z");
@@ -91,14 +95,21 @@ module axis_checker #(
       if (CHECK_FRAMING && frame_w > 0 && frame_h > 0 && hs) begin
         if (tuser) begin
           if (in_frame) fail("AXIS_FRAME", $sformatf("SOF after %0d lines + %0d beats", fy, fx));
-          in_frame = 1'b1; fx = 0; fy = 0;
+          in_frame = 1'b1;
+          fx = 0;
+          fy = 0;
         end else if (!in_frame)
           fail("AXIS_SOF", "first beat of frame without tuser");
         if (tlast !== (fx == frame_w - 1))
           fail("AXIS_EOL", $sformatf("tlast=%0b at x=%0d (width %0d)", tlast, fx, frame_w));
         if (fx == frame_w - 1) begin
-          fx = 0; fy++;
-          if (fy == frame_h) begin in_frame = 1'b0; fy = 0; cov_frames++; end
+          fx = 0;
+          fy++;
+          if (fy == frame_h) begin
+            in_frame = 1'b0;
+            fy = 0;
+            cov_frames++;
+          end
         end else fx++;
       end
 

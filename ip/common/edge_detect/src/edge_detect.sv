@@ -28,15 +28,24 @@ module edge_detect #(
   if (SYNC_INPUT) begin : g_sync
     (* async_reg = "true" *) logic [WIDTH-1:0] a, b;
     always_ff @(posedge clk) begin
-      if (!rst_n) begin a <= {WIDTH{RESET_LEVEL}}; b <= {WIDTH{RESET_LEVEL}}; end
-      else begin a <= d_i; b <= a; end
+      if (!rst_n) begin
+        a <= {WIDTH{RESET_LEVEL}};
+        b <= {WIDTH{RESET_LEVEL}};
+      end
+      else begin
+        a <= d_i;
+        b <= a;
+      end
     end
     assign cur = b;
   end else begin : g_nosync
     assign cur = d_i;
   end
   always_ff @(posedge clk) begin
-    if (!rst_n) begin prev <= {WIDTH{RESET_LEVEL}}; pulse_o <= '0; end
+    if (!rst_n) begin
+      prev <= {WIDTH{RESET_LEVEL}};
+      pulse_o <= '0;
+    end
     else begin
       prev <= cur;
       case (EDGE)

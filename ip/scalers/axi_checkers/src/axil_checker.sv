@@ -85,8 +85,14 @@ module axil_checker #(
 
   always @(posedge clk) begin
     if (!rst_n) begin
-      p_awv <= 0; p_wv <= 0; p_bv <= 0; p_arv <= 0; p_rv <= 0;
-      aw_acc = 0; w_acc = 0; ar_acc = 0;
+      p_awv <= 0;
+      p_wv <= 0;
+      p_bv <= 0;
+      p_arv <= 0;
+      p_rv <= 0;
+      aw_acc = 0;
+      w_acc = 0;
+      ar_acc = 0;
     end else begin
       cyc++;
       // ---- X checks
@@ -137,7 +143,8 @@ module axil_checker #(
         if (EXPECT_OKAY && bresp != 2'b00) fail("AXIL_RESP", $sformatf("bresp=%0d", bresp));
         if (cyc - last_b <= 8) cov_b2b_wr++;
         last_b = cyc;
-        aw_acc--; w_acc--;
+        aw_acc--;
+        w_acc--;
       end
       if (ar_hs) begin
         ar_acc++;
@@ -157,11 +164,23 @@ module axil_checker #(
       if (aw_acc > MAX_OUTSTANDING || w_acc > MAX_OUTSTANDING || ar_acc > MAX_OUTSTANDING)
         fail("AXIL_OUTSTANDING", "too many transactions in flight");
 
-      p_awv <= (awvalid === 1'b1); p_awr <= awready; p_awaddr <= awaddr;
-      p_wv  <= (wvalid === 1'b1);  p_wr  <= wready;  p_wdata  <= wdata; p_wstrb <= wstrb;
-      p_bv  <= (bvalid === 1'b1);  p_br  <= bready;  p_bresp  <= bresp;
-      p_arv <= (arvalid === 1'b1); p_arr <= arready; p_araddr <= araddr;
-      p_rv  <= (rvalid === 1'b1);  p_rr  <= rready;  p_rdata  <= rdata; p_rresp <= rresp;
+      p_awv <= (awvalid === 1'b1);
+      p_awr <= awready;
+      p_awaddr <= awaddr;
+      p_wv  <= (wvalid === 1'b1);
+      p_wr  <= wready;
+      p_wdata  <= wdata;
+      p_wstrb <= wstrb;
+      p_bv  <= (bvalid === 1'b1);
+      p_br  <= bready;
+      p_bresp  <= bresp;
+      p_arv <= (arvalid === 1'b1);
+      p_arr <= arready;
+      p_araddr <= araddr;
+      p_rv  <= (rvalid === 1'b1);
+      p_rr  <= rready;
+      p_rdata  <= rdata;
+      p_rresp <= rresp;
     end
   end
 

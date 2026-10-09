@@ -47,11 +47,41 @@ module axi4_lite_regs #(
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
   if (NREG < 1) begin : g_bad $error("axi4_lite_regs: NREG must be >= 1"); end
   if ((1 << (ADDR_W - 2)) < NREG) begin : g_bad2 $error("axi4_lite_regs: ADDR_W too small for NREG"); end
-  logic wr_en, rd_en, wr_err, rd_err; logic [ADDR_W-1:0] wa, ra; logic [31:0] wd, rdd; logic [3:0] ws;
+  logic wr_en, rd_en, wr_err, rd_err;
+  logic [ADDR_W-1:0] wa, ra;
+  logic [31:0] wd, rdd;
+  logic [3:0] ws;
   axi4_lite_slave #(.ADDR_W(ADDR_W), .READ_WAIT(0), .MAP_WORDS(NREG)) u_slave (
-    .aclk, .aresetn, .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready, .s_axil_wdata, .s_axil_wstrb, .s_axil_wvalid, .s_axil_wready, .s_axil_bresp, .s_axil_bvalid, .s_axil_bready, .s_axil_araddr, .s_axil_arvalid, .s_axil_arready, .s_axil_rdata, .s_axil_rresp, .s_axil_rvalid, .s_axil_rready,
-    .wr_en_o(wr_en), .wr_addr_o(wa), .wr_data_o(wd), .wr_strb_o(ws), .wr_err_i(wr_err),
-    .rd_en_o(rd_en), .rd_addr_o(ra), .rd_data_i(rdd), .rd_valid_i(1'b1), .rd_err_i(1'b0));
+    .aclk,
+    .aresetn,
+    .s_axil_awaddr,
+    .s_axil_awvalid,
+    .s_axil_awready,
+    .s_axil_wdata,
+    .s_axil_wstrb,
+    .s_axil_wvalid,
+    .s_axil_wready,
+    .s_axil_bresp,
+    .s_axil_bvalid,
+    .s_axil_bready,
+    .s_axil_araddr,
+    .s_axil_arvalid,
+    .s_axil_arready,
+    .s_axil_rdata,
+    .s_axil_rresp,
+    .s_axil_rvalid,
+    .s_axil_rready,
+    .wr_en_o(wr_en),
+    .wr_addr_o(wa),
+    .wr_data_o(wd),
+    .wr_strb_o(ws),
+    .wr_err_i(wr_err),
+    .rd_en_o(rd_en),
+    .rd_addr_o(ra),
+    .rd_data_i(rdd),
+    .rd_valid_i(1'b1),
+    .rd_err_i(1'b0)
+  );
 
   wire [$clog2(NREG > 1 ? NREG : 2)-1:0] widx = wa[2 +: $clog2(NREG > 1 ? NREG : 2)];
   wire [$clog2(NREG > 1 ? NREG : 2)-1:0] ridx = ra[2 +: $clog2(NREG > 1 ? NREG : 2)];
@@ -59,9 +89,14 @@ module axi4_lite_regs #(
   always_comb for (int b = 0; b < 4; b++) bmask[b*8 +: 8] = {8{ws[b]}};
 
   always_ff @(posedge aclk) begin
-    if (!aresetn) begin reg_o <= RESET_VALS; wr_pulse_o <= '0; wr_err <= 1'b0; end
+    if (!aresetn) begin
+      reg_o <= RESET_VALS;
+      wr_pulse_o <= '0;
+      wr_err <= 1'b0;
+    end
     else begin
-      wr_pulse_o <= '0; wr_err <= 1'b0;
+      wr_pulse_o <= '0;
+      wr_err <= 1'b0;
       // hardware set/clear first, then software (software W1C/W1S wins on the same bit is avoided by order)
       for (int i = 0; i < NREG; i++) begin
         case (ACCESS[2*i +: 2])

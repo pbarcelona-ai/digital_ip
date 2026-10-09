@@ -63,12 +63,24 @@ module vs_stream_adapter #(
   output logic [31:0]      ret_drops_o
 );
   // ---------------- return path ----------------
-  logic rf_ready; logic [$clog2(RET_FIFO)+1:0] rf_level;
+  logic rf_ready;
+  logic [$clog2(RET_FIFO)+1:0] rf_level;
   assign r_s_axis_tready = 1'b1;
-  ip_axis_fifo #(.DATA_W(PIX_W), .DEPTH(RET_FIFO)) u_ret_fifo (.clk, .rst_n,
-    .s_tdata(r_s_axis_tdata), .s_tlast(r_s_axis_tlast), .s_tuser(r_s_axis_tuser), .s_tvalid(r_s_axis_tvalid), .s_tready(rf_ready),
-    .m_tdata(r_m_axis_tdata), .m_tlast(r_m_axis_tlast), .m_tuser(r_m_axis_tuser), .m_tvalid(r_m_axis_tvalid), .m_tready(r_m_axis_tready),
-    .level_o(rf_level));
+  ip_axis_fifo #(.DATA_W(PIX_W), .DEPTH(RET_FIFO)) u_ret_fifo (
+    .clk,
+    .rst_n,
+    .s_tdata(r_s_axis_tdata),
+    .s_tlast(r_s_axis_tlast),
+    .s_tuser(r_s_axis_tuser),
+    .s_tvalid(r_s_axis_tvalid),
+    .s_tready(rf_ready),
+    .m_tdata(r_m_axis_tdata),
+    .m_tlast(r_m_axis_tlast),
+    .m_tuser(r_m_axis_tuser),
+    .m_tvalid(r_m_axis_tvalid),
+    .m_tready(r_m_axis_tready),
+    .level_o(rf_level)
+  );
   wire ret_empty = rf_level == 0 && !r_s_axis_tvalid;
   always_ff @(posedge clk) begin
     if (!rst_n) ret_drops_o <= '0;
@@ -92,18 +104,27 @@ module vs_stream_adapter #(
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      st <= S_DROP; gap <= '0; frames_o <= '0; drops_o <= '0;
+      st <= S_DROP;
+      gap <= '0;
+      frames_o <= '0;
+      drops_o <= '0;
     end else begin
       case (st)
         S_DROP, S_PASS: if (s_axis_tvalid && s_axis_tready) begin
           if (sof) begin
-            if (fwd) frames_o <= frames_o + 1'b1; else drops_o <= drops_o + 1'b1;
+            if (fwd) frames_o <= frames_o + 1'b1;
+            else drops_o <= drops_o + 1'b1;
           end
-          if (fwd && s_axis_tlast) begin st <= S_GAP; gap <= GAP[$bits(gap)-1:0]; end
+          if (fwd && s_axis_tlast) begin
+            st <= S_GAP;
+            gap <= GAP[$bits(gap)-1:0];
+          end
           else if (sof && fwd) st <= S_PASS;
           else if (sof) st <= S_DROP;
         end
-        S_GAP: if (gap == 1) st <= S_PASS; else gap <= gap - 1'b1;
+        S_GAP:
+          if (gap == 1) st <= S_PASS;
+          else gap <= gap - 1'b1;
         default: st <= S_DROP;
       endcase
     end

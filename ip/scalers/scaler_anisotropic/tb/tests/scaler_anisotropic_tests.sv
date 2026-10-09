@@ -14,7 +14,8 @@
 // ***************
   // Build the reference pyramid from img[][] with the 2x2 box filter
   task automatic build_pyramid();
-    lw[0] = in_w; lh[0] = in_h;
+    lw[0] = in_w;
+    lh[0] = in_h;
     for (int y = 0; y < in_h; y++) for (int x = 0; x < in_w; x++) mip[0][y][x] = img[y][x];
     for (int k = 1; k < LEVELS; k++) begin
       lw[k] = (lw[k-1] > 1) ? lw[k-1] / 2 : 1;
@@ -48,7 +49,8 @@
     if (lod < 0.0) lod = 0.0;
     lod_reg = int'($floor(lod * 256.0 + 0.5));
     d = fmaj / real'(1 << alog2);                        // probe spacing (level-0 px)
-    pstep_x = 0; pstep_y = 0;
+    pstep_x = 0;
+    pstep_y = 0;
     if (alog2 > 0) begin
       if (sx >= sy) pstep_x = int'($floor(d * 65536.0 + 0.5));
       else          pstep_y = int'($floor(d * 65536.0 + 0.5));

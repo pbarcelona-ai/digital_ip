@@ -155,9 +155,14 @@ module mac #(
       logic [31:0] fp_result;
       logic fp_overflow, fp_underflow, fp_inexact, fp_invalid;
       fp32_fma u_fp32_fma (
-        .a_i(a_i), .b_i(b_i), .c_i(acc_i), .result_o(fp_result),
-        .overflow_o(fp_overflow), .underflow_o(fp_underflow),
-        .inexact_o(fp_inexact), .invalid_o(fp_invalid)
+        .a_i(a_i),
+        .b_i(b_i),
+        .c_i(acc_i),
+        .result_o(fp_result),
+        .overflow_o(fp_overflow),
+        .underflow_o(fp_underflow),
+        .inexact_o(fp_inexact),
+        .invalid_o(fp_invalid)
       );
       always_comb begin
         computed_result = fp_result;

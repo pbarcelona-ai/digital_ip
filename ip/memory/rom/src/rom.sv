@@ -32,7 +32,10 @@ module rom #(
     else for (int i = 0; i < DEPTH; i++) mem[i] = WIDTH'(32'(i) ^ 32'hA5A5_5A5A);
   end
   always_ff @(posedge clk) begin
-    if (!rst_n) begin data_o <= '0; oob_o <= 1'b0; end
+    if (!rst_n) begin
+      data_o <= '0;
+      oob_o <= 1'b0;
+    end
     else if (en_i) begin
       oob_o  <= (32'(addr_i) >= DEPTH);
       data_o <= (32'(addr_i) >= DEPTH) ? '0 : mem[addr_i];

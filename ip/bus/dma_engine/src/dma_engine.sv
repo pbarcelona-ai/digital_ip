@@ -75,6 +75,8 @@ module dma_engine #(
   if (FIFO_DEPTH < MAX_BURST) begin : g_chk_fd $error("%m: FIFO_DEPTH must hold a full burst"); end
 
 `ifndef SYNTHESIS
+  // verification-only checks: excluded from code coverage
+  // verilator coverage_off
   // ---- immediate assertions (simulation only; skipped by synthesis) ----
   logic ip_chk_b_q, ip_chk_r_q;
   always @(posedge aclk) begin
@@ -85,14 +87,42 @@ module dma_engine #(
       assert (s_axil_rresp == 2'b00 || s_axil_rresp == 2'b10) else $error("%m: reserved RRESP value");
       if (ip_chk_b_q) assert (s_axil_bvalid) else $error("%m: BVALID dropped before BREADY");
       if (ip_chk_r_q) assert (s_axil_rvalid) else $error("%m: RVALID dropped before RREADY");
-    end else begin ip_chk_b_q <= 1'b0; ip_chk_r_q <= 1'b0; end
+    end else begin
+      ip_chk_b_q <= 1'b0;
+      ip_chk_r_q <= 1'b0;
+    end
   end
+  // verilator coverage_on
 `endif
 
-  logic [5*32-1:0] regs, rd; logic [4:0] wr_pulse; logic [31:0] wr_data;
+  logic [5*32-1:0] regs, rd;
+  logic [4:0] wr_pulse;
+  logic [31:0] wr_data;
   ip_axil_regs #(.ADDR_W(8), .NREG(5)) u_regs (
-.aclk, .aresetn, .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready, .s_axil_wdata, .s_axil_wstrb, .s_axil_wvalid, .s_axil_wready, .s_axil_bresp, .s_axil_bvalid, .s_axil_bready, .s_axil_araddr, .s_axil_arvalid, .s_axil_arready, .s_axil_rdata, .s_axil_rresp, .s_axil_rvalid, .s_axil_rready,
-    .reg_o(regs), .wr_pulse_o(wr_pulse), .wr_data_o(wr_data), .rd_i(rd));
+    .aclk,
+    .aresetn,
+    .s_axil_awaddr,
+    .s_axil_awvalid,
+    .s_axil_awready,
+    .s_axil_wdata,
+    .s_axil_wstrb,
+    .s_axil_wvalid,
+    .s_axil_wready,
+    .s_axil_bresp,
+    .s_axil_bvalid,
+    .s_axil_bready,
+    .s_axil_araddr,
+    .s_axil_arvalid,
+    .s_axil_arready,
+    .s_axil_rdata,
+    .s_axil_rresp,
+    .s_axil_rvalid,
+    .s_axil_rready,
+    .reg_o(regs),
+    .wr_pulse_o(wr_pulse),
+    .wr_data_o(wr_data),
+    .rd_i(rd)
+  );
 
   wire [31:0] src = regs[32 +: 32], dst = regs[64 +: 32], len = regs[96 +: 32];
   logic start_p;
@@ -102,12 +132,19 @@ module dma_engine #(
   wire  busy = rd_busy | wr_busy;
 
   always_ff @(posedge aclk) begin
-    if (!aresetn) begin start_p <= 1'b0; done_f <= 1'b0; err_f <= 1'b0; end
+    if (!aresetn) begin
+      start_p <= 1'b0;
+      done_f <= 1'b0;
+      err_f <= 1'b0;
+    end
     else begin
       // Start only if idle and the length is a non-zero multiple of 4
       start_p <= wr_pulse[0] & wr_data[0] & ~busy;
       if (wr_pulse[0] & wr_data[0] & ~busy & (len[1:0] != 2'b00 || len == 32'd0)) err_f <= 1'b1;
-      if (wr_done) begin done_f <= 1'b1; if (rd_err | wr_err) err_f <= 1'b1; end
+      if (wr_done) begin
+        done_f <= 1'b1;
+        if (rd_err | wr_err) err_f <= 1'b1;
+      end
       if (wr_pulse[4]) begin
         if (wr_data[8]) done_f <= 1'b0;
         if (wr_data[9]) err_f  <= 1'b0;
@@ -117,24 +154,77 @@ module dma_engine #(
   wire go = start_p & (len[1:0] == 2'b00) & (len != 32'd0);
 
   // Read engine -> FIFO -> write engine
-  logic [31:0] rd_t, wr_t; logic rd_tv, rd_tr, rd_tl, wr_tv, wr_tr, wr_tl, wr_tu;
-  logic [$clog2(FIFO_DEPTH)+1:0] lvl; logic fu;
+  logic [31:0] rd_t, wr_t;
+  logic rd_tv, rd_tr, rd_tl, wr_tv, wr_tr, wr_tl, wr_tu;
+  logic [$clog2(FIFO_DEPTH)+1:0] lvl;
+  logic fu;
   dma_rd_engine #(.ADDR_W(32), .MAX_BURST(MAX_BURST)) u_rd (
-    .clk(aclk), .rst_n(aresetn), .start_i(go), .addr_i(src), .nwords_i(len[25:2]),
-    .busy_o(rd_busy), .done_o(rd_done), .err_o(rd_err),
-    .m_axi_araddr, .m_axi_arlen, .m_axi_arsize, .m_axi_arburst, .m_axi_arvalid, .m_axi_arready, .m_axi_rdata, .m_axi_rresp, .m_axi_rlast, .m_axi_rvalid, .m_axi_rready,
-    .m_tdata(rd_t), .m_tvalid(rd_tv), .m_tready(rd_tr), .m_tlast(rd_tl));
+    .clk(aclk),
+    .rst_n(aresetn),
+    .start_i(go),
+    .addr_i(src),
+    .nwords_i(len[25:2]),
+    .busy_o(rd_busy),
+    .done_o(rd_done),
+    .err_o(rd_err),
+    .m_axi_araddr,
+    .m_axi_arlen,
+    .m_axi_arsize,
+    .m_axi_arburst,
+    .m_axi_arvalid,
+    .m_axi_arready,
+    .m_axi_rdata,
+    .m_axi_rresp,
+    .m_axi_rlast,
+    .m_axi_rvalid,
+    .m_axi_rready,
+    .m_tdata(rd_t),
+    .m_tvalid(rd_tv),
+    .m_tready(rd_tr),
+    .m_tlast(rd_tl)
+  );
   ip_axis_fifo #(.DATA_W(32), .DEPTH(FIFO_DEPTH)) u_fifo (
-    .clk(aclk), .rst_n(aresetn),
-    .s_tdata(rd_t), .s_tlast(rd_tl), .s_tuser(1'b0), .s_tvalid(rd_tv), .s_tready(rd_tr),
-    .m_tdata(wr_t), .m_tlast(wr_tl), .m_tuser(wr_tu), .m_tvalid(wr_tv), .m_tready(wr_tr), .level_o(lvl));
+    .clk(aclk),
+    .rst_n(aresetn),
+    .s_tdata(rd_t),
+    .s_tlast(rd_tl),
+    .s_tuser(1'b0),
+    .s_tvalid(rd_tv),
+    .s_tready(rd_tr),
+    .m_tdata(wr_t),
+    .m_tlast(wr_tl),
+    .m_tuser(wr_tu),
+    .m_tvalid(wr_tv),
+    .m_tready(wr_tr),
+    .level_o(lvl)
+  );
   dma_wr_engine #(.ADDR_W(32), .MAX_BURST(MAX_BURST)) u_wr (
-    .clk(aclk), .rst_n(aresetn), .start_i(go), .addr_i(dst), .nwords_i(len[25:2]),
-    .busy_o(wr_busy), .done_o(wr_done), .err_o(wr_err),
-    .s_tdata(wr_t), .s_tvalid(wr_tv), .s_tready(wr_tr),
-    .m_axi_awaddr, .m_axi_awlen, .m_axi_awsize, .m_axi_awburst, .m_axi_awvalid, .m_axi_awready,
-    .m_axi_wdata, .m_axi_wstrb, .m_axi_wlast, .m_axi_wvalid, .m_axi_wready,
-    .m_axi_bresp, .m_axi_bvalid, .m_axi_bready);
+    .clk(aclk),
+    .rst_n(aresetn),
+    .start_i(go),
+    .addr_i(dst),
+    .nwords_i(len[25:2]),
+    .busy_o(wr_busy),
+    .done_o(wr_done),
+    .err_o(wr_err),
+    .s_tdata(wr_t),
+    .s_tvalid(wr_tv),
+    .s_tready(wr_tr),
+    .m_axi_awaddr,
+    .m_axi_awlen,
+    .m_axi_awsize,
+    .m_axi_awburst,
+    .m_axi_awvalid,
+    .m_axi_awready,
+    .m_axi_wdata,
+    .m_axi_wstrb,
+    .m_axi_wlast,
+    .m_axi_wvalid,
+    .m_axi_wready,
+    .m_axi_bresp,
+    .m_axi_bvalid,
+    .m_axi_bready
+  );
 
   assign irq_o = done_f & regs[1];
   assign rd = {32'd0, {22'd0, err_f, done_f, 7'd0, busy}, regs[3*32 +: 32], regs[2*32 +: 32], regs[32 +: 32], regs[31:0]};

@@ -17,7 +17,13 @@
       expected[7:0]   = ref_chan(TL[7:0],   TR[7:0],   BL[7:0],   BR[7:0],   FX, FY);
 
       @(posedge clk);
-      tl <= TL; tr <= TR; bl <= BL; br <= BR; fx <= FX; fy <= FY; valid_in <= 1'b1;
+      tl <= TL;
+      tr <= TR;
+      bl <= BL;
+      br <= BR;
+      fx <= FX;
+      fy <= FY;
+      valid_in <= 1'b1;
       @(posedge clk);
       valid_in <= 1'b0;
       @(posedge clk);

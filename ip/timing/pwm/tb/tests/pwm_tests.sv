@@ -11,11 +11,23 @@
 // Date: 2026-10-08
 // ***************
   task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
+    if (!c) begin
+      errors++;
+      $display("ERROR @%0t: %s", $time, m);
+    end
   endtask
 
   // Measure high count of channel ch and period length over one full period
   task automatic measure(input int ch);
-    @(posedge pp); #1; hi_cnt = 0; per_cnt = 0;
-    do begin @(posedge aclk); #1; per_cnt++; hi_cnt += pwm[ch]; end while (!pp);
+    @(posedge pp);
+    #1;
+    hi_cnt = 0;
+    per_cnt = 0;
+    do begin
+      @(posedge aclk);
+      #1;
+      per_cnt++;
+      hi_cnt += pwm[ch];
+    end
+    while (!pp);
   endtask

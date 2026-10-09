@@ -1,3 +1,3 @@
-../../peripherals/i2c_master/tb/i2c_master_tb.sv
-../../peripherals/spi_flash_ctrl/tb/spi_flash_ctrl_tb.sv
+../../shared/tb/lib/i2c_bfm.sv
+../../shared/tb/lib/spi_flash_bfm.sv
 tb/py_soc_tb.sv

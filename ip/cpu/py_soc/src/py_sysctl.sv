@@ -46,14 +46,41 @@ module py_sysctl (
 );
   localparam logic [31:0] ID = 32'h5059_0100;
 
-  logic wr_en, rd_en; logic [7:0] wr_addr, rd_addr; logic [31:0] wr_data, rd_data; logic [3:0] wr_strb;
+  logic wr_en, rd_en;
+  logic [7:0] wr_addr, rd_addr;
+  logic [31:0] wr_data, rd_data;
+  logic [3:0] wr_strb;
   axi4_lite_slave #(.ADDR_W(8), .READ_WAIT(0), .MAP_WORDS(5)) u_slv (
-    .aclk, .aresetn,
-    .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready, .s_axil_wdata, .s_axil_wstrb, .s_axil_wvalid, .s_axil_wready,
-    .s_axil_bresp, .s_axil_bvalid, .s_axil_bready, .s_axil_araddr, .s_axil_arvalid, .s_axil_arready,
-    .s_axil_rdata, .s_axil_rresp, .s_axil_rvalid, .s_axil_rready,
-    .wr_en_o(wr_en), .wr_addr_o(wr_addr), .wr_data_o(wr_data), .wr_strb_o(wr_strb), .wr_err_i(1'b0),
-    .rd_en_o(rd_en), .rd_addr_o(rd_addr), .rd_data_i(rd_data), .rd_valid_i(1'b0), .rd_err_i(1'b0));
+    .aclk,
+    .aresetn,
+    .s_axil_awaddr,
+    .s_axil_awvalid,
+    .s_axil_awready,
+    .s_axil_wdata,
+    .s_axil_wstrb,
+    .s_axil_wvalid,
+    .s_axil_wready,
+    .s_axil_bresp,
+    .s_axil_bvalid,
+    .s_axil_bready,
+    .s_axil_araddr,
+    .s_axil_arvalid,
+    .s_axil_arready,
+    .s_axil_rdata,
+    .s_axil_rresp,
+    .s_axil_rvalid,
+    .s_axil_rready,
+    .wr_en_o(wr_en),
+    .wr_addr_o(wr_addr),
+    .wr_data_o(wr_data),
+    .wr_strb_o(wr_strb),
+    .wr_err_i(1'b0),
+    .rd_en_o(rd_en),
+    .rd_addr_o(rd_addr),
+    .rd_data_i(rd_data),
+    .rd_valid_i(1'b0),
+    .rd_err_i(1'b0)
+  );
 
   // Reset cause survives the system reset it describes
   logic [1:0] cause;

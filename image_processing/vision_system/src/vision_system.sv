@@ -104,15 +104,30 @@ module vision_system #(
   logic fb_wr_ready, fb_wr_idle, fb_rd_ready, fb_rd_valid;
 
   axi_lite_regs #(.COORD_W(COORD_W)) u_regs (
-    .clk, .rst_n,
-    .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready,
-    .s_axil_wdata, .s_axil_wstrb, .s_axil_wvalid, .s_axil_wready,
-    .s_axil_bresp, .s_axil_bvalid, .s_axil_bready,
-    .s_axil_araddr, .s_axil_arvalid, .s_axil_arready,
-    .s_axil_rdata, .s_axil_rresp, .s_axil_rvalid, .s_axil_rready,
-    .top_busy, .top_frame_done_pulse(frame_out_done),
+    .clk,
+    .rst_n,
+    .s_axil_awaddr,
+    .s_axil_awvalid,
+    .s_axil_awready,
+    .s_axil_wdata,
+    .s_axil_wstrb,
+    .s_axil_wvalid,
+    .s_axil_wready,
+    .s_axil_bresp,
+    .s_axil_bvalid,
+    .s_axil_bready,
+    .s_axil_araddr,
+    .s_axil_arvalid,
+    .s_axil_arready,
+    .s_axil_rdata,
+    .s_axil_rresp,
+    .s_axil_rvalid,
+    .s_axil_rready,
+    .top_busy,
+    .top_frame_done_pulse(frame_out_done),
     .cfg_out(cfg),
-    .img_width, .img_height,
+    .img_width,
+    .img_height,
     .cfg_recip_busy,
     .interp_mode
   );
@@ -211,23 +226,52 @@ module vision_system #(
 
   // ---- input controller ---------------------------------------------
   axis_in_ctrl #(.COORD_W(COORD_W), .ADDR_W(ADDR_W)) u_in (
-    .clk, .rst_n,
-    .capture_en, .fb_wr_ready, .img_width, .img_height,
-    .frame_done(frame_done_in), .busy(), .err_line_len(),
-    .s_axis_tvalid, .s_axis_tready, .s_axis_tdata, .s_axis_tlast, .s_axis_tuser,
-    .wr_en(fb_wr_en), .wr_addr(fb_wr_addr), .wr_data(fb_wr_data)
+    .clk,
+    .rst_n,
+    .capture_en,
+    .fb_wr_ready,
+    .img_width,
+    .img_height,
+    .frame_done(frame_done_in),
+    .busy(),
+    .err_line_len(),
+    .s_axis_tvalid,
+    .s_axis_tready,
+    .s_axis_tdata,
+    .s_axis_tlast,
+    .s_axis_tuser,
+    .wr_en(fb_wr_en),
+    .wr_addr(fb_wr_addr),
+    .wr_data(fb_wr_data)
   );
 
   // ---- output controller ---------------------------------------------
   axis_out_ctrl #(.COORD_W(COORD_W), .ADDR_W(ADDR_W), .USE_EXT_FB(USE_EXT_FB)) u_out (
-    .clk, .rst_n,
-    .start_output, .img_width, .img_height, .interp_mode,
-    .busy(), .frame_out_done,
+    .clk,
+    .rst_n,
+    .start_output,
+    .img_width,
+    .img_height,
+    .interp_mode,
+    .busy(),
+    .frame_out_done,
     .cfg,
-    .fb_rd_en, .fb_rd_addr0, .fb_rd_addr1, .fb_rd_addr2, .fb_rd_addr3,
-    .fb_rd_data0, .fb_rd_data1, .fb_rd_data2, .fb_rd_data3,
-    .fb_rd_ready, .fb_rd_valid,
-    .m_axis_tvalid, .m_axis_tready, .m_axis_tdata, .m_axis_tlast, .m_axis_tuser
+    .fb_rd_en,
+    .fb_rd_addr0,
+    .fb_rd_addr1,
+    .fb_rd_addr2,
+    .fb_rd_addr3,
+    .fb_rd_data0,
+    .fb_rd_data1,
+    .fb_rd_data2,
+    .fb_rd_data3,
+    .fb_rd_ready,
+    .fb_rd_valid,
+    .m_axis_tvalid,
+    .m_axis_tready,
+    .m_axis_tdata,
+    .m_axis_tlast,
+    .m_axis_tuser
   );
 
 endmodule

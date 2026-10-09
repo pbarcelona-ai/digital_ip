@@ -33,8 +33,26 @@ wire [31:0]        rdata;
 
 // AXI4-Lite protocol checker + coverage on the testbench/DUT control link
 axil_checker #(.ADDR_W(ADDR_W), .NAME("s_axil")) u_axil_chk (
-  .clk, .rst_n, .awaddr, .awvalid, .awready, .wdata, .wstrb, .wvalid, .wready,
-  .bresp, .bvalid, .bready, .araddr, .arvalid, .arready, .rdata, .rresp, .rvalid, .rready);
+  .clk,
+  .rst_n,
+  .awaddr,
+  .awvalid,
+  .awready,
+  .wdata,
+  .wstrb,
+  .wvalid,
+  .wready,
+  .bresp,
+  .bvalid,
+  .bready,
+  .araddr,
+  .arvalid,
+  .arready,
+  .rdata,
+  .rresp,
+  .rvalid,
+  .rready
+);
 
 int errors = 0;                // mismatches / protocol errors found
 int checks = 0;                // comparisons performed
@@ -62,11 +80,14 @@ int axil_max_delay = 2;   // set to 0 for fastest register access
 task automatic axil_write(input int addr, input logic [31:0] data);
   bit aw_done, w_done;
   int order, lag;
-  aw_done = 0; w_done = 0;
+  aw_done = 0;
+  w_done = 0;
   order = $urandom_range(2, 0);             // 0: together, 1: AW first, 2: W first
   lag   = (axil_max_delay > 0) ? $urandom_range(axil_max_delay, 1) : 0;
   @(negedge clk);
-  awaddr = ADDR_W'(addr); wdata = data; wstrb = 4'hF;
+  awaddr = ADDR_W'(addr);
+  wdata = data;
+  wstrb = 4'hF;
   awvalid = (order != 2) || (lag == 0);
   wvalid  = (order != 1) || (lag == 0);
   while (!(aw_done && w_done)) begin
@@ -84,27 +105,36 @@ task automatic axil_write(input int addr, input logic [31:0] data);
   end
   repeat ((axil_max_delay > 0) ? $urandom_range(axil_max_delay, 0) : 0) @(negedge clk);
   bready = 1'b1;
-  do @(posedge clk); while (!bvalid);
+  do @(posedge clk);
+  while (!bvalid);
   if (bresp != 2'b00) begin
-    $display("ERROR: bresp=%0d at addr 0x%0h", bresp, addr); errors++;
+    $display("ERROR: bresp=%0d at addr 0x%0h", bresp, addr);
+    errors++;
   end
-  @(negedge clk); bready = 1'b0;
+  @(negedge clk);
+  bready = 1'b0;
 endtask
 
 // Single AXI-Lite read: AR handshake, then wait for R and check OKAY.
 task automatic axil_read(input int addr, output logic [31:0] data);
   @(negedge clk);
-  araddr = ADDR_W'(addr); arvalid = 1'b1;
-  do @(posedge clk); while (!arready);
-  @(negedge clk); arvalid = 1'b0;
+  araddr = ADDR_W'(addr);
+  arvalid = 1'b1;
+  do @(posedge clk);
+  while (!arready);
+  @(negedge clk);
+  arvalid = 1'b0;
   repeat ((axil_max_delay > 0) ? $urandom_range(axil_max_delay + 1, 0) : 0) @(negedge clk);
   rready = 1'b1;
-  do @(posedge clk); while (!rvalid);
+  do @(posedge clk);
+  while (!rvalid);
   data = rdata;
   if (rresp != 2'b00) begin
-    $display("ERROR: rresp=%0d at addr 0x%0h", rresp, addr); errors++;
+    $display("ERROR: rresp=%0d at addr 0x%0h", rresp, addr);
+    errors++;
   end
-  @(negedge clk); rready = 1'b0;
+  @(negedge clk);
+  rready = 1'b0;
 endtask
 
 // Read a register and compare the bits selected by mask

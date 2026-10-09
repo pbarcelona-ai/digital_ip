@@ -11,7 +11,15 @@
 // Date: 2026-10-08
 // ***************
   task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
+    if (!c) begin
+      errors++;
+      $display("ERROR @%0t: %s", $time, m);
+    end
   endtask
 
-  task automatic run(input int n, output int got); int b; b = xf; repeat (n) @(posedge clk); got = xf - b; endtask
+  task automatic run(input int n, output int got); // #1: after this edge's xf update
+    int b;
+    b = xf;
+    repeat (n) @(posedge clk);
+    #1 got = xf - b;
+  endtask

@@ -42,8 +42,11 @@ module lvds_tx (
 
   function automatic logic [27:0] map(input logic [23:0] p, input logic de, input logic hs, input logic vs,
                                       input logic b18, input logic jei);
-    logic [7:0] r, g, b; logic [6:0] l0, l1, l2, l3;
-    r = p[7:0]; g = p[15:8]; b = p[23:16];
+    logic [7:0] r, g, b;
+    logic [6:0] l0, l1, l2, l3;
+    r = p[7:0];
+    g = p[15:8];
+    b = p[23:16];
     if (b18 || jei) begin
       l0 = {g[2], r[7], r[6], r[5], r[4], r[3], r[2]};
       l1 = {b[3], b[2], g[7], g[6], g[5], g[4], g[3]};
@@ -58,17 +61,29 @@ module lvds_tx (
     map = {l3, l2, l1, l0};
   endfunction
 
-  logic ph; logic [23:0] first_px; logic first_de;
+  logic ph;
+  logic [23:0] first_px;
+  logic first_de;
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      ph <= 1'b0; first_px <= '0; first_de <= 1'b0; link_a_o <= '0; link_b_o <= '0; stb_o <= 1'b0;
+      ph <= 1'b0;
+      first_px <= '0;
+      first_de <= 1'b0;
+      link_a_o <= '0;
+      link_b_o <= '0;
+      stb_o <= 1'b0;
     end else if (!dual_i) begin
       link_a_o <= map(rgb_i, de_i, hs_i, vs_i, bpp18_i, jeida_i);
-      link_b_o <= '0; stb_o <= 1'b1; ph <= 1'b0;
+      link_b_o <= '0;
+      stb_o <= 1'b1;
+      ph <= 1'b0;
     end else begin
       ph <= ~ph;
       stb_o <= ph;                                  // a pair is complete on odd phases
-      if (!ph) begin first_px <= rgb_i; first_de <= de_i; end
+      if (!ph) begin
+        first_px <= rgb_i;
+        first_de <= de_i;
+      end
       else begin
         link_a_o <= map(first_px, first_de, hs_i, vs_i, bpp18_i, jeida_i);
         link_b_o <= map(rgb_i, de_i, hs_i, vs_i, bpp18_i, jeida_i);

@@ -14,13 +14,21 @@ module tb_mulq;
   always #5 clk = ~clk;
   logic signed [31:0] a, b;
   logic signed [47:0] s;
-  mulq_s dut (.clk, .a, .b, .s);
+  mulq_s dut (
+    .clk,
+    .a,
+    .b,
+    .s
+  );
 
   // Reference: exact 64-bit product, arithmetic shift, then (for the
   // saturated comparison) clamp to signed 32 bits.
   function automatic logic signed [47:0] ref_s(input logic signed [31:0] x, input logic signed [31:0] y);
     logic signed [63:0] p;
-    begin p = x * y; ref_s = p >>> 16; end
+    begin
+      p = x * y;
+      ref_s = p >>> 16;
+    end
   endfunction
   function automatic logic signed [31:0] sat32(input logic signed [47:0] v);
     begin
@@ -40,8 +48,10 @@ module tb_mulq;
   `include "mulq_tests.sv"
 
   always @(posedge clk) begin
-    a1 <= a;  b1 <= b;
-    a2 <= a1; b2 <= b1;
+    a1 <= a;
+    b1 <= b;
+    a2 <= a1;
+    b2 <= b1;
   end
 
   // Check at each edge: s reflects inputs presented 2 edges earlier.
@@ -62,8 +72,12 @@ module tb_mulq;
   end
 
   initial begin
-    checks = 0; fails = 0; started = 0; seed = 32'hC0FFEE01;
-    a = 0; b = 0;
+    checks = 0;
+    fails = 0;
+    started = 0;
+    seed = 32'hC0FFEE01;
+    a = 0;
+    b = 0;
     // corner values
     drive(32'sd0, 32'sd0);
     drive(32'sh7fffffff, 32'sh7fffffff);

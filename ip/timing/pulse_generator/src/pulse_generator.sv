@@ -28,27 +28,47 @@ module pulse_generator #(
 );
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
   if (WIDTH < 2) begin : g_bad $error("pulse_generator: WIDTH must be >= 2"); end
-  logic [WIDTH-1:0] pcnt, wcnt, w_lat, p_lat; logic active;
+  logic [WIDTH-1:0] pcnt, wcnt, w_lat, p_lat;
+  logic active;
   logic raw;
   always_ff @(posedge clk) begin
     if (!rst_n || !en_i) begin
-      pcnt <= '0; wcnt <= '0; active <= 1'b0; raw <= 1'b0; start_o <= 1'b0; w_lat <= '0; p_lat <= '0;
+      pcnt <= '0;
+      wcnt <= '0;
+      active <= 1'b0;
+      raw <= 1'b0;
+      start_o <= 1'b0;
+      w_lat <= '0;
+      p_lat <= '0;
     end else begin
       start_o <= 1'b0;
       if (oneshot_i) begin
         if (!active) begin
-          if (trigger_i && width_i != '0) begin active <= 1'b1; wcnt <= width_i - 1'b1; raw <= 1'b1; start_o <= 1'b1; end
+          if (trigger_i && width_i != '0) begin
+            active <= 1'b1;
+            wcnt <= width_i - 1'b1;
+            raw <= 1'b1;
+            start_o <= 1'b1;
+          end
           else raw <= 1'b0;
-        end else if (wcnt == '0) begin active <= 1'b0; raw <= 1'b0; end
+        end else if (wcnt == '0) begin
+          active <= 1'b0;
+          raw <= 1'b0;
+        end
         else wcnt <= wcnt - 1'b1;
       end else begin
-        if (period_i == '0) begin raw <= 1'b0; pcnt <= '0; end
+        if (period_i == '0) begin
+          raw <= 1'b0;
+          pcnt <= '0;
+        end
         else begin
           if (pcnt == '0) begin
             // period start: latch new period/width
-            p_lat <= period_i; w_lat <= (width_i > period_i) ? period_i : width_i;
+            p_lat <= period_i;
+            w_lat <= (width_i > period_i) ? period_i : width_i;
             pcnt <= period_i - 1'b1;
-            raw <= (width_i != '0); start_o <= (width_i != '0);
+            raw <= (width_i != '0);
+            start_o <= (width_i != '0);
             wcnt <= ((width_i > period_i) ? period_i : width_i);
           end else begin
             pcnt <= pcnt - 1'b1;

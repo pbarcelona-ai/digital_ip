@@ -43,7 +43,8 @@ module uart_rx (
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      sync_q <= 2'b11; rxs <= 1'b1;
+      sync_q <= 2'b11;
+      rxs <= 1'b1;
     end else begin
       sync_q <= {sync_q[0], rxd_i};
       rxs    <= sync_q[1];
@@ -52,8 +53,16 @@ module uart_rx (
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      state <= S_IDLE; tcnt <= '0; bitn <= '0; word <= '0; par <= 1'b0;
-      armed <= 1'b0; perr <= 1'b0; valid_o <= 1'b0; frame_err_o <= 1'b0; parity_err_o <= 1'b0;
+      state <= S_IDLE;
+      tcnt <= '0;
+      bitn <= '0;
+      word <= '0;
+      par <= 1'b0;
+      armed <= 1'b0;
+      perr <= 1'b0;
+      valid_o <= 1'b0;
+      frame_err_o <= 1'b0;
+      parity_err_o <= 1'b0;
       data_o <= '0;
     end else begin
       valid_o <= 1'b0;
@@ -62,14 +71,20 @@ module uart_rx (
           tcnt <= '0;
           if (rxs) armed <= 1'b1;                        // line is idle
           else if (armed & en_i) begin                   // falling edge
-            state <= S_START; armed <= 1'b0;             // (break holds off)
+            state <= S_START; // (break holds off)
+            armed <= 1'b0;
           end
         end
         S_START: if (tick16_i) begin
           if (tcnt == 4'd7) begin                        // middle of start
             tcnt <= '0;
             if (rxs) state <= S_IDLE;                    // glitch: reject
-            else begin state <= S_DATA; bitn <= '0; par <= 1'b0; word <= '0; end
+            else begin
+              state <= S_DATA;
+              bitn <= '0;
+              par <= 1'b0;
+              word <= '0;
+            end
           end else tcnt <= tcnt + 4'd1;
         end
         S_DATA: if (tick16_i) begin

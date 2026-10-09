@@ -27,7 +27,15 @@ module tb_fixed_recip;
   logic [W-1:0] operand, result;
   logic busy, done;
 
-  fixed_recip #(.W(W)) dut (.clk, .rst_n, .start, .operand, .result, .busy, .done);
+  fixed_recip #(.W(W)) dut (
+    .clk,
+    .rst_n,
+    .start,
+    .operand,
+    .result,
+    .busy,
+    .done
+  );
 
   always #5 clk = ~clk;
 
@@ -37,8 +45,11 @@ module tb_fixed_recip;
   `include "fixed_recip_tests.sv"
 
   initial begin
-    checks = 0; fails = 0;
-    rst_n = 0; repeat (3) @(posedge clk); rst_n = 1;
+    checks = 0;
+    fails = 0;
+    rst_n = 0;
+    repeat (3) @(posedge clk);
+    rst_n = 1;
 
     check(32'h0001_0000, "1.0");           // expect 1.0
     check(32'h0002_0000, "2.0");           // expect 0.5

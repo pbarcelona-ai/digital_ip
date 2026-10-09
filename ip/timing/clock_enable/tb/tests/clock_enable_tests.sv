@@ -11,11 +11,18 @@
 // Date: 2026-10-08
 // ***************
   task automatic check(input bit c, input string m);
-    if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end
+    if (!c) begin
+      errors++;
+      $display("ERROR @%0t: %s", $time, m);
+    end
   endtask
 
   task automatic spacing(input int expect_div);
     int a, b;
-    @(posedge ce); a = cyc; @(posedge ce); b = cyc; @(posedge ce);
+    @(posedge ce);
+    a = cyc;
+    @(posedge ce);
+    b = cyc;
+    @(posedge ce);
     check(b - a == expect_div && cyc - b == expect_div, $sformatf("div %0d spacing %0d/%0d", expect_div, b - a, cyc - b));
   endtask

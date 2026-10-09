@@ -68,7 +68,8 @@ module conv2d_filter #(
   localparam int NN = N * N, KB = 16, NREG = KB + NN;
 
   function automatic logic [NREG*32-1:0] reset_vals();
-    logic [NREG*32-1:0] v; v = '0;
+    logic [NREG*32-1:0] v;
+    v = '0;
     v[1*32 +: 32] = {RESET_H, RESET_W};
     v[2*32 +: 32] = 32'(SHIFT);
     for (int i = 0; i < NN; i++) v[(KB + i)*32 +: 32] = KERNEL[i*32 +: 32];
@@ -76,16 +77,39 @@ module conv2d_filter #(
   endfunction
 
   logic [NREG*32-1:0] regs, rd;
-  ip_axil_regs #(.ADDR_W(8), .NREG(NREG), .RESET_VALS(reset_vals())) u_regs (.aclk(clk), .aresetn(rst_n),
-    .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready, .s_axil_wdata, .s_axil_wstrb, .s_axil_wvalid, .s_axil_wready,
-    .s_axil_bresp, .s_axil_bvalid, .s_axil_bready, .s_axil_araddr, .s_axil_arvalid, .s_axil_arready,
-    .s_axil_rdata, .s_axil_rresp, .s_axil_rvalid, .s_axil_rready,
-    .reg_o(regs), .wr_pulse_o(), .wr_data_o(), .rd_i(rd));
+  ip_axil_regs #(.ADDR_W(8), .NREG(NREG), .RESET_VALS(reset_vals())) u_regs (
+    .aclk(clk),
+    .aresetn(rst_n),
+    .s_axil_awaddr,
+    .s_axil_awvalid,
+    .s_axil_awready,
+    .s_axil_wdata,
+    .s_axil_wstrb,
+    .s_axil_wvalid,
+    .s_axil_wready,
+    .s_axil_bresp,
+    .s_axil_bvalid,
+    .s_axil_bready,
+    .s_axil_araddr,
+    .s_axil_arvalid,
+    .s_axil_arready,
+    .s_axil_rdata,
+    .s_axil_rresp,
+    .s_axil_rvalid,
+    .s_axil_rready,
+    .reg_o(regs),
+    .wr_pulse_o(),
+    .wr_data_o(),
+    .rd_i(rd)
+  );
 
   // Settings copied at each frame start (the core then holds them for the
   // frame). The new frame size reaches isp_window with the start-of-frame
   // pixel (while it waits between frames, so not through s_axis_tready).
-  logic [NN*COEF_W-1:0] coef_f; logic [4:0] shift_f; logic [31:0] size_f; logic sof_wait;
+  logic [NN*COEF_W-1:0] coef_f;
+  logic [4:0] shift_f;
+  logic [31:0] size_f;
+  logic sof_wait;
   wire        sof_in = s_axis_tvalid && s_axis_tready && s_axis_tuser;
   wire [31:0] size   = (sof_wait && s_axis_tvalid && s_axis_tuser) ? regs[1*32 +: 32] : size_f;
   always_ff @(posedge clk) begin
@@ -96,12 +120,31 @@ module conv2d_filter #(
     end
   end
 
-  logic frame; logic [15:0] frames;
+  logic frame;
+  logic [15:0] frames;
   conv2d_core #(.N(N), .C(C), .CW(CW), .COEF_W(COEF_W), .MAX_W(MAX_W), .BORDER(BORDER)) u_core (
-    .clk, .rst_n, .width_i(size[15:0]), .height_i(size[31:16]), .coef_i(coef_f), .shift_i(shift_f),
-    .s_axis_tdata, .s_axis_tlast, .s_axis_tuser, .s_axis_tvalid, .s_axis_tready,
-    .m_axis_tdata, .m_axis_tlast, .m_axis_tuser, .m_axis_tvalid, .m_axis_tready, .frame_o(frame), .sof_wait_o(sof_wait));
-  always_ff @(posedge clk) if (!rst_n) frames <= '0; else if (frame) frames <= frames + 1'b1;
+    .clk,
+    .rst_n,
+    .width_i(size[15:0]),
+    .height_i(size[31:16]),
+    .coef_i(coef_f),
+    .shift_i(shift_f),
+    .s_axis_tdata,
+    .s_axis_tlast,
+    .s_axis_tuser,
+    .s_axis_tvalid,
+    .s_axis_tready,
+    .m_axis_tdata,
+    .m_axis_tlast,
+    .m_axis_tuser,
+    .m_axis_tvalid,
+    .m_axis_tready,
+    .frame_o(frame),
+    .sof_wait_o(sof_wait)
+  );
+  always_ff @(posedge clk)
+    if (!rst_n) frames <= '0;
+    else if (frame) frames <= frames + 1'b1;
 
   always_comb begin
     rd = regs;

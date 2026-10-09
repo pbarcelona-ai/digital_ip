@@ -796,6 +796,15 @@ VCD viewer works with the files. (`view_waves.sh` was tested with a
 stand-in `surfer` executable; the GUI itself is not runnable in the
 headless environment used to build this.)
 
+## Code coverage
+
+`make cov` runs `test-ip`, `test-smoke`, `test-sv`, and `test-ext-sdram`
+through `../../ip/scripts/run_cov.sh`, which rebuilds each Icarus compile
+with `verilator --coverage` and writes a per-RTL-file summary (line,
+branch, expression, toggle) to `build/coverage/summary.txt`, plus LCOV
+(`coverage.info`) and annotated sources (`annotated/`). The cocotb
+regression is not included: it needs Icarus VPI. `FULL=1` applies as usual.
+
 ## Continuous integration (GitHub Actions)
 
 `.github/workflows/ci.yml` runs on **every push to `main`** (and on manual

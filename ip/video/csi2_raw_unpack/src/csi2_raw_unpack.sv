@@ -47,7 +47,8 @@ module csi2_raw_unpack #(
   localparam int BUF = IN_BYTES + 8;             // bytes held (largest group is 5)
   localparam int CW  = $clog2(BUF + 1);
 
-  logic [7:0] bq [BUF]; logic [BUF-1:0] bfirst, blast;
+  logic [7:0] bq [BUF];
+  logic [BUF-1:0] bfirst, blast;
   logic [CW-1:0] cnt;
   logic [1:0]    pi;                             // pixel index inside the group
 
@@ -63,7 +64,8 @@ module csi2_raw_unpack #(
   endfunction
 
   // Current pixel of the group at the head of the buffer
-  logic [OUT_W-1:0] px; logic glast;
+  logic [OUT_W-1:0] px;
+  logic glast;
   always_comb begin
     if (is10)      px = align({4'd0, bq[pi], bq[4][2*pi +: 2]}, 10);
     else if (is12) px = align((pi == 0) ? {bq[0], bq[2][3:0]} : {bq[1], bq[2][7:4]}, 12);
@@ -74,13 +76,21 @@ module csi2_raw_unpack #(
 
   // Misaligned group at the head (checked before its first pixel): a line end
   // before the group's last byte, or a frame start after its first byte
-  logic mis; logic [2:0] dropn;
+  logic mis;
+  logic [2:0] dropn;
   always_comb begin
-    mis = 1'b0; dropn = '0;
+    mis = 1'b0;
+    dropn = '0;
     for (int k = 4; k >= 0; k--) begin
       if (k < gsize && CW'(k) < cnt) begin
-        if (k > 0 && bfirst[k])             begin mis = 1'b1; dropn = 3'(k);     end
-        if (k < gsize - 1 && blast[k])      begin mis = 1'b1; dropn = 3'(k + 1); end
+        if (k > 0 && bfirst[k])             begin
+          mis = 1'b1;
+          dropn = 3'(k);
+        end
+        if (k < gsize - 1 && blast[k])      begin
+          mis = 1'b1;
+          dropn = 3'(k + 1);
+        end
       end
     end
     if (pi != 0) mis = 1'b0;
@@ -97,12 +107,19 @@ module csi2_raw_unpack #(
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      cnt <= '0; pi <= '0; bfirst <= '0; blast <= '0;
-      m_axis_tvalid <= 1'b0; m_axis_tdata <= '0; m_axis_tlast <= 1'b0; m_axis_tuser <= 1'b0;
+      cnt <= '0;
+      pi <= '0;
+      bfirst <= '0;
+      blast <= '0;
+      m_axis_tvalid <= 1'b0;
+      m_axis_tdata <= '0;
+      m_axis_tlast <= 1'b0;
+      m_axis_tuser <= 1'b0;
     end else begin
       // Output stage
       if (emit) begin
-        m_axis_tvalid <= 1'b1; m_axis_tdata <= px;
+        m_axis_tvalid <= 1'b1;
+        m_axis_tdata <= px;
         m_axis_tuser  <= (pi == 0) && bfirst[0];
         m_axis_tlast  <= (pi == plast) && glast;
         pi <= (pi == plast) ? 2'd0 : pi + 1'b1;
@@ -110,7 +127,9 @@ module csi2_raw_unpack #(
 
       // Byte buffer: drop a consumed group, then append the new word
       begin : buf_update
-        logic [7:0] nb [BUF]; logic [BUF-1:0] nf, nl; int last_k;
+        logic [7:0] nb [BUF];
+        logic [BUF-1:0] nf, nl;
+        int last_k;
         for (int k = 0; k < BUF; k++) begin
           nb[k] = (k + popn < BUF) ? bq[k + popn] : bq[k];
           nf[k] = (k + popn < BUF) ? bfirst[k + popn] : 1'b0;
@@ -126,7 +145,8 @@ module csi2_raw_unpack #(
           end
         end
         for (int k = 0; k < BUF; k++) bq[k] <= nb[k];
-        bfirst <= nf; blast <= nl;
+        bfirst <= nf;
+        blast <= nl;
         cnt <= cnt_pop + (push ? CW'($countones(s_axis_tkeep)) : '0);
       end
     end

@@ -67,7 +67,8 @@
           s_axis_tdata  <= {img_r[y*w+x], img_g[y*w+x], img_b[y*w+x]};
           s_axis_tlast  <= (x == w-1);
           s_axis_tuser  <= (x == 0) && (y == 0);
-          do @(posedge clk); while (!s_axis_tready);
+          do @(posedge clk);
+          while (!s_axis_tready);
         end
         s_axis_tvalid <= 1'b0;
         s_axis_tlast  <= 1'b0;
@@ -81,10 +82,16 @@
   task automatic capture_frame_out(input int w, input int h);
     int x;
     begin
-      cap_w = w; cap_h = h;
-      cap_r = new[w*h]; cap_g = new[w*h]; cap_b = new[w*h];
-      cap_count = 0; cap_total = w*h; cap_done = 1'b0;
-      cap_tlast_err = 1'b0; cap_tuser_err = 1'b0;
+      cap_w = w;
+      cap_h = h;
+      cap_r = new[w*h];
+      cap_g = new[w*h];
+      cap_b = new[w*h];
+      cap_count = 0;
+      cap_total = w*h;
+      cap_done = 1'b0;
+      cap_tlast_err = 1'b0;
+      cap_tuser_err = 1'b0;
       while (cap_count < cap_total) begin
         @(posedge clk);
         if (m_axis_tvalid === 1'b1 && m_axis_tready === 1'b1) begin
@@ -156,23 +163,46 @@
 
       ppm_write({work_dir, "/corrected_", label, ".ppm"}, fw, fh, cap_r, cap_g, cap_b);
 
-      max_err = 0; mismatches = 0;
+      max_err = 0;
+      mismatches = 0;
       for (i = 0; i < fw*fh; i = i + 1) begin
-        d = int'(cap_r[i]) - int'(gold_r[i]); if (d<0) d=-d; if (d>max_err) max_err=d; if (d>1) mismatches=mismatches+1;
-        d = int'(cap_g[i]) - int'(gold_g[i]); if (d<0) d=-d; if (d>max_err) max_err=d; if (d>1) mismatches=mismatches+1;
-        d = int'(cap_b[i]) - int'(gold_b[i]); if (d<0) d=-d; if (d>max_err) max_err=d; if (d>1) mismatches=mismatches+1;
+        d = int'(cap_r[i]) - int'(gold_r[i]);
+        if (d<0) d=-d;
+        if (d>max_err) max_err=d;
+        if (d>1) mismatches=mismatches+1;
+        d = int'(cap_g[i]) - int'(gold_g[i]);
+        if (d<0) d=-d;
+        if (d>max_err) max_err=d;
+        if (d>1) mismatches=mismatches+1;
+        d = int'(cap_b[i]) - int'(gold_b[i]);
+        if (d<0) d=-d;
+        if (d>max_err) max_err=d;
+        if (d>1) mismatches=mismatches+1;
       end
       $display("[%s] DUT vs golden model: max_err=%0d  channel-mismatches(>1)=%0d/%0d",
                 label, max_err, mismatches, fw*fh*3);
 
-      mae_warp_acc = 0; mae_corr_acc = 0;
+      mae_warp_acc = 0;
+      mae_corr_acc = 0;
       for (i = 0; i < fw*fh; i = i + 1) begin
-        d = int'(warp_r[i]) - int'(fsrc_r[i]); if (d<0) d=-d; mae_warp_acc += d;
-        d = int'(warp_g[i]) - int'(fsrc_g[i]); if (d<0) d=-d; mae_warp_acc += d;
-        d = int'(warp_b[i]) - int'(fsrc_b[i]); if (d<0) d=-d; mae_warp_acc += d;
-        d = int'(cap_r[i])  - int'(fsrc_r[i]); if (d<0) d=-d; mae_corr_acc += d;
-        d = int'(cap_g[i])  - int'(fsrc_g[i]); if (d<0) d=-d; mae_corr_acc += d;
-        d = int'(cap_b[i])  - int'(fsrc_b[i]); if (d<0) d=-d; mae_corr_acc += d;
+        d = int'(warp_r[i]) - int'(fsrc_r[i]);
+        if (d<0) d=-d;
+        mae_warp_acc += d;
+        d = int'(warp_g[i]) - int'(fsrc_g[i]);
+        if (d<0) d=-d;
+        mae_warp_acc += d;
+        d = int'(warp_b[i]) - int'(fsrc_b[i]);
+        if (d<0) d=-d;
+        mae_warp_acc += d;
+        d = int'(cap_r[i])  - int'(fsrc_r[i]);
+        if (d<0) d=-d;
+        mae_corr_acc += d;
+        d = int'(cap_g[i])  - int'(fsrc_g[i]);
+        if (d<0) d=-d;
+        mae_corr_acc += d;
+        d = int'(cap_b[i])  - int'(fsrc_b[i]);
+        if (d<0) d=-d;
+        mae_corr_acc += d;
       end
       mae_warp = real'(mae_warp_acc) / real'(fw*fh*3);
       mae_corr = real'(mae_corr_acc) / real'(fw*fh*3);
@@ -262,7 +292,10 @@
       while (i < 200 && status_val[2] !== 1'b0) begin
         axil_read(REG_STATUS, status_val);
         if (status_val[2] === 1'b0) i = 200;
-        else begin @(posedge clk); i = i + 1; end
+        else begin
+          @(posedge clk);
+          i = i + 1;
+        end
       end
       if (status_val[2] !== 1'b0) begin
         $display("ERROR [%s]: timed out waiting for recip_busy to clear", label);
@@ -276,20 +309,43 @@
 
       ppm_write({work_dir, "/corrected_", label, ".ppm"}, fw, fh, cap_r, cap_g, cap_b);
 
-      max_err = 0; mismatches = 0;
+      max_err = 0;
+      mismatches = 0;
       for (i = 0; i < fw*fh; i = i + 1) begin
-        d = int'(cap_r[i]) - int'(gold_r[i]); if (d<0) d=-d; if (d>max_err) max_err=d; if (d>1) mismatches=mismatches+1;
-        d = int'(cap_g[i]) - int'(gold_g[i]); if (d<0) d=-d; if (d>max_err) max_err=d; if (d>1) mismatches=mismatches+1;
-        d = int'(cap_b[i]) - int'(gold_b[i]); if (d<0) d=-d; if (d>max_err) max_err=d; if (d>1) mismatches=mismatches+1;
+        d = int'(cap_r[i]) - int'(gold_r[i]);
+        if (d<0) d=-d;
+        if (d>max_err) max_err=d;
+        if (d>1) mismatches=mismatches+1;
+        d = int'(cap_g[i]) - int'(gold_g[i]);
+        if (d<0) d=-d;
+        if (d>max_err) max_err=d;
+        if (d>1) mismatches=mismatches+1;
+        d = int'(cap_b[i]) - int'(gold_b[i]);
+        if (d<0) d=-d;
+        if (d>max_err) max_err=d;
+        if (d>1) mismatches=mismatches+1;
       end
-      mae_dm_warp_acc = 0; mae_dm_corr_acc = 0;
+      mae_dm_warp_acc = 0;
+      mae_dm_corr_acc = 0;
       for (i = 0; i < fw*fh; i = i + 1) begin
-        d = int'(warp_r[i]) - int'(fsrc_r[i]); if (d<0) d=-d; mae_dm_warp_acc += d;
-        d = int'(warp_g[i]) - int'(fsrc_g[i]); if (d<0) d=-d; mae_dm_warp_acc += d;
-        d = int'(warp_b[i]) - int'(fsrc_b[i]); if (d<0) d=-d; mae_dm_warp_acc += d;
-        d = int'(cap_r[i])  - int'(fsrc_r[i]); if (d<0) d=-d; mae_dm_corr_acc += d;
-        d = int'(cap_g[i])  - int'(fsrc_g[i]); if (d<0) d=-d; mae_dm_corr_acc += d;
-        d = int'(cap_b[i])  - int'(fsrc_b[i]); if (d<0) d=-d; mae_dm_corr_acc += d;
+        d = int'(warp_r[i]) - int'(fsrc_r[i]);
+        if (d<0) d=-d;
+        mae_dm_warp_acc += d;
+        d = int'(warp_g[i]) - int'(fsrc_g[i]);
+        if (d<0) d=-d;
+        mae_dm_warp_acc += d;
+        d = int'(warp_b[i]) - int'(fsrc_b[i]);
+        if (d<0) d=-d;
+        mae_dm_warp_acc += d;
+        d = int'(cap_r[i])  - int'(fsrc_r[i]);
+        if (d<0) d=-d;
+        mae_dm_corr_acc += d;
+        d = int'(cap_g[i])  - int'(fsrc_g[i]);
+        if (d<0) d=-d;
+        mae_dm_corr_acc += d;
+        d = int'(cap_b[i])  - int'(fsrc_b[i]);
+        if (d<0) d=-d;
+        mae_dm_corr_acc += d;
       end
       mae_dm_warp = real'(mae_dm_warp_acc) / real'(fw*fh*3);
       mae_dm_corr = real'(mae_dm_corr_acc) / real'(fw*fh*3);
@@ -345,20 +401,30 @@
       // coefficients were originally tuned for). These values keep the
       // zero-crossing far outside any frame size this project's
       // testbenches use (~5000, vs. a maximum frame dimension of 720).
-      hf11=1.0; hf12=0.0;    hf13=0.0;
-      hf21=0.0; hf22=1.0;    hf23=0.0;
+      hf11=1.0;
+      hf12=0.0;
+      hf13=0.0;
+      hf21=0.0;
+      hf22=1.0;
+      hf23=0.0;
       // Scaled to the frame: 0.144/W and -0.06/H give 0.0002/-0.000125 at
       // 720x480 (the values found safe there) and keep the corrected
       // homography's zero-crossing ~7x beyond the frame at ANY size.
-      hf31 = 0.144 / real'(fw); hf32 = -0.06 / real'(fh);
+      hf31 = 0.144 / real'(fw);
+      hf32 = -0.06 / real'(fh);
 
       invert_homography(hf11,hf12,hf13, hf21,hf22,hf23, hf31,hf32,
                           hc11,hc12,hc13, hc21,hc22,hc23, hc31,hc32);
       $display("[%s] forward H31=%f H32=%f -> correcting H31=%f H32=%f", label, hf31, hf32, hc31, hc32);
 
-      hcq11 = longint'($rtoi(hc11*65536.0)); hcq12 = longint'($rtoi(hc12*65536.0)); hcq13 = longint'($rtoi(hc13*65536.0));
-      hcq21 = longint'($rtoi(hc21*65536.0)); hcq22 = longint'($rtoi(hc22*65536.0)); hcq23 = longint'($rtoi(hc23*65536.0));
-      hcq31 = longint'($rtoi(hc31*65536.0)); hcq32 = longint'($rtoi(hc32*65536.0));
+      hcq11 = longint'($rtoi(hc11*65536.0));
+      hcq12 = longint'($rtoi(hc12*65536.0));
+      hcq13 = longint'($rtoi(hc13*65536.0));
+      hcq21 = longint'($rtoi(hc21*65536.0));
+      hcq22 = longint'($rtoi(hc22*65536.0));
+      hcq23 = longint'($rtoi(hc23*65536.0));
+      hcq31 = longint'($rtoi(hc31*65536.0));
+      hcq32 = longint'($rtoi(hc32*65536.0));
 
       cfg = make_remap_cfg(fw, fh, 32'h0000_8000, 32'h0000_8000, 32'h0001_0000);
       full_remap_ref(cfg, 3 /*MODEL_PERSPECTIVE*/, 0,0,0,0,0,
@@ -373,9 +439,14 @@
 
       axil_write(REG_MODEL_SEL, 3);
       axil_write(REG_INTERP_MODE, 0);
-      axil_write(REG_H11, hcq11); axil_write(REG_H12, hcq12); axil_write(REG_H13, hcq13);
-      axil_write(REG_H21, hcq21); axil_write(REG_H22, hcq22); axil_write(REG_H23, hcq23);
-      axil_write(REG_H31, hcq31); axil_write(REG_H32, hcq32);
+      axil_write(REG_H11, hcq11);
+      axil_write(REG_H12, hcq12);
+      axil_write(REG_H13, hcq13);
+      axil_write(REG_H21, hcq21);
+      axil_write(REG_H22, hcq22);
+      axil_write(REG_H23, hcq23);
+      axil_write(REG_H31, hcq31);
+      axil_write(REG_H32, hcq32);
       axil_write(REG_CENTER_X, 32'h0000_8000);
       axil_write(REG_CENTER_Y, 32'h0000_8000);
       axil_write(REG_SCALE,    32'h0001_0000);
@@ -387,7 +458,10 @@
       while (i < 200 && status_val[2] !== 1'b0) begin
         axil_read(REG_STATUS, status_val);
         if (status_val[2] === 1'b0) i = 200;
-        else begin @(posedge clk); i = i + 1; end
+        else begin
+          @(posedge clk);
+          i = i + 1;
+        end
       end
       if (status_val[2] !== 1'b0) begin
         $display("ERROR [%s]: timed out waiting for recip_busy to clear", label);
@@ -401,20 +475,43 @@
 
       ppm_write({work_dir, "/corrected_", label, ".ppm"}, fw, fh, cap_r, cap_g, cap_b);
 
-      max_err = 0; mismatches = 0;
+      max_err = 0;
+      mismatches = 0;
       for (i = 0; i < fw*fh; i = i + 1) begin
-        d = int'(cap_r[i]) - int'(gold_r[i]); if (d<0) d=-d; if (d>max_err) max_err=d; if (d>1) mismatches=mismatches+1;
-        d = int'(cap_g[i]) - int'(gold_g[i]); if (d<0) d=-d; if (d>max_err) max_err=d; if (d>1) mismatches=mismatches+1;
-        d = int'(cap_b[i]) - int'(gold_b[i]); if (d<0) d=-d; if (d>max_err) max_err=d; if (d>1) mismatches=mismatches+1;
+        d = int'(cap_r[i]) - int'(gold_r[i]);
+        if (d<0) d=-d;
+        if (d>max_err) max_err=d;
+        if (d>1) mismatches=mismatches+1;
+        d = int'(cap_g[i]) - int'(gold_g[i]);
+        if (d<0) d=-d;
+        if (d>max_err) max_err=d;
+        if (d>1) mismatches=mismatches+1;
+        d = int'(cap_b[i]) - int'(gold_b[i]);
+        if (d<0) d=-d;
+        if (d>max_err) max_err=d;
+        if (d>1) mismatches=mismatches+1;
       end
-      mae_dm_warp_acc = 0; mae_dm_corr_acc = 0;
+      mae_dm_warp_acc = 0;
+      mae_dm_corr_acc = 0;
       for (i = 0; i < fw*fh; i = i + 1) begin
-        d = int'(warp_r[i]) - int'(fsrc_r[i]); if (d<0) d=-d; mae_dm_warp_acc += d;
-        d = int'(warp_g[i]) - int'(fsrc_g[i]); if (d<0) d=-d; mae_dm_warp_acc += d;
-        d = int'(warp_b[i]) - int'(fsrc_b[i]); if (d<0) d=-d; mae_dm_warp_acc += d;
-        d = int'(cap_r[i])  - int'(fsrc_r[i]); if (d<0) d=-d; mae_dm_corr_acc += d;
-        d = int'(cap_g[i])  - int'(fsrc_g[i]); if (d<0) d=-d; mae_dm_corr_acc += d;
-        d = int'(cap_b[i])  - int'(fsrc_b[i]); if (d<0) d=-d; mae_dm_corr_acc += d;
+        d = int'(warp_r[i]) - int'(fsrc_r[i]);
+        if (d<0) d=-d;
+        mae_dm_warp_acc += d;
+        d = int'(warp_g[i]) - int'(fsrc_g[i]);
+        if (d<0) d=-d;
+        mae_dm_warp_acc += d;
+        d = int'(warp_b[i]) - int'(fsrc_b[i]);
+        if (d<0) d=-d;
+        mae_dm_warp_acc += d;
+        d = int'(cap_r[i])  - int'(fsrc_r[i]);
+        if (d<0) d=-d;
+        mae_dm_corr_acc += d;
+        d = int'(cap_g[i])  - int'(fsrc_g[i]);
+        if (d<0) d=-d;
+        mae_dm_corr_acc += d;
+        d = int'(cap_b[i])  - int'(fsrc_b[i]);
+        if (d<0) d=-d;
+        mae_dm_corr_acc += d;
       end
       mae_dm_warp = real'(mae_dm_warp_acc) / real'(fw*fh*3);
       mae_dm_corr = real'(mae_dm_corr_acc) / real'(fw*fh*3);
@@ -440,9 +537,14 @@
       end
 
       axil_write(REG_MODEL_SEL, 0);
-      axil_write(REG_H11, 32'h0001_0000); axil_write(REG_H12, 0); axil_write(REG_H13, 0);
-      axil_write(REG_H21, 0); axil_write(REG_H22, 32'h0001_0000); axil_write(REG_H23, 0);
-      axil_write(REG_H31, 0); axil_write(REG_H32, 0);
+      axil_write(REG_H11, 32'h0001_0000);
+      axil_write(REG_H12, 0);
+      axil_write(REG_H13, 0);
+      axil_write(REG_H21, 0);
+      axil_write(REG_H22, 32'h0001_0000);
+      axil_write(REG_H23, 0);
+      axil_write(REG_H31, 0);
+      axil_write(REG_H32, 0);
     end
   endtask
 

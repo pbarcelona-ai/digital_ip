@@ -9,11 +9,16 @@
 // Date: 2026-10-08
 // ***************
   task automatic send(input int nbytes, input bit match_hdr);
-    int idx; logic [HB*8-1:0] hh;
-    pk.delete(); for (int i = 0; i < nbytes; i++) pk.push_back($urandom);
+    int idx;
+    logic [HB*8-1:0] hh;
+    pk.delete();
+    for (int i = 0; i < nbytes; i++) pk.push_back($urandom);
     if (nbytes >= HB) begin
-      pk[0] = match_hdr ? 8'hA5 : 8'h5A; pk[1] = match_hdr ? 8'h3C : $urandom;
-      hh = 0; for (int i = 0; i < HB; i++) hh[i*8 +: 8] = pk[i]; exp_hdr.push_back(hh);
+      pk[0] = match_hdr ? 8'hA5 : 8'h5A;
+      pk[1] = match_hdr ? 8'h3C : $urandom;
+      hh = 0;
+      for (int i = 0; i < HB; i++) hh[i*8 +: 8] = pk[i];
+      exp_hdr.push_back(hh);
       exp_len.push_back(nbytes);
     end else exp_runt.push_back(1);
     if (!STRIP) begin                                   // pass-through: everything is forwarded, nothing is dropped
@@ -28,11 +33,22 @@
     end
     idx = 0;
     while (idx < nbytes) begin
-      logic [31:0] w32; logic [3:0] kp; w32 = 0; kp = 0;
-      for (int b2 = 0; b2 < 4; b2++) if (idx + b2 < nbytes) begin w32[b2*8 +: 8] = pk[idx + b2]; kp[b2] = 1; end
+      logic [31:0] w32;
+      logic [3:0] kp;
+      w32 = 0;
+      kp = 0;
+      for (int b2 = 0; b2 < 4; b2++) if (idx + b2 < nbytes) begin
+        w32[b2*8 +: 8] = pk[idx + b2];
+        kp[b2] = 1;
+      end
       while ($urandom_range(0, 4) == 0) @(posedge clk);
-      #1 sv = 1; sd = w32; sk = kp; sl = (idx + 4 >= nbytes); idx += 4;
-      @(posedge clk); while (!sr) @(posedge clk);
+      #1 sv = 1;
+      sd = w32;
+      sk = kp;
+      sl = (idx + 4 >= nbytes);
+      idx += 4;
+      @(posedge clk);
+      while (!sr) @(posedge clk);
       #1 sv = 0;
     end
   endtask

@@ -112,10 +112,10 @@ pattern. The `video_pipeline` testbench follows the same `define`s
 | `mipi_tx_engine`, `mipi_line_buf` | shared by `dsi_tx` / `csi2_tx` | packet engine (ECC, CRC, EoTp, lane distribution, bursts that never pause) and dual-clock ping-pong line buffer; tested through those two |
 | `video_pipeline` | everything above | AXI4-Lite register map in the source header |
 
-Shared testbench models in `video_tb_lib/`: `csi2_lane_driver` (D-PHY lanes
-with skew, filler bytes, CSI-2 packet builder), `hdmi_sink_model`
+Shared testbench models in `video_tb_lib/`: `csi2_bfm` (D-PHY lanes
+with skew, filler bytes, CSI-2 packet builder), `hdmi_bfm`
 (independent TMDS decoder that checks HDMI framing and InfoFrames) and
-`dsi_rx_model` (DSI packet decoder with ECC / checksum checks and a timed
+`dsi_bfm` (DSI packet decoder with ECC / checksum checks and a timed
 packet log), `axis_frame_bfm` (frame driver / monitor with random gaps and
 back-pressure) and `conv2d_ref` (convolution reference model).
 
@@ -206,7 +206,7 @@ testbenches catch real errors. The CSI-2 CRC matches both CRC examples of the
 specification. The shared CSI-2 / DSI header ECC reproduces the ECC byte of
 the DSI End of Transmission packet (08 0F 0F 01). The transmitters are
 verified by loopback: `csi2_tx` into the verified `csi2_rx`, `dsi_tx` into
-`dsi_rx_model`, `lvds_tx` against an independently written bit-position
+`dsi_bfm`, `lvds_tx` against an independently written bit-position
 table. Not yet verified against external references: the HDMI data-island
 BCH code and TERC4 / guard-band tables, the DSI and CSI-2 pixel byte
 orders and the OpenLDI bit tables are implemented from the specifications

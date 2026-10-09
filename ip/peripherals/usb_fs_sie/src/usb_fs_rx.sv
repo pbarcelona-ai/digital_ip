@@ -56,7 +56,10 @@ module usb_fs_rx #(
   logic [1:0] ls, ls_d;                 // {dp,dm}, synchronized and delayed
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      dp_q <= 2'b11; dm_q <= 2'b00; ls <= LS_J; ls_d <= LS_J;
+      dp_q <= 2'b11;
+      dm_q <= 2'b00;
+      ls <= LS_J;
+      ls_d <= LS_J;
     end else begin
       dp_q <= {dp_q[0], dp_i};
       dm_q <= {dm_q[0], dm_i};
@@ -75,7 +78,8 @@ module usb_fs_rx #(
   wire  [23:0] d_th   = (ph_n >= TH) ? (ph_n - TH) : (ph_n + P - TH);
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      ph <= '0; samp <= 1'b0;
+      ph <= '0;
+      samp <= 1'b0;
     end else begin
       samp <= 1'b0;
       if (edge_det) ph <= LAG;                      // restart phase at an edge
@@ -89,7 +93,10 @@ module usb_fs_rx #(
   // ---------------- Bus reset detection (long SE0) ----------------
   logic [15:0] se0_cnt;
   always_ff @(posedge clk) begin
-    if (!rst_n) begin se0_cnt <= '0; reset_o <= 1'b0; end
+    if (!rst_n) begin
+      se0_cnt <= '0;
+      reset_o <= 1'b0;
+    end
     else begin
       reset_o <= 1'b0;
       if (ls == LS_SE0) begin
@@ -133,21 +140,46 @@ module usb_fs_rx #(
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      state <= R_IDLE; prev <= LS_J; zeros <= '0; ones <= '0; sh <= '0;
-      bitcnt <= '0; first <= 1'b1; stuff_err <= 1'b0; pid_ok <= 1'b0;
-      is_data <= 1'b0; is_tok <= 1'b0; in_pay <= 1'b0; crc16 <= 16'hFFFF;
-      crc5 <= 5'h1F; h0 <= '0; h1 <= '0; h2 <= '0; hcnt <= '0; nbytes <= '0;
-      misalign <= 1'b0; data_o <= '0; valid_o <= 1'b0; last_o <= 1'b0;
-      err_o <= 1'b0; good_o <= 1'b0; bad_o <= 1'b0;
+      state <= R_IDLE;
+      prev <= LS_J;
+      zeros <= '0;
+      ones <= '0;
+      sh <= '0;
+      bitcnt <= '0;
+      first <= 1'b1;
+      stuff_err <= 1'b0;
+      pid_ok <= 1'b0;
+      is_data <= 1'b0;
+      is_tok <= 1'b0;
+      in_pay <= 1'b0;
+      crc16 <= 16'hFFFF;
+      crc5 <= 5'h1F;
+      h0 <= '0;
+      h1 <= '0;
+      h2 <= '0;
+      hcnt <= '0;
+      nbytes <= '0;
+      misalign <= 1'b0;
+      data_o <= '0;
+      valid_o <= 1'b0;
+      last_o <= 1'b0;
+      err_o <= 1'b0;
+      good_o <= 1'b0;
+      bad_o <= 1'b0;
     end else begin
-      valid_o <= 1'b0; last_o <= 1'b0; err_o <= 1'b0;
-      good_o  <= 1'b0; bad_o  <= 1'b0;
+      valid_o <= 1'b0;
+      last_o <= 1'b0;
+      err_o <= 1'b0;
+      good_o  <= 1'b0;
+      bad_o  <= 1'b0;
       if (!enable_i) begin
         state <= R_WAITJ;                                  // ignore the bus
       end else if (samp) begin
         case (state)
           R_IDLE: if (ls == LS_K) begin                    // first SYNC bit
-            prev <= LS_K; zeros <= 4'd1; state <= R_SYNC;
+            prev <= LS_K;
+            zeros <= 4'd1;
+            state <= R_SYNC;
           end
           R_SYNC: begin
             if (is_jk) begin
@@ -155,10 +187,20 @@ module usb_fs_rx #(
               if (!d_bit) begin
                 if (zeros != 4'hF) zeros <= zeros + 4'd1;
               end else if (zeros >= 4'd5) begin            // SYNC found
-                state <= R_DATA; ones <= 3'd1; bitcnt <= '0; first <= 1'b1;
-                stuff_err <= 1'b0; in_pay <= 1'b0; crc16 <= 16'hFFFF;
-                crc5 <= 5'h1F; hcnt <= '0; nbytes <= '0; misalign <= 1'b0;
-                pid_ok <= 1'b0; is_data <= 1'b0; is_tok <= 1'b0;
+                state <= R_DATA;
+                ones <= 3'd1;
+                bitcnt <= '0;
+                first <= 1'b1;
+                stuff_err <= 1'b0;
+                in_pay <= 1'b0;
+                crc16 <= 16'hFFFF;
+                crc5 <= 5'h1F;
+                hcnt <= '0;
+                nbytes <= '0;
+                misalign <= 1'b0;
+                pid_ok <= 1'b0;
+                is_data <= 1'b0;
+                is_tok <= 1'b0;
               end else state <= R_WAITJ;                   // bad SYNC
             end else state <= R_WAITJ;
           end
@@ -166,14 +208,17 @@ module usb_fs_rx #(
             if (ls == LS_SE0) begin                        // EOP
               misalign <= 1'b0;
               if (hcnt == hneed) begin                     // flush last byte
-                data_o  <= h0; valid_o <= 1'b1; last_o <= 1'b1;
+                data_o  <= h0;
+                valid_o <= 1'b1;
+                last_o <= 1'b1;
                 err_o   <= pkt_bad | (bitcnt != 3'd0);
                 good_o  <= ~(pkt_bad | (bitcnt != 3'd0));
                 bad_o   <=  (pkt_bad | (bitcnt != 3'd0));
               end else bad_o <= 1'b1;                      // truncated packet
               state <= R_WAITJ;
             end else if (!is_jk) begin                     // SE1: illegal
-              bad_o <= 1'b1; state <= R_WAITJ;
+              bad_o <= 1'b1;
+              state <= R_WAITJ;
             end else begin
               prev <= ls;
               if (ones == 3'd6) begin                      // stuffed bit
@@ -189,19 +234,27 @@ module usb_fs_rx #(
                 bitcnt <= bitcnt + 3'd1;
                 if (bitcnt == 3'd7) begin                  // byte complete
                   if (first) begin                         // PID byte
-                    first  <= 1'b0; in_pay <= 1'b1;
+                    first  <= 1'b0;
+                    in_pay <= 1'b1;
                     pid_ok <= (nb[7:4] == ~nb[3:0]);
                     is_data <= (nb[1:0] == 2'b11);
                     is_tok  <= (nb[1:0] == 2'b01) || (nb[3:0] == 4'b0100);
-                    h0 <= {4'h0, nb[3:0]}; hcnt <= 2'd1;
+                    h0 <= {4'h0, nb[3:0]};
+                    hcnt <= 2'd1;
                   end else begin
                     nbytes <= nbytes + 11'd1;
                     if (hcnt != hneed) begin               // still filling
-                      if (hcnt == 2'd1) h1 <= nb; else h2 <= nb;
+                      if (hcnt == 2'd1) h1 <= nb;
+                      else h2 <= nb;
                       hcnt <= hcnt + 2'd1;
                     end else begin                         // emit oldest byte
-                      data_o <= h0; valid_o <= 1'b1;
-                      if (is_data) begin h0 <= h1; h1 <= h2; h2 <= nb; end
+                      data_o <= h0;
+                      valid_o <= 1'b1;
+                      if (is_data) begin
+                        h0 <= h1;
+                        h1 <= h2;
+                        h2 <= nb;
+                      end
                       else         h0 <= nb;
                     end
                   end
@@ -210,7 +263,8 @@ module usb_fs_rx #(
             end
           end
           R_WAITJ: if (ls == LS_J) begin
-            state <= R_IDLE; prev <= LS_J;
+            state <= R_IDLE;
+            prev <= LS_J;
           end
           default: state <= R_IDLE;
         endcase

@@ -32,25 +32,52 @@ module axil_bfm #(
 );
   int  resp_errors = 0;          // count of non-OKAY responses
   logic [1:0] last_resp;         // response of the last transaction
+  int  bready_delay = 0;         // clocks BREADY stays low after BVALID (backpressure tests; 0 = ready at once)
+  int  rready_delay = 0;         // clocks RREADY stays low after RVALID
 
   initial begin
-    s_axil_awaddr = '0; s_axil_awvalid = 0; s_axil_wdata = '0;
-    s_axil_wstrb = 4'hF; s_axil_wvalid = 0; s_axil_bready = 0;
-    s_axil_araddr = '0; s_axil_arvalid = 0; s_axil_rready = 0;
+    s_axil_awaddr = '0;
+    s_axil_awvalid = 0;
+    s_axil_wdata = '0;
+    s_axil_wstrb = 4'hF;
+    s_axil_wvalid = 0;
+    s_axil_bready = 0;
+    s_axil_araddr = '0;
+    s_axil_arvalid = 0;
+    s_axil_rready = 0;
   end
 
   // Blocking register write with byte strobes
   task automatic write_strb(input [ADDR_W-1:0] a, input [31:0] d, input [3:0] s);
-    @(posedge aclk); #1;
-    s_axil_awaddr = a; s_axil_awvalid = 1;
-    s_axil_wdata = d; s_axil_wstrb = s; s_axil_wvalid = 1; s_axil_bready = 1;
+    @(posedge aclk);
+    #1;
+    s_axil_awaddr = a;
+    s_axil_awvalid = 1;
+    s_axil_wdata = d;
+    s_axil_wstrb = s;
+    s_axil_wvalid = 1;
+    s_axil_bready = (bready_delay == 0);
     fork
-      begin wait (s_axil_awready); @(posedge aclk); #1 s_axil_awvalid = 0; end
-      begin wait (s_axil_wready);  @(posedge aclk); #1 s_axil_wvalid = 0;  end
+      begin
+        wait (s_axil_awready);
+        @(posedge aclk);
+        #1 s_axil_awvalid = 0;
+      end
+      begin
+        wait (s_axil_wready);
+        @(posedge aclk);
+        #1 s_axil_wvalid = 0;
+      end
     join
-    wait (s_axil_bvalid); last_resp = s_axil_bresp;
+    wait (s_axil_bvalid);
+    if (bready_delay > 0) begin
+      repeat (bready_delay) @(posedge aclk);
+      #1 s_axil_bready = 1;
+    end
+    last_resp = s_axil_bresp;
     if (s_axil_bresp != 2'b00) resp_errors++;
-    @(posedge aclk); #1 s_axil_bready = 0;
+    @(posedge aclk);
+    #1 s_axil_bready = 0;
   endtask
   task automatic write(input [ADDR_W-1:0] a, input [31:0] d);
     write_strb(a, d, 4'hF);
@@ -58,23 +85,58 @@ module axil_bfm #(
 
   // Write with independent delays (clocks) before presenting AW and W, to test channel ordering
   task automatic write_skew(input [ADDR_W-1:0] a, input [31:0] d, input int aw_delay, input int w_delay);
-    @(posedge aclk); #1; s_axil_bready = 1; s_axil_wstrb = 4'hF;
+    @(posedge aclk);
+    #1;
+    s_axil_bready = (bready_delay == 0);
+    s_axil_wstrb = 4'hF;
     fork
-      begin repeat (aw_delay) @(posedge aclk); #1 s_axil_awaddr = a; s_axil_awvalid = 1;
-            wait (s_axil_awready); @(posedge aclk); #1 s_axil_awvalid = 0; end
-      begin repeat (w_delay) @(posedge aclk); #1 s_axil_wdata = d; s_axil_wvalid = 1;
-            wait (s_axil_wready); @(posedge aclk); #1 s_axil_wvalid = 0; end
+      begin
+        repeat (aw_delay) @(posedge aclk);
+        #1 s_axil_awaddr = a;
+        s_axil_awvalid = 1;
+        wait (s_axil_awready);
+        @(posedge aclk);
+        #1 s_axil_awvalid = 0;
+      end
+      begin
+        repeat (w_delay) @(posedge aclk);
+        #1 s_axil_wdata = d;
+        s_axil_wvalid = 1;
+        wait (s_axil_wready);
+        @(posedge aclk);
+        #1 s_axil_wvalid = 0;
+      end
     join
-    wait (s_axil_bvalid); last_resp = s_axil_bresp; if (s_axil_bresp != 2'b00) resp_errors++;
-    @(posedge aclk); #1 s_axil_bready = 0;
+    wait (s_axil_bvalid);
+    if (bready_delay > 0) begin
+      repeat (bready_delay) @(posedge aclk);
+      #1 s_axil_bready = 1;
+    end
+    last_resp = s_axil_bresp;
+    if (s_axil_bresp != 2'b00) resp_errors++;
+    @(posedge aclk);
+    #1 s_axil_bready = 0;
   endtask
 
   // Blocking register read
   task automatic read(input [ADDR_W-1:0] a, output [31:0] d);
-    @(posedge aclk); #1; s_axil_araddr = a; s_axil_arvalid = 1; s_axil_rready = 1;
-    wait (s_axil_arready); @(posedge aclk); #1 s_axil_arvalid = 0;
-    wait (s_axil_rvalid); d = s_axil_rdata; last_resp = s_axil_rresp;
+    @(posedge aclk);
+    #1;
+    s_axil_araddr = a;
+    s_axil_arvalid = 1;
+    s_axil_rready = (rready_delay == 0);
+    wait (s_axil_arready);
+    @(posedge aclk);
+    #1 s_axil_arvalid = 0;
+    wait (s_axil_rvalid);
+    if (rready_delay > 0) begin
+      repeat (rready_delay) @(posedge aclk);
+      #1 s_axil_rready = 1;
+    end
+    d = s_axil_rdata;
+    last_resp = s_axil_rresp;
     if (s_axil_rresp != 2'b00) resp_errors++;
-    @(posedge aclk); #1 s_axil_rready = 0;
+    @(posedge aclk);
+    #1 s_axil_rready = 0;
   endtask
 endmodule

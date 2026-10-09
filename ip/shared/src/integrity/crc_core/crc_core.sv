@@ -35,7 +35,9 @@ module crc_core #(
   if (CRC_W < 8) begin : g_bw $error("crc_core: CRC_W must be >= 8"); end
   if (DATA_W < 8 || (DATA_W % 8) != 0) begin : g_bd $error("crc_core: DATA_W must be a multiple of 8"); end
   function automatic logic [CRC_W-1:0] byte_step(input logic [CRC_W-1:0] c, input logic [7:0] b);
-    logic [CRC_W-1:0] r; logic [7:0] bb; logic fb;
+    logic [CRC_W-1:0] r;
+    logic [7:0] bb;
+    logic fb;
     r = c;
     for (int i = 0; i < 8; i++) bb[i] = REFIN ? b[7-i] : b[i];        // bb[7] is processed first
     for (int i = 7; i >= 0; i--) begin

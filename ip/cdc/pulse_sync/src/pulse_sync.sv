@@ -29,21 +29,40 @@ module pulse_sync #(
   end
   logic req_tog, ack_tog, ack_s;
   always_ff @(posedge src_clk) begin
-    if (!src_rst_n) begin req_tog <= 1'b0; drop_o <= 1'b0; end
+    if (!src_rst_n) begin
+      req_tog <= 1'b0;
+      drop_o <= 1'b0;
+    end
     else begin
       drop_o <= pulse_i & busy_o;
       if (pulse_i & ~busy_o) req_tog <= ~req_tog;
     end
   end
-  bit_sync #(.STAGES(STAGES)) u_ack (.clk(src_clk), .rst_n(src_rst_n), .d_i(ack_tog), .q_o(ack_s));
+  bit_sync #(.STAGES(STAGES)) u_ack (
+    .clk(src_clk),
+    .rst_n(src_rst_n),
+    .d_i(ack_tog),
+    .q_o(ack_s)
+  );
   assign busy_o = (req_tog != ack_s);
 
   logic req_s, req_d;
-  bit_sync #(.STAGES(STAGES)) u_req (.clk(dst_clk), .rst_n(dst_rst_n), .d_i(req_tog), .q_o(req_s));
+  bit_sync #(.STAGES(STAGES)) u_req (
+    .clk(dst_clk),
+    .rst_n(dst_rst_n),
+    .d_i(req_tog),
+    .q_o(req_s)
+  );
   always_ff @(posedge dst_clk) begin
-    if (!dst_rst_n) begin req_d <= 1'b0; pulse_o <= 1'b0; ack_tog <= 1'b0; end
+    if (!dst_rst_n) begin
+      req_d <= 1'b0;
+      pulse_o <= 1'b0;
+      ack_tog <= 1'b0;
+    end
     else begin
-      req_d <= req_s; pulse_o <= req_s ^ req_d; ack_tog <= req_s;
+      req_d <= req_s;
+      pulse_o <= req_s ^ req_d;
+      ack_tog <= req_s;
     end
   end
 endmodule

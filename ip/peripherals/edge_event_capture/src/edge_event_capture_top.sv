@@ -62,6 +62,8 @@ module edge_event_capture_top #(
   if (TS_W < 8 || TS_W > 32) begin : g_chk_ts $error("%m: TS_W must be 8..32"); end
 
 `ifndef SYNTHESIS
+  // verification-only checks: excluded from code coverage
+  // verilator coverage_off
   // ---- immediate assertions (simulation only; skipped by synthesis) ----
   logic ip_chk_b_q, ip_chk_r_q;
   always @(posedge aclk) begin
@@ -72,16 +74,44 @@ module edge_event_capture_top #(
       assert (s_axil_rresp == 2'b00 || s_axil_rresp == 2'b10) else $error("%m: reserved RRESP value");
       if (ip_chk_b_q) assert (s_axil_bvalid) else $error("%m: BVALID dropped before BREADY");
       if (ip_chk_r_q) assert (s_axil_rvalid) else $error("%m: RVALID dropped before RREADY");
-    end else begin ip_chk_b_q <= 1'b0; ip_chk_r_q <= 1'b0; end
+    end else begin
+      ip_chk_b_q <= 1'b0;
+      ip_chk_r_q <= 1'b0;
+    end
   end
+  // verilator coverage_on
 `endif
 
   localparam int DW = TS_W + 2*WIDTH;
   localparam int LW = $clog2(FIFO_DEPTH) + 2;
-  logic [10*32-1:0] regs, rd; logic [9:0] wr_pulse; logic [31:0] wr_data;
+  logic [10*32-1:0] regs, rd;
+  logic [9:0] wr_pulse;
+  logic [31:0] wr_data;
   ip_axil_regs #(.ADDR_W(8), .NREG(10), .RESET_VALS({32'd0, 32'd0, 32'd0, 32'd0, 32'd0, 32'd0, 32'd0, 32'd0, 32'd0, 32'd1})) u_regs (
-.aclk, .aresetn, .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready, .s_axil_wdata, .s_axil_wstrb, .s_axil_wvalid, .s_axil_wready, .s_axil_bresp, .s_axil_bvalid, .s_axil_bready, .s_axil_araddr, .s_axil_arvalid, .s_axil_arready, .s_axil_rdata, .s_axil_rresp, .s_axil_rvalid, .s_axil_rready,
-    .reg_o(regs), .wr_pulse_o(wr_pulse), .wr_data_o(wr_data), .rd_i(rd));
+    .aclk,
+    .aresetn,
+    .s_axil_awaddr,
+    .s_axil_awvalid,
+    .s_axil_awready,
+    .s_axil_wdata,
+    .s_axil_wstrb,
+    .s_axil_wvalid,
+    .s_axil_wready,
+    .s_axil_bresp,
+    .s_axil_bvalid,
+    .s_axil_bready,
+    .s_axil_araddr,
+    .s_axil_arvalid,
+    .s_axil_arready,
+    .s_axil_rdata,
+    .s_axil_rresp,
+    .s_axil_rvalid,
+    .s_axil_rready,
+    .reg_o(regs),
+    .wr_pulse_o(wr_pulse),
+    .wr_data_o(wr_data),
+    .rd_i(rd)
+  );
 
   wire en = regs[0];
   wire [WIDTH-1:0] rise_en = regs[32 +: WIDTH], fall_en = regs[64 +: WIDTH];
@@ -97,13 +127,18 @@ module edge_event_capture_top #(
   logic [WIDTH-1:0] filt, prev;
   logic [WIDTH*16-1:0] dcnt;
   always_ff @(posedge aclk) begin
-    if (!aresetn) begin filt <= '0; prev <= '0; dcnt <= '0; end
+    if (!aresetn) begin
+      filt <= '0;
+      prev <= '0;
+      dcnt <= '0;
+    end
     else begin
       prev <= filt;
       for (int i = 0; i < WIDTH; i++) begin
         if (s_out[i] == filt[i]) dcnt[i*16 +: 16] <= '0;
         else if (deb == 16'd0 || dcnt[i*16 +: 16] >= deb - 16'd1) begin
-          filt[i] <= s_out[i]; dcnt[i*16 +: 16] <= '0;
+          filt[i] <= s_out[i];
+          dcnt[i*16 +: 16] <= '0;
         end else dcnt[i*16 +: 16] <= dcnt[i*16 +: 16] + 16'd1;
       end
     end
@@ -118,11 +153,17 @@ module edge_event_capture_top #(
   logic [31:0] evt_cnt, drop_cnt;
   always_ff @(posedge aclk) begin
     if (!aresetn) begin
-      ts <= '0; rise_pend <= '0; fall_pend <= '0; evt_cnt <= '0; drop_cnt <= '0;
-      rise_o <= '0; fall_o <= '0;
+      ts <= '0;
+      rise_pend <= '0;
+      fall_pend <= '0;
+      evt_cnt <= '0;
+      drop_cnt <= '0;
+      rise_o <= '0;
+      fall_o <= '0;
     end else begin
       ts <= ts + 1'b1;
-      rise_o <= rise; fall_o <= fall;
+      rise_o <= rise;
+      fall_o <= fall;
       rise_pend <= (rise_pend & ~(wr_pulse[4] ? wr_data[WIDTH-1:0] : '0)) | rise;
       fall_pend <= (fall_pend & ~(wr_pulse[5] ? wr_data[WIDTH-1:0] : '0)) | fall;
       if (|(rise | fall)) evt_cnt <= evt_cnt + 32'd1;
@@ -134,7 +175,10 @@ module edge_event_capture_top #(
   logic [DW-1:0] ev_data;
   logic [LW-1:0] lvl;
   always_ff @(posedge aclk) begin
-    if (!aresetn) begin ev_valid <= 1'b0; ev_data <= '0; end
+    if (!aresetn) begin
+      ev_valid <= 1'b0;
+      ev_data <= '0;
+    end
     else begin
       ev_valid <= |(rise | fall);
       ev_data  <= {ts, fall, rise};
@@ -142,10 +186,20 @@ module edge_event_capture_top #(
   end
   logic fu, fl;
   ip_axis_fifo #(.DATA_W(DW), .DEPTH(FIFO_DEPTH)) u_fifo (
-    .clk(aclk), .rst_n(aresetn),
-    .s_tdata(ev_data), .s_tlast(1'b1), .s_tuser(1'b0), .s_tvalid(ev_valid), .s_tready(ev_ready),
-    .m_tdata(m_axis_tdata), .m_tlast(m_axis_tlast), .m_tuser(fu),
-    .m_tvalid(m_axis_tvalid), .m_tready(m_axis_tready), .level_o(lvl));
+    .clk(aclk),
+    .rst_n(aresetn),
+    .s_tdata(ev_data),
+    .s_tlast(1'b1),
+    .s_tuser(1'b0),
+    .s_tvalid(ev_valid),
+    .s_tready(ev_ready),
+    .m_tdata(m_axis_tdata),
+    .m_tlast(m_axis_tlast),
+    .m_tuser(fu),
+    .m_tvalid(m_axis_tvalid),
+    .m_tready(m_axis_tready),
+    .level_o(lvl)
+  );
 
   assign irq_o = |((rise_pend | fall_pend) & regs[9*32 +: WIDTH]);
   assign rd = {regs[9*32 +: 32], drop_cnt, 32'(ts), evt_cnt, 32'(fall_pend), 32'(rise_pend),

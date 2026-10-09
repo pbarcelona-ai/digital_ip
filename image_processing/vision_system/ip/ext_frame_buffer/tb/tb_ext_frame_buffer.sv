@@ -131,4 +131,13 @@ module tb_ext_frame_buffer;
     #1000000;
     $fatal(1, "SDRAM write/refresh test timed out");
   end
+
+  // Optional waveform dump: compile with -DDUMP_VCD (the run scripts do this
+  // when VCD=1; SURFER=1 then opens it, see synth/view_waves.sh).
+`ifdef DUMP_VCD
+  initial begin
+    $dumpfile("waves.vcd");
+    $dumpvars(0, tb_ext_frame_buffer);
+  end
+`endif
 endmodule

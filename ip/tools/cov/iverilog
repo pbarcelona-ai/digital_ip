@@ -1,0 +1,112 @@
+#!/usr/bin/env python3
+# ***************
+# Filename: iverilog
+# Author: FPGA Cores 4 U
+# Description: Coverage shim for Icarus Verilog. scripts/run_cov.sh puts
+#   tools/cov first on PATH, so every flow that compiles with iverilog
+#   (scripts/run_sim.sh, scalers/*/run.sh, py_soc, image_processing/*)
+#   builds the same sources with verilator --binary --coverage instead.
+#   The -o output becomes a launcher script that the vvp shim runs; each
+#   run writes <COV_DIR>/<name>.<pid>.dat. cocotb builds (-f .../cmds.f)
+#   are passed through to the real iverilog.
+# Date: 2026-10-09
+#
+# Environment: COV_DIR    coverage data directory (default: next to -o)
+#              COV_JOBS   verilator build jobs (default 0 = all cores)
+#              COV_VFLAGS extra verilator options
+import hashlib, os, re, shlex, shutil, subprocess, sys
+
+SHIM_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def real_tool(name):
+    path = os.pathsep.join(p for p in os.environ.get("PATH", "").split(os.pathsep)
+                           if p and os.path.abspath(p) != SHIM_DIR)
+    tool = shutil.which(name, path=path)
+    if not tool:
+        sys.exit(f"cov shim: real {name} not found on PATH")
+    return tool
+
+
+def expand_env(text):
+    return re.sub(r"\$\(([A-Za-z_]\w*)\)|\$\{([A-Za-z_]\w*)\}",
+                  lambda m: os.environ.get(m.group(1) or m.group(2), ""), text)
+
+
+def command_file(path):
+    """Tokens of an iverilog command file (-c/-f): // and # comments, $(VAR)."""
+    toks = []
+    with open(path) as f:
+        for line in f:
+            line = re.sub(r"//.*|^\s*#.*", "", line)
+            toks += shlex.split(expand_env(line))
+    return toks
+
+
+def main(argv):
+    if any(a in ("-f", "-c") and os.path.basename(b) == "cmds.f" for a, b in zip(argv, argv[1:])):
+        os.execv(real_tool("iverilog"), ["iverilog"] + argv)    # cocotb + Icarus: VPI needs real vvp
+    out, top, srcs, opts = "a.out", None, [], []
+    args = list(argv)
+    while args:
+        a = args.pop(0)
+        if a in ("-o", "-s", "-I", "-D", "-c", "-f", "-y", "-l", "-T", "-t", "-M", "-m", "-p", "-W"):
+            v = args.pop(0) if args else ""
+            if a == "-o": out = v
+            elif a == "-s": top = v
+            elif a == "-I": opts.append("-I" + os.path.abspath(v))
+            elif a == "-D": opts.append("-D" + v)
+            elif a in ("-c", "-f"): args = command_file(v) + args
+            elif a == "-y": opts += ["-y", os.path.abspath(v)]
+            elif a == "-l": srcs.append(os.path.abspath(v))
+        elif a.startswith("+incdir+"):
+            opts += ["-I" + os.path.abspath(d) for d in a[8:].split("+") if d]
+        elif a.startswith("+define+"):
+            opts += ["-D" + d for d in a[8:].split("+") if d]
+        elif a.startswith("+libext+"):
+            opts.append(a)
+        elif a.startswith("+libdir+"):
+            opts += ["-y" + os.path.abspath(d) for d in a[8:].split("+") if d]
+        elif a.startswith("+"):
+            pass                                                # other iverilog plusargs
+        elif a.startswith("-I"): opts.append("-I" + os.path.abspath(a[2:]))
+        elif a.startswith("-D"): opts.append(a)
+        elif a.startswith("-s"): top = a[2:]
+        elif a.startswith("-o"): out = a[2:]
+        elif a.startswith("-"):
+            pass                                                # -g2012, -Wall, -Wno-..., -E, -v ...
+        else:
+            srcs.append(os.path.abspath(a))         # absolute: coverage annotation reads them later
+    out = os.path.abspath(out)
+    name = top or os.path.splitext(os.path.basename(out))[0]
+    cov_dir = os.path.abspath(os.environ.get("COV_DIR") or os.path.dirname(out))
+    # Verilator objects live next to the coverage data, not in the (source) tree of -o
+    obj = os.path.join(os.path.dirname(cov_dir), "obj", f"{name}-{hashlib.md5(out.encode()).hexdigest()[:8]}")
+    exe = "Vcov_top"
+    cmd = ["verilator", "--binary", "--timing", "--coverage", "-j", os.environ.get("COV_JOBS", "0"),
+           "-Wno-fatal", "-Wno-lint", "-Wno-style", "-Wno-MULTITOP",
+           "-Mdir", obj, "-o", exe] + shlex.split(os.environ.get("COV_VFLAGS", ""))
+    if top:
+        cmd += ["--top-module", top]
+    cmd += opts + srcs
+    shutil.rmtree(obj, ignore_errors=True)
+    os.makedirs(obj, exist_ok=True)
+    log = os.path.join(obj, "verilator.log")
+    with open(log, "w") as f:
+        f.write(shlex.join(cmd) + "\n")
+        f.flush()
+        rc = subprocess.call(cmd, stdout=f, stderr=subprocess.STDOUT)
+    if rc != 0:
+        with open(log) as f:
+            sys.stderr.write("".join(f.readlines()[-40:]))
+        sys.exit(f"cov shim: verilator build failed (full log: {log})")
+    with open(out, "w") as f:
+        f.write("#!/bin/sh\n# cov-shim launcher: run by tools/cov/vvp\n"
+                f"mkdir -p {shlex.quote(cov_dir)}\n"
+                f"exec {shlex.quote(os.path.join(obj, exe))} "
+                f"+verilator+coverage+file+{shlex.quote(cov_dir)}/{shlex.quote(name)}.$$.dat \"$@\"\n")
+    os.chmod(out, 0o755)
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

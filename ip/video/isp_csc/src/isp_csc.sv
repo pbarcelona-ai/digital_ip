@@ -42,7 +42,9 @@ module isp_csc (
   wire  m709 = s_axis_tuser ? bt709_i  : m709_f;
 
   wire signed [9:0] r = {2'b00, s_axis_tdata[7:0]}, g = {2'b00, s_axis_tdata[15:8]}, b = {2'b00, s_axis_tdata[23:16]};
-  logic signed [18:0] sy, scb, scr; logic [23:0] d1; logic v1, l1, u1, b1;
+  logic signed [18:0] sy, scb, scr;
+  logic [23:0] d1;
+  logic v1, l1, u1, b1;
 
   function automatic logic [7:0] clamp(input logic signed [18:0] x);
     clamp = (x < 0) ? 8'd0 : (x > 255) ? 8'd255 : x[7:0];
@@ -50,11 +52,25 @@ module isp_csc (
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      by_f <= 1'b0; m709_f <= 1'b0; v1 <= 1'b0; l1 <= 1'b0; u1 <= 1'b0; b1 <= 1'b0; d1 <= '0;
-      sy <= '0; scb <= '0; scr <= '0;
-      m_axis_tvalid <= 1'b0; m_axis_tdata <= '0; m_axis_tlast <= 1'b0; m_axis_tuser <= 1'b0;
+      by_f <= 1'b0;
+      m709_f <= 1'b0;
+      v1 <= 1'b0;
+      l1 <= 1'b0;
+      u1 <= 1'b0;
+      b1 <= 1'b0;
+      d1 <= '0;
+      sy <= '0;
+      scb <= '0;
+      scr <= '0;
+      m_axis_tvalid <= 1'b0;
+      m_axis_tdata <= '0;
+      m_axis_tlast <= 1'b0;
+      m_axis_tuser <= 1'b0;
     end else if (en) begin
-      if (acc && s_axis_tuser) begin by_f <= bypass_i; m709_f <= bt709_i; end
+      if (acc && s_axis_tuser) begin
+        by_f <= bypass_i;
+        m709_f <= bt709_i;
+      end
       if (m709) begin
         sy  <= 47 * r + 157 * g + 16 * b + 128;
         scb <= -26 * r - 86 * g + 112 * b + 128;
@@ -64,8 +80,14 @@ module isp_csc (
         scb <= -38 * r - 74 * g + 112 * b + 128;
         scr <= 112 * r - 94 * g - 18 * b + 128;
       end
-      d1 <= s_axis_tdata; v1 <= acc; l1 <= s_axis_tlast; u1 <= s_axis_tuser; b1 <= by;
-      m_axis_tvalid <= v1; m_axis_tlast <= l1; m_axis_tuser <= u1;
+      d1 <= s_axis_tdata;
+      v1 <= acc;
+      l1 <= s_axis_tlast;
+      u1 <= s_axis_tuser;
+      b1 <= by;
+      m_axis_tvalid <= v1;
+      m_axis_tlast <= l1;
+      m_axis_tuser <= u1;
       m_axis_tdata  <= b1 ? d1 : {clamp(128 + (scb >>> 8)), clamp(16 + (sy >>> 8)), clamp(128 + (scr >>> 8))};
     end
   end

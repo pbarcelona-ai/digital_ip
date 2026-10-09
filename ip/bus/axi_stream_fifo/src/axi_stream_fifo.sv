@@ -35,10 +35,23 @@ module axi_stream_fifo #(
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
   if (DEPTH < 4 || (DEPTH & (DEPTH - 1)) != 0) begin : g_bad $error("axi_stream_fifo: DEPTH must be a power of two >= 4"); end
   localparam int PW = DATA_W + DATA_W/8 + USER_W;
-  logic [PW-1:0] pd, qd; logic mu;
+  logic [PW-1:0] pd, qd;
+  logic mu;
   assign pd = {s_axis_tuser, s_axis_tkeep, s_axis_tdata};
   ip_axis_fifo #(.DATA_W(PW), .DEPTH(DEPTH)) u_fifo (
-    .clk(aclk), .rst_n(aresetn), .s_tdata(pd), .s_tlast(s_axis_tlast), .s_tuser(1'b0), .s_tvalid(s_axis_tvalid), .s_tready(s_axis_tready),
-    .m_tdata(qd), .m_tlast(m_axis_tlast), .m_tuser(mu), .m_tvalid(m_axis_tvalid), .m_tready(m_axis_tready), .level_o(level_o));
+    .clk(aclk),
+    .rst_n(aresetn),
+    .s_tdata(pd),
+    .s_tlast(s_axis_tlast),
+    .s_tuser(1'b0),
+    .s_tvalid(s_axis_tvalid),
+    .s_tready(s_axis_tready),
+    .m_tdata(qd),
+    .m_tlast(m_axis_tlast),
+    .m_tuser(mu),
+    .m_tvalid(m_axis_tvalid),
+    .m_tready(m_axis_tready),
+    .level_o(level_o)
+  );
   assign {m_axis_tuser, m_axis_tkeep, m_axis_tdata} = qd;
 endmodule

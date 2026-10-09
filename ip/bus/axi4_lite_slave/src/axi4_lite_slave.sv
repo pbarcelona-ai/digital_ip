@@ -56,64 +56,115 @@ module axi4_lite_slave #(
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
   if (ADDR_W < 2) begin : g_bad $error("axi4_lite_slave: ADDR_W must be >= 2"); end
   // ---------------- write path ----------------
-  logic aw_got, w_got; logic [ADDR_W-1:0] aw_q; logic [31:0] w_q; logic [3:0] ws_q;
-  typedef enum logic [2:0] {W_IDLE, W_EXEC, W_WAIT, W_RESP} wst_t; wst_t wst;
+  logic aw_got, w_got;
+  logic [ADDR_W-1:0] aw_q;
+  logic [31:0] w_q;
+  logic [3:0] ws_q;
+  typedef enum logic [2:0] {W_IDLE, W_EXEC, W_WAIT, W_RESP} wst_t;
+  wst_t wst;
   wire wr_bad = (MAP_WORDS != 0) && (aw_q[ADDR_W-1:2] >= MAP_WORDS);
   // one write outstanding: no new address/data is accepted while the previous response is still pending
   assign s_axil_awready = (wst == W_IDLE) & ~aw_got & ~s_axil_bvalid;
   assign s_axil_wready  = (wst == W_IDLE) & ~w_got  & ~s_axil_bvalid;
   always_ff @(posedge aclk) begin
     if (!aresetn) begin
-      wst <= W_IDLE; aw_got <= 1'b0; w_got <= 1'b0; wr_en_o <= 1'b0; s_axil_bvalid <= 1'b0; s_axil_bresp <= 2'b00;
-      aw_q <= '0; w_q <= '0; ws_q <= '0;
+      wst <= W_IDLE;
+      aw_got <= 1'b0;
+      w_got <= 1'b0;
+      wr_en_o <= 1'b0;
+      s_axil_bvalid <= 1'b0;
+      s_axil_bresp <= 2'b00;
+      aw_q <= '0;
+      w_q <= '0;
+      ws_q <= '0;
     end else begin
       wr_en_o <= 1'b0;
       case (wst)
         W_IDLE: begin
-          if (s_axil_awvalid & s_axil_awready) begin aw_got <= 1'b1; aw_q <= s_axil_awaddr; end
-          if (s_axil_wvalid & s_axil_wready) begin w_got <= 1'b1; w_q <= s_axil_wdata; ws_q <= s_axil_wstrb; end
+          if (s_axil_awvalid & s_axil_awready) begin
+            aw_got <= 1'b1;
+            aw_q <= s_axil_awaddr;
+          end
+          if (s_axil_wvalid & s_axil_wready) begin
+            w_got <= 1'b1;
+            w_q <= s_axil_wdata;
+            ws_q <= s_axil_wstrb;
+          end
           if ((aw_got | (s_axil_awvalid & s_axil_awready)) & (w_got | (s_axil_wvalid & s_axil_wready))) wst <= W_EXEC;
         end
         W_EXEC: begin
-          wr_en_o <= ~wr_bad; wst <= W_WAIT;      // wr_en_o is high during W_WAIT
+          wr_en_o <= ~wr_bad; // wr_en_o is high during W_WAIT
+          wst <= W_WAIT;
         end
         W_WAIT: wst <= W_RESP;                   // user computes wr_err_i for this write
         W_RESP: begin
-          s_axil_bvalid <= 1'b1; s_axil_bresp <= wr_bad ? 2'b11 : (wr_err_i ? 2'b10 : 2'b00);
-          aw_got <= 1'b0; w_got <= 1'b0; wst <= W_IDLE;
+          s_axil_bvalid <= 1'b1;
+          s_axil_bresp <= wr_bad ? 2'b11 : (wr_err_i ? 2'b10 : 2'b00);
+          aw_got <= 1'b0;
+          w_got <= 1'b0;
+          wst <= W_IDLE;
         end
         default: wst <= W_IDLE;
       endcase
       if (s_axil_bvalid & s_axil_bready) s_axil_bvalid <= 1'b0;
     end
   end
-  assign wr_addr_o = aw_q; assign wr_data_o = w_q; assign wr_strb_o = ws_q;
+  assign wr_addr_o = aw_q;
+  assign wr_data_o = w_q;
+  assign wr_strb_o = ws_q;
   // wr_err_i is sampled while in W_RESP (cycle after wr_en_o); keep bvalid from being set before it
   // ---------------- read path ----------------
-  typedef enum logic [2:0] {R_IDLE, R_REQ, R_WAIT, R_DATA, R_RESP} rst_t; rst_t rst; logic [ADDR_W-1:0] ar_q;
+  typedef enum logic [2:0] {R_IDLE, R_REQ, R_WAIT, R_DATA, R_RESP} rst_t;
+  rst_t rst;
+  logic [ADDR_W-1:0] ar_q;
   wire rd_bad = (MAP_WORDS != 0) && (ar_q[ADDR_W-1:2] >= MAP_WORDS);
   assign s_axil_arready = (rst == R_IDLE);
   assign rd_addr_o = ar_q;
   always_ff @(posedge aclk) begin
     if (!aresetn) begin
-      rst <= R_IDLE; rd_en_o <= 1'b0; s_axil_rvalid <= 1'b0; s_axil_rdata <= '0; s_axil_rresp <= 2'b00; ar_q <= '0;
+      rst <= R_IDLE;
+      rd_en_o <= 1'b0;
+      s_axil_rvalid <= 1'b0;
+      s_axil_rdata <= '0;
+      s_axil_rresp <= 2'b00;
+      ar_q <= '0;
     end else begin
       rd_en_o <= 1'b0;
       case (rst)
-        R_IDLE: if (s_axil_arvalid) begin ar_q <= s_axil_araddr; rst <= R_REQ; end
-        R_REQ: begin rd_en_o <= 1'b1; rst <= R_WAIT; end
+        R_IDLE: if (s_axil_arvalid) begin
+          ar_q <= s_axil_araddr;
+          rst <= R_REQ;
+        end
+        R_REQ: begin
+          rd_en_o <= 1'b1;
+          rst <= R_WAIT;
+        end
         R_WAIT: begin                            // rd_en_o is high in this state
-          if (rd_bad) begin s_axil_rvalid <= 1'b1; s_axil_rdata <= '0; s_axil_rresp <= 2'b11; rst <= R_RESP; end
+          if (rd_bad) begin
+            s_axil_rvalid <= 1'b1;
+            s_axil_rdata <= '0;
+            s_axil_rresp <= 2'b11;
+            rst <= R_RESP;
+          end
           else if (READ_WAIT != 0 && rd_valid_i) begin
-            s_axil_rvalid <= 1'b1; s_axil_rdata <= rd_data_i; s_axil_rresp <= rd_err_i ? 2'b10 : 2'b00; rst <= R_RESP;
+            s_axil_rvalid <= 1'b1;
+            s_axil_rdata <= rd_data_i;
+            s_axil_rresp <= rd_err_i ? 2'b10 : 2'b00;
+            rst <= R_RESP;
           end else rst <= R_DATA;
         end
         R_DATA: begin                            // data valid one cycle after rd_en_o
           if (READ_WAIT == 0 || rd_valid_i) begin
-            s_axil_rvalid <= 1'b1; s_axil_rdata <= rd_data_i; s_axil_rresp <= rd_err_i ? 2'b10 : 2'b00; rst <= R_RESP;
+            s_axil_rvalid <= 1'b1;
+            s_axil_rdata <= rd_data_i;
+            s_axil_rresp <= rd_err_i ? 2'b10 : 2'b00;
+            rst <= R_RESP;
           end
         end
-        R_RESP: if (s_axil_rready) begin s_axil_rvalid <= 1'b0; rst <= R_IDLE; end
+        R_RESP: if (s_axil_rready) begin
+          s_axil_rvalid <= 1'b0;
+          rst <= R_IDLE;
+        end
         default: rst <= R_IDLE;
       endcase
     end

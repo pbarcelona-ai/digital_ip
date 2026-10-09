@@ -26,12 +26,23 @@ module timeout_timer #(
   if (WIDTH < 1) begin : g_bw $error("timeout_timer: WIDTH must be >= 1"); end
   logic [WIDTH-1:0] cnt;
   always_ff @(posedge clk) begin
-    if (!rst_n) begin cnt <= '0; expired_o <= 1'b0; timeout_pulse_o <= 1'b0; end
+    if (!rst_n) begin
+      cnt <= '0;
+      expired_o <= 1'b0;
+      timeout_pulse_o <= 1'b0;
+    end
     else begin
       timeout_pulse_o <= 1'b0;
-      if (activity_i || timeout_i == '0) begin cnt <= '0; expired_o <= 1'b0; end
+      if (activity_i || timeout_i == '0) begin
+        cnt <= '0;
+        expired_o <= 1'b0;
+      end
       else if (ce_i && !expired_o) begin
-        if (cnt + 1'b1 >= timeout_i) begin expired_o <= 1'b1; timeout_pulse_o <= 1'b1; cnt <= timeout_i; end
+        if (cnt + 1'b1 >= timeout_i) begin
+          expired_o <= 1'b1;
+          timeout_pulse_o <= 1'b1;
+          cnt <= timeout_i;
+        end
         else cnt <= cnt + 1'b1;
       end
     end

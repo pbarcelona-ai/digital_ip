@@ -13,23 +13,36 @@
 // Date: 2026-10-08
 // ***************
   task automatic check(input bit c, input string m);
-    if (!c) begin errors++; if (errors < 30) $display("ERROR @%0t: %s", $time, m); end
+    if (!c) begin
+      errors++;
+      if (errors < 30) $display("ERROR @%0t: %s", $time, m);
+    end
   endtask
 
-  task automatic wr(input int a, input int d); bfm.write(8'(a), 32'(d)); endtask
+  task automatic wr(input int a, input int d);
+    bfm.write(8'(a), 32'(d));
+  endtask
 
-  task automatic rd(input int a, output logic [31:0] d); bfm.read(8'(a), d); endtask
+  task automatic rd(input int a, output logic [31:0] d);
+    bfm.read(8'(a), d);
+  endtask
 
   task automatic run_frame(input string what);
-    int f0, bad; f0 = vid.frames; vid.ow = W; vid.oh = H;
+    int f0, bad;
+    f0 = vid.frames;
+    vid.ow = W;
+    vid.oh = H;
     for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) begin
-      logic [23:0] p; p = ((x / 3 + y / 2) % 2) ? 24'hF0E0D0 : 24'h102030;     // edges to blur / sharpen
+      logic [23:0] p; // edges to blur / sharpen
+      p = ((x / 3 + y / 2) % 2) ? 24'hF0E0D0 : 24'h102030;
       if ($urandom_range(4) == 0) p = $urandom;
-      vid.img[y][x] = p; mdl.img[y][x] = p;
+      vid.img[y][x] = p;
+      mdl.img[y][x] = p;
     end
     vid.send(W, H);
     while (vid.frames < f0 + 1) @(posedge clk);
-    mdl.run(W, H); bad = 0;
+    mdl.run(W, H);
+    bad = 0;
     for (int y = 0; y < H; y++) for (int x = 0; x < W; x++)
       if (vid.out[y][x] !== mdl.out[y][x]) begin
         if (bad < 3) $display("  %s (%0d,%0d): %h expected %h", what, x, y, vid.out[y][x], mdl.out[y][x]);

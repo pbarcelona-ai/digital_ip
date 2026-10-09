@@ -98,14 +98,16 @@ module isp_window #(
   logic [PW-1:0] cstore [N][N];
   always_comb begin
     int yi, hi, d, sc;
-    yi = int'(y); hi = int'(height_i);
+    yi = int'(y);
+    hi = int'(height_i);
     d = int'(x) - int'(width_i) + 1;
     sc = (BORDER != 0) ? N - 2*d : N - 1;
     raw[0] = (y >= height_i) ? q[0] : s_axis_tdata;          // below the frame: placeholder
     for (int k = 1; k < N; k++) raw[k] = q[k-1];
     for (int k = 0; k < N; k++) begin : vrow
       int src, row;
-      row = yi - k; src = k;
+      row = yi - k;
+      src = k;
       if (row < 0)        src = (BORDER != 0) ? 2*yi - k : yi;
       else if (row >= hi) src = (BORDER != 0) ? 2*yi - k - 2*hi + 2 : yi - hi + 1;
       col[k] = raw[0];
@@ -127,7 +129,8 @@ module isp_window #(
     win = '0;
     for (int c = 0; c < N; c++) begin : wcol
       int src, xc;
-      src = c; xc = int'(x) - (N - 1) + c;                   // image column of window column c
+      src = c; // image column of window column c
+      xc = int'(x) - (N - 1) + c;
       if (xc < 0) src = (BORDER != 0) ? 2*(N - 1) - 2*int'(x) - c : (N - 1) - int'(x);
       for (int r = 0; r < N; r++)
         for (int s = 0; s < N; s++) if (s == src)
@@ -137,18 +140,30 @@ module isp_window #(
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      x <= '0; y <= '0;
-      m_axis_tvalid <= 1'b0; m_axis_tdata <= '0; m_x <= '0; m_y <= '0; m_axis_tlast <= 1'b0; m_axis_tuser <= 1'b0;
+      x <= '0;
+      y <= '0;
+      m_axis_tvalid <= 1'b0;
+      m_axis_tdata <= '0;
+      m_x <= '0;
+      m_y <= '0;
+      m_axis_tlast <= 1'b0;
+      m_axis_tuser <= 1'b0;
     end else begin
-      if (restart) begin x <= '0; y <= '0; end
+      if (restart) begin
+        x <= '0;
+        y <= '0;
+      end
       else if (advance) begin
-        x <= nx; y <= ny;
+        x <= nx;
+        y <= ny;
         for (int c = 0; c < N - 1; c++) for (int k = 0; k < N; k++) cstore[c][k] <= cstore[c+1][k];
         for (int k = 0; k < N; k++) cstore[N-1][k] <= col[k];
       end
       if (advance && prod) begin
-        m_axis_tvalid <= 1'b1; m_axis_tdata <= win;
-        m_x <= x - 16'(R); m_y <= y - 16'(R);
+        m_axis_tvalid <= 1'b1;
+        m_axis_tdata <= win;
+        m_x <= x - 16'(R);
+        m_y <= y - 16'(R);
         m_axis_tuser <= (x == 16'(R)) && (y == 16'(R));
         m_axis_tlast <= (x == xend);
       end else if (m_axis_tready) m_axis_tvalid <= 1'b0;

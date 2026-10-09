@@ -36,9 +36,15 @@ module fallthrough_fifo #(
   assign m_valid_o = (wptr != rptr);
   assign m_data_o  = mem[rptr[AW-1:0]];
   always_ff @(posedge clk) begin
-    if (!rst_n) begin wptr <= '0; rptr <= '0; end
+    if (!rst_n) begin
+      wptr <= '0;
+      rptr <= '0;
+    end
     else begin
-      if (s_valid_i & s_ready_o) begin mem[wptr[AW-1:0]] <= s_data_i; wptr <= wptr + 1'b1; end
+      if (s_valid_i & s_ready_o) begin
+        mem[wptr[AW-1:0]] <= s_data_i;
+        wptr <= wptr + 1'b1;
+      end
       if (m_valid_o & m_ready_i) rptr <= rptr + 1'b1;
     end
   end

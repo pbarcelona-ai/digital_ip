@@ -18,7 +18,8 @@ module conv2d_ref #(
   localparam int R = (N - 1) / 2;
   logic [C*CW-1:0] img [MAXH][MAXW];
   logic [C*CW-1:0] out [MAXH][MAXW];
-  int k [25]; int shift = 0;
+  int k [25];
+  int shift = 0;
 
   function automatic int bnd(input int v, input int n);
     if (BORDER != 0) return (v < 0) ? -v : (v >= n) ? 2 * (n - 1) - v : v;
@@ -32,11 +33,13 @@ module conv2d_ref #(
 
   task automatic set_identity();
     for (int i = 0; i < 25; i++) k[i] = 0;
-    k[R * N + R] = 1; shift = 0;
+    k[R * N + R] = 1;
+    shift = 0;
   endtask
 
   task automatic run(input int W, input int H);
-    logic [C*CW-1:0] p, res; int acc, v;
+    logic [C*CW-1:0] p, res;
+    int acc, v;
     for (int y = 0; y < H; y++)
       for (int x = 0; x < W; x++) begin
         res = '0;

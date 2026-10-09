@@ -1,0 +1,8 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1791577414" />
+    <testcase name="test_barrel_distortion_correction" classname="test_vision_system" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/image_processing/vision_system/tb/test_vision_system.py" lineno="526" time="282.82170510292053" sim_time_ns="3152390.0" ratio_time="11146.209584065786" />
+    <testcase name="test_pincushion_distortion_correction" classname="test_vision_system" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/image_processing/vision_system/tb/test_vision_system.py" lineno="541" time="222.97668600082397" sim_time_ns="3152400.0" ratio_time="14137.800935781917" />
+    <testcase name="test_fisheye_panoramic_perspective_correction" classname="test_vision_system" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/image_processing/vision_system/tb/test_vision_system.py" lineno="557" time="265.74126505851746" sim_time_ns="3899320.0" ratio_time="14673.370351952497" />
+  </testsuite>
+</testsuites>

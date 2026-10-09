@@ -24,9 +24,21 @@ module clock_enable #(
   if (DIV_W < 1) begin : g_bad $error("clock_enable: DIV_W must be >= 1"); end
   logic [DIV_W-1:0] cnt;
   always_ff @(posedge clk) begin
-    if (!rst_n || !en_i) begin cnt <= '0; ce_o <= 1'b0; end
-    else if (div_i <= 1) begin cnt <= '0; ce_o <= 1'b1; end
-    else if (cnt >= div_i - 1'b1) begin cnt <= '0; ce_o <= 1'b1; end
-    else begin cnt <= cnt + 1'b1; ce_o <= 1'b0; end
+    if (!rst_n || !en_i) begin
+      cnt <= '0;
+      ce_o <= 1'b0;
+    end
+    else if (div_i <= 1) begin
+      cnt <= '0;
+      ce_o <= 1'b1;
+    end
+    else if (cnt >= div_i - 1'b1) begin
+      cnt <= '0;
+      ce_o <= 1'b1;
+    end
+    else begin
+      cnt <= cnt + 1'b1;
+      ce_o <= 1'b0;
+    end
   end
 endmodule

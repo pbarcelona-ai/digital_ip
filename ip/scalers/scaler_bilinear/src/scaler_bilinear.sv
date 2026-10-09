@@ -113,10 +113,25 @@ module scaler_bilinear #(
 
   // DDA: raster scan of the output, source coordinate per pixel
   scaler_dda u_dda (
-    .clk, .rst_n, .start(gen_start), .adv, .hold(lb_hold), .nxt_y(d_nxt_y),
-    .out_w, .out_h, .step_x, .step_y, .offs_x, .offs_y,
-    .busy(d_busy), .o_valid(d_valid), .o_x(d_x), .o_y(d_y),
-    .o_sof(d_sof), .o_eol(d_eol), .o_eof(d_eof)
+    .clk,
+    .rst_n,
+    .start(gen_start),
+    .adv,
+    .hold(lb_hold),
+    .nxt_y(d_nxt_y),
+    .out_w,
+    .out_h,
+    .step_x,
+    .step_y,
+    .offs_x,
+    .offs_y,
+    .busy(d_busy),
+    .o_valid(d_valid),
+    .o_x(d_x),
+    .o_y(d_y),
+    .o_sof(d_sof),
+    .o_eol(d_eol),
+    .o_eof(d_eof)
   );
 
   // Round the source coordinate to the PHASE_BITS grid: integer part =
@@ -134,8 +149,17 @@ module scaler_bilinear #(
   banked_framebuf #(.PIX_W(PIX_W), .TAPS(2), .MAX_W(MAX_W), .MAX_H(MAX_H),
                   .NBUF(NBUF), .RING(LB_ROWS)) u_fb (
     .clk,
-    .wr_en(fb_we), .wr_x(fb_wx), .wr_y(fb_wy), .wr_data(fb_wdata), .wr_buf(fb_wbuf),
-    .rd_adv(adv), .rd_buf(gen_buf), .rd_x0(ix), .rd_y0(iy), .img_w(in_w), .img_h(in_h),
+    .wr_en(fb_we),
+    .wr_x(fb_wx),
+    .wr_y(fb_wy),
+    .wr_data(fb_wdata),
+    .wr_buf(fb_wbuf),
+    .rd_adv(adv),
+    .rd_buf(gen_buf),
+    .rd_x0(ix),
+    .rd_y0(iy),
+    .img_w(in_w),
+    .img_h(in_h),
     .rd_win(win)
   );
 
@@ -200,14 +224,19 @@ module scaler_bilinear #(
   // Data path registers (no reset needed)
   always_ff @(posedge clk) begin
     if (adv) begin
-      fx_q[0] <= fx;  fx_q[1] <= fx_q[0];                         // A, B
-      fy_q[0] <= fy;  fy_q[1] <= fy_q[0];
+      fx_q[0] <= fx; // A, B
+      fx_q[1] <= fx_q[0];
+      fy_q[0] <= fy;
+      fy_q[1] <= fy_q[0];
       win_q <= win;                                               // W
       wx0   <= (PHASE_BITS+1)'(ONE) - (PHASE_BITS+1)'(fx_q[1]);
       wx1   <= (PHASE_BITS+1)'(fx_q[1]);
       wy0_d[0] <= (PHASE_BITS+1)'(ONE) - (PHASE_BITS+1)'(fy_q[1]);
       wy1_d[0] <= (PHASE_BITS+1)'(fy_q[1]);
-      for (int d = 1; d < 3; d++) begin wy0_d[d] <= wy0_d[d-1]; wy1_d[d] <= wy1_d[d-1]; end
+      for (int d = 1; d < 3; d++) begin
+        wy0_d[d] <= wy0_d[d-1];
+        wy1_d[d] <= wy1_d[d-1];
+      end
       for (int c = 0; c < CHANNELS; c++) begin
         ph_q[c][0] <= HW'(win_q[(0*PIX_W) + c*COMP_W +: COMP_W]) * HW'(wx0);   // M1
         ph_q[c][1] <= HW'(win_q[(1*PIX_W) + c*COMP_W +: COMP_W]) * HW'(wx1);
@@ -232,19 +261,58 @@ module scaler_bilinear #(
   scaler_ctrl #(.PIX_W(PIX_W), .ADDR_W(ADDR_W), .MAX_W(MAX_W), .MAX_H(MAX_H),
                 .IP_ID(IP_ID), .CAPS(CAPS), .NBUF(NBUF), .LB_ROWS(LB_ROWS),
                 .LB_TAPS(WIN_T), .LB_CTR(0), .LB_RND(1 << (16 - PHASE_BITS - 1))) u_ctrl (
-    .clk, .rst_n,
-    .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready,
-    .s_axil_wdata,  .s_axil_wstrb,   .s_axil_wvalid, .s_axil_wready,
-    .s_axil_bresp,  .s_axil_bvalid,  .s_axil_bready,
-    .s_axil_araddr, .s_axil_arvalid, .s_axil_arready,
-    .s_axil_rdata,  .s_axil_rresp,   .s_axil_rvalid, .s_axil_rready,
-    .s_axis_tdata, .s_axis_tvalid, .s_axis_tready, .s_axis_tuser, .s_axis_tlast,
-    .fb_we, .fb_wx, .fb_wy, .fb_wdata,
-    .fb_wbuf, .gen_buf, .gen_start, .gen_done,
-    .lb_nxt_y(d_nxt_y), .lb_nxt_v(d_busy), .lb_o_y(d_y), .lb_o_v(d_valid),
-    .lb_a_y(a_y), .lb_a_v(v_q[0]), .lb_hold,
-    .cfg_in_w(in_w), .cfg_in_h(in_h), .cfg_out_w(out_w), .cfg_out_h(out_h),
-    .cfg_step_x(step_x), .cfg_step_y(step_y), .cfg_offs_x(offs_x), .cfg_offs_y(offs_y),
-    .ext_wr, .ext_waddr, .ext_wdata, .ext_rd, .ext_raddr, .ext_rdata(32'd0)
+    .clk,
+    .rst_n,
+    .s_axil_awaddr,
+    .s_axil_awvalid,
+    .s_axil_awready,
+    .s_axil_wdata,
+    .s_axil_wstrb,
+    .s_axil_wvalid,
+    .s_axil_wready,
+    .s_axil_bresp,
+    .s_axil_bvalid,
+    .s_axil_bready,
+    .s_axil_araddr,
+    .s_axil_arvalid,
+    .s_axil_arready,
+    .s_axil_rdata,
+    .s_axil_rresp,
+    .s_axil_rvalid,
+    .s_axil_rready,
+    .s_axis_tdata,
+    .s_axis_tvalid,
+    .s_axis_tready,
+    .s_axis_tuser,
+    .s_axis_tlast,
+    .fb_we,
+    .fb_wx,
+    .fb_wy,
+    .fb_wdata,
+    .fb_wbuf,
+    .gen_buf,
+    .gen_start,
+    .gen_done,
+    .lb_nxt_y(d_nxt_y),
+    .lb_nxt_v(d_busy),
+    .lb_o_y(d_y),
+    .lb_o_v(d_valid),
+    .lb_a_y(a_y),
+    .lb_a_v(v_q[0]),
+    .lb_hold,
+    .cfg_in_w(in_w),
+    .cfg_in_h(in_h),
+    .cfg_out_w(out_w),
+    .cfg_out_h(out_h),
+    .cfg_step_x(step_x),
+    .cfg_step_y(step_y),
+    .cfg_offs_x(offs_x),
+    .cfg_offs_y(offs_y),
+    .ext_wr,
+    .ext_waddr,
+    .ext_wdata,
+    .ext_rd,
+    .ext_raddr,
+    .ext_rdata(32'd0)
   );
 endmodule

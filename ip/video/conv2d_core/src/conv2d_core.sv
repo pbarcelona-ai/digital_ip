@@ -57,21 +57,43 @@ module conv2d_core #(
   if (N != 3 && N != 5) begin : g_bad_n $error("conv2d_core: N must be 3 or 5"); end
 
   // ---------------- window ----------------
-  logic [NN*PW-1:0] w_d; logic w_l, w_u, w_v, w_r;
+  logic [NN*PW-1:0] w_d;
+  logic w_l, w_u, w_v, w_r;
   isp_window #(.N(N), .PW(PW), .MAX_W(MAX_W), .BORDER(BORDER)) u_win (
-    .clk, .rst_n, .width_i, .height_i,
-    .s_axis_tdata, .s_axis_tlast, .s_axis_tuser, .s_axis_tvalid, .s_axis_tready,
-    .m_axis_tdata(w_d), .m_x(), .m_y(), .m_axis_tlast(w_l), .m_axis_tuser(w_u), .m_axis_tvalid(w_v), .m_axis_tready(w_r),
-    .sof_wait_o);
+    .clk,
+    .rst_n,
+    .width_i,
+    .height_i,
+    .s_axis_tdata,
+    .s_axis_tlast,
+    .s_axis_tuser,
+    .s_axis_tvalid,
+    .s_axis_tready,
+    .m_axis_tdata(w_d),
+    .m_x(),
+    .m_y(),
+    .m_axis_tlast(w_l),
+    .m_axis_tuser(w_u),
+    .m_axis_tvalid(w_v),
+    .m_axis_tready(w_r),
+    .sof_wait_o
+  );
 
   // ---------------- kernel, held per frame ----------------
-  logic [NN*COEF_W-1:0] coef_q; logic [4:0] shift_q;
+  logic [NN*COEF_W-1:0] coef_q;
+  logic [4:0] shift_q;
   wire                  take = w_v && w_r && w_u;
   wire [NN*COEF_W-1:0]  k    = w_u ? coef_i  : coef_q;   // the first window of a frame uses the new kernel
   wire [4:0]            ks   = w_u ? shift_i : shift_q;
   always_ff @(posedge clk) begin
-    if (!rst_n) begin coef_q <= '0; shift_q <= '0; end
-    else if (take) begin coef_q <= coef_i; shift_q <= shift_i; end
+    if (!rst_n) begin
+      coef_q <= '0;
+      shift_q <= '0;
+    end
+    else if (take) begin
+      coef_q <= coef_i;
+      shift_q <= shift_i;
+    end
   end
   assign frame_o = take;
 
@@ -110,21 +132,31 @@ module conv2d_core #(
     if (!rst_n) begin
       {v1, v2, v3, v4} <= '0;
     end else if (adv) begin
-      v1 <= w_v; v2 <= v1; v3 <= v2; v4 <= v3;
+      v1 <= w_v;
+      v2 <= v1;
+      v3 <= v2;
+      v4 <= v3;
     end
   end
 
   always_ff @(posedge clk) begin
     if (adv) begin
-      l1 <= w_l; u1 <= w_u; s1 <= ks;
+      l1 <= w_l;
+      u1 <= w_u;
+      s1 <= ks;
       for (int c = 0; c < C; c++)
         for (int i = 0; i < NN; i++)
           p1[c*NN + i] <= $signed({1'b0, w_d[i*PW + c*CW +: CW]}) * $signed(k[i*COEF_W +: COEF_W]);
-      l2 <= l1; u2 <= u1; s2 <= s1;
+      l2 <= l1;
+      u2 <= u1;
+      s2 <= s1;
       for (int i = 0; i < C*N; i++) r2[i] <= rs[i];
-      l3 <= l2; u3 <= u2; s3 <= s2;
+      l3 <= l2;
+      u3 <= u2;
+      s3 <= s2;
       for (int c = 0; c < C; c++) a3[c] <= ts[c];
-      l4 <= l3; u4 <= u3;
+      l4 <= l3;
+      u4 <= u3;
       for (int c = 0; c < C; c++) d4[c*CW +: CW] <= clamp(a3[c] >>> s3);
     end
   end

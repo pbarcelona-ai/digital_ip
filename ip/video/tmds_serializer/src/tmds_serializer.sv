@@ -27,22 +27,36 @@ module tmds_serializer (
   output logic [3:0] serial_o                   // {clock, ch2, ch1, ch0}
 );
   // Pixel domain: hold the symbols for a whole pixel period, mark each one
-  logic [39:0] sym_q; logic tog;
+  logic [39:0] sym_q;
+  logic tog;
   always_ff @(posedge pix_clk) begin
-    if (!pix_rst_n) begin sym_q <= '0; tog <= 1'b0; end
-    else begin sym_q <= {tmds_clk_i, tmds2_i, tmds1_i, tmds0_i}; tog <= ~tog; end
+    if (!pix_rst_n) begin
+      sym_q <= '0;
+      tog <= 1'b0;
+    end
+    else begin
+      sym_q <= {tmds_clk_i, tmds2_i, tmds1_i, tmds0_i};
+      tog <= ~tog;
+    end
   end
 
   // Serial domain
   (* async_reg = "true" *) logic t1, t2;
-  logic t3; logic [3:0] dly; logic [9:0] sh [4];
+  logic t3;
+  logic [3:0] dly;
+  logic [9:0] sh [4];
   always_ff @(posedge ser_clk) begin
     if (!ser_rst_n) begin
-      t1 <= 1'b0; t2 <= 1'b0; t3 <= 1'b0; dly <= '0;
+      t1 <= 1'b0;
+      t2 <= 1'b0;
+      t3 <= 1'b0;
+      dly <= '0;
       for (int c = 0; c < 4; c++) sh[c] <= '0;
       serial_o <= '0;
     end else begin
-      t1 <= tog; t2 <= t1; t3 <= t2;
+      t1 <= tog;
+      t2 <= t1;
+      t3 <= t2;
       dly <= {dly[2:0], t2 ^ t3};                      // edge seen; wait for the data to settle
       for (int c = 0; c < 4; c++) begin
         if (dly[0]) sh[c] <= sym_q[10*c +: 10];        // new symbol: bit 0 goes out next

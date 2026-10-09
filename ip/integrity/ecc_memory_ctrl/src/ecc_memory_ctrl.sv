@@ -50,14 +50,31 @@ module ecc_memory_ctrl #(
   if (DEPTH < 2) begin : g_bd $error("ecc_memory_ctrl: DEPTH must be >= 2"); end
   logic [CODE_W-1:0] mem [0:DEPTH-1];
   logic [CODE_W-1:0] enc, enc_scrub, mem_q;
-  logic [DATA_W-1:0] dec_data; logic dec_sec, dec_ded; logic [R-1:0] dec_syn;
-  ecc_encoder #(.DATA_W(DATA_W)) u_enc (.data_i(wdata_i), .code_o(enc));
-  ecc_decoder #(.DATA_W(DATA_W)) u_dec (.code_i(mem_q), .data_o(dec_data), .sec_o(dec_sec), .ded_o(dec_ded), .syndrome_o(dec_syn));
-  ecc_encoder #(.DATA_W(DATA_W)) u_enc_scrub (.data_i(dec_data), .code_o(enc_scrub));
+  logic [DATA_W-1:0] dec_data;
+  logic dec_sec, dec_ded;
+  logic [R-1:0] dec_syn;
+  ecc_encoder #(.DATA_W(DATA_W)) u_enc (
+    .data_i(wdata_i),
+    .code_o(enc)
+  );
+  ecc_decoder #(.DATA_W(DATA_W)) u_dec (
+    .code_i(mem_q),
+    .data_o(dec_data),
+    .sec_o(dec_sec),
+    .ded_o(dec_ded),
+    .syndrome_o(dec_syn)
+  );
+  ecc_encoder #(.DATA_W(DATA_W)) u_enc_scrub (
+    .data_i(dec_data),
+    .code_o(enc_scrub)
+  );
 
   // pipeline: stage 1 holds a read whose codeword is being decoded
-  logic rd1_v; logic [AW-1:0] rd1_addr;
-  logic scrub_wr; logic [AW-1:0] scrub_addr; logic [CODE_W-1:0] scrub_code;
+  logic rd1_v;
+  logic [AW-1:0] rd1_addr;
+  logic scrub_wr;
+  logic [AW-1:0] scrub_addr;
+  logic [CODE_W-1:0] scrub_code;
   assign ready_o = SCRUB ? ~(rd1_v | scrub_wr) : 1'b1;
   wire acc = req_i & ready_o;
   wire do_wr = acc & we_i;
@@ -70,21 +87,48 @@ module ecc_memory_ctrl #(
   end
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      rd1_v <= 1'b0; rd1_addr <= '0; rvalid_o <= 1'b0; rdata_o <= '0; sec_o <= 1'b0; ded_o <= 1'b0;
-      sec_count_o <= '0; ded_count_o <= '0; err_addr_o <= '0; scrub_wr <= 1'b0; scrub_addr <= '0; scrub_code <= '0;
+      rd1_v <= 1'b0;
+      rd1_addr <= '0;
+      rvalid_o <= 1'b0;
+      rdata_o <= '0;
+      sec_o <= 1'b0;
+      ded_o <= 1'b0;
+      sec_count_o <= '0;
+      ded_count_o <= '0;
+      err_addr_o <= '0;
+      scrub_wr <= 1'b0;
+      scrub_addr <= '0;
+      scrub_code <= '0;
     end else begin
-      rd1_v <= do_rd; rd1_addr <= addr_i;
-      rvalid_o <= rd1_v; scrub_wr <= 1'b0;
+      rd1_v <= do_rd;
+      rd1_addr <= addr_i;
+      rvalid_o <= rd1_v;
+      scrub_wr <= 1'b0;
       if (rd1_v) begin
-        rdata_o <= dec_data; sec_o <= dec_sec; ded_o <= dec_ded;
+        rdata_o <= dec_data;
+        sec_o <= dec_sec;
+        ded_o <= dec_ded;
         if (dec_sec) begin
           if (sec_count_o != '1) sec_count_o <= sec_count_o + 1'b1;
           err_addr_o <= rd1_addr;
-          if (SCRUB) begin scrub_wr <= 1'b1; scrub_addr <= rd1_addr; scrub_code <= enc_scrub; end
+          if (SCRUB) begin
+            scrub_wr <= 1'b1;
+            scrub_addr <= rd1_addr;
+            scrub_code <= enc_scrub;
+          end
         end
-        if (dec_ded) begin if (ded_count_o != '1) ded_count_o <= ded_count_o + 1'b1; err_addr_o <= rd1_addr; end
-      end else begin sec_o <= 1'b0; ded_o <= 1'b0; end
-      if (clr_i) begin sec_count_o <= '0; ded_count_o <= '0; end
+        if (dec_ded) begin
+          if (ded_count_o != '1) ded_count_o <= ded_count_o + 1'b1;
+          err_addr_o <= rd1_addr;
+        end
+      end else begin
+        sec_o <= 1'b0;
+        ded_o <= 1'b0;
+      end
+      if (clr_i) begin
+        sec_count_o <= '0;
+        ded_count_o <= '0;
+      end
     end
   end
 endmodule

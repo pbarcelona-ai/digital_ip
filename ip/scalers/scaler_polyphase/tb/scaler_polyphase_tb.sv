@@ -116,7 +116,8 @@ module tb_scaler_polyphase;
     axil_check(12'h024, 32'h504F_4C59);     // IP_ID "POLY"
     axil_check(12'h040, {8'(COEF_FRAC), 8'(COEF_W), 8'(PHASE_BITS), 8'(TAPS)});
     check_default_tables();
-    kind = KERNEL_LANCZOS; kpa = 4.0;                   // Lanczos-4 (8 taps)
+    kind = KERNEL_LANCZOS; // Lanczos-4 (8 taps)
+    kpa = 4.0;
     if (use_file) begin
       run_file_suite();              // +IMG=<file.ppm>
     end else if (quick) begin
@@ -124,7 +125,9 @@ module tb_scaler_polyphase;
     end else begin
       // generated images: standard sweep plus IP-specific tests
       run_standard_suite();
-      kind = KERNEL_CUBIC; kpa = 0.0; kpb = 0.5;          // Catmull-Rom stretched x2
+      kind = KERNEL_CUBIC; // Catmull-Rom stretched x2
+      kpa = 0.0;
+      kpb = 0.5;
       run_test(MAX_W, MAX_H, 24, 20, 0);                  // 2:1 downscale fully anti-aliased
       run_test(MAX_W, MAX_H, 19, 11, 2);
     end

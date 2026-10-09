@@ -35,7 +35,7 @@ package ppm_io_pkg;
         val = val * 10 + (ch - "0");
         ch = $fgetc(fd);
       end
-      if (ch != -1) back = $fseek(fd, -1, 1);
+      if (ch != -1) back = $ungetc(ch, fd);    // push back the delimiter
       ppm_read_int = val;
     end
   endfunction
@@ -56,7 +56,8 @@ package ppm_io_pkg;
       fd = $fopen(path, "rb");
       if (fd == 0) begin
         success = 0;
-        w = 0; h = 0;
+        w = 0;
+        h = 0;
       end else begin
       c = $fgetc(fd); // 'P'
       c = $fgetc(fd); // '6'

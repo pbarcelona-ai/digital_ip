@@ -61,49 +61,124 @@ module dsi_tx #(
   output logic                  underflow_o
 );
   localparam int AW = $clog2(MAX_W / 2);
-  logic lb_buf, lb_done; logic [AW-1:0] lb_addr; logic [47:0] lb_data;
+  logic lb_buf, lb_done;
+  logic [AW-1:0] lb_addr;
+  logic [47:0] lb_data;
 
   // ================================================================ pixel side
-  logic de_q, hs_q, vs_q, pend; logic pbuf; logic [15:0] pwidth;
+  logic de_q, hs_q, vs_q, pend;
+  logic pbuf;
+  logic [15:0] pwidth;
   wire  hs_lead  = (hs_i == hs_pol_i) && (hs_q != hs_pol_i);
   wire  vs_act   = (vs_i == vs_pol_i);
   wire  vs_lead  = vs_act && (vs_q != vs_pol_i);
   wire  line_end = de_q && !de_i;
-  logic lr, lbuf; logic [15:0] lwidth;
-  mipi_line_buf #(.MAX_W(MAX_W)) u_lb (.pclk, .prst_n, .px_i(rgb_i), .px_valid_i(de_i && video_en_i), .line_end_i(line_end),
-    .line_ready_o(lr), .line_buf_o(lbuf), .line_width_o(lwidth), .line_drop_o(line_drop_o),
-    .bclk, .brst_n, .rd_buf_i(lb_buf), .rd_addr_i(lb_addr), .rd_data_o(lb_data), .done_i(lb_done));
+  logic lr, lbuf;
+  logic [15:0] lwidth;
+  mipi_line_buf #(.MAX_W(MAX_W)) u_lb (
+    .pclk,
+    .prst_n,
+    .px_i(rgb_i),
+    .px_valid_i(de_i && video_en_i),
+    .line_end_i(line_end),
+    .line_ready_o(lr),
+    .line_buf_o(lbuf),
+    .line_width_o(lwidth),
+    .line_drop_o(line_drop_o),
+    .bclk,
+    .brst_n,
+    .rd_buf_i(lb_buf),
+    .rd_addr_i(lb_addr),
+    .rd_data_o(lb_data),
+    .done_i(lb_done)
+  );
 
   // Line events at each hsync leading edge: {VSS, pixels pending, buffer, width}
   logic [18:0] ev_w;
   always_ff @(posedge pclk) begin
-    if (!prst_n) begin de_q <= 1'b0; hs_q <= 1'b0; vs_q <= 1'b0; pend <= 1'b0; pbuf <= 1'b0; pwidth <= '0; end
+    if (!prst_n) begin
+      de_q <= 1'b0;
+      hs_q <= 1'b0;
+      vs_q <= 1'b0;
+      pend <= 1'b0;
+      pbuf <= 1'b0;
+      pwidth <= '0;
+    end
     else begin
-      de_q <= de_i; hs_q <= hs_i; vs_q <= vs_i;
-      if (lr) begin pend <= 1'b1; pbuf <= lbuf; pwidth <= lwidth; end
+      de_q <= de_i;
+      hs_q <= hs_i;
+      vs_q <= vs_i;
+      if (lr) begin
+        pend <= 1'b1;
+        pbuf <= lbuf;
+        pwidth <= lwidth;
+      end
       else if (hs_lead) pend <= 1'b0;
     end
   end
   // vsync is aligned with the hsync leading edge (CEA-861); vs_lead or vsync
   // already active at an hsync edge after an inactive line both mean VSS
   logic vs_line_q;                                  // vsync was active on the previous line
-  always_ff @(posedge pclk) if (!prst_n) vs_line_q <= 1'b0; else if (hs_lead) vs_line_q <= vs_act;
+  always_ff @(posedge pclk)
+    if (!prst_n) vs_line_q <= 1'b0;
+    else if (hs_lead) vs_line_q <= vs_act;
   assign ev_w = {vs_act && !vs_line_q, pend, pbuf, pwidth};
-  logic [18:0] ev; logic ev_v, ev_r;
-  async_fifo #(.DATA_W(19), .DEPTH(16)) u_ev (.wclk(pclk), .wrst_n(prst_n), .wdata(ev_w), .wvalid(hs_lead && video_en_i),
-    .wready(), .wlevel_o(), .rclk(bclk), .rrst_n(brst_n), .rdata(ev), .rvalid(ev_v), .rready(ev_r));
+  logic [18:0] ev;
+  logic ev_v, ev_r;
+  async_fifo #(.DATA_W(19), .DEPTH(16)) u_ev (
+    .wclk(pclk),
+    .wrst_n(prst_n),
+    .wdata(ev_w),
+    .wvalid(hs_lead && video_en_i),
+    .wready(),
+    .wlevel_o(),
+    .rclk(bclk),
+    .rrst_n(brst_n),
+    .rdata(ev),
+    .rvalid(ev_v),
+    .rready(ev_r)
+  );
 
   // Commands and their payload bytes
-  logic [24:0] cq; logic cq_v, cq_r; logic [7:0] pb; logic pb_v, pb_r;
-  async_fifo #(.DATA_W(25), .DEPTH(16)) u_cmd (.wclk(pclk), .wrst_n(prst_n), .wdata(cmd_i), .wvalid(cmd_wr_i), .wready(),
-    .wlevel_o(), .rclk(bclk), .rrst_n(brst_n), .rdata(cq), .rvalid(cq_v), .rready(cq_r));
-  async_fifo #(.DATA_W(8), .DEPTH(256)) u_pay (.wclk(pclk), .wrst_n(prst_n), .wdata(cmd_byte_i), .wvalid(cmd_byte_wr_i), .wready(),
-    .wlevel_o(), .rclk(bclk), .rrst_n(brst_n), .rdata(pb), .rvalid(pb_v), .rready(pb_r));
+  logic [24:0] cq;
+  logic cq_v, cq_r;
+  logic [7:0] pb;
+  logic pb_v, pb_r;
+  async_fifo #(.DATA_W(25), .DEPTH(16)) u_cmd (
+    .wclk(pclk),
+    .wrst_n(prst_n),
+    .wdata(cmd_i),
+    .wvalid(cmd_wr_i),
+    .wready(),
+    .wlevel_o(),
+    .rclk(bclk),
+    .rrst_n(brst_n),
+    .rdata(cq),
+    .rvalid(cq_v),
+    .rready(cq_r)
+  );
+  async_fifo #(.DATA_W(8), .DEPTH(256)) u_pay (
+    .wclk(pclk),
+    .wrst_n(prst_n),
+    .wdata(cmd_byte_i),
+    .wvalid(cmd_byte_wr_i),
+    .wready(),
+    .wlevel_o(),
+    .rclk(bclk),
+    .rrst_n(brst_n),
+    .rdata(pb),
+    .rvalid(pb_v),
+    .rready(pb_r)
+  );
   (* async_reg = "true" *) logic ven_s1, ven_s2;
-  always_ff @(posedge bclk) begin ven_s1 <= video_en_i; ven_s2 <= ven_s1; end
+  always_ff @(posedge bclk) begin
+    ven_s1 <= video_en_i;
+    ven_s2 <= ven_s1;
+  end
 
   // ================================================================ byte side
-  logic [45:0] cmd; logic cmd_v, cmd_r;
+  logic [45:0] cmd;
+  logic cmd_v, cmd_r;
   function automatic logic [45:0] mk(input logic [1:0] t, input logic [7:0] di, input logic [15:0] d,
                                      input logic [1:0] f, input logic b, input logic [15:0] g, input logic e);
     mk = {e, g, b, f, d, di, t};
@@ -112,7 +187,10 @@ module dsi_tx #(
   wire [15:0] e_w   = ev[15:0];
   logic sync_sent;                                   // the sync packet of this event is out
   always_comb begin
-    cmd_v = 1'b0; ev_r = 1'b0; cq_r = 1'b0; cmd = '0;
+    cmd_v = 1'b0;
+    ev_r = 1'b0;
+    cq_r = 1'b0;
+    cmd = '0;
     if (ev_v) begin                                  // video has priority
       cmd_v = 1'b1;
       if (!sync_sent) cmd = mk(2'd0, {vc_i, e_vss ? 6'h01 : 6'h21}, 16'h0000, 2'd0, 1'b0, sync_gap_i, eotp_i);
@@ -131,9 +209,24 @@ module dsi_tx #(
   logic eng_busy;
   assign cmd_busy_o = cq_v || (eng_busy && !ev_v);
 
-  mipi_tx_engine #(.NLANES(NLANES), .MAX_W(MAX_W)) u_eng (.clk(bclk), .rst_n(brst_n),
-    .cmd_i(cmd), .cmd_valid_i(cmd_v), .cmd_ready_o(cmd_r),
-    .lb_buf_o(lb_buf), .lb_addr_o(lb_addr), .lb_data_i(lb_data), .lb_done_o(lb_done),
-    .pl_data_i(pb), .pl_valid_i(pb_v), .pl_ready_o(pb_r),
-    .lane_data_o, .lane_valid_o, .hs_req_o, .tx_ready_i, .busy_o(eng_busy), .underflow_o);
+  mipi_tx_engine #(.NLANES(NLANES), .MAX_W(MAX_W)) u_eng (
+    .clk(bclk),
+    .rst_n(brst_n),
+    .cmd_i(cmd),
+    .cmd_valid_i(cmd_v),
+    .cmd_ready_o(cmd_r),
+    .lb_buf_o(lb_buf),
+    .lb_addr_o(lb_addr),
+    .lb_data_i(lb_data),
+    .lb_done_o(lb_done),
+    .pl_data_i(pb),
+    .pl_valid_i(pb_v),
+    .pl_ready_o(pb_r),
+    .lane_data_o,
+    .lane_valid_o,
+    .hs_req_o,
+    .tx_ready_i,
+    .busy_o(eng_busy),
+    .underflow_o
+  );
 endmodule

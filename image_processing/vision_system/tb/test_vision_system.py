@@ -533,6 +533,9 @@ async def test_barrel_distortion_correction(dut):
     await setup_dut(dut)
     shapes = load_or_make_shaped_images(dut)
     await run_distortion_matrix(dut, "barrel", shapes)
+    # let the last register write settle before the test returns: a write still pending at
+    # the end of the final test makes Icarus call back into the finalized cocotb (SIGSEGV)
+    await ClockCycles(dut.clk, 1)
 
 
 @cocotb.test()
@@ -546,6 +549,9 @@ async def test_pincushion_distortion_correction(dut):
     await setup_dut(dut)
     shapes = load_or_make_shaped_images(dut)
     await run_distortion_matrix(dut, "pincushion", shapes)
+    # let the last register write settle before the test returns: a write still pending at
+    # the end of the final test makes Icarus call back into the finalized cocotb (SIGSEGV)
+    await ClockCycles(dut.clk, 1)
 
 
 @cocotb.test()
@@ -567,4 +573,7 @@ async def test_fisheye_panoramic_perspective_correction(dut):
     await run_division_model_correction_test(dut, "fisheye",   1, -0.20, 0.03, sq[1], sq[2])
     await run_division_model_correction_test(dut, "panoramic", 5, -0.20, 0.0,  pt[1], pt[2])
     await run_perspective_correction_test(dut, "perspective", ls[1], ls[2])
+    # let the last register write settle before the test returns: a write still pending at
+    # the end of the final test makes Icarus call back into the finalized cocotb (SIGSEGV)
+    await ClockCycles(dut.clk, 1)
 

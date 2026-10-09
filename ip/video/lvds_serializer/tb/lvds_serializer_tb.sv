@@ -18,13 +18,28 @@ module lvds_serializer_tb;
   realtime ser_half = 1.0;
   logic pix_clk = 0, ser_clk = 0, prst_n = 0, srst_n = 0, dual = 0;
   always #7 pix_clk = ~pix_clk;
-  initial begin #0.3; forever #(ser_half) ser_clk = ~ser_clk; end
+  initial begin
+    #0.3;
+    forever #(ser_half) ser_clk = ~ser_clk;
+  end
 
-  logic [34:0] words; logic stb; logic [4:0] ser;
-  lvds_serializer #(.NL(5)) dut (.pix_clk, .pix_rst_n(prst_n), .words_i(words), .stb_i(stb), .ser_clk, .ser_rst_n(srst_n), .serial_o(ser));
+  logic [34:0] words;
+  logic stb;
+  logic [4:0] ser;
+  lvds_serializer #(.NL(5)) dut (
+    .pix_clk,
+    .pix_rst_n(prst_n),
+    .words_i(words),
+    .stb_i(stb),
+    .ser_clk,
+    .ser_rst_n(srst_n),
+    .serial_o(ser)
+  );
 
   localparam int NS = 300;
-  logic [27:0] sent [NS]; int nsent; bit ph;
+  logic [27:0] sent [NS];
+  int nsent;
+  bit ph;
   always @(posedge pix_clk) if (prst_n) begin
     logic [27:0] d;
     ph = dual ? ~ph : 1'b1;
@@ -37,17 +52,25 @@ module lvds_serializer_tb;
     end
   end
 
-  logic [4:0] bits [NS * 7 + 400]; int nb;
-  always @(posedge ser_clk) if (srst_n) begin bits[nb] = ser; nb++; end
+  // LVDS receiver: aligns on the clock lane and recovers the 28-bit words
+  lvds_bfm #(.NDATA(4)) rx (
+    .ser_clk,
+    .lanes(ser)
+  );
+  initial rx.decode = 0;
 
   // test tasks: tests/lvds_serializer_tests.sv
   `include "lvds_serializer_tests.sv"
 
   initial begin
-    if ($test$plusargs("vcd")) begin $dumpfile("lvds_serializer_tb.vcd"); $dumpvars(0, lvds_serializer_tb); end
+    if ($test$plusargs("vcd")) begin
+      $dumpfile("lvds_serializer_tb.vcd");
+      $dumpvars(0, lvds_serializer_tb);
+    end
     run(0);
     run(1);
-    if (errors == 0) $display("TEST PASSED"); else $display("TEST FAILED (%0d errors)", errors);
+    if (errors == 0) $display("TEST PASSED");
+    else $display("TEST FAILED (%0d errors)", errors);
     $finish;
   end
 endmodule

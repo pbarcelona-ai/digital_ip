@@ -22,19 +22,29 @@ module onehot_decoder #(
 );
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
   if (WIDTH < 2) begin : g_bw $error("onehot_decoder: WIDTH must be >= 2"); end
-  logic [WIDTH-1:0] oh_c; logic e_c;
+  logic [WIDTH-1:0] oh_c;
+  logic e_c;
   always_comb begin
-    oh_c = '0; e_c = 1'b0;
+    oh_c = '0;
+    e_c = 1'b0;
     if (en_i) begin
-      if (32'(sel_i) < WIDTH) oh_c[sel_i] = 1'b1; else e_c = 1'b1;
+      if (32'(sel_i) < WIDTH) oh_c[sel_i] = 1'b1;
+      else e_c = 1'b1;
     end
   end
   if (REGISTERED) begin : g_reg
     always_ff @(posedge clk) begin
-      if (!rst_n) begin onehot_o <= '0; err_o <= 1'b0; end
-      else begin onehot_o <= oh_c; err_o <= e_c; end
+      if (!rst_n) begin
+        onehot_o <= '0;
+        err_o <= 1'b0;
+      end
+      else begin
+        onehot_o <= oh_c;
+        err_o <= e_c;
+      end
     end
   end else begin : g_comb
-    assign onehot_o = oh_c; assign err_o = e_c;
+    assign onehot_o = oh_c;
+    assign err_o = e_c;
   end
 endmodule

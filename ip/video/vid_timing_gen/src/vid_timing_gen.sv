@@ -48,7 +48,8 @@ module vid_timing_gen (
   output logic        waiting_o
 );
   logic [15:0] h, v, extra;
-  logic [15:0] ha, hfp, hs, hbp, va, vfp, vs, vbp; logic hpol, vpol;   // per-frame settings
+  logic [15:0] ha, hfp, hs, hbp, va, vfp, vs, vbp; // per-frame settings
+  logic hpol, vpol;
   wire  [15:0] htot = ha + hfp + hs + hbp, vtot = va + vfp + vs + vbp;
   wire  [15:0] hs_start = ha + hfp, vs_start = va + vfp;
   wire  line_end  = (h == htot - 1'b1);
@@ -62,26 +63,57 @@ module vid_timing_gen (
 
   always_ff @(posedge clk) begin
     if (!rst_n || !enable_i) begin
-      h <= '0; v <= '0; extra <= '0;
-      ha <= h_active_i; hfp <= h_fp_i; hs <= h_sync_i; hbp <= h_bp_i;
-      va <= v_active_i; vfp <= v_fp_i; vs <= v_sync_i; vbp <= v_bp_i; hpol <= hs_pol_i; vpol <= vs_pol_i;
-      de_o <= 1'b0; hs_o <= ~hs_pol_i; vs_o <= ~vs_pol_i; x_o <= '0; y_o <= '0;
-      sof_o <= 1'b0; eol_o <= 1'b0; vblank_o <= 1'b0; waiting_o <= 1'b0;
+      h <= '0;
+      v <= '0;
+      extra <= '0;
+      ha <= h_active_i;
+      hfp <= h_fp_i;
+      hs <= h_sync_i;
+      hbp <= h_bp_i;
+      va <= v_active_i;
+      vfp <= v_fp_i;
+      vs <= v_sync_i;
+      vbp <= v_bp_i;
+      hpol <= hs_pol_i;
+      vpol <= vs_pol_i;
+      de_o <= 1'b0;
+      hs_o <= ~hs_pol_i;
+      vs_o <= ~vs_pol_i;
+      x_o <= '0;
+      y_o <= '0;
+      sof_o <= 1'b0;
+      eol_o <= 1'b0;
+      vblank_o <= 1'b0;
+      waiting_o <= 1'b0;
     end else begin
       // counters
       if (!line_end) h <= h + 1'b1;
       else begin
         h <= '0;
-        if (hold) begin extra <= extra + 1'b1; waiting_o <= 1'b1; end
+        if (hold) begin
+          extra <= extra + 1'b1;
+          waiting_o <= 1'b1;
+        end
         else if (frame_end) begin
-          v <= '0; extra <= '0; waiting_o <= 1'b0;
-          ha <= h_active_i; hfp <= h_fp_i; hs <= h_sync_i; hbp <= h_bp_i;
-          va <= v_active_i; vfp <= v_fp_i; vs <= v_sync_i; vbp <= v_bp_i; hpol <= hs_pol_i; vpol <= vs_pol_i;
+          v <= '0;
+          extra <= '0;
+          waiting_o <= 1'b0;
+          ha <= h_active_i;
+          hfp <= h_fp_i;
+          hs <= h_sync_i;
+          hbp <= h_bp_i;
+          va <= v_active_i;
+          vfp <= v_fp_i;
+          vs <= v_sync_i;
+          vbp <= v_bp_i;
+          hpol <= hs_pol_i;
+          vpol <= vs_pol_i;
         end else v <= v + 1'b1;
       end
       // registered outputs for position (h, v)
       de_o     <= (h < ha) && (v < va);
-      x_o      <= h; y_o <= v;
+      x_o      <= h;
+      y_o <= v;
       sof_o    <= (h == 0) && (v == 0);
       eol_o    <= (h == ha - 1'b1) && (v < va);
       vblank_o <= (v >= va);

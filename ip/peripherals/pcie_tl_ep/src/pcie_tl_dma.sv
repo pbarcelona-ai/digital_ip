@@ -57,7 +57,10 @@ module pcie_tl_dma #(
 
   // Header / payload multiplexer
   always_comb begin
-    tx_dw = 32'd0; tx_valid = 1'b0; tx_last = 1'b0; f_ready = 1'b0;
+    tx_dw = 32'd0;
+    tx_valid = 1'b0;
+    tx_last = 1'b0;
+    f_ready = 1'b0;
     case (state)
       D_H0: begin
         tx_dw = {(use4 ? 3'b011 : 3'b010), 5'b00000, 1'b0, 3'b000, 4'b0000,
@@ -73,10 +76,13 @@ module pcie_tl_dma #(
         tx_valid = 1'b1;
       end
       D_H3: begin
-        tx_dw = {cur_addr[31:2], 2'b00}; tx_valid = 1'b1;
+        tx_dw = {cur_addr[31:2], 2'b00};
+        tx_valid = 1'b1;
       end
       D_DATA: begin
-        tx_dw = f_data; tx_valid = f_valid; f_ready = tx_ready;
+        tx_dw = f_data;
+        tx_valid = f_valid;
+        f_ready = tx_ready;
         tx_last = (cnt == len - 10'd1);
       end
       default: ;
@@ -85,14 +91,21 @@ module pcie_tl_dma #(
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      state <= D_IDLE; cur_addr <= '0; len <= '0; cnt <= '0; tag <= '0;
-      use4 <= 1'b0; tlp_o <= 1'b0;
+      state <= D_IDLE;
+      cur_addr <= '0;
+      len <= '0;
+      cnt <= '0;
+      tag <= '0;
+      use4 <= 1'b0;
+      tlp_o <= 1'b0;
     end else begin
       tlp_o <= 1'b0;
       if (addr_load_i) cur_addr <= addr_i;
       case (state)
         D_IDLE: if (go) begin
-          len <= len_clip; cnt <= '0; use4 <= (cur_addr[63:32] != 32'd0);
+          len <= len_clip;
+          cnt <= '0;
+          use4 <= (cur_addr[63:32] != 32'd0);
           state <= D_H0;
         end
         D_H0: if (tx_ready) state <= D_H1;

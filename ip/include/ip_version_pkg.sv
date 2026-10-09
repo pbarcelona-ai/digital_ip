@@ -14,7 +14,8 @@ package ip_version_pkg;
   localparam logic [1:0] AXI_RESP_SLVERR = 2'b10;
   localparam logic [1:0] AXI_RESP_DECERR = 2'b11;
   function automatic int clog2_safe(input int n);
-    int r; r = 0;
+    int r;
+    r = 0;
     for (int v = (n < 2) ? 1 : n - 1; v > 0; v = v >> 1) r++;
     clog2_safe = (r < 1) ? 1 : r;
   endfunction

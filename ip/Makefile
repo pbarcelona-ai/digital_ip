@@ -7,16 +7,21 @@ PYTHON_SIM ?= $(PYTHON_SIMULATOR)
 SYNTH_TOOL ?= $(SYNTHESIS)
 PNR_TOOL ?= $(PLACE_ROUTE)
 RUN_ARGS ?=
+VCD ?= 0
 SCALER_IPS := axi_checkers axil_regbus axil_split banked_framebuf scaler_anisotropic scaler_bicubic scaler_bilinear scaler_ctrl scaler_dda scaler_edge_directed scaler_lanczos scaler_mip scaler_nearest scaler_polyphase scaler_trilinear sharpen_cas spatial_upscaler
 
-.PHONY: all help test sim synth yosys synplify pnr vivado gatesim docs diagrams diagram-check module-support scaler-test scaler-docs scaler-diagrams
+.PHONY: all help test sim cov wave synth yosys synplify pnr vivado gatesim docs diagrams diagram-check module-support scaler-test scaler-docs scaler-diagrams
 all: help
 
 help:
 	@printf '%s\n' 'Full regression: '
 	@printf '%s\n' '    make test [MODE=frame|pingpong|linebuf]'
 	@printf '%s\n' 'One IP: '
-	@printf '%s\n' '    make test IP=<name>; '
+	@printf '%s\n' '    make test IP=<name> [VCD=1]   (VCD=1: also dump the testbench VCD)'
+	@printf '%s\n' 'Code coverage (Verilator; reports in build/coverage/<IP or all>/summary.txt): '
+	@printf '%s\n' '    make cov [IP=<name>]'
+	@printf '%s\n' 'Waveforms: '
+	@printf '%s\n' '    make wave IP=<name>   simulate with the VCD dump, open it in Surfer'
 	@printf '%s\n' 'synthesis/gate sim: '
 	@printf '%s\n' '    make synth SYNTH_TOOL=yosys|synplify [IP=<name>]'
 	@printf '%s\n' '    make pnr IP=<name> PNR_TOOL=vivado'
@@ -30,10 +35,16 @@ help:
 
 ifneq ($(filter $(IP),$(SCALER_IPS)),)
 test:
-	@NO_VIEW=1 SIM=$(SIM) MODE=$(MODE) ./tools/run_all.sh "$(IP)" $(RUN_ARGS)
+	@NO_VIEW=1 SIM=$(SIM) MODE=$(MODE) VCD=$(VCD) ./tools/run_all.sh "$(IP)" $(RUN_ARGS)
+
+wave:
+	@SIM=$(SIM) ./scripts/run_sim.sh "$(IP)" --wave $(RUN_ARGS)
 
 sim:
 	@NO_VIEW=1 SIM=$(SIM) MODE=$(MODE) ./tools/run_all.sh "$(IP)" $(RUN_ARGS)
+
+cov:
+	@NO_VIEW=1 SIM=$(SIM) MODE=$(MODE) ./scripts/run_cov.sh build/coverage/$(IP) ./tools/run_all.sh "$(IP)" $(RUN_ARGS)
 
 ifeq ($(SYNTH_TOOL),synplify)
 synth:
@@ -62,8 +73,14 @@ diagrams:
 diagram-check:
 	@python3 ./tools/docs/make_block_diagrams.py --check "$(IP)"
 else ifeq ($(IP),all)
+wave:
+	@echo 'make wave needs one IP: make wave IP=<name>' >&2; exit 2
+
 test sim:
 	@BUILD_ROOT="$(CURDIR)/build/regression" SCALER_OUTDIR="$(CURDIR)/build/regression/scaler" SCALER_MODE=$(MODE) SIM=$(SIM) PYTHON_SIM=$(PYTHON_SIM) ./scripts/run_all.sh sim
+
+cov:
+	@SIM=$(SIM) BUILD_ROOT="$(CURDIR)/build/coverage/regression" SCALER_OUTDIR="$(CURDIR)/build/coverage/regression/scaler" SCALER_MODE=$(MODE) PYTHON_SIM=$(PYTHON_SIM) ./scripts/run_cov.sh build/coverage/all ./scripts/run_all.sh sim
 
 synplify:
 	@SYNTH_TOOL=synplify ./scripts/run_all.sh synplify
@@ -90,7 +107,13 @@ diagram-check:
 	@python3 ./tools/docs/make_block_diagrams.py --check
 else
 test sim:
-	@SIM=$(SIM) PYTHON_SIM=$(PYTHON_SIM) ./scripts/run_sim.sh "$(IP)"
+	@SIM=$(SIM) PYTHON_SIM=$(PYTHON_SIM) ./scripts/run_sim.sh "$(IP)" $(if $(filter 1,$(VCD)),--vcd,)
+
+cov:
+	@SIM=$(SIM) PYTHON_SIM=$(PYTHON_SIM) ./scripts/run_cov.sh build/coverage/$(IP) ./scripts/run_sim.sh "$(IP)"
+
+wave:
+	@SIM=$(SIM) PYTHON_SIM=$(PYTHON_SIM) ./scripts/run_sim.sh "$(IP)" --wave
 
 ifeq ($(SYNTH_TOOL),synplify)
 synth:

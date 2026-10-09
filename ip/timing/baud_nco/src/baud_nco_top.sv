@@ -58,6 +58,8 @@ module baud_nco_top #(
   if (BAUD * OSR > CLK_HZ / 2) begin : g_chk_rate $error("%m: BAUD*OSR must not exceed CLK_HZ/2"); end
 
 `ifndef SYNTHESIS
+  // verification-only checks: excluded from code coverage
+  // verilator coverage_off
   // ---- immediate assertions (simulation only; skipped by synthesis) ----
   logic ip_chk_b_q, ip_chk_r_q;
   always @(posedge aclk) begin
@@ -68,8 +70,12 @@ module baud_nco_top #(
       assert (s_axil_rresp == 2'b00 || s_axil_rresp == 2'b10) else $error("%m: reserved RRESP value");
       if (ip_chk_b_q) assert (s_axil_bvalid) else $error("%m: BVALID dropped before BREADY");
       if (ip_chk_r_q) assert (s_axil_rvalid) else $error("%m: RVALID dropped before RREADY");
-    end else begin ip_chk_b_q <= 1'b0; ip_chk_r_q <= 1'b0; end
+    end else begin
+      ip_chk_b_q <= 1'b0;
+      ip_chk_r_q <= 1'b0;
+    end
   end
+  // verilator coverage_on
 `endif
 
   // Default FCW = round(BAUD * OSR * 2^PHASE_W / CLK_HZ), 64 bit math
@@ -83,13 +89,30 @@ module baud_nco_top #(
   logic [31:0]     wr_data;
 
   ip_axil_regs #(.ADDR_W(8), .NREG(6), .RESET_VALS(RSTV)) u_regs (
-    .aclk, .aresetn,
-    .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready,
-    .s_axil_wdata, .s_axil_wstrb, .s_axil_wvalid, .s_axil_wready,
-    .s_axil_bresp, .s_axil_bvalid, .s_axil_bready,
-    .s_axil_araddr, .s_axil_arvalid, .s_axil_arready,
-    .s_axil_rdata, .s_axil_rresp, .s_axil_rvalid, .s_axil_rready,
-    .reg_o(regs), .wr_pulse_o(wr_pulse), .wr_data_o(wr_data), .rd_i(rd));
+    .aclk,
+    .aresetn,
+    .s_axil_awaddr,
+    .s_axil_awvalid,
+    .s_axil_awready,
+    .s_axil_wdata,
+    .s_axil_wstrb,
+    .s_axil_wvalid,
+    .s_axil_wready,
+    .s_axil_bresp,
+    .s_axil_bvalid,
+    .s_axil_bready,
+    .s_axil_araddr,
+    .s_axil_arvalid,
+    .s_axil_arready,
+    .s_axil_rdata,
+    .s_axil_rresp,
+    .s_axil_rvalid,
+    .s_axil_rready,
+    .reg_o(regs),
+    .wr_pulse_o(wr_pulse),
+    .wr_data_o(wr_data),
+    .rd_i(rd)
+  );
 
   wire        en        = regs[0];
   wire        stream_en = regs[1];
@@ -103,10 +126,20 @@ module baud_nco_top #(
   wire  adv       = ~out_stall;
 
   nco_core #(.PHASE_W(PHASE_W)) u_core (
-    .clk(aclk), .rst_n(aresetn), .en(en), .adv(adv), .phase_rst(phase_rst),
-    .fcw(fcw), .phase_off(regs[64 +: 16]), .gain(regs[96 +: 15]),
-    .tick_o(baud_tick_o), .sq_o(sq_o), .valid_o(core_valid),
-    .sin_o(sin_s), .cos_o(cos_s));
+    .clk(aclk),
+    .rst_n(aresetn),
+    .en(en),
+    .adv(adv),
+    .phase_rst(phase_rst),
+    .fcw(fcw),
+    .phase_off(regs[64 +: 16]),
+    .gain(regs[96 +: 15]),
+    .tick_o(baud_tick_o),
+    .sq_o(sq_o),
+    .valid_o(core_valid),
+    .sin_o(sin_s),
+    .cos_o(cos_s)
+  );
 
   // A transfer that completes while the core is disabled must still pop
   assign m_axis_tvalid = stream_en & core_valid;

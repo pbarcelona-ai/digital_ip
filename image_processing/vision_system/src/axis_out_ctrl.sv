@@ -141,16 +141,26 @@ module axis_out_ctrl #(
 
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      rstate <= R_IDLE; x_cnt <= '0; y_cnt <= '0; gap_cnt <= '0;
-      req_valid <= 1'b0; req_tlast <= 1'b0; req_tuser <= 1'b0;
-      req_x <= '0; req_y <= '0; req_outstanding <= 1'b0;
+      rstate <= R_IDLE;
+      x_cnt <= '0;
+      y_cnt <= '0;
+      gap_cnt <= '0;
+      req_valid <= 1'b0;
+      req_tlast <= 1'b0;
+      req_tuser <= 1'b0;
+      req_x <= '0;
+      req_y <= '0;
+      req_outstanding <= 1'b0;
     end else begin
-      req_valid <= 1'b0; req_tlast <= 1'b0; req_tuser <= 1'b0;
+      req_valid <= 1'b0;
+      req_tlast <= 1'b0;
+      req_tuser <= 1'b0;
       if (req_done_pulse) req_outstanding <= 1'b0;
       unique case (rstate)
         R_IDLE: begin
           if (start_output && img_width != 0 && img_height != 0) begin
-            x_cnt <= '0; y_cnt <= '0;
+            x_cnt <= '0;
+            y_cnt <= '0;
             rstate <= R_ACTIVE;
           end
         end
@@ -202,7 +212,8 @@ module axis_out_ctrl #(
   logic signed [31:0] cg_sx, cg_sy;
 
   coord_gen #(.COORD_W(COORD_W)) u_coord_gen (
-    .clk, .rst_n,
+    .clk,
+    .rst_n,
     .cfg,
     .in_valid (req_valid),
     .in_x     (req_x),
@@ -271,7 +282,10 @@ module axis_out_ctrl #(
 
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      v_ae0 <= 1'b0; v_ae1 <= 1'b0; v_ae2 <= 1'b0; ae_valid <= 1'b0;
+      v_ae0 <= 1'b0;
+      v_ae1 <= 1'b0;
+      v_ae2 <= 1'b0;
+      ae_valid <= 1'b0;
     end else begin
       v_ae0    <= cg_valid;
       v_ae1    <= v_ae0;
@@ -283,20 +297,28 @@ module axis_out_ctrl #(
   // synthesizer can absorb the multiplier's product register into the DSP.
   always_ff @(posedge clk) begin
     // AE0
-    x_ae0 <= x0_clamped; y_ae0 <= y0_clamped; fx_ae0 <= fx_c; fy_ae0 <= fy_c;
+    x_ae0 <= x0_clamped;
+    y_ae0 <= y0_clamped;
+    fx_ae0 <= fx_c;
+    fy_ae0 <= fy_c;
     // AE1
     rowbase0_ae1 <= {{(ADDR_W-COORD_W){1'b0}}, y_ae0} * img_width_x;
-    x_ae1 <= x_ae0; fx_ae1 <= fx_ae0; fy_ae1 <= fy_ae0;
+    x_ae1 <= x_ae0;
+    fx_ae1 <= fx_ae0;
+    fy_ae1 <= fy_ae0;
     // AE2
     rowbase0_ae2 <= rowbase0_ae1;
     rowbase1_ae2 <= rowbase0_ae1 + img_width_x;
-    x_ae2 <= x_ae1; fx_ae2 <= fx_ae1; fy_ae2 <= fy_ae1;
+    x_ae2 <= x_ae1;
+    fx_ae2 <= fx_ae1;
+    fy_ae2 <= fy_ae1;
     // AE3
     ae_addr_tl <= rowbase0_ae2 + {{(ADDR_W-COORD_W){1'b0}}, x_ae2};
     ae_addr_tr <= rowbase0_ae2 + {{(ADDR_W-COORD_W){1'b0}}, x_ae2} + 1'b1;
     ae_addr_bl <= rowbase1_ae2 + {{(ADDR_W-COORD_W){1'b0}}, x_ae2};
     ae_addr_br <= rowbase1_ae2 + {{(ADDR_W-COORD_W){1'b0}}, x_ae2} + 1'b1;
-    ae_fx <= fx_ae2; ae_fy <= fy_ae2;
+    ae_fx <= fx_ae2;
+    ae_fy <= fy_ae2;
   end
 
   // These become the BILINEAR-path candidate for the frame_buffer read
@@ -337,7 +359,9 @@ module axis_out_ctrl #(
   logic [7:0]  rd_fx, rd_fy;
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      rd_valid <= 1'b0; rd_fx <= '0; rd_fy <= '0;
+      rd_valid <= 1'b0;
+      rd_fx <= '0;
+      rd_fy <= '0;
     end else begin
       if (USE_EXT_FB) begin
         rd_valid <= fb_rd_valid;
@@ -359,10 +383,15 @@ module axis_out_ctrl #(
   logic [barrel_pkg::PIX_W-1:0]   bl_pixel;
 
   bilinear u_bilinear (
-    .clk, .rst_n,
+    .clk,
+    .rst_n,
     .valid_in (rd_valid),
-    .fx (rd_fx), .fy (rd_fy),
-    .tl (fb_rd_data0), .tr (fb_rd_data1), .bl (fb_rd_data2), .br (fb_rd_data3),
+    .fx (rd_fx),
+    .fy (rd_fy),
+    .tl (fb_rd_data0),
+    .tr (fb_rd_data1),
+    .bl (fb_rd_data2),
+    .br (fb_rd_data3),
     .valid_out (bl_valid),
     .pixel_out (bl_pixel)
   );
@@ -461,7 +490,10 @@ module axis_out_ctrl #(
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       bcstate <= BC_IDLE;
-      bcx0_lock <= '0; bcy0_lock <= '0; bctx_lock <= '0; bcty_lock <= '0;
+      bcx0_lock <= '0;
+      bcy0_lock <= '0;
+      bctx_lock <= '0;
+      bcty_lock <= '0;
       {p0_0,p0_1,p0_2,p0_3,p1_0,p1_1,p1_2,p1_3,
        p2_0,p2_1,p2_2,p2_3,p3_0,p3_1,p3_2,p3_3} <= '0;
       bc_gather_valid <= 1'b0;
@@ -472,8 +504,10 @@ module axis_out_ctrl #(
         unique case (bcstate)
           BC_IDLE: begin
             if (cg_valid) begin
-              bcx0_lock <= bcx0_c; bcy0_lock <= bcy0_c;
-              bctx_lock <= bctx_c; bcty_lock <= bcty_c;
+              bcx0_lock <= bcx0_c;
+              bcy0_lock <= bcy0_c;
+              bctx_lock <= bctx_c;
+              bcty_lock <= bcty_c;
               bcstate <= BC_MUL;
             end
           end
@@ -510,8 +544,10 @@ module axis_out_ctrl #(
         unique case (bcstate)
           BC_IDLE: begin
             if (cg_valid) begin
-              bcx0_lock <= bcx0_c; bcy0_lock <= bcy0_c;
-              bctx_lock <= bctx_c; bcty_lock <= bcty_c;
+              bcx0_lock <= bcx0_c;
+              bcy0_lock <= bcy0_c;
+              bctx_lock <= bctx_c;
+              bcty_lock <= bcty_c;
               bcstate   <= BC_MUL;
             end
           end
@@ -543,13 +579,27 @@ module axis_out_ctrl #(
   logic [barrel_pkg::PIX_W-1:0] bc_pixel;
 
   bicubic u_bicubic (
-    .clk, .rst_n,
+    .clk,
+    .rst_n,
     .valid_in (bc_gather_valid),
-    .tx_q16 (bctx_lock), .ty_q16 (bcty_lock),
-    .p00(p0_0), .p01(p0_1), .p02(p0_2), .p03(p0_3),
-    .p10(p1_0), .p11(p1_1), .p12(p1_2), .p13(p1_3),
-    .p20(p2_0), .p21(p2_1), .p22(p2_2), .p23(p2_3),
-    .p30(p3_0), .p31(p3_1), .p32(p3_2), .p33(p3_3),
+    .tx_q16 (bctx_lock),
+    .ty_q16 (bcty_lock),
+    .p00(p0_0),
+    .p01(p0_1),
+    .p02(p0_2),
+    .p03(p0_3),
+    .p10(p1_0),
+    .p11(p1_1),
+    .p12(p1_2),
+    .p13(p1_3),
+    .p20(p2_0),
+    .p21(p2_1),
+    .p22(p2_2),
+    .p23(p2_3),
+    .p30(p3_0),
+    .p31(p3_1),
+    .p32(p3_2),
+    .p33(p3_3),
     .valid_out (bc_valid),
     .pixel_out (bc_pixel)
   );
@@ -596,7 +646,8 @@ module axis_out_ctrl #(
 
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      tlast_sr <= '0; tuser_sr <= '0;
+      tlast_sr <= '0;
+      tuser_sr <= '0;
     end else begin
       tlast_sr <= {tlast_sr[TAG_SR_DEPTH-2:0], req_tlast};
       tuser_sr <= {tuser_sr[TAG_SR_DEPTH-2:0], req_tuser};
@@ -634,7 +685,9 @@ module axis_out_ctrl #(
 
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      beats_remaining <= '0; counting <= 1'b0; frame_out_done <= 1'b0;
+      beats_remaining <= '0;
+      counting <= 1'b0;
+      frame_out_done <= 1'b0;
     end else begin
       frame_out_done <= 1'b0;
       if (start_output) begin

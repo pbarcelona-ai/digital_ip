@@ -32,9 +32,18 @@ module error_status #(
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
   if (NERR < 1 || CNT_W < 1) begin : g_bad $error("error_status: bad parameters"); end
   always_ff @(posedge clk) begin
-    if (!rst_n) begin status_o <= '0; first_idx_o <= '0; first_valid_o <= 1'b0; count_o <= '0; end
+    if (!rst_n) begin
+      status_o <= '0;
+      first_idx_o <= '0;
+      first_valid_o <= 1'b0;
+      count_o <= '0;
+    end
     else begin
-      if (clr_all_i) begin status_o <= err_i; first_valid_o <= 1'b0; count_o <= '0; end
+      if (clr_all_i) begin
+        status_o <= err_i;
+        first_valid_o <= 1'b0;
+        count_o <= '0;
+      end
       else status_o <= (status_o & ~clr_mask_i) | err_i;
       if (|err_i) begin
         if (!first_valid_o || clr_all_i) begin

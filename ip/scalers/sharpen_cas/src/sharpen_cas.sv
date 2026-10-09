@@ -122,14 +122,32 @@ module sharpen_cas #(
   logic [3:0]        reg_wstrb;
 
   axil_regbus #(.ADDR_W(ADDR_W), .DATA_W(32)) u_axil (
-    .clk, .rst_n,
-    .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready,
-    .s_axil_wdata,  .s_axil_wstrb,   .s_axil_wvalid, .s_axil_wready,
-    .s_axil_bresp,  .s_axil_bvalid,  .s_axil_bready,
-    .s_axil_araddr, .s_axil_arvalid, .s_axil_arready,
-    .s_axil_rdata,  .s_axil_rresp,   .s_axil_rvalid, .s_axil_rready,
-    .reg_wr, .reg_waddr, .reg_wdata, .reg_wstrb,
-    .reg_rd, .reg_raddr, .reg_rdata
+    .clk,
+    .rst_n,
+    .s_axil_awaddr,
+    .s_axil_awvalid,
+    .s_axil_awready,
+    .s_axil_wdata,
+    .s_axil_wstrb,
+    .s_axil_wvalid,
+    .s_axil_wready,
+    .s_axil_bresp,
+    .s_axil_bvalid,
+    .s_axil_bready,
+    .s_axil_araddr,
+    .s_axil_arvalid,
+    .s_axil_arready,
+    .s_axil_rdata,
+    .s_axil_rresp,
+    .s_axil_rvalid,
+    .s_axil_rready,
+    .reg_wr,
+    .reg_waddr,
+    .reg_wdata,
+    .reg_wstrb,
+    .reg_rd,
+    .reg_raddr,
+    .reg_rdata
   );
 
   logic        enable, bypass;
@@ -142,20 +160,31 @@ module sharpen_cas #(
 
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      enable <= 1'b0; bypass <= 1'b0;
-      cfg_w <= 16'd1; cfg_h <= 16'd1; sharpness <= 9'd128;
-      st_done <= 1'b0; st_sof_err <= 1'b0; st_eol_err <= 1'b0;
+      enable <= 1'b0;
+      bypass <= 1'b0;
+      cfg_w <= 16'd1;
+      cfg_h <= 16'd1;
+      sharpness <= 9'd128;
+      st_done <= 1'b0;
+      st_sof_err <= 1'b0;
+      st_eol_err <= 1'b0;
       reg_rdata <= '0;
     end else begin
       if (reg_wr) begin
         case (reg_waddr[7:0])
-          8'h00: begin enable <= reg_wdata[0]; bypass <= reg_wdata[1]; end
+          8'h00: begin
+            enable <= reg_wdata[0];
+            bypass <= reg_wdata[1];
+          end
           8'h04: begin
             if (reg_wdata[1]) st_done    <= 1'b0;
             if (reg_wdata[2]) st_sof_err <= 1'b0;
             if (reg_wdata[3]) st_eol_err <= 1'b0;
           end
-          8'h08: begin cfg_w <= reg_wdata[15:0]; cfg_h <= reg_wdata[31:16]; end
+          8'h08: begin
+            cfg_w <= reg_wdata[15:0];
+            cfg_h <= reg_wdata[31:16];
+          end
           8'h40: sharpness <= (reg_wdata[15:0] > 16'd256) ? 9'd256 : reg_wdata[8:0];
           default: ;
         endcase
@@ -212,11 +241,23 @@ module sharpen_cas #(
 
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      active <= 1'b0; in_done <= 1'b0; ix <= '0; iy <= '0;
-      rows_rcvd <= '0; fw <= 16'd1; fh <= 16'd1; f_bypass <= 1'b0; f_gain <= 9'd64;
-      set_done <= 1'b0; set_sof_err <= 1'b0; set_eol_err <= 1'b0; frame_cnt <= '0;
+      active <= 1'b0;
+      in_done <= 1'b0;
+      ix <= '0;
+      iy <= '0;
+      rows_rcvd <= '0;
+      fw <= 16'd1;
+      fh <= 16'd1;
+      f_bypass <= 1'b0;
+      f_gain <= 9'd64;
+      set_done <= 1'b0;
+      set_sof_err <= 1'b0;
+      set_eol_err <= 1'b0;
+      frame_cnt <= '0;
     end else begin
-      set_done <= 1'b0; set_sof_err <= 1'b0; set_eol_err <= 1'b0;
+      set_done <= 1'b0;
+      set_sof_err <= 1'b0;
+      set_eol_err <= 1'b0;
       if (beat) begin
         logic [15:0] w, h, x, y;
         w = active ? fw : cfg_w;
@@ -276,11 +317,25 @@ module sharpen_cas #(
 
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      oy <= '0; oj <= '0; eng_done <= 1'b0; s0_v <= 1'b0;
-      s0_first <= 0; s0_emit <= 0; s0_rowlast <= 0; s0_sof <= 0; s0_eol <= 0; s0_eof <= 0;
-      s0_col <= '0; s0_bt <= '0; s0_bm <= '0; s0_bb <= '0;
+      oy <= '0;
+      oj <= '0;
+      eng_done <= 1'b0;
+      s0_v <= 1'b0;
+      s0_first <= 0;
+      s0_emit <= 0;
+      s0_rowlast <= 0;
+      s0_sof <= 0;
+      s0_eol <= 0;
+      s0_eof <= 0;
+      s0_col <= '0;
+      s0_bt <= '0;
+      s0_bm <= '0;
+      s0_bb <= '0;
     end else if (beat && !active) begin     // new frame: restart engine
-      oy <= '0; oj <= '0; eng_done <= 1'b0; s0_v <= 1'b0;
+      oy <= '0;
+      oj <= '0;
+      eng_done <= 1'b0;
+      s0_v <= 1'b0;
     end else if (adv) begin
       s0_v <= can_issue;
       if (can_issue) begin
@@ -323,9 +378,14 @@ module sharpen_cas #(
 
   always_ff @(posedge clk) begin
     if (adv) begin
-      s1_bt <= s0_bt; s1_bm <= s0_bm; s1_bb <= s0_bb;
-      s1_first <= s0_first; s1_emit <= s0_emit;
-      s1_sof <= s0_sof; s1_eol <= s0_eol; s1_eof <= s0_eof;
+      s1_bt <= s0_bt;
+      s1_bm <= s0_bm;
+      s1_bb <= s0_bb;
+      s1_first <= s0_first;
+      s1_emit <= s0_emit;
+      s1_sof <= s0_sof;
+      s1_eol <= s0_eol;
+      s1_eof <= s0_eof;
     end
   end
 
@@ -348,22 +408,33 @@ module sharpen_cas #(
 
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      s2_v <= 1'b0; s2_sof <= 0; s2_eol <= 0; s2_eof <= 0;
+      s2_v <= 1'b0;
+      s2_sof <= 0;
+      s2_eol <= 0;
+      s2_eof <= 0;
     end else if (beat && !active) begin
       s2_v <= 1'b0;
     end else if (adv) begin
       s2_v <= s1_v && s1_emit;
       if (s1_v) begin
         logic [PIX_W-1:0] col [3];
-        col[0] = bq[s1_bt]; col[1] = bq[s1_bm]; col[2] = bq[s1_bb];
+        col[0] = bq[s1_bt];
+        col[1] = bq[s1_bm];
+        col[2] = bq[s1_bb];
         for (int r = 0; r < 3; r++) begin
           if (s1_first) begin
-            wn[r][0] <= col[r]; wn[r][1] <= col[r]; wn[r][2] <= col[r];
+            wn[r][0] <= col[r];
+            wn[r][1] <= col[r];
+            wn[r][2] <= col[r];
           end else begin
-            wn[r][0] <= wn[r][1]; wn[r][1] <= wn[r][2]; wn[r][2] <= col[r];
+            wn[r][0] <= wn[r][1];
+            wn[r][1] <= wn[r][2];
+            wn[r][2] <= col[r];
           end
         end
-        s2_sof <= s1_sof; s2_eol <= s1_eol; s2_eof <= s1_eof;
+        s2_sof <= s1_sof;
+        s2_eol <= s1_eol;
+        s2_eof <= s1_eof;
       end
     end
   end
@@ -436,19 +507,29 @@ module sharpen_cas #(
         logic [SW-1:0]     mn, mx, rest;
         logic [RW-1:0]     rnd;
         logic [17:0]       kp;
-        a = comp(wn[0][0], c); b = comp(wn[0][1], c); cc = comp(wn[0][2], c);
-        d = comp(wn[1][0], c); e = comp(wn[1][1], c); f  = comp(wn[1][2], c);
-        g = comp(wn[2][0], c); h = comp(wn[2][1], c); i  = comp(wn[2][2], c);
+        a = comp(wn[0][0], c);
+        b = comp(wn[0][1], c);
+        cc = comp(wn[0][2], c);
+        d = comp(wn[1][0], c);
+        e = comp(wn[1][1], c);
+        f  = comp(wn[1][2], c);
+        g = comp(wn[2][0], c);
+        h = comp(wn[2][1], c);
+        i  = comp(wn[2][2], c);
         // X1: min/max as small balanced trees
-        t0 = (b < d) ? b : d;   t1 = (f < h) ? f : h;
+        t0 = (b < d) ? b : d;
+        t1 = (f < h) ? f : h;
         t0 = (t0 < t1) ? t0 : t1;
         mn5_q[c] <= (t0 < e) ? t0 : e;
-        t0 = (b > d) ? b : d;   t1 = (f > h) ? f : h;
+        t0 = (b > d) ? b : d;
+        t1 = (f > h) ? f : h;
         t0 = (t0 > t1) ? t0 : t1;
         mx5_q[c] <= (t0 > e) ? t0 : e;
-        t0 = (a < cc) ? a : cc; t1 = (g < i) ? g : i;
+        t0 = (a < cc) ? a : cc;
+        t1 = (g < i) ? g : i;
         mnc_q[c] <= (t0 < t1) ? t0 : t1;
-        t0 = (a > cc) ? a : cc; t1 = (g > i) ? g : i;
+        t0 = (a > cc) ? a : cc;
+        t1 = (g > i) ? g : i;
         mxc_q[c] <= (t0 > t1) ? t0 : t1;
         d_d[c][0] <= DW'({e, 2'b00}) - DW'(b) - DW'(d) - DW'(f) - DW'(h);
         for (int k = 1; k < 7; k++) d_d[c][k] <= d_d[c][k-1];
@@ -497,8 +578,11 @@ module sharpen_cas #(
   logic m_eof;
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      m_axis_tvalid <= 1'b0; m_axis_tdata <= '0; m_axis_tuser <= 1'b0;
-      m_axis_tlast <= 1'b0; m_eof <= 1'b0;
+      m_axis_tvalid <= 1'b0;
+      m_axis_tdata <= '0;
+      m_axis_tuser <= 1'b0;
+      m_axis_tlast <= 1'b0;
+      m_eof <= 1'b0;
     end else if (adv) begin
       m_axis_tvalid <= be_v[NBE-1];
       m_axis_tdata  <= out_c;

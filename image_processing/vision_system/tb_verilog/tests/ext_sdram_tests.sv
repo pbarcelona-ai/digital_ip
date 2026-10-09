@@ -15,12 +15,14 @@
       s_axil_wdata = value;
       s_axil_awvalid = 1'b1;
       s_axil_wvalid = 1'b1;
-      do @(posedge clk); while (!(s_axil_awready && s_axil_wready));
+      do @(posedge clk);
+      while (!(s_axil_awready && s_axil_wready));
       @(negedge clk);
       s_axil_awvalid = 1'b0;
       s_axil_wvalid = 1'b0;
       s_axil_bready = 1'b1;
-      do @(posedge clk); while (!s_axil_bvalid);
+      do @(posedge clk);
+      while (!s_axil_bvalid);
       @(negedge clk);
       s_axil_bready = 1'b0;
     end
@@ -37,7 +39,8 @@
           s_axis_tdata = expected[index];
           s_axis_tlast = (x == WIDTH-1);
           s_axis_tuser = (index == 0);
-          do @(posedge clk); while (!s_axis_tready);
+          do @(posedge clk);
+          while (!s_axis_tready);
           index = index + 1;
         end
         @(negedge clk);

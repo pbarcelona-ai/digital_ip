@@ -40,28 +40,41 @@ module packet_fifo #(
   logic [WIDTH:0] mem [0:DEPTH-1];                 // {last, data}
   logic [AW:0] wptr, cptr, rptr;                   // write, commit, read pointers
   logic        discard;                            // dropping the current packet
-  wire         space = ((wptr - rptr) != DEPTH);
+  wire [AW:0]  used  = wptr - rptr;                  // AW+1 bits: wraps with the pointers
+  wire         space = (used != (AW+1)'(DEPTH));
   assign s_ready_o = 1'b1;
   wire do_wr = s_valid_i & space & ~discard;
 
   always_ff @(posedge clk) if (do_wr) mem[wptr[AW-1:0]] <= {s_last_i, s_data_i};
 
   // Packet count is incremented in the write process and decremented on read of a last word
-  logic [AW:0] pcnt; logic pop_pkt;
+  logic [AW:0] pcnt;
+  logic pop_pkt;
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      wptr <= '0; cptr <= '0; discard <= 1'b0; drop_o <= 1'b0; pcnt <= '0;
+      wptr <= '0;
+      cptr <= '0;
+      discard <= 1'b0;
+      drop_o <= 1'b0;
+      pcnt <= '0;
     end else begin
       drop_o <= 1'b0;
       if (s_valid_i) begin
         if (!space || discard) begin
           // out of space: enter / stay in discard until the packet ends
-          if (s_last_i) begin wptr <= cptr; discard <= 1'b0; drop_o <= 1'b1; end
+          if (s_last_i) begin
+            wptr <= cptr;
+            discard <= 1'b0;
+            drop_o <= 1'b1;
+          end
           else discard <= 1'b1;
         end else begin
           wptr <= wptr + 1'b1;
           if (s_last_i) begin
-            if (DROP_ON_BAD && s_bad_i) begin wptr <= cptr; drop_o <= 1'b1; end
+            if (DROP_ON_BAD && s_bad_i) begin
+              wptr <= cptr;
+              drop_o <= 1'b1;
+            end
             else begin cptr <= wptr + 1'b1; end
           end
         end
@@ -73,13 +86,21 @@ module packet_fifo #(
   assign pkt_count_o = pcnt;
 
   // Read side: prefetch from RAM into an output register while committed data exists
-  logic [WIDTH:0] q; logic q_v;
+  logic [WIDTH:0] q;
+  logic q_v;
   wire  out_take = q_v & m_ready_i;
   wire  rd_en    = (rptr != cptr) & (~q_v | out_take);
   always_ff @(posedge clk) begin
-    if (!rst_n) begin rptr <= '0; q_v <= 1'b0; q <= '0; end
+    if (!rst_n) begin
+      rptr <= '0;
+      q_v <= 1'b0;
+      q <= '0;
+    end
     else begin
-      if (rd_en) begin q <= mem[rptr[AW-1:0]]; rptr <= rptr + 1'b1; end
+      if (rd_en) begin
+        q <= mem[rptr[AW-1:0]];
+        rptr <= rptr + 1'b1;
+      end
       q_v <= rd_en | (q_v & ~out_take);
     end
   end

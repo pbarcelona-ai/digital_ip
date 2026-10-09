@@ -36,14 +36,37 @@ module dds #(
 );
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
   if (ZW > PHASE_W) begin : g_bz $error("dds: ZW must not exceed PHASE_W"); end
-  logic [PHASE_W-1:0] ph; logic en_d, nco_carry, nco_msb;
-  nco #(.PHASE_W(PHASE_W)) u_nco (.clk, .rst_n, .ce_i(en_i), .tuning_i, .phase_off_i, .sync_load_i, .phase_load_i,
-                                  .phase_o(ph), .carry_o(nco_carry), .msb_o(nco_msb), .nyquist_o);
+  logic [PHASE_W-1:0] ph;
+  logic en_d, nco_carry, nco_msb;
+  nco #(.PHASE_W(PHASE_W)) u_nco (
+    .clk,
+    .rst_n,
+    .ce_i(en_i),
+    .tuning_i,
+    .phase_off_i,
+    .sync_load_i,
+    .phase_load_i,
+    .phase_o(ph),
+    .carry_o(nco_carry),
+    .msb_o(nco_msb),
+    .nyquist_o
+  );
   always_ff @(posedge clk) begin
-    if (!rst_n) en_d <= 1'b0; else en_d <= en_i | sync_load_i;
+    if (!rst_n) en_d <= 1'b0;
+    else en_d <= en_i | sync_load_i;
   end
   localparam logic signed [OUT_W-1:0] AMP = {1'b0, {(OUT_W-1){1'b1}}};
   cordic #(.WIDTH(OUT_W), .ZW(ZW), .ITER(ITER), .MODE(0)) u_cordic (
-    .clk, .rst_n, .valid_i(en_d), .x_i(AMP), .y_i('0), .z_i(ph[PHASE_W-1 -: ZW]),
-    .valid_o, .x_o(cos_o), .y_o(sin_o), .mag_o(), .z_o());
+    .clk,
+    .rst_n,
+    .valid_i(en_d),
+    .x_i(AMP),
+    .y_i('0),
+    .z_i(ph[PHASE_W-1 -: ZW]),
+    .valid_o,
+    .x_o(cos_o),
+    .y_o(sin_o),
+    .mag_o(),
+    .z_o()
+  );
 endmodule

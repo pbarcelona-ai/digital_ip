@@ -13,29 +13,60 @@
 // Date: 2026-10-08
 // ***************
   task automatic check(input bit cond, input string msg);
-    if (!cond) begin errors++; $display("ERROR @%0t: %s", $time, msg); end
+    if (!cond) begin
+      errors++;
+      $display("ERROR @%0t: %s", $time, msg);
+    end
   endtask
 
   // ---------------- AXI-Lite master tasks ----------------
   task automatic axil_write(input [7:0] a, input [31:0] d);
-    @(posedge aclk); #1;
-    awaddr = a; awvalid = 1; wdata = d; wstrb = 4'hF; wvalid = 1; bready = 1;
+    @(posedge aclk);
+    #1;
+    awaddr = a;
+    awvalid = 1;
+    wdata = d;
+    wstrb = 4'hF;
+    wvalid = 1;
+    bready = 1;
     fork
-      begin wait (awready); @(posedge aclk); #1 awvalid = 0; end
-      begin wait (wready);  @(posedge aclk); #1 wvalid = 0;  end
+      begin
+        wait (awready);
+        @(posedge aclk);
+        #1 awvalid = 0;
+      end
+      begin
+        wait (wready);
+        @(posedge aclk);
+        #1 wvalid = 0;
+      end
     join
-    wait (bvalid); @(posedge aclk); #1;
+    wait (bvalid);
+    @(posedge aclk);
+    #1;
     check(bresp == 2'b00, "write response not OKAY");
   endtask
 
   task automatic axil_read(input [7:0] a, output [31:0] d);
-    @(posedge aclk); #1; araddr = a; arvalid = 1; rready = 1;
-    wait (arready); @(posedge aclk); #1 arvalid = 0;
-    wait (rvalid); d = rdata; @(posedge aclk); #1;
+    @(posedge aclk);
+    #1;
+    araddr = a;
+    arvalid = 1;
+    rready = 1;
+    wait (arready);
+    @(posedge aclk);
+    #1 arvalid = 0;
+    wait (rvalid);
+    d = rdata;
+    @(posedge aclk);
+    #1;
   endtask
 
   // Count consecutive cycles rst_o[0] stays asserted (low)
   task automatic measure_low();
     low_cycles = 0;
-    while (rst_o[0] == 1'b0) begin @(posedge aclk); low_cycles++; end
+    while (rst_o[0] == 1'b0) begin
+      @(posedge aclk);
+      low_cycles++;
+    end
   endtask

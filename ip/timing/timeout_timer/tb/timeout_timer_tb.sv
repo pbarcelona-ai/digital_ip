@@ -9,32 +9,79 @@
 // Date: 2026-09-29
 `timescale 1ns/1ps
 module timeout_timer_tb;
-  logic clk = 0, rst_n = 0; always #5 clk = ~clk;
-  logic ce = 1, act = 0, exp, pls; logic [9:0] tmo = 0;
-  timeout_timer #(.WIDTH(10)) dut (.clk, .rst_n, .ce_i(ce), .activity_i(act), .timeout_i(tmo), .expired_o(exp), .timeout_pulse_o(pls));
+  logic clk = 0, rst_n = 0;
+  always #5 clk = ~clk;
+  logic ce = 1, act = 0, exp, pls;
+  logic [9:0] tmo = 0;
+  timeout_timer #(.WIDTH(10)) dut (
+    .clk,
+    .rst_n,
+    .ce_i(ce),
+    .activity_i(act),
+    .timeout_i(tmo),
+    .expired_o(exp),
+    .timeout_pulse_o(pls)
+  );
   int errors = 0, n, pulses = 0;
   always @(posedge clk) if (pls) pulses++;
   // test tasks: tests/timeout_timer_tests.sv
   `include "timeout_timer_tests.sv"
   initial begin
-    if ($test$plusargs("vcd")) begin $dumpfile("timeout_timer_tb.vcd"); $dumpvars(0, timeout_timer_tb); end
-    repeat (3) @(posedge clk); rst_n = 1; tmo = 0; repeat (50) @(posedge clk);
+    if ($test$plusargs("vcd")) begin
+      $dumpfile("timeout_timer_tb.vcd");
+      $dumpvars(0, timeout_timer_tb);
+    end
+    repeat (3) @(posedge clk);
+    rst_n = 1;
+    tmo = 0;
+    repeat (50) @(posedge clk);
     check(!exp, "disabled timer expired");
-    tmo = 20; kick(); n = 0;
-    while (!exp) begin @(posedge clk); #1 n++; end
+    tmo = 20;
+    kick();
+    n = 0;
+    while (!exp) begin
+      @(posedge clk);
+      #1 n++;
+    end
     check(n >= 19 && n <= 21, $sformatf("expiry after %0d clocks, timeout 20", n));
-    repeat (2) @(posedge clk); check(pulses == 1, "one pulse expected"); repeat (30) @(posedge clk); check(pulses == 1, "pulse repeated");
-    check(exp, "expired must stay high"); kick(); check(!exp, "activity must clear expired");
+    repeat (2) @(posedge clk);
+    check(pulses == 1, "one pulse expected");
+    repeat (30) @(posedge clk);
+    check(pulses == 1, "pulse repeated");
+    check(exp, "expired must stay high");
+    kick();
+    check(!exp, "activity must clear expired");
     // activity keeps it alive
-    repeat (10) begin repeat (15) @(posedge clk); kick(); end
+    repeat (10) begin
+      repeat (15) @(posedge clk);
+      kick();
+    end
     check(!exp, "expired despite activity");
     // tick enable: ce every 4th clock
-    tmo = 5; kick(); ce = 0; n = 0;
-    fork begin repeat (100) begin @(posedge clk); #1 ce = ($time / 10) % 4 == 0; end end join_none
-    while (!exp) begin @(posedge clk); #1 n++; end
+    tmo = 5;
+    kick();
+    ce = 0;
+    n = 0;
+    fork
+      begin
+        repeat (100) begin
+          @(posedge clk);
+          #1 ce = ($time / 10) % 4 == 0;
+        end
+      end
+    join_none
+    while (!exp) begin
+      @(posedge clk);
+      #1 n++;
+    end
     check(n >= 18 && n <= 26, $sformatf("slow tick expiry %0d", n));
-    if (errors == 0) $display("TEST PASSED"); else $display("TEST FAILED (%0d errors)", errors);
+    if (errors == 0) $display("TEST PASSED");
+    else $display("TEST FAILED (%0d errors)", errors);
     $finish;
   end
-  initial begin #500000; $display("TEST FAILED (timeout)"); $finish; end
+  initial begin
+    #500000;
+    $display("TEST FAILED (timeout)");
+    $finish;
+  end
 endmodule

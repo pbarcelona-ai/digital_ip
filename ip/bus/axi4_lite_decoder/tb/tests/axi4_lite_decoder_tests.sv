@@ -9,6 +9,12 @@
 // Date: 2026-10-08
 // ***************
   task automatic t(input logic [31:0] x);
-    logic [3:0] e; a = x; #1; e = model(x);
-    if ({miss, sel} !== ((e[3]) ? {1'b1, 3'b000} : {1'b0, e[2:0]}) || multi) begin errors++; $display("ERROR addr %h: sel %b miss %b exp %b", x, sel, miss, e); end
+    logic [3:0] e;
+    a = x;
+    #1;
+    e = model(x);
+    if ({miss, sel} !== ((e[3]) ? {1'b1, 3'b000} : {1'b0, e[2:0]}) || multi) begin
+      errors++;
+      $display("ERROR addr %h: sel %b miss %b exp %b", x, sel, miss, e);
+    end
   endtask

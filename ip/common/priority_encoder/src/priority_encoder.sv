@@ -26,21 +26,45 @@ module priority_encoder #(
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
   localparam int IW = $clog2(WIDTH);
   if (WIDTH < 2) begin : g_bw $error("priority_encoder: WIDTH must be >= 2"); end
-  logic [IW-1:0] idx_c; logic [WIDTH-1:0] oh_c; logic v_c;
+  logic [IW-1:0] idx_c;
+  logic [WIDTH-1:0] oh_c;
+  logic v_c;
   always_comb begin
-    idx_c = '0; oh_c = '0; v_c = 1'b0;
+    idx_c = '0;
+    oh_c = '0;
+    v_c = 1'b0;
     if (LSB_HIGH) begin
-      for (int i = WIDTH-1; i >= 0; i--) if (req_i[i]) begin idx_c = IW'(i); oh_c = '0; oh_c[i] = 1'b1; v_c = 1'b1; end
+      for (int i = WIDTH-1; i >= 0; i--) if (req_i[i]) begin
+        idx_c = IW'(i);
+        oh_c = '0;
+        oh_c[i] = 1'b1;
+        v_c = 1'b1;
+      end
     end else begin
-      for (int i = 0; i < WIDTH; i++) if (req_i[i]) begin idx_c = IW'(i); oh_c = '0; oh_c[i] = 1'b1; v_c = 1'b1; end
+      for (int i = 0; i < WIDTH; i++) if (req_i[i]) begin
+        idx_c = IW'(i);
+        oh_c = '0;
+        oh_c[i] = 1'b1;
+        v_c = 1'b1;
+      end
     end
   end
   if (REGISTERED) begin : g_reg
     always_ff @(posedge clk) begin
-      if (!rst_n) begin idx_o <= '0; onehot_o <= '0; valid_o <= 1'b0; end
-      else begin idx_o <= idx_c; onehot_o <= oh_c; valid_o <= v_c; end
+      if (!rst_n) begin
+        idx_o <= '0;
+        onehot_o <= '0;
+        valid_o <= 1'b0;
+      end
+      else begin
+        idx_o <= idx_c;
+        onehot_o <= oh_c;
+        valid_o <= v_c;
+      end
     end
   end else begin : g_comb
-    assign idx_o = idx_c; assign onehot_o = oh_c; assign valid_o = v_c;
+    assign idx_o = idx_c;
+    assign onehot_o = oh_c;
+    assign valid_o = v_c;
   end
 endmodule

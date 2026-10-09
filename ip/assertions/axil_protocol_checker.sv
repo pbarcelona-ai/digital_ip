@@ -33,10 +33,19 @@ module axil_protocol_checker #(
   // outstanding accounting: responses only follow accepted requests
   int aw_n, w_n, b_n, ar_n, r_n;
   always_ff @(posedge aclk) begin
-    if (!aresetn) begin aw_n <= 0; w_n <= 0; b_n <= 0; ar_n <= 0; r_n <= 0; end
+    if (!aresetn) begin
+      aw_n <= 0;
+      w_n <= 0;
+      b_n <= 0;
+      ar_n <= 0;
+      r_n <= 0;
+    end
     else begin
-      if (awvalid && awready) aw_n <= aw_n + 1; if (wvalid && wready) w_n <= w_n + 1; if (bvalid && bready) b_n <= b_n + 1;
-      if (arvalid && arready) ar_n <= ar_n + 1; if (rvalid && rready) r_n <= r_n + 1;
+      if (awvalid && awready) aw_n <= aw_n + 1;
+      if (wvalid && wready) w_n <= w_n + 1;
+      if (bvalid && bready) b_n <= b_n + 1;
+      if (arvalid && arready) ar_n <= ar_n + 1;
+      if (rvalid && rready) r_n <= r_n + 1;
     end
   end
   a_b_after_req: assert property (@(posedge aclk) disable iff (!aresetn) bvalid |-> (b_n < aw_n) && (b_n < w_n)) else $error("%m: BVALID without accepted AW and W");

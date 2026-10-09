@@ -106,8 +106,12 @@ module tb_spatial_upscaler;
   endfunction
 
   // Min/max helpers (functions: they are called from golden_pixel)
-  function automatic int imin(input int a, input int b); return (a < b) ? a : b; endfunction
-  function automatic int imax(input int a, input int b); return (a > b) ? a : b; endfunction
+  function automatic int imin(input int a, input int b);
+    return (a < b) ? a : b;
+  endfunction
+  function automatic int imax(input int a, input int b);
+    return (a > b) ? a : b;
+  endfunction
 
   function automatic logic [PIX_W-1:0] golden_pixel(int ox, int oy);
     logic [PIX_W-1:0] r;
@@ -116,13 +120,31 @@ module tb_spatial_upscaler;
     for (int c = 0; c < CHANNELS; c++) begin
       int e, n, w, ea, s, mn5, mx5, mn9, mx9, head, amp, sq, k, v;
       longint rc;
-      e = mc(ox, oy, c); n = mc(ox, oy - 1, c); s = mc(ox, oy + 1, c);
-      w = mc(ox - 1, oy, c); ea = mc(ox + 1, oy, c);
-      mn5 = e; mx5 = e;
-      mn5 = imin(n, mn5); mx5 = imax(n, mx5); mn5 = imin(s, mn5); mx5 = imax(s, mx5); mn5 = imin(w, mn5); mx5 = imax(w, mx5); mn5 = imin(ea, mn5); mx5 = imax(ea, mx5);
-      mn9 = mn5; mx9 = mx5;
-      mn9 = imin(mc(ox - 1, oy - 1, c), mn9); mx9 = imax(mc(ox - 1, oy - 1, c), mx9); mn9 = imin(mc(ox + 1, oy - 1, c), mn9); mx9 = imax(mc(ox + 1, oy - 1, c), mx9);
-      mn9 = imin(mc(ox - 1, oy + 1, c), mn9); mx9 = imax(mc(ox - 1, oy + 1, c), mx9); mn9 = imin(mc(ox + 1, oy + 1, c), mn9); mx9 = imax(mc(ox + 1, oy + 1, c), mx9);
+      e = mc(ox, oy, c);
+      n = mc(ox, oy - 1, c);
+      s = mc(ox, oy + 1, c);
+      w = mc(ox - 1, oy, c);
+      ea = mc(ox + 1, oy, c);
+      mn5 = e;
+      mx5 = e;
+      mn5 = imin(n, mn5);
+      mx5 = imax(n, mx5);
+      mn5 = imin(s, mn5);
+      mx5 = imax(s, mx5);
+      mn5 = imin(w, mn5);
+      mx5 = imax(w, mx5);
+      mn5 = imin(ea, mn5);
+      mx5 = imax(ea, mx5);
+      mn9 = mn5;
+      mx9 = mx5;
+      mn9 = imin(mc(ox - 1, oy - 1, c), mn9);
+      mx9 = imax(mc(ox - 1, oy - 1, c), mx9);
+      mn9 = imin(mc(ox + 1, oy - 1, c), mn9);
+      mx9 = imax(mc(ox + 1, oy - 1, c), mx9);
+      mn9 = imin(mc(ox - 1, oy + 1, c), mn9);
+      mx9 = imax(mc(ox - 1, oy + 1, c), mx9);
+      mn9 = imin(mc(ox + 1, oy + 1, c), mn9);
+      mx9 = imax(mc(ox + 1, oy + 1, c), mx9);
       head = mn5 + mn9;
       if (2 * M - (mx5 + mx9) < head) head = 2 * M - (mx5 + mx9);
       if (mx5 + mx9 == 0) amp = 0;
@@ -158,13 +180,19 @@ module tb_spatial_upscaler;
       run_quick_suite();                // +QUICK
     end else begin
       run_standard_suite();
-      sharp = 0;   run_test(20, 15, 40, 30, 1);
-      sharp = 256; run_test(20, 15, 40, 30, 2);
-      sharp = 256; run_test(MAX_W, MAX_H, 2 * MAX_W, 2 * MAX_H, 0);   // largest output
+      sharp = 0;
+      run_test(20, 15, 40, 30, 1);
+      sharp = 256;
+      run_test(20, 15, 40, 30, 2);
+      sharp = 256; // largest output
+      run_test(MAX_W, MAX_H, 2 * MAX_W, 2 * MAX_H, 0);
     end
     axil_read(16'h4020, fc);
     checks++;
-    if (fc != frames_total) begin errors++; $display("ERROR: sharpener FRAME_CNT %0d != %0d", fc, frames_total); end
+    if (fc != frames_total) begin
+      errors++;
+      $display("ERROR: sharpener FRAME_CNT %0d != %0d", fc, frames_total);
+    end
     finish_report();
   end
 

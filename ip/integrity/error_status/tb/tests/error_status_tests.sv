@@ -10,6 +10,16 @@
 //     pulse_err
 // Date: 2026-10-08
 // ***************
-  task automatic check(input bit c, input string m); if (!c) begin errors++; $display("ERROR @%0t: %s", $time, m); end endtask
+  task automatic check(input bit c, input string m);
+    if (!c) begin
+      errors++;
+      $display("ERROR @%0t: %s", $time, m);
+    end
+  endtask
 
-  task automatic pulse_err(input logic [7:0] e); @(posedge clk); #1 err = e; @(posedge clk); #1 err = 0; endtask
+  task automatic pulse_err(input logic [7:0] e);
+    @(posedge clk);
+    #1 err = e;
+    @(posedge clk);
+    #1 err = 0;
+  endtask

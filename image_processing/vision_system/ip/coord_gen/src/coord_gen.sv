@@ -148,8 +148,18 @@ module coord_gen #(
   // ---- Stage 1 (levels 2-4): nx = dx/fx ; ny = dy/fy --------------------
   logic signed [47:0] fm_nx1, fm_ny1;
   logic signed [31:0] nx1, ny1;
-  mulq_s u_m_nx (.clk, .a(dx0), .b(recip_fx_s), .s(fm_nx1));
-  mulq_s u_m_ny (.clk, .a(dy0), .b(recip_fy_s), .s(fm_ny1));
+  mulq_s u_m_nx (
+    .clk,
+    .a(dx0),
+    .b(recip_fx_s),
+    .s(fm_nx1)
+  );
+  mulq_s u_m_ny (
+    .clk,
+    .a(dy0),
+    .b(recip_fy_s),
+    .s(fm_ny1)
+  );
   always_ff @(posedge clk) begin
     nx1 <= barrel_pkg::qsat48(fm_nx1);
     ny1 <= barrel_pkg::qsat48(fm_ny1);
@@ -160,12 +170,29 @@ module coord_gen #(
   logic signed [47:0] fm_nxsq, fm_nysq, fm_nxny;
   logic signed [31:0] nx2a, nx2b, ny2a, ny2b;
   logic signed [31:0] nx2, ny2, r2_2, nxsq_2, nysq_2, nxny_2;
-  mulq_s u_m_nxsq (.clk, .a(nx1), .b(nx1), .s(fm_nxsq));
-  mulq_s u_m_nysq (.clk, .a(ny1), .b(ny1), .s(fm_nysq));
-  mulq_s u_m_nxny (.clk, .a(nx1), .b(ny1), .s(fm_nxny));
+  mulq_s u_m_nxsq (
+    .clk,
+    .a(nx1),
+    .b(nx1),
+    .s(fm_nxsq)
+  );
+  mulq_s u_m_nysq (
+    .clk,
+    .a(ny1),
+    .b(ny1),
+    .s(fm_nysq)
+  );
+  mulq_s u_m_nxny (
+    .clk,
+    .a(nx1),
+    .b(ny1),
+    .s(fm_nxny)
+  );
   always_ff @(posedge clk) begin
-    nx2a <= nx1;  nx2b <= nx2a;
-    ny2a <= ny1;  ny2b <= ny2a;
+    nx2a <= nx1;
+    nx2b <= nx2a;
+    ny2a <= ny1;
+    ny2b <= ny2a;
     nxsq_2 <= barrel_pkg::qsat48(fm_nxsq);
     nysq_2 <= barrel_pkg::qsat48(fm_nysq);
     nxny_2 <= barrel_pkg::qsat48(fm_nxny);
@@ -178,17 +205,32 @@ module coord_gen #(
   logic signed [47:0] fm_r4;
   logic signed [31:0] nx3a, nx3b, ny3a, ny3b, r2_3a, r2_3b, nxsq_3a, nxsq_3b, nysq_3a, nysq_3b, nxny_3a, nxny_3b;
   logic signed [31:0] nx3, ny3, r2_3, r4_3, nxsq_3, nysq_3, nxny_3;
-  mulq_s u_m_r4 (.clk, .a(r2_2), .b(r2_2), .s(fm_r4));
+  mulq_s u_m_r4 (
+    .clk,
+    .a(r2_2),
+    .b(r2_2),
+    .s(fm_r4)
+  );
   always_ff @(posedge clk) begin
-    nx3a <= nx2;      nx3b <= nx3a;
-    ny3a <= ny2;      ny3b <= ny3a;
-    r2_3a <= r2_2;    r2_3b <= r2_3a;
-    nxsq_3a <= nxsq_2; nxsq_3b <= nxsq_3a;
-    nysq_3a <= nysq_2; nysq_3b <= nysq_3a;
-    nxny_3a <= nxny_2; nxny_3b <= nxny_3a;
+    nx3a <= nx2;
+    nx3b <= nx3a;
+    ny3a <= ny2;
+    ny3b <= ny3a;
+    r2_3a <= r2_2;
+    r2_3b <= r2_3a;
+    nxsq_3a <= nxsq_2;
+    nxsq_3b <= nxsq_3a;
+    nysq_3a <= nysq_2;
+    nysq_3b <= nysq_3a;
+    nxny_3a <= nxny_2;
+    nxny_3b <= nxny_3a;
     r4_3   <= barrel_pkg::qsat48(fm_r4);
-    nx3 <= nx3b; ny3 <= ny3b; r2_3 <= r2_3b;
-    nxsq_3 <= nxsq_3b; nysq_3 <= nysq_3b; nxny_3 <= nxny_3b;
+    nx3 <= nx3b;
+    ny3 <= ny3b;
+    r2_3 <= r2_3b;
+    nxsq_3 <= nxsq_3b;
+    nysq_3 <= nysq_3b;
+    nxny_3 <= nxny_3b;
   end
 
   // ---- Stage 4 (levels 11-13): r6 = r4*r2 ; pre-add the two tangential
@@ -197,19 +239,35 @@ module coord_gen #(
   logic signed [31:0] nx4a, nx4b, ny4a, ny4b, r2_4a, r2_4b, r4_4a, r4_4b, nxny_4a, nxny_4b;
   logic signed [31:0] sumb_4a, sumb_4b, sumc_4a, sumc_4b;
   logic signed [31:0] nx4, ny4, r2_4, r4_4, r6_4, nxny_4, sumb_4, sumc_4;
-  mulq_s u_m_r6 (.clk, .a(r4_3), .b(r2_3), .s(fm_r6));
+  mulq_s u_m_r6 (
+    .clk,
+    .a(r4_3),
+    .b(r2_3),
+    .s(fm_r6)
+  );
   always_ff @(posedge clk) begin
-    nx4a <= nx3;     nx4b <= nx4a;
-    ny4a <= ny3;     ny4b <= ny4a;
-    r2_4a <= r2_3;   r2_4b <= r2_4a;
-    r4_4a <= r4_3;   r4_4b <= r4_4a;
-    nxny_4a <= nxny_3; nxny_4b <= nxny_4a;
+    nx4a <= nx3;
+    nx4b <= nx4a;
+    ny4a <= ny3;
+    ny4b <= ny4a;
+    r2_4a <= r2_3;
+    r2_4b <= r2_4a;
+    r4_4a <= r4_3;
+    r4_4b <= r4_4a;
+    nxny_4a <= nxny_3;
+    nxny_4b <= nxny_4a;
     sumb_4a <= r2_3 + (nxsq_3 <<< 1);          // r2 + 2nx^2
     sumc_4a <= r2_3 + (nysq_3 <<< 1);          // r2 + 2ny^2
-    sumb_4b <= sumb_4a;  sumc_4b <= sumc_4a;
+    sumb_4b <= sumb_4a;
+    sumc_4b <= sumc_4a;
     r6_4   <= barrel_pkg::qsat48(fm_r6);
-    nx4 <= nx4b; ny4 <= ny4b; r2_4 <= r2_4b; r4_4 <= r4_4b;
-    nxny_4 <= nxny_4b; sumb_4 <= sumb_4b; sumc_4 <= sumc_4b;
+    nx4 <= nx4b;
+    ny4 <= ny4b;
+    r2_4 <= r2_4b;
+    r4_4 <= r4_4b;
+    nxny_4 <= nxny_4b;
+    sumb_4 <= sumb_4b;
+    sumc_4 <= sumc_4b;
   end
 
   // ---- Stage 5 (levels 14-16): t1=k1*r2, t2=k2*r4, t3=k3*r6 ; tangential
@@ -220,17 +278,55 @@ module coord_gen #(
   logic signed [47:0] fm_t1, fm_t2, fm_t3, fm_ta, fm_tb, fm_tc, fm_td;
   logic signed [31:0] nx5a, nx5b, ny5a, ny5b;
   logic signed [31:0] nx5, ny5, t1_5, t2_5, t3_5, tangx_5, tangy_5;
-  mulq_s u_m_t1 (.clk, .a(cfg.k1), .b(r2_4),   .s(fm_t1));
-  mulq_s u_m_t2 (.clk, .a(cfg.k2), .b(r4_4),   .s(fm_t2));
-  mulq_s u_m_t3 (.clk, .a(cfg.k3), .b(r6_4),   .s(fm_t3));
-  mulq_s u_m_ta (.clk, .a(cfg.p1), .b(nxny_4), .s(fm_ta));   // -> 2*p1*nx*ny
-  mulq_s u_m_tb (.clk, .a(cfg.p2), .b(sumb_4), .s(fm_tb));   // -> p2*(r2+2nx^2)
-  mulq_s u_m_tc (.clk, .a(cfg.p1), .b(sumc_4), .s(fm_tc));   // -> p1*(r2+2ny^2)
-  mulq_s u_m_td (.clk, .a(cfg.p2), .b(nxny_4), .s(fm_td));   // -> 2*p2*nx*ny
+  mulq_s u_m_t1 (
+    .clk,
+    .a(cfg.k1),
+    .b(r2_4),
+    .s(fm_t1)
+  );
+  mulq_s u_m_t2 (
+    .clk,
+    .a(cfg.k2),
+    .b(r4_4),
+    .s(fm_t2)
+  );
+  mulq_s u_m_t3 (
+    .clk,
+    .a(cfg.k3),
+    .b(r6_4),
+    .s(fm_t3)
+  );
+  mulq_s u_m_ta (
+    .clk,
+    .a(cfg.p1),
+    .b(nxny_4),
+    .s(fm_ta)
+  );   // -> 2*p1*nx*ny
+  mulq_s u_m_tb (
+    .clk,
+    .a(cfg.p2),
+    .b(sumb_4),
+    .s(fm_tb)
+  );   // -> p2*(r2+2nx^2)
+  mulq_s u_m_tc (
+    .clk,
+    .a(cfg.p1),
+    .b(sumc_4),
+    .s(fm_tc)
+  );   // -> p1*(r2+2ny^2)
+  mulq_s u_m_td (
+    .clk,
+    .a(cfg.p2),
+    .b(nxny_4),
+    .s(fm_td)
+  );   // -> 2*p2*nx*ny
   always_ff @(posedge clk) begin
-    nx5a <= nx4;  nx5b <= nx5a;
-    ny5a <= ny4;  ny5b <= ny5a;
-    nx5 <= nx5b;  ny5 <= ny5b;
+    nx5a <= nx4;
+    nx5b <= nx5a;
+    ny5a <= ny4;
+    ny5b <= ny5a;
+    nx5 <= nx5b;
+    ny5 <= ny5b;
     if (is_radial) begin
       t1_5    <= barrel_pkg::qsat48(fm_t1);
       t2_5    <= barrel_pkg::qsat48(fm_t2);
@@ -238,14 +334,19 @@ module coord_gen #(
       tangx_5 <= (barrel_pkg::qsat48(fm_ta) <<< 1) + barrel_pkg::qsat48(fm_tb);
       tangy_5 <= barrel_pkg::qsat48(fm_tc) + (barrel_pkg::qsat48(fm_td) <<< 1);
     end else begin
-      t1_5 <= '0; t2_5 <= '0; t3_5 <= '0; tangx_5 <= '0; tangy_5 <= '0;
+      t1_5 <= '0;
+      t2_5 <= '0;
+      t3_5 <= '0;
+      tangx_5 <= '0;
+      tangy_5 <= '0;
     end
   end
 
   // ---- Stage 6 (level 17): factor = 1 + t1 + t2 + t3 (adds only) --------
   logic signed [31:0] nx6, ny6, factor6, tangx6, tangy6;
   always_ff @(posedge clk) begin
-    nx6     <= nx5; ny6 <= ny5;
+    nx6     <= nx5;
+    ny6 <= ny5;
     factor6 <= barrel_pkg::Q16_ONE + t1_5 + t2_5 + t3_5;
     tangx6  <= tangx_5;
     tangy6  <= tangy_5;
@@ -254,11 +355,23 @@ module coord_gen #(
   // ---- Stage 7 (levels 18-20): sxn = nx*factor + tang_x ; syn similarly --
   logic signed [47:0] fm_sx, fm_sy;
   logic signed [31:0] tangx7a, tangx7b, tangy7a, tangy7b, sxn7, syn7;
-  mulq_s u_m_sx (.clk, .a(nx6), .b(factor6), .s(fm_sx));
-  mulq_s u_m_sy (.clk, .a(ny6), .b(factor6), .s(fm_sy));
+  mulq_s u_m_sx (
+    .clk,
+    .a(nx6),
+    .b(factor6),
+    .s(fm_sx)
+  );
+  mulq_s u_m_sy (
+    .clk,
+    .a(ny6),
+    .b(factor6),
+    .s(fm_sy)
+  );
   always_ff @(posedge clk) begin
-    tangx7a <= tangx6;  tangx7b <= tangx7a;
-    tangy7a <= tangy6;  tangy7b <= tangy7a;
+    tangx7a <= tangx6;
+    tangx7b <= tangx7a;
+    tangy7a <= tangy6;
+    tangy7b <= tangy7a;
     sxn7 <= barrel_pkg::qsat48(fm_sx) + tangx7b;
     syn7 <= barrel_pkg::qsat48(fm_sy) + tangy7b;
   end
@@ -266,8 +379,18 @@ module coord_gen #(
   // ---- Stage 8 (levels 21-23): sx = cx + sxn*fx ; sy = cy + syn*fy -------
   logic signed [47:0] fm_fx, fm_fy;
   logic signed [31:0] sx8, sy8;
-  mulq_s u_m_fx (.clk, .a(sxn7), .b(cfg.fx_pix), .s(fm_fx));
-  mulq_s u_m_fy (.clk, .a(syn7), .b(cfg.fy_pix), .s(fm_fy));
+  mulq_s u_m_fx (
+    .clk,
+    .a(sxn7),
+    .b(cfg.fx_pix),
+    .s(fm_fx)
+  );
+  mulq_s u_m_fy (
+    .clk,
+    .a(syn7),
+    .b(cfg.fy_pix),
+    .s(fm_fy)
+  );
   always_ff @(posedge clk) begin
     sx8 <= cfg.cx_pix + barrel_pkg::qsat48(fm_fx);
     sy8 <= cfg.cy_pix + barrel_pkg::qsat48(fm_fy);
@@ -315,14 +438,54 @@ module coord_gen #(
   // L2-L4: nx,ny (fisheye/panoramic) and the perspective h-terms
   logic signed [47:0] sm_nx, sm_ny, sm_h31, sm_h32, sm_h11, sm_h12, sm_h21, sm_h22;
   logic signed [31:0] s_nx, s_ny, s_hx, s_hy, s_numx, s_numy;
-  mulq_s u_p_nx  (.clk, .a(s_dx),   .b(recip_fx_s), .s(sm_nx));
-  mulq_s u_p_ny  (.clk, .a(s_dy),   .b(recip_fy_s), .s(sm_ny));
-  mulq_s u_p_h31 (.clk, .a(cfg.h31), .b(s_xq), .s(sm_h31));
-  mulq_s u_p_h32 (.clk, .a(cfg.h32), .b(s_yq), .s(sm_h32));
-  mulq_s u_p_h11 (.clk, .a(cfg.h11), .b(s_xq), .s(sm_h11));
-  mulq_s u_p_h12 (.clk, .a(cfg.h12), .b(s_yq), .s(sm_h12));
-  mulq_s u_p_h21 (.clk, .a(cfg.h21), .b(s_xq), .s(sm_h21));
-  mulq_s u_p_h22 (.clk, .a(cfg.h22), .b(s_yq), .s(sm_h22));
+  mulq_s u_p_nx  (
+    .clk,
+    .a(s_dx),
+    .b(recip_fx_s),
+    .s(sm_nx)
+  );
+  mulq_s u_p_ny  (
+    .clk,
+    .a(s_dy),
+    .b(recip_fy_s),
+    .s(sm_ny)
+  );
+  mulq_s u_p_h31 (
+    .clk,
+    .a(cfg.h31),
+    .b(s_xq),
+    .s(sm_h31)
+  );
+  mulq_s u_p_h32 (
+    .clk,
+    .a(cfg.h32),
+    .b(s_yq),
+    .s(sm_h32)
+  );
+  mulq_s u_p_h11 (
+    .clk,
+    .a(cfg.h11),
+    .b(s_xq),
+    .s(sm_h11)
+  );
+  mulq_s u_p_h12 (
+    .clk,
+    .a(cfg.h12),
+    .b(s_yq),
+    .s(sm_h12)
+  );
+  mulq_s u_p_h21 (
+    .clk,
+    .a(cfg.h21),
+    .b(s_xq),
+    .s(sm_h21)
+  );
+  mulq_s u_p_h22 (
+    .clk,
+    .a(cfg.h22),
+    .b(s_yq),
+    .s(sm_h22)
+  );
   always_ff @(posedge clk) begin
     s_nx   <= barrel_pkg::qsat48(sm_nx);
     s_ny   <= barrel_pkg::qsat48(sm_ny);
@@ -334,8 +497,18 @@ module coord_gen #(
   // L5-L7: nx^2, ny^2, r2
   logic signed [47:0] sm_nxsq, sm_nysq;
   logic signed [31:0] s_nxsq, s_r2;
-  mulq_s u_p_nxsq (.clk, .a(s_nx), .b(s_nx), .s(sm_nxsq));
-  mulq_s u_p_nysq (.clk, .a(s_ny), .b(s_ny), .s(sm_nysq));
+  mulq_s u_p_nxsq (
+    .clk,
+    .a(s_nx),
+    .b(s_nx),
+    .s(sm_nxsq)
+  );
+  mulq_s u_p_nysq (
+    .clk,
+    .a(s_ny),
+    .b(s_ny),
+    .s(sm_nysq)
+  );
   always_ff @(posedge clk) begin
     s_nxsq <= barrel_pkg::qsat48(sm_nxsq);
     s_r2   <= barrel_pkg::qsat48(sm_nxsq) + barrel_pkg::qsat48(sm_nysq);
@@ -343,9 +516,24 @@ module coord_gen #(
   // L8-L10: r4 = r2^2 ; k1*r2 ; k1*nx^2
   logic signed [47:0] sm_r4, sm_k1r2, sm_k1nxsq;
   logic signed [31:0] s_r4, s_k1r2, s_k1nxsq;
-  mulq_s u_p_r4     (.clk, .a(s_r2),    .b(s_r2),    .s(sm_r4));
-  mulq_s u_p_k1r2   (.clk, .a(cfg.k1),  .b(s_r2),    .s(sm_k1r2));
-  mulq_s u_p_k1nxsq (.clk, .a(cfg.k1),  .b(s_nxsq),  .s(sm_k1nxsq));
+  mulq_s u_p_r4     (
+    .clk,
+    .a(s_r2),
+    .b(s_r2),
+    .s(sm_r4)
+  );
+  mulq_s u_p_k1r2   (
+    .clk,
+    .a(cfg.k1),
+    .b(s_r2),
+    .s(sm_k1r2)
+  );
+  mulq_s u_p_k1nxsq (
+    .clk,
+    .a(cfg.k1),
+    .b(s_nxsq),
+    .s(sm_k1nxsq)
+  );
   always_ff @(posedge clk) begin
     s_r4     <= barrel_pkg::qsat48(sm_r4);
     s_k1r2   <= barrel_pkg::qsat48(sm_k1r2);
@@ -354,7 +542,12 @@ module coord_gen #(
   // L11-L13: k2*r4
   logic signed [47:0] sm_k2r4;
   logic signed [31:0] s_k2r4;
-  mulq_s u_p_k2r4 (.clk, .a(cfg.k2), .b(s_r4), .s(sm_k2r4));
+  mulq_s u_p_k2r4 (
+    .clk,
+    .a(cfg.k2),
+    .b(s_r4),
+    .s(sm_k2r4)
+  );
   always_ff @(posedge clk) s_k2r4 <= barrel_pkg::qsat48(sm_k2r4);
   // L14: model-specific denominator with the <=0 safety clamp.
   // Safety clamp: a denominator that hits <=0 (extreme coefficients, or
@@ -384,7 +577,8 @@ module coord_gen #(
   assign sd_denom_u = s_denom;
 
   fixed_recip #(.W(32)) u_slow_recip (
-    .clk, .rst_n,
+    .clk,
+    .rst_n,
     .start   (sd_recip_start),
     .operand (sd_denom_u),
     .result  (sd_recip_result),
@@ -400,19 +594,54 @@ module coord_gen #(
   logic signed [47:0] sq_ax, sq_ay, sq_px, sq_py, sq_bx, sq_by, sq_pany;
   logic signed [31:0] q_ax, q_ay, q_px, q_py;
   logic signed [31:0] post_sx, post_sy;
-  mulq_s u_q_ax (.clk, .a(s_nx),   .b(sd_recip_s), .s(sq_ax));
-  mulq_s u_q_ay (.clk, .a(s_ny),   .b(sd_recip_s), .s(sq_ay));
-  mulq_s u_q_px (.clk, .a(s_numx), .b(sd_recip_s), .s(sq_px));
-  mulq_s u_q_py (.clk, .a(s_numy), .b(sd_recip_s), .s(sq_py));
+  mulq_s u_q_ax (
+    .clk,
+    .a(s_nx),
+    .b(sd_recip_s),
+    .s(sq_ax)
+  );
+  mulq_s u_q_ay (
+    .clk,
+    .a(s_ny),
+    .b(sd_recip_s),
+    .s(sq_ay)
+  );
+  mulq_s u_q_px (
+    .clk,
+    .a(s_numx),
+    .b(sd_recip_s),
+    .s(sq_px)
+  );
+  mulq_s u_q_py (
+    .clk,
+    .a(s_numy),
+    .b(sd_recip_s),
+    .s(sq_py)
+  );
   always_ff @(posedge clk) begin
     q_ax <= barrel_pkg::qsat48(sq_ax);
     q_ay <= barrel_pkg::qsat48(sq_ay);
     q_px <= barrel_pkg::qsat48(sq_px);
     q_py <= barrel_pkg::qsat48(sq_py);
   end
-  mulq_s u_q_bx   (.clk, .a(q_ax), .b(cfg.fx_pix), .s(sq_bx));
-  mulq_s u_q_by   (.clk, .a(q_ay), .b(cfg.fy_pix), .s(sq_by));
-  mulq_s u_q_pany (.clk, .a(s_ny), .b(cfg.fy_pix), .s(sq_pany));   // panoramic: y not divided
+  mulq_s u_q_bx   (
+    .clk,
+    .a(q_ax),
+    .b(cfg.fx_pix),
+    .s(sq_bx)
+  );
+  mulq_s u_q_by   (
+    .clk,
+    .a(q_ay),
+    .b(cfg.fy_pix),
+    .s(sq_by)
+  );
+  mulq_s u_q_pany (
+    .clk,
+    .a(s_ny),
+    .b(cfg.fy_pix),
+    .s(sq_pany)
+  );   // panoramic: y not divided
   always_ff @(posedge clk) begin
     if (cfg.model_sel == distortion_model_pkg::MODEL_PERSPECTIVE) begin
       post_sx <= q_px;
@@ -431,7 +660,9 @@ module coord_gen #(
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       sd_state <= SD_IDLE;
-      sd_x <= '0; sd_y <= '0; sd_cnt <= '0;
+      sd_x <= '0;
+      sd_y <= '0;
+      sd_cnt <= '0;
       sd_recip_start <= 1'b0;
       sd_out_valid <= 1'b0;
     end else begin
@@ -440,7 +671,8 @@ module coord_gen #(
       unique case (sd_state)
         SD_IDLE: begin
           if (is_slow_div && in_valid) begin
-            sd_x <= in_x; sd_y <= in_y;
+            sd_x <= in_x;
+            sd_y <= in_y;
             sd_cnt <= '0;
             sd_state <= SD_PRE;
           end

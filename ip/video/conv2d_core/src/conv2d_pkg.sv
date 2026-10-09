@@ -18,7 +18,11 @@ package conv2d_pkg;
 
   function automatic int binom(input int n, input int i);
     if (n == 3) return (i == 1) ? 2 : 1;
-    case (i) 0, 4: return 1; 1, 3: return 4; default: return 6; endcase
+    case (i)
+      0, 4: return 1;
+      1, 3: return 4;
+      default: return 6;
+    endcase
   endfunction
 
   function automatic int blur_shift(input int n);
@@ -26,13 +30,15 @@ package conv2d_pkg;
   endfunction
 
   function automatic logic [KMAX*32-1:0] identity_kernel(input int n);
-    logic [KMAX*32-1:0] k; k = '0;
+    logic [KMAX*32-1:0] k;
+    k = '0;
     k[((n / 2) * n + n / 2) * 32 +: 32] = 32'sd1;
     return k;
   endfunction
 
   function automatic logic [KMAX*32-1:0] blur_kernel(input int n);
-    logic [KMAX*32-1:0] k; k = '0;
+    logic [KMAX*32-1:0] k;
+    k = '0;
     for (int r = 0; r < n; r++)
       for (int c = 0; c < n; c++)
         k[(r * n + c) * 32 +: 32] = 32'(binom(n, r) * binom(n, c));
@@ -40,7 +46,8 @@ package conv2d_pkg;
   endfunction
 
   function automatic logic [KMAX*32-1:0] sharpen_kernel(input int n, input int amount);
-    logic [KMAX*32-1:0] k; int one;
+    logic [KMAX*32-1:0] k;
+    int one;
     one = 1 << blur_shift(n);
     for (int r = 0; r < n; r++)
       for (int c = 0; c < n; c++)

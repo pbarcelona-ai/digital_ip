@@ -64,8 +64,14 @@ module nco_core #(
   // ---- Stage 5: DSP multiply (input regs -> product reg) ----
   logic signed [31:0] prod_s, prod_c;
 
-  nco_sine_rom u_rom (.clk(clk), .en(adv), .addr_a(addr_s), .addr_b(addr_c),
-                      .dout_a(mag_s), .dout_b(mag_c));
+  nco_sine_rom u_rom (
+    .clk(clk),
+    .en(adv),
+    .addr_a(addr_s),
+    .addr_b(addr_c),
+    .dout_a(mag_s),
+    .dout_b(mag_c)
+  );
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin

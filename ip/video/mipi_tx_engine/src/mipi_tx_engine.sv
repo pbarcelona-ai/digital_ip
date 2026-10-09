@@ -83,14 +83,18 @@ module mipi_tx_engine #(
     ecc6 = p;
   endfunction
   function automatic logic [15:0] crc_byte(input logic [15:0] c, input logic [7:0] b);
-    logic [15:0] r; r = c;
+    logic [15:0] r;
+    r = c;
     for (int i = 0; i < 8; i++) r = (r >> 1) ^ ((r[0] ^ b[i]) ? 16'h8408 : 16'h0000);
     crc_byte = r;
   endfunction
 
   // ---------------- byte queue
-  logic [7:0] q [QCAP]; logic [QW-1:0] wp, rp; logic [QW:0] cnt;
-  logic [7:0] fb [6]; logic [2:0] fn;            // bytes appended this clock
+  logic [7:0] q [QCAP];
+  logic [QW-1:0] wp, rp;
+  logic [QW:0] cnt;
+  logic [7:0] fb [6]; // bytes appended this clock
+  logic [2:0] fn;
   logic burst, all_enq;
   wire  [2:0] wbytes = (cnt >= NLANES) ? 3'(NLANES) : 3'(cnt);
   wire  pop   = burst && tx_ready_i && (cnt >= NLANES || all_enq) && cnt != 0;
@@ -101,41 +105,77 @@ module mipi_tx_engine #(
   // ---------------- fill sequencer
   typedef enum logic [2:0] {F_IDLE, F_HDR, F_LINE, F_BYTES, F_CRC, F_EOTP, F_DRAIN, F_GAP} fst_e;
   fst_e fst;
-  logic [1:0] k_type, k_fmt; logic [7:0] k_di; logic [15:0] k_data, k_gap, wc, rem, crc; logic k_buf, k_eotp;
-  logic [AW-1:0] ra; logic [15:0] gap_cnt;
+  logic [1:0] k_type, k_fmt;
+  logic [7:0] k_di;
+  logic [15:0] k_data, k_gap, wc, rem, crc;
+  logic k_buf, k_eotp;
+  logic [AW-1:0] ra;
+  logic [15:0] gap_cnt;
   logic consume;                                 // a line-buffer word is used this clock
 
   wire [23:0] pe = lb_data_i[23:0], po = lb_data_i[47:24];
   function automatic logic [7:0] avg(input logic [7:0] a, input logic [7:0] b);
-    logic [8:0] s; s = a + b + 9'd1; avg = s[8:1];
+    logic [8:0] s;
+    s = a + b + 9'd1;
+    avg = s[8:1];
   endfunction
 
   always_comb begin
     logic [23:0] h, p;                           // scratch: header word, current pixel
-    h = {(k_type == 2'd0) ? k_data : wc, k_di}; p = '0;
-    fn = '0; for (int i = 0; i < 6; i++) fb[i] = 8'h00;
+    h = {(k_type == 2'd0) ? k_data : wc, k_di};
+    p = '0;
+    fn = '0;
+    for (int i = 0; i < 6; i++) fb[i] = 8'h00;
     consume = 1'b0;
     case (fst)
       F_HDR: begin
-        fb[0] = h[7:0]; fb[1] = h[15:8]; fb[2] = h[23:16]; fb[3] = {2'b00, ecc6(h)}; fn = 3'd4;
+        fb[0] = h[7:0];
+        fb[1] = h[15:8];
+        fb[2] = h[23:16];
+        fb[3] = {2'b00, ecc6(h)};
+        fn = 3'd4;
       end
       F_LINE: if (space6) begin
         consume = 1'b1;
         if (k_fmt == 2'd2) begin                 // YUV422: 4 bytes per pixel pair
-          fb[0] = avg(pe[23:16], po[23:16]); fb[1] = pe[15:8]; fb[2] = avg(pe[7:0], po[7:0]); fb[3] = po[15:8];
+          fb[0] = avg(pe[23:16], po[23:16]);
+          fb[1] = pe[15:8];
+          fb[2] = avg(pe[7:0], po[7:0]);
+          fb[3] = po[15:8];
           fn = 3'd4;
         end else begin
           for (int k = 0; k < 2; k++) begin
             p = k ? po : pe;
-            if (k_fmt == 2'd0) begin fb[3*k] = p[23:16]; fb[3*k+1] = p[15:8]; fb[3*k+2] = p[7:0]; end
-            else               begin fb[3*k] = p[7:0];   fb[3*k+1] = p[15:8]; fb[3*k+2] = p[23:16]; end
+            if (k_fmt == 2'd0) begin
+              fb[3*k] = p[23:16];
+              fb[3*k+1] = p[15:8];
+              fb[3*k+2] = p[7:0];
+            end
+            else               begin
+              fb[3*k] = p[7:0];
+              fb[3*k+1] = p[15:8];
+              fb[3*k+2] = p[23:16];
+            end
           end
           fn = (rem >= 16'd6) ? 3'd6 : 3'(rem);
         end
       end
-      F_BYTES: if (space6 && pl_valid_i) begin fb[0] = pl_data_i; fn = 3'd1; end
-      F_CRC: if (space6) begin fb[0] = crc[7:0]; fb[1] = crc[15:8]; fn = 3'd2; end
-      F_EOTP: if (space6) begin fb[0] = 8'h08; fb[1] = 8'h0F; fb[2] = 8'h0F; fb[3] = 8'h01; fn = 3'd4; end
+      F_BYTES: if (space6 && pl_valid_i) begin
+        fb[0] = pl_data_i;
+        fn = 3'd1;
+      end
+      F_CRC: if (space6) begin
+        fb[0] = crc[7:0];
+        fb[1] = crc[15:8];
+        fn = 3'd2;
+      end
+      F_EOTP: if (space6) begin
+        fb[0] = 8'h08;
+        fb[1] = 8'h0F;
+        fb[2] = 8'h0F;
+        fb[3] = 8'h01;
+        fn = 3'd4;
+      end
       default: ;
     endcase
   end
@@ -147,20 +187,50 @@ module mipi_tx_engine #(
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      fst <= F_IDLE; k_type <= '0; k_fmt <= '0; k_di <= '0; k_data <= '0; k_gap <= '0; k_buf <= 1'b0; k_eotp <= 1'b0;
-      wc <= '0; rem <= '0; crc <= 16'hFFFF; ra <= '0; gap_cnt <= '0; lb_done_o <= 1'b0;
-      wp <= '0; rp <= '0; cnt <= '0; burst <= 1'b0; all_enq <= 1'b0; underflow_o <= 1'b0;
-      hs_req_o <= 1'b0; lane_valid_o <= '0; lane_data_o <= '0;
+      fst <= F_IDLE;
+      k_type <= '0;
+      k_fmt <= '0;
+      k_di <= '0;
+      k_data <= '0;
+      k_gap <= '0;
+      k_buf <= 1'b0;
+      k_eotp <= 1'b0;
+      wc <= '0;
+      rem <= '0;
+      crc <= 16'hFFFF;
+      ra <= '0;
+      gap_cnt <= '0;
+      lb_done_o <= 1'b0;
+      wp <= '0;
+      rp <= '0;
+      cnt <= '0;
+      burst <= 1'b0;
+      all_enq <= 1'b0;
+      underflow_o <= 1'b0;
+      hs_req_o <= 1'b0;
+      lane_valid_o <= '0;
+      lane_data_o <= '0;
     end else begin
-      lb_done_o <= 1'b0; underflow_o <= 1'b0;
+      lb_done_o <= 1'b0;
+      underflow_o <= 1'b0;
       // ---- fill sequencer
       case (fst)
         F_IDLE: if (cmd_valid_i) begin
-          k_type <= c_type; k_di <= c_di; k_data <= c_data; k_fmt <= c_fmt; k_buf <= c_buf; k_gap <= c_gap; k_eotp <= c_eotp;
+          k_type <= c_type;
+          k_di <= c_di;
+          k_data <= c_data;
+          k_fmt <= c_fmt;
+          k_buf <= c_buf;
+          k_gap <= c_gap;
+          k_eotp <= c_eotp;
           wc  <= (c_type == 2'd1) ? ((c_fmt == 2'd2) ? 16'(c_data * 2) : 16'(c_data * 3)) : c_data;
           rem <= (c_type == 2'd1) ? ((c_fmt == 2'd2) ? 16'(c_data * 2) : 16'(c_data * 3)) : c_data;
-          crc <= 16'hFFFF; all_enq <= 1'b0;
-          if (c_type == 2'd3) begin gap_cnt <= c_gap; fst <= F_GAP; end
+          crc <= 16'hFFFF;
+          all_enq <= 1'b0;
+          if (c_type == 2'd3) begin
+            gap_cnt <= c_gap;
+            fst <= F_GAP;
+          end
           else fst <= F_HDR;
         end
         F_HDR: begin
@@ -170,9 +240,11 @@ module mipi_tx_engine #(
           else fst <= fst_e'((k_type == 2'd1) ? F_LINE : F_BYTES);
         end
         F_LINE, F_BYTES: if (fn != 0) begin
-          logic [15:0] c; c = crc;
+          logic [15:0] c;
+          c = crc;
           for (int i = 0; i < 6; i++) if (3'(i) < fn) c = crc_byte(c, fb[i]);
-          crc <= c; rem <= rem - fn;
+          crc <= c;
+          rem <= rem - fn;
           if (consume) ra <= ra + 1'b1;
           if (rem == 16'(fn)) fst <= F_CRC;
         end
@@ -182,10 +254,13 @@ module mipi_tx_engine #(
           all_enq <= 1'b1;
           if (all_enq && !burst && cnt == 0) begin
             if (k_type == 2'd1) lb_done_o <= 1'b1;
-            gap_cnt <= k_gap; fst <= F_GAP;
+            gap_cnt <= k_gap;
+            fst <= F_GAP;
           end
         end
-        F_GAP: if (gap_cnt == 0) fst <= F_IDLE; else gap_cnt <= gap_cnt - 1'b1;
+        F_GAP:
+          if (gap_cnt == 0) fst <= F_IDLE;
+          else gap_cnt <= gap_cnt - 1'b1;
         default: fst <= F_IDLE;
       endcase
 
@@ -193,7 +268,10 @@ module mipi_tx_engine #(
       begin
         logic [QW-1:0] w;
         w = wp;
-        for (int i = 0; i < 6; i++) if (3'(i) < fn) begin q[w] <= fb[i]; w = (w == QW'(QCAP - 1)) ? '0 : w + 1'b1; end
+        for (int i = 0; i < 6; i++) if (3'(i) < fn) begin
+          q[w] <= fb[i];
+          w = (w == QW'(QCAP - 1)) ? '0 : w + 1'b1;
+        end
         wp <= w;
         cnt <= cnt_after + fn;
       end
@@ -201,7 +279,8 @@ module mipi_tx_engine #(
       // ---- output: one word of up to NLANES bytes per accepted clock
       lane_valid_o <= '0;
       if (pop) begin
-        logic [QW-1:0] r; r = rp;
+        logic [QW-1:0] r;
+        r = rp;
         for (int l = 0; l < NLANES; l++) begin
           lane_data_o[8*l +: 8] <= q[r];
           lane_valid_o[l] <= (3'(l) < wbytes);
@@ -210,7 +289,10 @@ module mipi_tx_engine #(
         rp <= r;
       end
       // hs_req_o is high from the burst start through the clock of its last word
-      if (!burst && cnt != 0 && (all_enq || (k_type == 2'd1 && cnt >= START_TH))) begin burst <= 1'b1; hs_req_o <= 1'b1; end
+      if (!burst && cnt != 0 && (all_enq || (k_type == 2'd1 && cnt >= START_TH))) begin
+        burst <= 1'b1;
+        hs_req_o <= 1'b1;
+      end
       else if (burst && all_enq && cnt_after == 0 && pop) burst <= 1'b0;
       else if (!burst) hs_req_o <= 1'b0;
       if (burst && tx_ready_i && !all_enq && cnt < NLANES) underflow_o <= 1'b1;

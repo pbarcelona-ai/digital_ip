@@ -71,16 +71,30 @@ module tb_sharpen_cas;
       int e, n, w, ea, s, mn5, mx5, mn9, mx9, head, amp, sq, k, v;
       longint rc;
       e  = px(ox, oy, c);
-      n  = px(ox, oy - 1, c);  s  = px(ox, oy + 1, c);
-      w  = px(ox - 1, oy, c);  ea = px(ox + 1, oy, c);
-      mn5 = e; mx5 = e;
-      mn5 = imin(n, mn5); mx5 = imax(n, mx5); mn5 = imin(s, mn5); mx5 = imax(s, mx5);
-      mn5 = imin(w, mn5); mx5 = imax(w, mx5); mn5 = imin(ea, mn5); mx5 = imax(ea, mx5);
-      mn9 = mn5; mx9 = mx5;
-      mn9 = imin(px(ox - 1, oy - 1, c), mn9); mx9 = imax(px(ox - 1, oy - 1, c), mx9);
-      mn9 = imin(px(ox + 1, oy - 1, c), mn9); mx9 = imax(px(ox + 1, oy - 1, c), mx9);
-      mn9 = imin(px(ox - 1, oy + 1, c), mn9); mx9 = imax(px(ox - 1, oy + 1, c), mx9);
-      mn9 = imin(px(ox + 1, oy + 1, c), mn9); mx9 = imax(px(ox + 1, oy + 1, c), mx9);
+      n  = px(ox, oy - 1, c);
+      s  = px(ox, oy + 1, c);
+      w  = px(ox - 1, oy, c);
+      ea = px(ox + 1, oy, c);
+      mn5 = e;
+      mx5 = e;
+      mn5 = imin(n, mn5);
+      mx5 = imax(n, mx5);
+      mn5 = imin(s, mn5);
+      mx5 = imax(s, mx5);
+      mn5 = imin(w, mn5);
+      mx5 = imax(w, mx5);
+      mn5 = imin(ea, mn5);
+      mx5 = imax(ea, mx5);
+      mn9 = mn5;
+      mx9 = mx5;
+      mn9 = imin(px(ox - 1, oy - 1, c), mn9);
+      mx9 = imax(px(ox - 1, oy - 1, c), mx9);
+      mn9 = imin(px(ox + 1, oy - 1, c), mn9);
+      mx9 = imax(px(ox + 1, oy - 1, c), mx9);
+      mn9 = imin(px(ox - 1, oy + 1, c), mn9);
+      mx9 = imax(px(ox - 1, oy + 1, c), mx9);
+      mn9 = imin(px(ox + 1, oy + 1, c), mn9);
+      mx9 = imax(px(ox + 1, oy + 1, c), mx9);
       head = mn5 + mn9;
       if (2 * M - (mx5 + mx9) < head) head = 2 * M - (mx5 + mx9);
       if (mx5 + mx9 == 0) amp = 0;
@@ -99,8 +113,12 @@ module tb_sharpen_cas;
   endfunction
 
   // Min/max helpers (functions: they are called from golden_pixel)
-  function automatic int imin(input int a, input int b); return (a < b) ? a : b; endfunction
-  function automatic int imax(input int a, input int b); return (a > b) ? a : b; endfunction
+  function automatic int imin(input int a, input int b);
+    return (a < b) ? a : b;
+  endfunction
+  function automatic int imax(input int a, input int b);
+    return (a > b) ? a : b;
+  endfunction
 
   // test tasks: tests/sharpen_cas_tests.sv
   `include "sharpen_cas_tests.sv"
@@ -120,11 +138,17 @@ module tb_sharpen_cas;
       run_quick_filter_suite();                // +QUICK
     end else begin
       run_filter_suite();
-      sharp = 0;   run_test(24, 18, 24, 18, 0);
-      sharp = 256; run_test(24, 18, 24, 18, 1);
-      sharp = 256; run_test(MAX_W, MAX_H, MAX_W, MAX_H, 0);
-      axil_write(12'h040, 999); axil_check(12'h040, 256);   // clamp
-      sharp = 200; bypass = 1; run_test(17, 11, 17, 11, 1);
+      sharp = 0;
+      run_test(24, 18, 24, 18, 0);
+      sharp = 256;
+      run_test(24, 18, 24, 18, 1);
+      sharp = 256;
+      run_test(MAX_W, MAX_H, MAX_W, MAX_H, 0);
+      axil_write(12'h040, 999); // clamp
+      axil_check(12'h040, 256);
+      sharp = 200;
+      bypass = 1;
+      run_test(17, 11, 17, 11, 1);
       bypass = 0;
     end
     finish_report();

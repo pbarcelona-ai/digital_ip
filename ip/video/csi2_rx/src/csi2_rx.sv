@@ -69,7 +69,8 @@ module csi2_rx #(
   wire mw_valid  = all_ready && |nonempty;                     // merged word available
   wire burst_end = &done && !(|nonempty);                      // every lane drained
 
-  logic [W*8-1:0] mw_data; logic [W-1:0] mw_keep;
+  logic [W*8-1:0] mw_data;
+  logic [W-1:0] mw_keep;
   always_comb for (int i = 0; i < NLANES; i++) begin
     mw_data[8*i +: 8] = lf_mem[i][lf_rp[i]];
     mw_keep[i]        = nonempty[i];
@@ -77,21 +78,33 @@ module csi2_rx #(
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      for (int i = 0; i < NLANES; i++) begin lf_wp[i] <= '0; lf_rp[i] <= '0; lf_cnt[i] <= '0; end
-      started <= '0; done <= '0; lane_valid_q <= '0;
+      for (int i = 0; i < NLANES; i++) begin
+        lf_wp[i] <= '0;
+        lf_rp[i] <= '0;
+        lf_cnt[i] <= '0;
+      end
+      started <= '0;
+      done <= '0;
+      lane_valid_q <= '0;
     end else begin
       lane_valid_q <= lane_valid_i;
       for (int i = 0; i < NLANES; i++) begin : lane_fifo
         logic push, pop;
         push = lane_valid_i[i] && lf_cnt[i] != 4'd8;
         pop  = mw_valid && nonempty[i];
-        if (push) begin lf_mem[i][lf_wp[i]] <= lane_data_i[8*i +: 8]; lf_wp[i] <= lf_wp[i] + 1'b1; end
+        if (push) begin
+          lf_mem[i][lf_wp[i]] <= lane_data_i[8*i +: 8];
+          lf_wp[i] <= lf_wp[i] + 1'b1;
+        end
         if (pop) lf_rp[i] <= lf_rp[i] + 1'b1;
         lf_cnt[i] <= lf_cnt[i] + {3'd0, push} - {3'd0, pop};
         if (lane_valid_i[i]) started[i] <= 1'b1;
         if (started[i] && !lane_valid_i[i] && lane_valid_q[i]) done[i] <= 1'b1;
       end
-      if (burst_end) begin started <= '0; done <= '0; end
+      if (burst_end) begin
+        started <= '0;
+        done <= '0;
+      end
     end
   end
 
@@ -110,7 +123,8 @@ module csi2_rx #(
 
   // CRC-16 (x^16 + x^12 + x^5 + 1, LSB first, init 0xFFFF) over one byte
   function automatic logic [15:0] crc_byte(input logic [15:0] c, input logic [7:0] b);
-    logic [15:0] r; r = c;
+    logic [15:0] r;
+    r = c;
     for (int i = 0; i < 8; i++) r = (r >> 1) ^ ((r[0] ^ b[i]) ? 16'h8408 : 16'h0000);
     crc_byte = r;
   endfunction
@@ -121,21 +135,51 @@ module csi2_rx #(
   // byte by byte (unrolled), tracking the parser state across the bytes.
   typedef enum logic [2:0] {P_HDR, P_PAY, P_CRC, P_DRAIN} pst_e;
   pst_e pst;
-  logic [31:0] hdr; logic [1:0] hcnt;
-  logic [15:0] left, crc, crc_rx; logic crc_hi;
+  logic [31:0] hdr;
+  logic [1:0] hcnt;
+  logic [15:0] left, crc, crc_rx;
+  logic crc_hi;
   logic        sel, sof_pend;
 
   // Next-state of one word, computed combinationally
-  pst_e n_pst; logic [31:0] n_hdr; logic [1:0] n_hcnt; logic [15:0] n_left, n_crc, n_crc_rx; logic n_crc_hi, n_sel, n_sof;
-  logic [W-1:0] o_keep; logic o_last, o_any;
+  pst_e n_pst;
+  logic [31:0] n_hdr;
+  logic [1:0] n_hcnt;
+  logic [15:0] n_left, n_crc, n_crc_rx;
+  logic n_crc_hi, n_sel, n_sof;
+  logic [W-1:0] o_keep;
+  logic o_last, o_any;
   logic e_fs, e_fe, e_line, e_corr, e_err, e_crc;
   always_comb begin
-    logic [23:0] d; logic [5:0] syn, dt; logic [1:0] vc; logic ok; logic [7:0] b;   // per-byte scratch
-    d = '0; syn = '0; dt = '0; vc = '0; ok = 1'b0; b = '0;
-    n_pst = pst; n_hdr = hdr; n_hcnt = hcnt; n_left = left; n_crc = crc; n_crc_rx = crc_rx; n_crc_hi = crc_hi;
-    n_sel = sel; n_sof = sof_pend;
-    o_keep = '0; o_last = 1'b0; o_any = 1'b0;
-    e_fs = 1'b0; e_fe = 1'b0; e_line = 1'b0; e_corr = 1'b0; e_err = 1'b0; e_crc = 1'b0;
+    logic [23:0] d; // per-byte scratch
+    logic [5:0] syn, dt;
+    logic [1:0] vc;
+    logic ok;
+    logic [7:0] b;
+    d = '0;
+    syn = '0;
+    dt = '0;
+    vc = '0;
+    ok = 1'b0;
+    b = '0;
+    n_pst = pst;
+    n_hdr = hdr;
+    n_hcnt = hcnt;
+    n_left = left;
+    n_crc = crc;
+    n_crc_rx = crc_rx;
+    n_crc_hi = crc_hi;
+    n_sel = sel;
+    n_sof = sof_pend;
+    o_keep = '0;
+    o_last = 1'b0;
+    o_any = 1'b0;
+    e_fs = 1'b0;
+    e_fe = 1'b0;
+    e_line = 1'b0;
+    e_corr = 1'b0;
+    e_err = 1'b0;
+    e_crc = 1'b0;
     for (int i = 0; i < W; i++) begin
       b = mw_data[8*i +: 8];
       if (mw_valid && mw_keep[i]) begin
@@ -143,22 +187,34 @@ module csi2_rx #(
           P_HDR: begin
             n_hdr[8*n_hcnt +: 8] = b;
             if (n_hcnt == 2'd3) begin
-              d = n_hdr[23:0]; syn = ecc6(d) ^ n_hdr[29:24]; ok = 1'b1;
+              d = n_hdr[23:0];
+              syn = ecc6(d) ^ n_hdr[29:24];
+              ok = 1'b1;
               if (syn != 0) begin
                 ok = 1'b0;
-                for (int k = 0; k < 24; k++) if (syn == ecc6(24'd1 << k)) begin d[k] = ~d[k]; ok = 1'b1; end
+                for (int k = 0; k < 24; k++) if (syn == ecc6(24'd1 << k)) begin
+                  d[k] = ~d[k];
+                  ok = 1'b1;
+                end
                 for (int k = 0; k < 6; k++)  if (syn == (6'd1 << k)) ok = 1'b1;     // error in the ECC byte
-                if (ok) e_corr = 1'b1; else e_err = 1'b1;
+                if (ok) e_corr = 1'b1;
+                else e_err = 1'b1;
               end
-              dt = d[5:0]; vc = d[7:6];
+              dt = d[5:0];
+              vc = d[7:6];
               if (!ok) n_pst = P_DRAIN;
               else if (dt < 6'h10) begin                                        // short packet
-                if (vc == vc_i && dt == 6'h00) begin e_fs = 1'b1; n_sof = 1'b1; end
+                if (vc == vc_i && dt == 6'h00) begin
+                  e_fs = 1'b1;
+                  n_sof = 1'b1;
+                end
                 if (vc == vc_i && dt == 6'h01) e_fe = 1'b1;
                 n_pst = P_DRAIN;
               end else begin                                                    // long packet
                 n_sel = (vc == vc_i) && (dt == dt_i);
-                n_left = d[23:8]; n_crc = 16'hFFFF; n_crc_hi = 1'b0;
+                n_left = d[23:8];
+                n_crc = 16'hFFFF;
+                n_crc_hi = 1'b0;
                 n_pst = pst_e'((d[23:8] == 0) ? P_CRC : P_PAY);
               end
             end
@@ -166,12 +222,21 @@ module csi2_rx #(
           end
           P_PAY: begin
             n_crc = crc_byte(n_crc, b);
-            if (n_sel) begin o_keep[i] = 1'b1; o_any = 1'b1; end
+            if (n_sel) begin
+              o_keep[i] = 1'b1;
+              o_any = 1'b1;
+            end
             n_left = n_left - 1'b1;
-            if (n_left == 0) begin o_last = n_sel; n_pst = P_CRC; end
+            if (n_left == 0) begin
+              o_last = n_sel;
+              n_pst = P_CRC;
+            end
           end
           P_CRC: begin
-            if (!n_crc_hi) begin n_crc_rx[7:0] = b; n_crc_hi = 1'b1; end
+            if (!n_crc_hi) begin
+              n_crc_rx[7:0] = b;
+              n_crc_hi = 1'b1;
+            end
             else begin
               n_crc_rx[15:8] = b;
               if ({b, n_crc_rx[7:0]} != n_crc) e_crc = 1'b1;
@@ -185,23 +250,56 @@ module csi2_rx #(
     end
     if (burst_end) begin
       if (n_pst == P_PAY || n_pst == P_CRC) e_crc = 1'b1;                       // truncated packet
-      n_pst = P_HDR; n_hcnt = 2'd0; n_sel = 1'b0;
+      n_pst = P_HDR;
+      n_hcnt = 2'd0;
+      n_sel = 1'b0;
     end
   end
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      pst <= P_HDR; hdr <= '0; hcnt <= '0; left <= '0; crc <= 16'hFFFF; crc_rx <= '0; crc_hi <= 1'b0; sel <= 1'b0; sof_pend <= 1'b0;
-      m_axis_tvalid <= 1'b0; m_axis_tdata <= '0; m_axis_tkeep <= '0; m_axis_tlast <= 1'b0; m_axis_tuser <= 1'b0;
-      frame_start_o <= 1'b0; frame_end_o <= 1'b0; line_o <= 1'b0; ecc_corrected_o <= 1'b0; ecc_error_o <= 1'b0;
-      crc_error_o <= 1'b0; overflow_o <= 1'b0;
+      pst <= P_HDR;
+      hdr <= '0;
+      hcnt <= '0;
+      left <= '0;
+      crc <= 16'hFFFF;
+      crc_rx <= '0;
+      crc_hi <= 1'b0;
+      sel <= 1'b0;
+      sof_pend <= 1'b0;
+      m_axis_tvalid <= 1'b0;
+      m_axis_tdata <= '0;
+      m_axis_tkeep <= '0;
+      m_axis_tlast <= 1'b0;
+      m_axis_tuser <= 1'b0;
+      frame_start_o <= 1'b0;
+      frame_end_o <= 1'b0;
+      line_o <= 1'b0;
+      ecc_corrected_o <= 1'b0;
+      ecc_error_o <= 1'b0;
+      crc_error_o <= 1'b0;
+      overflow_o <= 1'b0;
     end else begin
-      pst <= n_pst; hdr <= n_hdr; hcnt <= n_hcnt; left <= n_left; crc <= n_crc; crc_rx <= n_crc_rx; crc_hi <= n_crc_hi;
-      sel <= n_sel; sof_pend <= (o_any) ? 1'b0 : n_sof;
-      m_axis_tvalid <= o_any; m_axis_tdata <= mw_data; m_axis_tkeep <= o_keep; m_axis_tlast <= o_last;
+      pst <= n_pst;
+      hdr <= n_hdr;
+      hcnt <= n_hcnt;
+      left <= n_left;
+      crc <= n_crc;
+      crc_rx <= n_crc_rx;
+      crc_hi <= n_crc_hi;
+      sel <= n_sel;
+      sof_pend <= (o_any) ? 1'b0 : n_sof;
+      m_axis_tvalid <= o_any;
+      m_axis_tdata <= mw_data;
+      m_axis_tkeep <= o_keep;
+      m_axis_tlast <= o_last;
       m_axis_tuser  <= o_any && n_sof;
-      frame_start_o <= e_fs; frame_end_o <= e_fe; line_o <= e_line;
-      ecc_corrected_o <= e_corr; ecc_error_o <= e_err; crc_error_o <= e_crc;
+      frame_start_o <= e_fs;
+      frame_end_o <= e_fe;
+      line_o <= e_line;
+      ecc_corrected_o <= e_corr;
+      ecc_error_o <= e_err;
+      crc_error_o <= e_crc;
       overflow_o <= m_axis_tvalid && !m_axis_tready;
     end
   end

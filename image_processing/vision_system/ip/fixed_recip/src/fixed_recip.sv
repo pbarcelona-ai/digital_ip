@@ -46,7 +46,10 @@ module fixed_recip #(
       busy   <= 1'b0;
       done   <= 1'b0;
       result <= '0;
-      divisor <= '0; rem <= '0; quot <= '0; step <= '0;
+      divisor <= '0;
+      rem <= '0;
+      quot <= '0;
+      step <= '0;
     end else begin
       done <= 1'b0;
       unique case (state)

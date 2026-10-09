@@ -46,7 +46,8 @@ module isp_blc_wb #(
 
   // CFA phase of the incoming pixel and per-frame settings
   logic xo, yo;                                // x / y parity of the next pixel
-  logic [1:0] cfa_f; logic blc_by_f, wb_by_f;
+  logic [1:0] cfa_f;
+  logic blc_by_f, wb_by_f;
   wire  [1:0] cfa_now = s_axis_tuser ? cfa_i : cfa_f;
   wire        blc_by  = s_axis_tuser ? blc_bypass_i : blc_by_f;
   wire        wb_by   = s_axis_tuser ? wb_bypass_i  : wb_by_f;
@@ -55,7 +56,9 @@ module isp_blc_wb #(
   wire  [1:0] color   = {px_y ^ cfa_now[1], px_x ^ cfa_now[0]};
 
   // Stage 1: black level
-  logic [PW-1:0] v1; logic [1:0] c1; logic wb1, l1, u1, val1;
+  logic [PW-1:0] v1;
+  logic [1:0] c1;
+  logic wb1, l1, u1, val1;
   // Stage 2: white balance (output register)
   wire [11:0] g = (c1 == 2'd0) ? gain_r_i : (c1 == 2'd3) ? gain_b_i : gain_g_i;
   wire [PW+12:0] prod = v1 * g + 13'd128;
@@ -64,19 +67,42 @@ module isp_blc_wb #(
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      xo <= 1'b0; yo <= 1'b0; cfa_f <= '0; blc_by_f <= 1'b0; wb_by_f <= 1'b0;
-      val1 <= 1'b0; v1 <= '0; c1 <= '0; wb1 <= 1'b0; l1 <= 1'b0; u1 <= 1'b0;
-      m_axis_tvalid <= 1'b0; m_axis_tdata <= '0; m_axis_tlast <= 1'b0; m_axis_tuser <= 1'b0;
+      xo <= 1'b0;
+      yo <= 1'b0;
+      cfa_f <= '0;
+      blc_by_f <= 1'b0;
+      wb_by_f <= 1'b0;
+      val1 <= 1'b0;
+      v1 <= '0;
+      c1 <= '0;
+      wb1 <= 1'b0;
+      l1 <= 1'b0;
+      u1 <= 1'b0;
+      m_axis_tvalid <= 1'b0;
+      m_axis_tdata <= '0;
+      m_axis_tlast <= 1'b0;
+      m_axis_tuser <= 1'b0;
     end else if (en) begin
       if (acc) begin
-        if (s_axis_tuser) begin cfa_f <= cfa_i; blc_by_f <= blc_bypass_i; wb_by_f <= wb_bypass_i; end
+        if (s_axis_tuser) begin
+          cfa_f <= cfa_i;
+          blc_by_f <= blc_bypass_i;
+          wb_by_f <= wb_bypass_i;
+        end
         xo <= s_axis_tlast ? 1'b0 : ~px_x;
         yo <= s_axis_tlast ? ~px_y : px_y;
       end
-      val1 <= acc; c1 <= color; wb1 <= wb_by; l1 <= s_axis_tlast; u1 <= s_axis_tuser;
+      val1 <= acc;
+      c1 <= color;
+      wb1 <= wb_by;
+      l1 <= s_axis_tlast;
+      u1 <= s_axis_tuser;
       if (blc_by) v1 <= s_axis_tdata;
       else        v1 <= (s_axis_tdata > blc_i[color*PW +: PW]) ? s_axis_tdata - blc_i[color*PW +: PW] : '0;
-      m_axis_tvalid <= val1; m_axis_tdata <= wb1 ? v1 : wb_out; m_axis_tlast <= l1; m_axis_tuser <= u1;
+      m_axis_tvalid <= val1;
+      m_axis_tdata <= wb1 ? v1 : wb_out;
+      m_axis_tlast <= l1;
+      m_axis_tuser <= u1;
     end
   end
 endmodule

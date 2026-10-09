@@ -52,6 +52,8 @@ module quad_dec_top (
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
 
 `ifndef SYNTHESIS
+  // verification-only checks: excluded from code coverage
+  // verilator coverage_off
   // ---- immediate assertions (simulation only; skipped by synthesis) ----
   logic ip_chk_b_q, ip_chk_r_q;
   always @(posedge aclk) begin
@@ -62,15 +64,43 @@ module quad_dec_top (
       assert (s_axil_rresp == 2'b00 || s_axil_rresp == 2'b10) else $error("%m: reserved RRESP value");
       if (ip_chk_b_q) assert (s_axil_bvalid) else $error("%m: BVALID dropped before BREADY");
       if (ip_chk_r_q) assert (s_axil_rvalid) else $error("%m: RVALID dropped before RREADY");
-    end else begin ip_chk_b_q <= 1'b0; ip_chk_r_q <= 1'b0; end
+    end else begin
+      ip_chk_b_q <= 1'b0;
+      ip_chk_r_q <= 1'b0;
+    end
   end
+  // verilator coverage_on
 `endif
 
   localparam logic [7*32-1:0] RSTV = {32'd0, 32'd0, 32'd0, 32'd100000, 32'd0, 32'd0, 32'd1};
-  logic [7*32-1:0] regs, rd; logic [6:0] wr_pulse; logic [31:0] wr_data;
+  logic [7*32-1:0] regs, rd;
+  logic [6:0] wr_pulse;
+  logic [31:0] wr_data;
   ip_axil_regs #(.ADDR_W(8), .NREG(7), .RESET_VALS(RSTV)) u_regs (
-.aclk, .aresetn, .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready, .s_axil_wdata, .s_axil_wstrb, .s_axil_wvalid, .s_axil_wready, .s_axil_bresp, .s_axil_bvalid, .s_axil_bready, .s_axil_araddr, .s_axil_arvalid, .s_axil_arready, .s_axil_rdata, .s_axil_rresp, .s_axil_rvalid, .s_axil_rready,
-    .reg_o(regs), .wr_pulse_o(wr_pulse), .wr_data_o(wr_data), .rd_i(rd));
+    .aclk,
+    .aresetn,
+    .s_axil_awaddr,
+    .s_axil_awvalid,
+    .s_axil_awready,
+    .s_axil_wdata,
+    .s_axil_wstrb,
+    .s_axil_wvalid,
+    .s_axil_wready,
+    .s_axil_bresp,
+    .s_axil_bvalid,
+    .s_axil_bready,
+    .s_axil_araddr,
+    .s_axil_arvalid,
+    .s_axil_arready,
+    .s_axil_rdata,
+    .s_axil_rresp,
+    .s_axil_rvalid,
+    .s_axil_rready,
+    .reg_o(regs),
+    .wr_pulse_o(wr_pulse),
+    .wr_data_o(wr_data),
+    .rd_i(rd)
+  );
 
   logic win_load;                // window boundary pulse
   wire en = regs[0];
@@ -81,12 +111,21 @@ module quad_dec_top (
   logic [2:0] fil;               // filtered value
   logic [23:0] fcnt;             // 3 x 8 bit stability counters
   always_ff @(posedge aclk) begin
-    if (!aresetn) begin s1 <= '0; s2 <= '0; fil <= '0; fcnt <= '0; end
+    if (!aresetn) begin
+      s1 <= '0;
+      s2 <= '0;
+      fil <= '0;
+      fcnt <= '0;
+    end
     else begin
-      s1 <= {enc_z_i, enc_b_i, enc_a_i}; s2 <= s1;
+      s1 <= {enc_z_i, enc_b_i, enc_a_i};
+      s2 <= s1;
       for (int i = 0; i < 3; i++) begin
         if (s2[i] == fil[i]) fcnt[i*8 +: 8] <= '0;
-        else if (fcnt[i*8 +: 8] >= filt) begin fil[i] <= s2[i]; fcnt[i*8 +: 8] <= '0; end
+        else if (fcnt[i*8 +: 8] >= filt) begin
+          fil[i] <= s2[i];
+          fcnt[i*8 +: 8] <= '0;
+        end
         else fcnt[i*8 +: 8] <= fcnt[i*8 +: 8] + 8'd1;
       end
     end
@@ -94,15 +133,19 @@ module quad_dec_top (
 
   wire a = regs[3] ? fil[1] : fil[0];
   wire b = regs[3] ? fil[0] : fil[1];
-  logic [1:0] ab_prev; logic z_prev;
+  logic [1:0] ab_prev;
+  logic z_prev;
 
   // ---- x4 decode: forward sequence 00 -> 10 -> 11 -> 01 -> 00 ----
   logic signed [31:0] pos, idx_pos, win_cnt;
-  logic dir, err_f, idx_f; logic [31:0] err_cnt;
+  logic dir, err_f, idx_f;
+  logic [31:0] err_cnt;
   logic step_up, step_dn, step_err;
   wire [3:0] tr = {ab_prev, a, b};
   always_comb begin
-    step_up = 1'b0; step_dn = 1'b0; step_err = 1'b0;
+    step_up = 1'b0;
+    step_dn = 1'b0;
+    step_err = 1'b0;
     case (tr)
       4'b0010, 4'b1011, 4'b1101, 4'b0100: step_up = 1'b1;
       4'b0001, 4'b0111, 4'b1110, 4'b1000: step_dn = 1'b1;
@@ -113,16 +156,36 @@ module quad_dec_top (
 
   always_ff @(posedge aclk) begin
     if (!aresetn) begin
-      pos <= '0; idx_pos <= '0; ab_prev <= '0; z_prev <= 1'b0; dir <= 1'b0;
-      err_f <= 1'b0; idx_f <= 1'b0; err_cnt <= '0; win_cnt <= '0;
+      pos <= '0;
+      idx_pos <= '0;
+      ab_prev <= '0;
+      z_prev <= 1'b0;
+      dir <= 1'b0;
+      err_f <= 1'b0;
+      idx_f <= 1'b0;
+      err_cnt <= '0;
+      win_cnt <= '0;
     end else begin
-      ab_prev <= {a, b}; z_prev <= fil[2];
+      ab_prev <= {a, b};
+      z_prev <= fil[2];
       if (en) begin
-        if (step_up) begin pos <= pos + 32'sd1; win_cnt <= win_cnt + 32'sd1; dir <= 1'b1; end
-        if (step_dn) begin pos <= pos - 32'sd1; win_cnt <= win_cnt - 32'sd1; dir <= 1'b0; end
-        if (step_err) begin err_f <= 1'b1; err_cnt <= err_cnt + 32'd1; end
+        if (step_up) begin
+          pos <= pos + 32'sd1;
+          win_cnt <= win_cnt + 32'sd1;
+          dir <= 1'b1;
+        end
+        if (step_dn) begin
+          pos <= pos - 32'sd1;
+          win_cnt <= win_cnt - 32'sd1;
+          dir <= 1'b0;
+        end
+        if (step_err) begin
+          err_f <= 1'b1;
+          err_cnt <= err_cnt + 32'd1;
+        end
         if (fil[2] & ~z_prev) begin                        // index rising edge
-          idx_pos <= pos; idx_f <= 1'b1;
+          idx_pos <= pos;
+          idx_f <= 1'b1;
           if (regs[2]) pos <= '0;
         end
       end
@@ -137,15 +200,23 @@ module quad_dec_top (
   end
 
   // ---- Velocity window ----
-  logic [31:0] wtmr; logic signed [31:0] vel;
+  logic [31:0] wtmr;
+  logic signed [31:0] vel;
   always_ff @(posedge aclk) begin
-    if (!aresetn) begin wtmr <= '0; win_load <= 1'b0; vel <= '0; m_axis_tvalid <= 1'b0; end
+    if (!aresetn) begin
+      wtmr <= '0;
+      win_load <= 1'b0;
+      vel <= '0;
+      m_axis_tvalid <= 1'b0;
+    end
     else begin
       win_load <= 1'b0;
       if (m_axis_tvalid && m_axis_tready) m_axis_tvalid <= 1'b0;
       if (en) begin
         if (wtmr >= regs[3*32 +: 32]) begin
-          wtmr <= '0; win_load <= 1'b1; vel <= win_cnt;
+          wtmr <= '0;
+          win_load <= 1'b1;
+          vel <= win_cnt;
           m_axis_tvalid <= 1'b1;                            // drops if not consumed
         end else wtmr <= wtmr + 32'd1;
       end

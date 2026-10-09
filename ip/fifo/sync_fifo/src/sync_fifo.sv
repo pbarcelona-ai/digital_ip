@@ -47,15 +47,27 @@ module sync_fifo #(
   always_ff @(posedge clk) if (do_wr) mem[wptr[AW-1:0]] <= wdata_i;
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      wptr <= '0; rptr <= '0; rd_valid_o <= 1'b0; rdata_o <= '0;
-      overflow_o <= 1'b0; underflow_o <= 1'b0; almost_full_o <= 1'b0; almost_empty_o <= 1'b1;
+      wptr <= '0;
+      rptr <= '0;
+      rd_valid_o <= 1'b0;
+      rdata_o <= '0;
+      overflow_o <= 1'b0;
+      underflow_o <= 1'b0;
+      almost_full_o <= 1'b0;
+      almost_empty_o <= 1'b1;
     end else begin
       if (do_wr) wptr <= wptr + 1'b1;
       rd_valid_o <= do_rd;
-      if (do_rd) begin rptr <= rptr + 1'b1; rdata_o <= mem[rptr[AW-1:0]]; end
+      if (do_rd) begin
+        rptr <= rptr + 1'b1;
+        rdata_o <= mem[rptr[AW-1:0]];
+      end
       if (wr_en_i & full_o)  overflow_o  <= 1'b1;
       if (rd_en_i & empty_o) underflow_o <= 1'b1;
-      if (clr_err_i) begin overflow_o <= 1'b0; underflow_o <= 1'b0; end
+      if (clr_err_i) begin
+        overflow_o <= 1'b0;
+        underflow_o <= 1'b0;
+      end
       almost_full_o  <= ((level_o + do_wr - do_rd) >= afull_thresh_i);
       almost_empty_o <= ((level_o + do_wr - do_rd) <= aempty_thresh_i);
     end

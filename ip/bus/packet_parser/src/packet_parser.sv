@@ -53,11 +53,15 @@ module packet_parser #(
   localparam int DB = DATA_W / 8;
   localparam int HB = HDR_BYTES / DB;
   if (DATA_W % 8 != 0 || HDR_BYTES < DB || (HDR_BYTES % DB) != 0) begin : g_bad $error("packet_parser: HDR_BYTES must be a multiple of DATA_W/8"); end
-  logic [$clog2(HB+1)-1:0] hb; logic [HDR_BYTES*8-1:0] hreg, hnow; logic pass_r, pass_c, match_c; logic [15:0] cnt;
+  logic [$clog2(HB+1)-1:0] hb;
+  logic [HDR_BYTES*8-1:0] hreg, hnow;
+  logic pass_r, pass_c, match_c;
+  logic [15:0] cnt;
   wire in_hdr = (hb < HB);
   wire last_hdr_beat = in_hdr && (hb == HB - 1);
   always_comb begin
-    hnow = hreg; hnow[hb*DATA_W +: DATA_W] = s_axis_tdata;
+    hnow = hreg;
+    hnow[hb*DATA_W +: DATA_W] = s_axis_tdata;
     match_c = ((hnow & cfg_mask_i) == (cfg_value_i & cfg_mask_i));
     pass_c  = STRIP ? (~drop_nomatch_i | match_c) : 1'b1;     // filtering only applies when the header is stripped
   end
@@ -68,27 +72,50 @@ module packet_parser #(
   wire fwd_pay = ~in_hdr & pass_r;
   assign m_axis_tvalid = s_axis_tvalid & (fwd_hdr | fwd_pay);
   assign s_axis_tready = (fwd_hdr | fwd_pay) ? m_axis_tready : 1'b1;
-  assign m_axis_tdata  = s_axis_tdata; assign m_axis_tkeep = s_axis_tkeep; assign m_axis_tlast = s_axis_tlast;
+  assign m_axis_tdata  = s_axis_tdata;
+  assign m_axis_tkeep = s_axis_tkeep;
+  assign m_axis_tlast = s_axis_tlast;
   wire acc = s_axis_tvalid & s_axis_tready;
   wire [15:0] beat_bytes = 16'($countones(s_axis_tkeep));
   always_ff @(posedge aclk) begin
     if (!aresetn) begin
-      hb <= '0; hreg <= '0; pass_r <= 1'b1; cnt <= '0; hdr_o <= '0; hdr_valid_o <= 1'b0; match_o <= 1'b0;
-      len_o <= '0; len_valid_o <= 1'b0; runt_o <= 1'b0; drop_o <= 1'b0;
+      hb <= '0;
+      hreg <= '0;
+      pass_r <= 1'b1;
+      cnt <= '0;
+      hdr_o <= '0;
+      hdr_valid_o <= 1'b0;
+      match_o <= 1'b0;
+      len_o <= '0;
+      len_valid_o <= 1'b0;
+      runt_o <= 1'b0;
+      drop_o <= 1'b0;
     end else begin
-      hdr_valid_o <= 1'b0; len_valid_o <= 1'b0; runt_o <= 1'b0; drop_o <= 1'b0;
+      hdr_valid_o <= 1'b0;
+      len_valid_o <= 1'b0;
+      runt_o <= 1'b0;
+      drop_o <= 1'b0;
       if (acc) begin
         cnt <= cnt + beat_bytes;
         if (in_hdr) begin
           hreg[hb*DATA_W +: DATA_W] <= s_axis_tdata;
           if (last_hdr_beat && !short_end) begin
-            hdr_o <= hnow; hdr_valid_o <= 1'b1; match_o <= match_c; pass_r <= pass_c; hb <= HB[$clog2(HB+1)-1:0];
+            hdr_o <= hnow;
+            hdr_valid_o <= 1'b1;
+            match_o <= match_c;
+            pass_r <= pass_c;
+            hb <= HB[$clog2(HB+1)-1:0];
           end else hb <= hb + 1'b1;
           if (short_end) runt_o <= 1'b1;
         end
         if (s_axis_tlast) begin
-          hb <= '0; pass_r <= 1'b1; cnt <= '0;
-          if (!short_end) begin len_o <= cnt + beat_bytes; len_valid_o <= 1'b1; end
+          hb <= '0;
+          pass_r <= 1'b1;
+          cnt <= '0;
+          if (!short_end) begin
+            len_o <= cnt + beat_bytes;
+            len_valid_o <= 1'b1;
+          end
           if (!pass_now && !short_end) drop_o <= 1'b1;
         end
       end

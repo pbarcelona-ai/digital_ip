@@ -8,5 +8,9 @@
 // Date: 2026-10-08
 // ***************
   task automatic drive(input int x, input int y, input int z);
-    @(posedge clk); #1 v_i = 1; xi = x; yi = y; zi = z;
+    @(posedge clk);
+    #1 v_i = 1;
+    xi = x;
+    yi = y;
+    zi = z;
   endtask

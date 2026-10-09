@@ -50,18 +50,41 @@ module demo_regs (
   localparam int NREG = 6;
   localparam logic [2*NREG-1:0]  ACCESS     = 12'hD21;
   localparam logic [32*NREG-1:0] RESET_VALS = 192'h100000000000000001000000000;
-  logic [32*NREG-1:0] hw, hwset, regv; logic [NREG-1:0] wrp;
+  logic [32*NREG-1:0] hw, hwset, regv;
+  logic [NREG-1:0] wrp;
   always_comb begin
-    hw = '0; hwset = '0;
+    hw = '0;
+    hwset = '0;
     hw[0*32 +: 32] = id_i;
     hwset[2*32 +: 32] = status_set_i;
     hw[4*32 +: 32] = count_i;
     hwset[5*32 +: 32] = trig_clr_i;
   end
   axi4_lite_regs #(.ADDR_W(5), .NREG(NREG), .ACCESS(ACCESS), .RESET_VALS(RESET_VALS)) u_regs (
-    .aclk, .aresetn, .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready, .s_axil_wdata, .s_axil_wstrb, .s_axil_wvalid, .s_axil_wready,
-    .s_axil_bresp, .s_axil_bvalid, .s_axil_bready, .s_axil_araddr, .s_axil_arvalid, .s_axil_arready, .s_axil_rdata, .s_axil_rresp,
-    .s_axil_rvalid, .s_axil_rready, .hw_i(hw), .hw_set_i(hwset), .reg_o(regv), .wr_pulse_o(wrp));
+    .aclk,
+    .aresetn,
+    .s_axil_awaddr,
+    .s_axil_awvalid,
+    .s_axil_awready,
+    .s_axil_wdata,
+    .s_axil_wstrb,
+    .s_axil_wvalid,
+    .s_axil_wready,
+    .s_axil_bresp,
+    .s_axil_bvalid,
+    .s_axil_bready,
+    .s_axil_araddr,
+    .s_axil_arvalid,
+    .s_axil_arready,
+    .s_axil_rdata,
+    .s_axil_rresp,
+    .s_axil_rvalid,
+    .s_axil_rready,
+    .hw_i(hw),
+    .hw_set_i(hwset),
+    .reg_o(regv),
+    .wr_pulse_o(wrp)
+  );
   assign id_wr_o = wrp[0];
   assign ctrl_o = regv[1*32 +: 32];
   assign ctrl_wr_o = wrp[1];

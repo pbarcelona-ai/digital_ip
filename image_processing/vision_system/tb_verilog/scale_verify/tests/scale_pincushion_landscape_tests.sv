@@ -15,10 +15,14 @@
   task automatic axil_write(input int addr, input longint data);
     begin
       @(posedge clk);
-      s_axil_awaddr  <= addr[7:0]; s_axil_awvalid <= 1'b1;
-      s_axil_wdata   <= data[31:0]; s_axil_wstrb <= 4'hF; s_axil_wvalid <= 1'b1;
+      s_axil_awaddr  <= addr[7:0];
+      s_axil_awvalid <= 1'b1;
+      s_axil_wdata   <= data[31:0];
+      s_axil_wstrb <= 4'hF;
+      s_axil_wvalid <= 1'b1;
       @(posedge clk);
-      s_axil_awvalid <= 1'b0; s_axil_wvalid <= 1'b0;
+      s_axil_awvalid <= 1'b0;
+      s_axil_wvalid <= 1'b0;
       while (s_axil_bvalid !== 1'b1) @(posedge clk);
       s_axil_bready <= 1'b1;
       @(posedge clk);
@@ -29,7 +33,8 @@
   task automatic axil_read(input int addr, output logic [31:0] data);
     begin
       @(posedge clk);
-      s_axil_araddr <= addr[7:0]; s_axil_arvalid <= 1'b1;
+      s_axil_araddr <= addr[7:0];
+      s_axil_arvalid <= 1'b1;
       @(posedge clk);
       s_axil_arvalid <= 1'b0;
       while (s_axil_rvalid !== 1'b1) @(posedge clk);
@@ -52,7 +57,9 @@
           s_axis_tuser <= (xx==0)&&(yy==0);
           @(posedge clk);
         end
-        s_axis_tvalid <= 1'b0; s_axis_tlast <= 1'b0; s_axis_tuser <= 1'b0;
+        s_axis_tvalid <= 1'b0;
+        s_axis_tlast <= 1'b0;
+        s_axis_tuser <= 1'b0;
         repeat(5) @(posedge clk);
       end
     end
@@ -60,12 +67,17 @@
 
   task automatic capture_frame_out(input int w, input int h);
     begin
-      cap_r = new[w*h]; cap_g = new[w*h]; cap_b = new[w*h];
-      cap_count=0; cap_total=w*h;
+      cap_r = new[w*h];
+      cap_g = new[w*h];
+      cap_b = new[w*h];
+      cap_count=0;
+      cap_total=w*h;
       while (cap_count < cap_total) begin
         @(posedge clk);
         if (m_axis_tvalid===1'b1 && m_axis_tready===1'b1) begin
-          cap_r[cap_count]=m_axis_tdata[23:16]; cap_g[cap_count]=m_axis_tdata[15:8]; cap_b[cap_count]=m_axis_tdata[7:0];
+          cap_r[cap_count]=m_axis_tdata[23:16];
+          cap_g[cap_count]=m_axis_tdata[15:8];
+          cap_b[cap_count]=m_axis_tdata[7:0];
           cap_count++;
         end
       end

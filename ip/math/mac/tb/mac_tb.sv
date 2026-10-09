@@ -21,9 +21,18 @@ module mac_tb;
     .A_SIGNED(1), .B_SIGNED(1), .ACC_SIGNED(1), .OUT_SIGNED(1),
     .A_FRAC_BITS(4), .B_FRAC_BITS(4), .ACC_FRAC_BITS(4), .SATURATE(1)
   ) u_signed_fixed (
-    .clk, .rst_n, .valid_i(fixed_valid_i), .a_i(fixed_a_i), .b_i(fixed_b_i), .acc_i(fixed_acc_i),
-    .valid_o(fixed_valid_o), .result_o(fixed_result_o), .overflow_o(fixed_overflow_o),
-    .underflow_o(fixed_underflow_o), .inexact_o(fixed_inexact_o), .invalid_o(fixed_invalid_o)
+    .clk,
+    .rst_n,
+    .valid_i(fixed_valid_i),
+    .a_i(fixed_a_i),
+    .b_i(fixed_b_i),
+    .acc_i(fixed_acc_i),
+    .valid_o(fixed_valid_o),
+    .result_o(fixed_result_o),
+    .overflow_o(fixed_overflow_o),
+    .underflow_o(fixed_underflow_o),
+    .inexact_o(fixed_inexact_o),
+    .invalid_o(fixed_invalid_o)
   );
 
   logic unsigned_valid_i = 1'b0, unsigned_valid_o;
@@ -35,9 +44,18 @@ module mac_tb;
     .A_WIDTH(8), .B_WIDTH(8), .ACC_WIDTH(16), .OUT_WIDTH(16),
     .A_SIGNED(0), .B_SIGNED(0), .ACC_SIGNED(0), .OUT_SIGNED(0)
   ) u_unsigned_fixed (
-    .clk, .rst_n, .valid_i(unsigned_valid_i), .a_i(unsigned_a_i), .b_i(unsigned_b_i), .acc_i(unsigned_acc_i),
-    .valid_o(unsigned_valid_o), .result_o(unsigned_result_o), .overflow_o(unsigned_overflow_o),
-    .underflow_o(unsigned_underflow_o), .inexact_o(unsigned_inexact_o), .invalid_o(unsigned_invalid_o)
+    .clk,
+    .rst_n,
+    .valid_i(unsigned_valid_i),
+    .a_i(unsigned_a_i),
+    .b_i(unsigned_b_i),
+    .acc_i(unsigned_acc_i),
+    .valid_o(unsigned_valid_o),
+    .result_o(unsigned_result_o),
+    .overflow_o(unsigned_overflow_o),
+    .underflow_o(unsigned_underflow_o),
+    .inexact_o(unsigned_inexact_o),
+    .invalid_o(unsigned_invalid_o)
   );
 
   logic fp_valid_i = 1'b0, fp_valid_o;
@@ -47,9 +65,18 @@ module mac_tb;
   mac #(
     .A_WIDTH(32), .B_WIDTH(32), .ACC_WIDTH(32), .OUT_WIDTH(32), .FLOATING_POINT(1)
   ) u_float32 (
-    .clk, .rst_n, .valid_i(fp_valid_i), .a_i(fp_a_i), .b_i(fp_b_i), .acc_i(fp_acc_i),
-    .valid_o(fp_valid_o), .result_o(fp_result_o), .overflow_o(fp_overflow_o),
-    .underflow_o(fp_underflow_o), .inexact_o(fp_inexact_o), .invalid_o(fp_invalid_o)
+    .clk,
+    .rst_n,
+    .valid_i(fp_valid_i),
+    .a_i(fp_a_i),
+    .b_i(fp_b_i),
+    .acc_i(fp_acc_i),
+    .valid_o(fp_valid_o),
+    .result_o(fp_result_o),
+    .overflow_o(fp_overflow_o),
+    .underflow_o(fp_underflow_o),
+    .inexact_o(fp_inexact_o),
+    .invalid_o(fp_invalid_o)
   );
 
   int errors = 0;
@@ -89,5 +116,11 @@ module mac_tb;
     #100000;
     $display("TEST FAILED (timeout)");
     $finish;
+  end
+
+  // Waveform dump: +vcd writes mac_tb.vcd (scripts/run_sim.sh --vcd / --wave, make wave)
+  initial if ($test$plusargs("vcd")) begin
+    $dumpfile("mac_tb.vcd");
+    $dumpvars(0, mac_tb);
   end
 endmodule

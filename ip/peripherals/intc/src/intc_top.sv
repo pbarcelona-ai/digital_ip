@@ -47,6 +47,8 @@ module intc_top #(
   if (NUM_IRQ < 1 || NUM_IRQ > 32) begin : g_chk_n $error("%m: NUM_IRQ must be 1..32"); end
 
 `ifndef SYNTHESIS
+  // verification-only checks: excluded from code coverage
+  // verilator coverage_off
   // ---- immediate assertions (simulation only; skipped by synthesis) ----
   logic ip_chk_b_q, ip_chk_r_q;
   always @(posedge aclk) begin
@@ -57,16 +59,42 @@ module intc_top #(
       assert (s_axil_rresp == 2'b00 || s_axil_rresp == 2'b10) else $error("%m: reserved RRESP value");
       if (ip_chk_b_q) assert (s_axil_bvalid) else $error("%m: BVALID dropped before BREADY");
       if (ip_chk_r_q) assert (s_axil_rvalid) else $error("%m: RVALID dropped before RREADY");
-    end else begin ip_chk_b_q <= 1'b0; ip_chk_r_q <= 1'b0; end
+    end else begin
+      ip_chk_b_q <= 1'b0;
+      ip_chk_r_q <= 1'b0;
+    end
   end
+  // verilator coverage_on
 `endif
 
   logic [7*32-1:0] regs, rd;
   logic [6:0]      wr_pulse;
   logic [31:0]     wr_data;
   ip_axil_regs #(.ADDR_W(8), .NREG(7)) u_regs (
-.aclk, .aresetn, .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready, .s_axil_wdata, .s_axil_wstrb, .s_axil_wvalid, .s_axil_wready, .s_axil_bresp, .s_axil_bvalid, .s_axil_bready, .s_axil_araddr, .s_axil_arvalid, .s_axil_arready, .s_axil_rdata, .s_axil_rresp, .s_axil_rvalid, .s_axil_rready,
-    .reg_o(regs), .wr_pulse_o(wr_pulse), .wr_data_o(wr_data), .rd_i(rd));
+    .aclk,
+    .aresetn,
+    .s_axil_awaddr,
+    .s_axil_awvalid,
+    .s_axil_awready,
+    .s_axil_wdata,
+    .s_axil_wstrb,
+    .s_axil_wvalid,
+    .s_axil_wready,
+    .s_axil_bresp,
+    .s_axil_bvalid,
+    .s_axil_bready,
+    .s_axil_araddr,
+    .s_axil_arvalid,
+    .s_axil_arready,
+    .s_axil_rdata,
+    .s_axil_rresp,
+    .s_axil_rvalid,
+    .s_axil_rready,
+    .reg_o(regs),
+    .wr_pulse_o(wr_pulse),
+    .wr_data_o(wr_data),
+    .rd_i(rd)
+  );
 
   wire [NUM_IRQ-1:0] en   = regs[0*32 +: NUM_IRQ];
   wire [NUM_IRQ-1:0] edg  = regs[1*32 +: NUM_IRQ];
@@ -77,8 +105,18 @@ module intc_top #(
   (* async_reg = "true" *) logic [NUM_IRQ-1:0] s1, s2;
   logic [NUM_IRQ-1:0] prev, lvl;
   always_ff @(posedge aclk) begin
-    if (!aresetn) begin s1 <= '0; s2 <= '0; prev <= '0; lvl <= '0; end
-    else begin s1 <= irq_i; s2 <= s1; lvl <= s2 ^ pol; prev <= lvl; end
+    if (!aresetn) begin
+      s1 <= '0;
+      s2 <= '0;
+      prev <= '0;
+      lvl <= '0;
+    end
+    else begin
+      s1 <= irq_i;
+      s2 <= s1;
+      lvl <= s2 ^ pol;
+      prev <= lvl;
+    end
   end
   wire [NUM_IRQ-1:0] rise = lvl & ~prev;
 
@@ -94,13 +132,21 @@ module intc_top #(
   wire [NUM_IRQ-1:0] masked  = pending & en;
 
   // Pipelined priority encoder (lowest index first)
-  logic [4:0] vec; logic vec_v;
+  logic [4:0] vec;
+  logic vec_v;
   always_ff @(posedge aclk) begin
-    if (!aresetn) begin vec <= '0; vec_v <= 1'b0; end
+    if (!aresetn) begin
+      vec <= '0;
+      vec_v <= 1'b0;
+    end
     else begin
-      vec_v <= 1'b0; vec <= '0;
+      vec_v <= 1'b0;
+      vec <= '0;
       for (int i = NUM_IRQ-1; i >= 0; i--)
-        if (masked[i]) begin vec <= 5'(i); vec_v <= 1'b1; end
+        if (masked[i]) begin
+          vec <= 5'(i);
+          vec_v <= 1'b1;
+        end
     end
   end
   assign irq_o = vec_v;

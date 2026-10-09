@@ -48,6 +48,8 @@ module pwm_top #(
   if (CHANNELS < 1 || CHANNELS > 8) begin : g_chk_ch $error("%m: CHANNELS must be 1..8"); end
 
 `ifndef SYNTHESIS
+  // verification-only checks: excluded from code coverage
+  // verilator coverage_off
   // ---- immediate assertions (simulation only; skipped by synthesis) ----
   logic ip_chk_b_q, ip_chk_r_q;
   always @(posedge aclk) begin
@@ -58,8 +60,12 @@ module pwm_top #(
       assert (s_axil_rresp == 2'b00 || s_axil_rresp == 2'b10) else $error("%m: reserved RRESP value");
       if (ip_chk_b_q) assert (s_axil_bvalid) else $error("%m: BVALID dropped before BREADY");
       if (ip_chk_r_q) assert (s_axil_rvalid) else $error("%m: RVALID dropped before RREADY");
-    end else begin ip_chk_b_q <= 1'b0; ip_chk_r_q <= 1'b0; end
+    end else begin
+      ip_chk_b_q <= 1'b0;
+      ip_chk_r_q <= 1'b0;
+    end
   end
+  // verilator coverage_on
 `endif
 
   localparam int NREG = 5 + CHANNELS;
@@ -68,8 +74,30 @@ module pwm_top #(
   logic [NREG-1:0]    wr_pulse;
   logic [31:0]        wr_data;
   ip_axil_regs #(.ADDR_W(8), .NREG(NREG), .RESET_VALS(RSTV)) u_regs (
-.aclk, .aresetn, .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready, .s_axil_wdata, .s_axil_wstrb, .s_axil_wvalid, .s_axil_wready, .s_axil_bresp, .s_axil_bvalid, .s_axil_bready, .s_axil_araddr, .s_axil_arvalid, .s_axil_arready, .s_axil_rdata, .s_axil_rresp, .s_axil_rvalid, .s_axil_rready,
-    .reg_o(regs), .wr_pulse_o(wr_pulse), .wr_data_o(wr_data), .rd_i(regs));
+    .aclk,
+    .aresetn,
+    .s_axil_awaddr,
+    .s_axil_awvalid,
+    .s_axil_awready,
+    .s_axil_wdata,
+    .s_axil_wstrb,
+    .s_axil_wvalid,
+    .s_axil_wready,
+    .s_axil_bresp,
+    .s_axil_bvalid,
+    .s_axil_bready,
+    .s_axil_araddr,
+    .s_axil_arvalid,
+    .s_axil_arready,
+    .s_axil_rdata,
+    .s_axil_rresp,
+    .s_axil_rvalid,
+    .s_axil_rready,
+    .reg_o(regs),
+    .wr_pulse_o(wr_pulse),
+    .wr_data_o(wr_data),
+    .rd_i(regs)
+  );
 
   wire        en     = regs[0];
   wire        center = regs[1];
@@ -79,28 +107,53 @@ module pwm_top #(
   wire [15:0] dtime  = regs[96 +: 16];
 
   // Prescaler tick
-  logic [15:0] pcnt; logic tick;
+  logic [15:0] pcnt;
+  logic tick;
   always_ff @(posedge aclk) begin
-    if (!aresetn || !en) begin pcnt <= '0; tick <= 1'b0; end
-    else if (pcnt >= presc) begin pcnt <= '0; tick <= 1'b1; end
-    else begin pcnt <= pcnt + 16'd1; tick <= 1'b0; end
+    if (!aresetn || !en) begin
+      pcnt <= '0;
+      tick <= 1'b0;
+    end
+    else if (pcnt >= presc) begin
+      pcnt <= '0;
+      tick <= 1'b1;
+    end
+    else begin
+      pcnt <= pcnt + 16'd1;
+      tick <= 1'b0;
+    end
   end
 
   // Period counter: up (edge aligned) or up/down (center aligned)
-  logic [15:0] cnt; logic dir_dn, boundary;
+  logic [15:0] cnt;
+  logic dir_dn, boundary;
   always_ff @(posedge aclk) begin
-    if (!aresetn || !en) begin cnt <= '0; dir_dn <= 1'b0; boundary <= 1'b0; end
+    if (!aresetn || !en) begin
+      cnt <= '0;
+      dir_dn <= 1'b0;
+      boundary <= 1'b0;
+    end
     else begin
       boundary <= 1'b0;
       if (tick) begin
         if (!center) begin
-          if (cnt >= period) begin cnt <= '0; boundary <= 1'b1; end
+          if (cnt >= period) begin
+            cnt <= '0;
+            boundary <= 1'b1;
+          end
           else cnt <= cnt + 16'd1;
         end else if (!dir_dn) begin
-          if (cnt >= period) begin dir_dn <= 1'b1; cnt <= cnt - 16'd1; end
+          if (cnt >= period) begin
+            dir_dn <= 1'b1;
+            cnt <= cnt - 16'd1;
+          end
           else cnt <= cnt + 16'd1;
         end else begin
-          if (cnt <= 16'd1) begin dir_dn <= 1'b0; cnt <= '0; boundary <= 1'b1; end
+          if (cnt <= 16'd1) begin
+            dir_dn <= 1'b0;
+            cnt <= '0;
+            boundary <= 1'b1;
+          end
           else cnt <= cnt - 16'd1;
         end
       end
@@ -118,8 +171,12 @@ module pwm_top #(
       logic        hi, lo;
       always_ff @(posedge aclk) begin
         if (!aresetn || !en) begin
-          duty_act <= regs[(5+c)*32 +: 16]; raw <= 1'b0; raw_d <= 1'b0;
-          dt_cnt <= '0; hi <= 1'b0; lo <= 1'b0;
+          duty_act <= regs[(5+c)*32 +: 16];
+          raw <= 1'b0;
+          raw_d <= 1'b0;
+          dt_cnt <= '0;
+          hi <= 1'b0;
+          lo <= 1'b0;
         end else begin
           if (boundary) duty_act <= regs[(5+c)*32 +: 16];
           raw   <= (cnt < duty_act);
@@ -130,7 +187,8 @@ module pwm_top #(
             hi <= raw & (dt_cnt == 16'd0) & (raw == raw_d);
             lo <= ~raw & (dt_cnt == 16'd0) & (raw == raw_d);
           end else begin
-            hi <= raw; lo <= ~raw;
+            hi <= raw;
+            lo <= ~raw;
           end
         end
       end

@@ -49,6 +49,8 @@ module gpio_top #(
   if (WIDTH < 1 || WIDTH > 32) begin : g_chk_w $error("%m: WIDTH must be 1..32"); end
 
 `ifndef SYNTHESIS
+  // verification-only checks: excluded from code coverage
+  // verilator coverage_off
   // ---- immediate assertions (simulation only; skipped by synthesis) ----
   logic ip_chk_b_q, ip_chk_r_q;
   always @(posedge aclk) begin
@@ -59,16 +61,42 @@ module gpio_top #(
       assert (s_axil_rresp == 2'b00 || s_axil_rresp == 2'b10) else $error("%m: reserved RRESP value");
       if (ip_chk_b_q) assert (s_axil_bvalid) else $error("%m: BVALID dropped before BREADY");
       if (ip_chk_r_q) assert (s_axil_rvalid) else $error("%m: RVALID dropped before RREADY");
-    end else begin ip_chk_b_q <= 1'b0; ip_chk_r_q <= 1'b0; end
+    end else begin
+      ip_chk_b_q <= 1'b0;
+      ip_chk_r_q <= 1'b0;
+    end
   end
+  // verilator coverage_on
 `endif
 
   logic [10*32-1:0] regs, rd;
   logic [9:0]       wr_pulse;
   logic [31:0]      wr_data;
   ip_axil_regs #(.ADDR_W(8), .NREG(10)) u_regs (
-.aclk, .aresetn, .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready, .s_axil_wdata, .s_axil_wstrb, .s_axil_wvalid, .s_axil_wready, .s_axil_bresp, .s_axil_bvalid, .s_axil_bready, .s_axil_araddr, .s_axil_arvalid, .s_axil_arready, .s_axil_rdata, .s_axil_rresp, .s_axil_rvalid, .s_axil_rready,
-    .reg_o(regs), .wr_pulse_o(wr_pulse), .wr_data_o(wr_data), .rd_i(rd));
+    .aclk,
+    .aresetn,
+    .s_axil_awaddr,
+    .s_axil_awvalid,
+    .s_axil_awready,
+    .s_axil_wdata,
+    .s_axil_wstrb,
+    .s_axil_wvalid,
+    .s_axil_wready,
+    .s_axil_bresp,
+    .s_axil_bvalid,
+    .s_axil_bready,
+    .s_axil_araddr,
+    .s_axil_arvalid,
+    .s_axil_arready,
+    .s_axil_rdata,
+    .s_axil_rresp,
+    .s_axil_rvalid,
+    .s_axil_rready,
+    .reg_o(regs),
+    .wr_pulse_o(wr_pulse),
+    .wr_data_o(wr_data),
+    .rd_i(rd)
+  );
 
   wire [WIDTH-1:0] wd = wr_data[WIDTH-1:0];
 
@@ -88,8 +116,16 @@ module gpio_top #(
   (* async_reg = "true" *) logic [WIDTH-1:0] sync1, sync2;
   logic [WIDTH-1:0] prev;
   always_ff @(posedge aclk) begin
-    if (!aresetn) begin sync1 <= '0; sync2 <= '0; prev <= '0; end
-    else begin sync1 <= gpio_i; sync2 <= sync1; prev <= sync2; end
+    if (!aresetn) begin
+      sync1 <= '0;
+      sync2 <= '0;
+      prev <= '0;
+    end
+    else begin
+      sync1 <= gpio_i;
+      sync2 <= sync1;
+      prev <= sync2;
+    end
   end
 
   // Edge interrupts

@@ -45,7 +45,11 @@ module uart_tx (
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      state <= S_IDLE; tcnt <= '0; bitn <= '0; sh <= '0; par <= 1'b0;
+      state <= S_IDLE;
+      tcnt <= '0;
+      bitn <= '0;
+      sh <= '0;
+      par <= 1'b0;
       txd_o <= 1'b1;
     end else begin
       if (tick16_i) tcnt <= tcnt + 4'd1;        // wraps naturally at 16
@@ -53,13 +57,20 @@ module uart_tx (
         S_IDLE: begin
           txd_o <= 1'b1;
           if (s_tvalid & en_i) begin            // load a new frame
-            sh <= s_tdata; state <= S_START; tcnt <= '0;
-            bitn <= '0; par <= 1'b0; txd_o <= 1'b0;
+            sh <= s_tdata;
+            state <= S_START;
+            tcnt <= '0;
+            bitn <= '0;
+            par <= 1'b0;
+            txd_o <= 1'b0;
           end
         end
         S_START: begin
           txd_o <= 1'b0;
-          if (bit_end) begin state <= S_DATA; txd_o <= sh[0]; end
+          if (bit_end) begin
+            state <= S_DATA;
+            txd_o <= sh[0];
+          end
         end
         S_DATA: begin
           if (bit_end) begin
@@ -68,14 +79,19 @@ module uart_tx (
             bitn <= bitn + 3'd1;
             if (bitn + 4'd1 == data_bits_i) begin       // last data bit sent
               if (parity_en_i) begin
-                state <= S_PAR;  txd_o <= par ^ sh[0] ^ parity_odd_i;
+                state <= S_PAR;
+                txd_o <= par ^ sh[0] ^ parity_odd_i;
               end else begin
-                state <= S_STOP1; txd_o <= 1'b1;
+                state <= S_STOP1;
+                txd_o <= 1'b1;
               end
             end else txd_o <= sh[1];                    // next data bit
           end
         end
-        S_PAR: if (bit_end) begin state <= S_STOP1; txd_o <= 1'b1; end
+        S_PAR: if (bit_end) begin
+          state <= S_STOP1;
+          txd_o <= 1'b1;
+        end
         S_STOP1: begin
           if (bit_end) begin
             if (stop2_i) state <= S_STOP2;

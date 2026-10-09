@@ -155,20 +155,33 @@ module axi_lite_regs #(
 
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      s_axil_bvalid <= 1'b0; s_axil_bresp <= 2'b00;
-      reg_img_width <= 32'd64; reg_img_height <= 32'd64;
-      reg_k1 <= '0; reg_k2 <= '0; reg_k3 <= '0;
-      reg_center_x <= DEFAULT_CENTER; reg_center_y <= DEFAULT_CENTER;
+      s_axil_bvalid <= 1'b0;
+      s_axil_bresp <= 2'b00;
+      reg_img_width <= 32'd64;
+      reg_img_height <= 32'd64;
+      reg_k1 <= '0;
+      reg_k2 <= '0;
+      reg_k3 <= '0;
+      reg_center_x <= DEFAULT_CENTER;
+      reg_center_y <= DEFAULT_CENTER;
       reg_scale <= DEFAULT_SCALE;
       reg_interp_mode <= 32'h0;
       reg_calib_mode <= 32'h0;
-      reg_fx <= DEFAULT_FXFY; reg_fy <= DEFAULT_FXFY;
-      reg_cx <= '0; reg_cy <= '0;
-      reg_p1 <= '0; reg_p2 <= '0;
+      reg_fx <= DEFAULT_FXFY;
+      reg_fy <= DEFAULT_FXFY;
+      reg_cx <= '0;
+      reg_cy <= '0;
+      reg_p1 <= '0;
+      reg_p2 <= '0;
       reg_model_sel <= 32'h0;   // MODEL_RADIAL
-      reg_h11 <= 32'h0001_0000; reg_h12 <= '0; reg_h13 <= '0;   // identity homography
-      reg_h21 <= '0; reg_h22 <= 32'h0001_0000; reg_h23 <= '0;
-      reg_h31 <= '0; reg_h32 <= '0;
+      reg_h11 <= 32'h0001_0000; // identity homography
+      reg_h12 <= '0;
+      reg_h13 <= '0;
+      reg_h21 <= '0;
+      reg_h22 <= 32'h0001_0000;
+      reg_h23 <= '0;
+      reg_h31 <= '0;
+      reg_h32 <= '0;
       sticky_frame_done <= 1'b0;
       geom_write_pulse <= 1'b0;
     end else begin
@@ -183,20 +196,50 @@ module axi_lite_regs #(
           6'h01: begin // STATUS write-1-to-clear
             if (s_axil_wdata[1]) sticky_frame_done <= 1'b0;
           end
-          6'h02: begin reg_img_width  <= s_axil_wdata; geom_write_pulse <= 1'b1; end
-          6'h03: begin reg_img_height <= s_axil_wdata; geom_write_pulse <= 1'b1; end
+          6'h02: begin
+            reg_img_width  <= s_axil_wdata;
+            geom_write_pulse <= 1'b1;
+          end
+          6'h03: begin
+            reg_img_height <= s_axil_wdata;
+            geom_write_pulse <= 1'b1;
+          end
           6'h04: reg_k1 <= s_axil_wdata;
           6'h05: reg_k2 <= s_axil_wdata;
           6'h06: reg_k3 <= s_axil_wdata;
-          6'h07: begin reg_center_x <= s_axil_wdata; geom_write_pulse <= 1'b1; end
-          6'h08: begin reg_center_y <= s_axil_wdata; geom_write_pulse <= 1'b1; end
-          6'h09: begin reg_scale    <= s_axil_wdata; geom_write_pulse <= 1'b1; end
+          6'h07: begin
+            reg_center_x <= s_axil_wdata;
+            geom_write_pulse <= 1'b1;
+          end
+          6'h08: begin
+            reg_center_y <= s_axil_wdata;
+            geom_write_pulse <= 1'b1;
+          end
+          6'h09: begin
+            reg_scale    <= s_axil_wdata;
+            geom_write_pulse <= 1'b1;
+          end
           6'h0B: reg_interp_mode <= s_axil_wdata;
-          6'h0C: begin reg_calib_mode <= s_axil_wdata; geom_write_pulse <= 1'b1; end
-          6'h0D: begin reg_fx    <= s_axil_wdata; geom_write_pulse <= 1'b1; end
-          6'h0E: begin reg_fy    <= s_axil_wdata; geom_write_pulse <= 1'b1; end
-          6'h0F: begin reg_cx    <= s_axil_wdata; geom_write_pulse <= 1'b1; end
-          6'h10: begin reg_cy    <= s_axil_wdata; geom_write_pulse <= 1'b1; end
+          6'h0C: begin
+            reg_calib_mode <= s_axil_wdata;
+            geom_write_pulse <= 1'b1;
+          end
+          6'h0D: begin
+            reg_fx    <= s_axil_wdata;
+            geom_write_pulse <= 1'b1;
+          end
+          6'h0E: begin
+            reg_fy    <= s_axil_wdata;
+            geom_write_pulse <= 1'b1;
+          end
+          6'h0F: begin
+            reg_cx    <= s_axil_wdata;
+            geom_write_pulse <= 1'b1;
+          end
+          6'h10: begin
+            reg_cy    <= s_axil_wdata;
+            geom_write_pulse <= 1'b1;
+          end
           6'h11: reg_p1 <= s_axil_wdata;
           6'h12: reg_p2 <= s_axil_wdata;
           6'h13: reg_model_sel <= s_axil_wdata;
@@ -223,7 +266,9 @@ module axi_lite_regs #(
 
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      s_axil_rvalid <= 1'b0; s_axil_rdata <= '0; s_axil_rresp <= 2'b00;
+      s_axil_rvalid <= 1'b0;
+      s_axil_rdata <= '0;
+      s_axil_rresp <= 2'b00;
     end else begin
       if (ar_hs) begin
         s_axil_rvalid <= 1'b1;
@@ -306,14 +351,44 @@ module axi_lite_regs #(
 
   logic signed [47:0] m_cx, m_cy, m_wh, m_hh, m_fx, m_fy;
   logic signed [31:0] w_half, h_half;
-  mulq_s u_m_cx (.clk, .a(center_x_s), .b(imgw_q16), .s(m_cx));
-  mulq_s u_m_cy (.clk, .a(center_y_s), .b(imgh_q16), .s(m_cy));
+  mulq_s u_m_cx (
+    .clk,
+    .a(center_x_s),
+    .b(imgw_q16),
+    .s(m_cx)
+  );
+  mulq_s u_m_cy (
+    .clk,
+    .a(center_y_s),
+    .b(imgh_q16),
+    .s(m_cy)
+  );
   // half extents: qmul(size, 0.5)
-  mulq_s u_m_wh (.clk, .a(imgw_q16), .b(32'sh0000_8000), .s(m_wh));
-  mulq_s u_m_hh (.clk, .a(imgh_q16), .b(32'sh0000_8000), .s(m_hh));
+  mulq_s u_m_wh (
+    .clk,
+    .a(imgw_q16),
+    .b(32'sh0000_8000),
+    .s(m_wh)
+  );
+  mulq_s u_m_hh (
+    .clk,
+    .a(imgh_q16),
+    .b(32'sh0000_8000),
+    .s(m_hh)
+  );
   // f = half_extent * scale (second multiply, after the first is saturated)
-  mulq_s u_m_fx (.clk, .a(w_half), .b(scale_s), .s(m_fx));
-  mulq_s u_m_fy (.clk, .a(h_half), .b(scale_s), .s(m_fy));
+  mulq_s u_m_fx (
+    .clk,
+    .a(w_half),
+    .b(scale_s),
+    .s(m_fx)
+  );
+  mulq_s u_m_fy (
+    .clk,
+    .a(h_half),
+    .b(scale_s),
+    .s(m_fy)
+  );
   always_ff @(posedge clk) begin
     cx_pix_legacy <= barrel_pkg::qsat48(m_cx);
     cy_pix_legacy <= barrel_pkg::qsat48(m_cy);
@@ -350,14 +425,19 @@ module axi_lite_regs #(
   always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       cstate <= C_IDLE;
-      cx_pix_r <= '0; cy_pix_r <= '0;
-      fx_pix_r <= 32'h0001_0000; fy_pix_r <= 32'h0001_0000;
-      recip_fx_r <= 32'h0001_0000; recip_fy_r <= 32'h0001_0000;
-      recip_w_start <= 1'b0; recip_h_start <= 1'b0;
+      cx_pix_r <= '0;
+      cy_pix_r <= '0;
+      fx_pix_r <= 32'h0001_0000;
+      fy_pix_r <= 32'h0001_0000;
+      recip_fx_r <= 32'h0001_0000;
+      recip_fy_r <= 32'h0001_0000;
+      recip_w_start <= 1'b0;
+      recip_h_start <= 1'b0;
       pending <= 1'b0;
       settle_cnt <= '0;
     end else begin
-      recip_w_start <= 1'b0; recip_h_start <= 1'b0;
+      recip_w_start <= 1'b0;
+      recip_h_start <= 1'b0;
       if (geom_write_pulse) pending <= 1'b1;
       unique case (cstate)
         C_IDLE: begin
@@ -410,7 +490,8 @@ module axi_lite_regs #(
   assign fy_pix_c_u = fy_pix_c;
 
   fixed_recip #(.W(32)) u_recip_w (
-    .clk, .rst_n,
+    .clk,
+    .rst_n,
     .start   (recip_w_start),
     .operand (fx_pix_c_u),
     .result  (recip_w_result),
@@ -419,7 +500,8 @@ module axi_lite_regs #(
   );
 
   fixed_recip #(.W(32)) u_recip_h (
-    .clk, .rst_n,
+    .clk,
+    .rst_n,
     .start   (recip_h_start),
     .operand (fy_pix_c_u),
     .result  (recip_h_result),

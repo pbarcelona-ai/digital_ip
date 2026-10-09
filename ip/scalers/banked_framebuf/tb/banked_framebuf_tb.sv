@@ -31,23 +31,33 @@ module fb_checker #(parameter int TAPS = 4, parameter int MAX_W = 29, parameter 
                     .NBUF(NBUF), .RING(RING)) dut (.*);
 
   // clamp v into [0, hi]
-  function automatic int cl(int v, int hi); return v < 0 ? 0 : (v > hi ? hi : v); endfunction
+  function automatic int cl(int v, int hi);
+    return v < 0 ? 0 : (v > hi ? hi : v);
+  endfunction
 
   // used by task write_row (tests/banked_framebuf_tests.sv)
-  int qx [3], qy [3], qb [3]; bit qv [3];
+  int qx [3], qy [3], qb [3];
+  bit qv [3];
   int w, h;
 
   // test tasks: tests/banked_framebuf_tests.sv
   `include "banked_framebuf_tests.sv"
 
   initial begin
-    errors = 0; checks = 0; done = 0;
+    errors = 0;
+    checks = 0;
+    done = 0;
     for (int k = 0; k < 3; k++) qv[k] = 0;
     for (int it = 0; it < 6; it++) begin
       w = (it == 0) ? MAX_W : $urandom_range(MAX_W, 1);
       h = (it == 1) ? MAX_H : $urandom_range(MAX_H, 1);
-      if (it == 2) begin w = 1; h = 1; end
-      @(negedge clk); img_w = w; img_h = h;
+      if (it == 2) begin
+        w = 1;
+        h = 1;
+      end
+      @(negedge clk);
+      img_w = w;
+      img_h = h;
       if (RING == 0) begin
         // full frame(s): write every buffer, then random reads of random
         // buffers, origins up to TAPS pixels outside the image, random stalls
@@ -81,31 +91,90 @@ module fb_checker #(parameter int TAPS = 4, parameter int MAX_W = 29, parameter 
 endmodule
 
 module tb_banked_framebuf;
-  logic clk = 0; always #5 clk = ~clk;
+  logic clk = 0;
+  always #5 clk = ~clk;
   localparam int N = 10;
   int e [N], c [N], d [N];
-  fb_checker #(.TAPS(1)) u1 (.clk, .errors(e[0]), .checks(c[0]), .done(d[0]));
-  fb_checker #(.TAPS(2)) u2 (.clk, .errors(e[1]), .checks(c[1]), .done(d[1]));
-  fb_checker #(.TAPS(3)) u3 (.clk, .errors(e[2]), .checks(c[2]), .done(d[2]));
-  fb_checker #(.TAPS(4)) u4 (.clk, .errors(e[3]), .checks(c[3]), .done(d[3]));
-  fb_checker #(.TAPS(6)) u6 (.clk, .errors(e[4]), .checks(c[4]), .done(d[4]));
-  fb_checker #(.TAPS(8), .MAX_W(40), .MAX_H(17)) u8 (.clk, .errors(e[5]), .checks(c[5]), .done(d[5]));
+  fb_checker #(.TAPS(1)) u1 (
+    .clk,
+    .errors(e[0]),
+    .checks(c[0]),
+    .done(d[0])
+  );
+  fb_checker #(.TAPS(2)) u2 (
+    .clk,
+    .errors(e[1]),
+    .checks(c[1]),
+    .done(d[1])
+  );
+  fb_checker #(.TAPS(3)) u3 (
+    .clk,
+    .errors(e[2]),
+    .checks(c[2]),
+    .done(d[2])
+  );
+  fb_checker #(.TAPS(4)) u4 (
+    .clk,
+    .errors(e[3]),
+    .checks(c[3]),
+    .done(d[3])
+  );
+  fb_checker #(.TAPS(6)) u6 (
+    .clk,
+    .errors(e[4]),
+    .checks(c[4]),
+    .done(d[4])
+  );
+  fb_checker #(.TAPS(8), .MAX_W(40), .MAX_H(17)) u8 (
+    .clk,
+    .errors(e[5]),
+    .checks(c[5]),
+    .done(d[5])
+  );
   // double buffer (ping-pong)
-  fb_checker #(.TAPS(2), .NBUF(2)) up2 (.clk, .errors(e[6]), .checks(c[6]), .done(d[6]));
-  fb_checker #(.TAPS(6), .NBUF(2)) up6 (.clk, .errors(e[7]), .checks(c[7]), .done(d[7]));
+  fb_checker #(.TAPS(2), .NBUF(2)) up2 (
+    .clk,
+    .errors(e[6]),
+    .checks(c[6]),
+    .done(d[6])
+  );
+  fb_checker #(.TAPS(6), .NBUF(2)) up6 (
+    .clk,
+    .errors(e[7]),
+    .checks(c[7]),
+    .done(d[7])
+  );
   // line buffer (ring of RING rows)
-  fb_checker #(.TAPS(4), .RING(8))  ur4 (.clk, .errors(e[8]), .checks(c[8]), .done(d[8]));
-  fb_checker #(.TAPS(1), .RING(4))  ur1 (.clk, .errors(e[9]), .checks(c[9]), .done(d[9]));
+  fb_checker #(.TAPS(4), .RING(8))  ur4 (
+    .clk,
+    .errors(e[8]),
+    .checks(c[8]),
+    .done(d[8])
+  );
+  fb_checker #(.TAPS(1), .RING(4))  ur1 (
+    .clk,
+    .errors(e[9]),
+    .checks(c[9]),
+    .done(d[9])
+  );
   initial begin
     int te, tc;
-    te = 0; tc = 0;
+    te = 0;
+    tc = 0;
     for (int i = 0; i < N; i++) wait (d[i]);
-    for (int i = 0; i < N; i++) begin te += e[i]; tc += c[i]; end
+    for (int i = 0; i < N; i++) begin
+      te += e[i];
+      tc += c[i];
+    end
     if (te == 0) $display("TB_RESULT: PASS  checks=%0d", tc);
     else         $display("TB_RESULT: FAIL  checks=%0d errors=%0d", tc, te);
     $finish;
   end
-  initial begin #50_000_000; $display("TB_RESULT: FAIL (timeout)"); $finish; end
+  initial begin
+    #50_000_000;
+    $display("TB_RESULT: FAIL (timeout)");
+    $finish;
+  end
 
   // ---------------------------------------------------------------- waveform dump
   // Writes a VCD of the whole testbench hierarchy.

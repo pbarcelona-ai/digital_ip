@@ -16,7 +16,13 @@
 #   make synth          Yosys synthesis + timing estimate, every module
 #   make html           build the local HTML documentation site
 #   make ci             sim + synth
+#   make cov            test-ip, test-smoke, test-sv, test-ext-sdram with Verilator
+#                       code coverage -> build/coverage/summary.txt (not cocotb: Icarus VPI)
 #   make diagram        regenerate docs/block_diagram.svg/.png
+#   make wave           run one testbench with the VCD dump and open it in Surfer:
+#                       WAVE_TEST=smoke (default) | sv | ext-sdram | scale | ip-<name>
+#                       (ip-<name>: fixed_recip frame_buffer ext_frame_buffer mulq
+#                       bilinear bicubic coord_gen)
 # Options:  FULL=1  use full-size frames (480x480/480x720/720x480; hours)
 #           VCD=1   dump waveforms   SURFER=1  (with VCD=1) open Surfer
 
@@ -32,10 +38,10 @@ SV_ENV := SMALL=1
 CT_ENV := SMALL_FRAMES=1
 endif
 
-.PHONY: all sim ci test-ip test-smoke test-sv test-ext-sdram test-cocotb synth html diagram clean help
+.PHONY: all sim wave ci cov test-ip test-smoke test-sv test-ext-sdram test-cocotb synth html diagram clean help
 all: help
 help:
-	@sed -n "9,19p" Makefile
+	@sed -n "9,25p" Makefile
 
 test-ip:
 	@for d in $(IPS); do \
@@ -56,6 +62,21 @@ test-cocotb:
 
 sim: test-ip test-smoke test-sv test-ext-sdram test-cocotb
 
+cov:
+	@../../ip/scripts/run_cov.sh build/coverage $(MAKE) --no-print-directory test-ip test-smoke test-sv test-ext-sdram $(if $(FULL),FULL=$(FULL),)
+
+WAVE_TEST ?= smoke
+wave:
+	@case "$(WAVE_TEST)" in \
+	  smoke)     VCD=1 SURFER=1 tb_verilog/scripts/run_smoke.sh ;; \
+	  sv)        env $(SV_ENV) VCD=1 SURFER=1 tb_verilog/scripts/run.sh ;; \
+	  ext-sdram) VCD=1 SURFER=1 tb_verilog/scripts/run_ext_sdram.sh ;; \
+	  scale)     VCD=1 SURFER=1 tb_verilog/scale_verify/scripts/run_scale_verify.sh fast ;; \
+	  ip-*)      test -x ip/$${WAVE_TEST#ip-}/scripts/run.sh || { echo "no IP $${WAVE_TEST#ip-}" >&2; exit 2; }; \
+	             VCD=1 SURFER=1 ip/$${WAVE_TEST#ip-}/scripts/run.sh ;; \
+	  *) echo "WAVE_TEST=smoke|sv|ext-sdram|scale|ip-<name>" >&2; exit 2 ;; \
+	esac
+
 synth:
 	@status=0; $(CHECK) synth 'Yosys synthesis summary' 'VIOLATED|SYNTH FAIL' -- synth/run_all_yosys.sh || status=$$?; \
 	  python3 docs/build_html.py; exit $$status
@@ -69,7 +90,7 @@ diagram:
 	python3 docs/make_block_diagram.py
 
 clean:
-	rm -rf ci/logs synth/summary.md
+	rm -rf ci/logs synth/summary.md build/coverage
 	find . -name '*.vvp' -delete
 	find . -name yosys -type d -prune -exec rm -rf {} +
 	rm -rf tb/sim_build tb/work tb_verilog/work tb_verilog/work_small

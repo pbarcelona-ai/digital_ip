@@ -14,7 +14,8 @@
       wr_en = 1'b1;
       wr_addr = address;
       wr_data = value;
-      do @(posedge clk); while (!wr_ready);
+      do @(posedge clk);
+      while (!wr_ready);
       @(negedge clk);
       wr_en = 1'b0;
     end

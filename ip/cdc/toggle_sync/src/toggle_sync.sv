@@ -32,10 +32,21 @@ module toggle_sync #(
     else if (event_i) tog <= ~tog;
   end
   logic tog_s, tog_d;
-  bit_sync #(.STAGES(STAGES)) u_sync (.clk(dst_clk), .rst_n(dst_rst_n), .d_i(tog), .q_o(tog_s));
+  bit_sync #(.STAGES(STAGES)) u_sync (
+    .clk(dst_clk),
+    .rst_n(dst_rst_n),
+    .d_i(tog),
+    .q_o(tog_s)
+  );
   always_ff @(posedge dst_clk) begin
-    if (!dst_rst_n) begin tog_d <= 1'b0; event_o <= 1'b0; end
-    else begin tog_d <= tog_s; event_o <= tog_s ^ tog_d; end
+    if (!dst_rst_n) begin
+      tog_d <= 1'b0;
+      event_o <= 1'b0;
+    end
+    else begin
+      tog_d <= tog_s;
+      event_o <= tog_s ^ tog_d;
+    end
   end
   assign toggle_o = tog_s;
 endmodule

@@ -150,10 +150,25 @@ module scaler_edge_directed #(
 
   // DDA: raster scan of the output, source coordinate per pixel
   scaler_dda u_dda (
-    .clk, .rst_n, .start(gen_start), .adv, .hold(lb_hold), .nxt_y(d_nxt_y),
-    .out_w, .out_h, .step_x, .step_y, .offs_x, .offs_y,
-    .busy(d_busy), .o_valid(d_valid), .o_x(d_x), .o_y(d_y),
-    .o_sof(d_sof), .o_eol(d_eol), .o_eof(d_eof)
+    .clk,
+    .rst_n,
+    .start(gen_start),
+    .adv,
+    .hold(lb_hold),
+    .nxt_y(d_nxt_y),
+    .out_w,
+    .out_h,
+    .step_x,
+    .step_y,
+    .offs_x,
+    .offs_y,
+    .busy(d_busy),
+    .o_valid(d_valid),
+    .o_x(d_x),
+    .o_y(d_y),
+    .o_sof(d_sof),
+    .o_eol(d_eol),
+    .o_eof(d_eof)
   );
 
   // Round the source coordinate to the PHASE_BITS grid: integer part =
@@ -170,8 +185,17 @@ module scaler_edge_directed #(
   banked_framebuf #(.PIX_W(PIX_W), .TAPS(2), .MAX_W(MAX_W), .MAX_H(MAX_H),
                   .NBUF(NBUF), .RING(LB_ROWS)) u_fb (
     .clk,
-    .wr_en(fb_we), .wr_x(fb_wx), .wr_y(fb_wy), .wr_data(fb_wdata), .wr_buf(fb_wbuf),
-    .rd_adv(adv), .rd_buf(gen_buf), .rd_x0(ix), .rd_y0(iy), .img_w(in_w), .img_h(in_h),
+    .wr_en(fb_we),
+    .wr_x(fb_wx),
+    .wr_y(fb_wy),
+    .wr_data(fb_wdata),
+    .wr_buf(fb_wbuf),
+    .rd_adv(adv),
+    .rd_buf(gen_buf),
+    .rd_x0(ix),
+    .rd_y0(iy),
+    .img_w(in_w),
+    .img_h(in_h),
     .rd_win(win)
   );
 
@@ -211,7 +235,8 @@ module scaler_edge_directed #(
   // ---- D (comb): diagonal activity, summed over the components
   logic [DW-1:0] d1_c, d2_c;
   always_comb begin
-    d1_c = '0; d2_c = '0;
+    d1_c = '0;
+    d2_c = '0;
     for (int c = 0; c < CHANNELS; c++) begin
       logic [COMP_W-1:0] p00, p01, p10, p11;
       p00 = win_d[0][(0*PIX_W) + c*COMP_W +: COMP_W];
@@ -241,20 +266,41 @@ module scaler_edge_directed #(
   logic [WW-1:0] w_c [4];
   always_comb begin
     logic [PB:0] x, y, nx, ny;                   // 0 .. ONE
-    x  = (PB+1)'(x_d[2]);           y  = (PB+1)'(y_d[2]);
-    nx = (PB+1)'(ONE) - x;          ny = (PB+1)'(ONE) - y;
+    x  = (PB+1)'(x_d[2]);
+    y  = (PB+1)'(y_d[2]);
+    nx = (PB+1)'(ONE) - x;
+    ny = (PB+1)'(ONE) - y;
     case (k_q)
-      K_D1U: begin w_c[0] = WW'(nx) << PB;    w_c[1] = WW'(x - y) << PB;
-                   w_c[2] = '0;               w_c[3] = WW'(y) << PB;       end
-      K_D1L: begin w_c[0] = WW'(ny) << PB;    w_c[1] = '0;
-                   w_c[2] = WW'(y - x) << PB; w_c[3] = WW'(x) << PB;       end
-      K_D2U: begin w_c[0] = WW'(nx - y) << PB; w_c[1] = WW'(x) << PB;
-                   w_c[2] = WW'(y) << PB;     w_c[3] = '0;                 end
-      K_D2L: begin w_c[0] = '0;               w_c[1] = WW'(ny) << PB;
-                   w_c[2] = WW'(nx) << PB;    w_c[3] = WW'(x + y - (PB+1)'(ONE)) << PB; end
+      K_D1U: begin
+        w_c[0] = WW'(nx) << PB;
+        w_c[1] = WW'(x - y) << PB;
+        w_c[2] = '0;
+        w_c[3] = WW'(y) << PB;
+      end
+      K_D1L: begin
+        w_c[0] = WW'(ny) << PB;
+        w_c[1] = '0;
+        w_c[2] = WW'(y - x) << PB;
+        w_c[3] = WW'(x) << PB;
+      end
+      K_D2U: begin
+        w_c[0] = WW'(nx - y) << PB;
+        w_c[1] = WW'(x) << PB;
+        w_c[2] = WW'(y) << PB;
+        w_c[3] = '0;
+      end
+      K_D2L: begin
+        w_c[0] = '0;
+        w_c[1] = WW'(ny) << PB;
+        w_c[2] = WW'(nx) << PB;
+        w_c[3] = WW'(x + y - (PB+1)'(ONE)) << PB;
+      end
       default: begin
-                   w_c[0] = WW'(nx) * WW'(ny); w_c[1] = WW'(x) * WW'(ny);
-                   w_c[2] = WW'(nx) * WW'(y);  w_c[3] = WW'(x) * WW'(y);   end
+                   w_c[0] = WW'(nx) * WW'(ny);
+                   w_c[1] = WW'(x) * WW'(ny);
+                   w_c[2] = WW'(nx) * WW'(y);
+                   w_c[3] = WW'(x) * WW'(y);
+                   end
     endcase
   end
 
@@ -295,12 +341,20 @@ module scaler_edge_directed #(
   // Data path registers (no reset needed)
   always_ff @(posedge clk) begin
     if (adv) begin
-      fx_q[0] <= fx;  fx_q[1] <= fx_q[0];                          // A, B
-      fy_q[0] <= fy;  fy_q[1] <= fy_q[0];
-      x_d[0] <= fx_q[1];  y_d[0] <= fy_q[1];  win_d[0] <= win;     // W
-      for (int d = 1; d < 3; d++) begin x_d[d] <= x_d[d-1]; y_d[d] <= y_d[d-1]; end
+      fx_q[0] <= fx; // A, B
+      fx_q[1] <= fx_q[0];
+      fy_q[0] <= fy;
+      fy_q[1] <= fy_q[0];
+      x_d[0] <= fx_q[1]; // W
+      y_d[0] <= fy_q[1];
+      win_d[0] <= win;
+      for (int d = 1; d < 3; d++) begin
+        x_d[d] <= x_d[d-1];
+        y_d[d] <= y_d[d-1];
+      end
       for (int d = 1; d < 5; d++) win_d[d] <= win_d[d-1];
-      d1_q <= d1_c;  d2_q <= d2_c;                                 // D
+      d1_q <= d1_c; // D
+      d2_q <= d2_c;
       k_q  <= k_c;                                                 // C
       for (int t = 0; t < 4; t++) w_q[t] <= w_c[t];                // G
       for (int c = 0; c < CHANNELS; c++) begin
@@ -323,19 +377,58 @@ module scaler_edge_directed #(
   scaler_ctrl #(.PIX_W(PIX_W), .ADDR_W(ADDR_W), .MAX_W(MAX_W), .MAX_H(MAX_H),
                 .IP_ID(IP_ID), .CAPS(CAPS), .NBUF(NBUF), .LB_ROWS(LB_ROWS),
                 .LB_TAPS(WIN_T), .LB_CTR(0), .LB_RND(1 << (16 - PHASE_BITS - 1))) u_ctrl (
-    .clk, .rst_n,
-    .s_axil_awaddr, .s_axil_awvalid, .s_axil_awready,
-    .s_axil_wdata,  .s_axil_wstrb,   .s_axil_wvalid, .s_axil_wready,
-    .s_axil_bresp,  .s_axil_bvalid,  .s_axil_bready,
-    .s_axil_araddr, .s_axil_arvalid, .s_axil_arready,
-    .s_axil_rdata,  .s_axil_rresp,   .s_axil_rvalid, .s_axil_rready,
-    .s_axis_tdata, .s_axis_tvalid, .s_axis_tready, .s_axis_tuser, .s_axis_tlast,
-    .fb_we, .fb_wx, .fb_wy, .fb_wdata,
-    .fb_wbuf, .gen_buf, .gen_start, .gen_done,
-    .lb_nxt_y(d_nxt_y), .lb_nxt_v(d_busy), .lb_o_y(d_y), .lb_o_v(d_valid),
-    .lb_a_y(a_y), .lb_a_v(v_q[0]), .lb_hold,
-    .cfg_in_w(in_w), .cfg_in_h(in_h), .cfg_out_w(out_w), .cfg_out_h(out_h),
-    .cfg_step_x(step_x), .cfg_step_y(step_y), .cfg_offs_x(offs_x), .cfg_offs_y(offs_y),
-    .ext_wr, .ext_waddr, .ext_wdata, .ext_rd, .ext_raddr, .ext_rdata(ext_rdata)
+    .clk,
+    .rst_n,
+    .s_axil_awaddr,
+    .s_axil_awvalid,
+    .s_axil_awready,
+    .s_axil_wdata,
+    .s_axil_wstrb,
+    .s_axil_wvalid,
+    .s_axil_wready,
+    .s_axil_bresp,
+    .s_axil_bvalid,
+    .s_axil_bready,
+    .s_axil_araddr,
+    .s_axil_arvalid,
+    .s_axil_arready,
+    .s_axil_rdata,
+    .s_axil_rresp,
+    .s_axil_rvalid,
+    .s_axil_rready,
+    .s_axis_tdata,
+    .s_axis_tvalid,
+    .s_axis_tready,
+    .s_axis_tuser,
+    .s_axis_tlast,
+    .fb_we,
+    .fb_wx,
+    .fb_wy,
+    .fb_wdata,
+    .fb_wbuf,
+    .gen_buf,
+    .gen_start,
+    .gen_done,
+    .lb_nxt_y(d_nxt_y),
+    .lb_nxt_v(d_busy),
+    .lb_o_y(d_y),
+    .lb_o_v(d_valid),
+    .lb_a_y(a_y),
+    .lb_a_v(v_q[0]),
+    .lb_hold,
+    .cfg_in_w(in_w),
+    .cfg_in_h(in_h),
+    .cfg_out_w(out_w),
+    .cfg_out_h(out_h),
+    .cfg_step_x(step_x),
+    .cfg_step_y(step_y),
+    .cfg_offs_x(offs_x),
+    .cfg_offs_y(offs_y),
+    .ext_wr,
+    .ext_waddr,
+    .ext_wdata,
+    .ext_rd,
+    .ext_raddr,
+    .ext_rdata(ext_rdata)
   );
 endmodule

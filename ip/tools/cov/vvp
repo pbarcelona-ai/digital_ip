@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# ***************
+# Filename: vvp
+# Author: FPGA Cores 4 U
+# Description: Coverage shim for vvp (see tools/cov/iverilog). Runs the
+#   launcher the iverilog shim wrote in place of the .vvp file, passing the
+#   plusargs through; anything else goes to the real vvp.
+# Date: 2026-10-09
+#
+# Usage: vvp [-n|-N|-s|-v] [-l <log>] <file> [+plusargs...]
+SHIM_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ARGS=("$@"); LOG=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -n|-N|-s|-v) shift ;;
+    -l) LOG="$2"; shift 2 ;;
+    -M*|-m*) break ;;                                   # VPI modules (cocotb): real vvp
+    *) break ;;
+  esac
+done
+if [ $# -gt 0 ] && head -2 "$1" 2>/dev/null | grep -q '^# cov-shim launcher'; then
+  case "$1" in */*) FILE="$1" ;; *) FILE="./$1" ;; esac; shift
+  if [ -n "$LOG" ]; then "$FILE" "$@" 2>&1 | tee "$LOG"; exit "${PIPESTATUS[0]}"; fi
+  exec "$FILE" "$@"
+fi
+PATH="$(printf '%s' "$PATH" | tr ':' '\n' | grep -vxF "$SHIM_DIR" | paste -sd: -)"
+exec vvp "${ARGS[@]}"

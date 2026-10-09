@@ -75,7 +75,8 @@ package golden_model_pkg;
     remap_cfg_t cfg;
     longint imgw_q16, imgh_q16;
     begin
-      cfg.w = w; cfg.h = h;
+      cfg.w = w;
+      cfg.h = h;
       imgw_q16 = longint'(w) <<< FRAC_BITS;
       imgh_q16 = longint'(h) <<< FRAC_BITS;
       cfg.cx_pix       = qmul_ref(center_x_q16, imgw_q16);
@@ -127,18 +128,32 @@ package golden_model_pkg;
           sy  = cfg.cy_pix + qmul_ref(syn, cfg.halfh_scaled);
 
           if (sx < 0) begin
-            x0 = 0; fx = 0;
+            x0 = 0;
+            fx = 0;
           end else begin
             x0s = sx >>> FRAC_BITS;
-            if (x0s > (cfg.w - 2)) begin x0 = cfg.w - 2; fx = 255; end
-            else begin x0 = int'(x0s); fx = bits_ref(sx, 15, 8); end
+            if (x0s > (cfg.w - 2)) begin
+              x0 = cfg.w - 2;
+              fx = 255;
+            end
+            else begin
+              x0 = int'(x0s);
+              fx = bits_ref(sx, 15, 8);
+            end
           end
           if (sy < 0) begin
-            y0 = 0; fy = 0;
+            y0 = 0;
+            fy = 0;
           end else begin
             y0s = sy >>> FRAC_BITS;
-            if (y0s > (cfg.h - 2)) begin y0 = cfg.h - 2; fy = 255; end
-            else begin y0 = int'(y0s); fy = bits_ref(sy, 15, 8); end
+            if (y0s > (cfg.h - 2)) begin
+              y0 = cfg.h - 2;
+              fy = 255;
+            end
+            else begin
+              y0 = int'(y0s);
+              fy = bits_ref(sy, 15, 8);
+            end
           end
 
           idx_tl = y0 * cfg.w + x0;
@@ -213,18 +228,32 @@ package golden_model_pkg;
                          x, y, sx, sy);
 
           if (sx < 0) begin
-            x0 = 0; fx = 0;
+            x0 = 0;
+            fx = 0;
           end else begin
             x0s = sx >>> FRAC_BITS;
-            if (x0s > (cfg.w - 2)) begin x0 = cfg.w - 2; fx = 255; end
-            else begin x0 = int'(x0s); fx = bits_ref(sx, 15, 8); end
+            if (x0s > (cfg.w - 2)) begin
+              x0 = cfg.w - 2;
+              fx = 255;
+            end
+            else begin
+              x0 = int'(x0s);
+              fx = bits_ref(sx, 15, 8);
+            end
           end
           if (sy < 0) begin
-            y0 = 0; fy = 0;
+            y0 = 0;
+            fy = 0;
           end else begin
             y0s = sy >>> FRAC_BITS;
-            if (y0s > (cfg.h - 2)) begin y0 = cfg.h - 2; fy = 255; end
-            else begin y0 = int'(y0s); fy = bits_ref(sy, 15, 8); end
+            if (y0s > (cfg.h - 2)) begin
+              y0 = cfg.h - 2;
+              fy = 255;
+            end
+            else begin
+              y0 = int'(y0s);
+              fy = bits_ref(sy, 15, 8);
+            end
           end
 
           idx_tl = y0 * cfg.w + x0;
@@ -300,18 +329,32 @@ package golden_model_pkg;
           sy  = cfg.cy_pix + qmul_ref(syn, cfg.halfh_scaled);
 
           if (sx < 0) begin
-            x0 = 0; fx = 0;
+            x0 = 0;
+            fx = 0;
           end else begin
             x0s = sx >>> FRAC_BITS;
-            if (x0s > (cfg.w - 2)) begin x0 = cfg.w - 2; fx = 255; end
-            else begin x0 = int'(x0s); fx = bits_ref(sx, 15, 8); end
+            if (x0s > (cfg.w - 2)) begin
+              x0 = cfg.w - 2;
+              fx = 255;
+            end
+            else begin
+              x0 = int'(x0s);
+              fx = bits_ref(sx, 15, 8);
+            end
           end
           if (sy < 0) begin
-            y0 = 0; fy = 0;
+            y0 = 0;
+            fy = 0;
           end else begin
             y0s = sy >>> FRAC_BITS;
-            if (y0s > (cfg.h - 2)) begin y0 = cfg.h - 2; fy = 255; end
-            else begin y0 = int'(y0s); fy = bits_ref(sy, 15, 8); end
+            if (y0s > (cfg.h - 2)) begin
+              y0 = cfg.h - 2;
+              fy = 255;
+            end
+            else begin
+              y0 = int'(y0s);
+              fy = bits_ref(sy, 15, 8);
+            end
           end
 
           idx_tl = y0 * cfg.w + x0;
@@ -352,8 +395,12 @@ package golden_model_pkg;
     longint t2, t3;
     longint NEG_HALF, HALF, ONE, ONE_HALF, NEG_ONE_HALF, TWO, TWO_HALF;
     begin
-      NEG_HALF = -32'sd32768; HALF = 32'sd32768; ONE = 32'sd65536;
-      ONE_HALF = 32'sd98304; NEG_ONE_HALF = -32'sd98304; TWO = 32'sd131072;
+      NEG_HALF = -32'sd32768;
+      HALF = 32'sd32768;
+      ONE = 32'sd65536;
+      ONE_HALF = 32'sd98304;
+      NEG_ONE_HALF = -32'sd98304;
+      TWO = 32'sd131072;
       TWO_HALF = 32'sd163840;
       t2 = qmul_ref(t, t);
       t3 = qmul_ref(t2, t);
@@ -409,27 +456,53 @@ package golden_model_pkg;
           sy  = cfg.cy_pix + qmul_ref(syn, cfg.halfh_scaled);
 
           if (sx < 0) begin
-            x0 = 1; tx = 0;
+            x0 = 1;
+            tx = 0;
           end else begin
             x0s = sx >>> FRAC_BITS;
-            if (x0s < 1)              begin x0 = 1; tx = 0; end
-            else if (x0s > cfg.w - 3) begin x0 = cfg.w - 3; tx = 0; end
-            else                      begin x0 = int'(x0s); tx = sx & 64'hFFFF; end
+            if (x0s < 1)              begin
+              x0 = 1;
+              tx = 0;
+            end
+            else if (x0s > cfg.w - 3) begin
+              x0 = cfg.w - 3;
+              tx = 0;
+            end
+            else                      begin
+              x0 = int'(x0s);
+              tx = sx & 64'hFFFF;
+            end
           end
           if (sy < 0) begin
-            y0 = 1; ty = 0;
+            y0 = 1;
+            ty = 0;
           end else begin
             y0s = sy >>> FRAC_BITS;
-            if (y0s < 1)              begin y0 = 1; ty = 0; end
-            else if (y0s > cfg.h - 3) begin y0 = cfg.h - 3; ty = 0; end
-            else                      begin y0 = int'(y0s); ty = sy & 64'hFFFF; end
+            if (y0s < 1)              begin
+              y0 = 1;
+              ty = 0;
+            end
+            else if (y0s > cfg.h - 3) begin
+              y0 = cfg.h - 3;
+              ty = 0;
+            end
+            else                      begin
+              y0 = int'(y0s);
+              ty = sy & 64'hFFFF;
+            end
           end
 
           cubic_weights_ref(tx, wx0, wx1, wx2, wx3);
           cubic_weights_ref(ty, wy0, wy1, wy2, wy3);
 
-          xm1 = x0-1; xp0 = x0; xp1 = x0+1; xp2 = x0+2;
-          ym1 = y0-1; yp0 = y0; yp1 = y0+1; yp2 = y0+2;
+          xm1 = x0-1;
+          xp0 = x0;
+          xp1 = x0+1;
+          xp2 = x0+2;
+          ym1 = y0-1;
+          yp0 = y0;
+          yp1 = y0+1;
+          yp2 = y0+2;
 
           rowR0 = longint'(src_r[ym1*cfg.w+xm1])*wx0 + longint'(src_r[ym1*cfg.w+xp0])*wx1
                 + longint'(src_r[ym1*cfg.w+xp1])*wx2 + longint'(src_r[ym1*cfg.w+xp2])*wx3;
@@ -462,11 +535,14 @@ package golden_model_pkg;
           finalG = qmul_ref(rowG0,wy0) + qmul_ref(rowG1,wy1) + qmul_ref(rowG2,wy2) + qmul_ref(rowG3,wy3);
           finalB = qmul_ref(rowB0,wy0) + qmul_ref(rowB1,wy1) + qmul_ref(rowB2,wy2) + qmul_ref(rowB3,wy3);
 
-          acc = finalR + 32768; acc = acc >>> 16;
+          acc = finalR + 32768;
+          acc = acc >>> 16;
           out_r[y*cfg.w+x] = (acc < 0) ? 8'd0 : (acc > 255) ? 8'd255 : 8'(acc);
-          acc = finalG + 32768; acc = acc >>> 16;
+          acc = finalG + 32768;
+          acc = acc >>> 16;
           out_g[y*cfg.w+x] = (acc < 0) ? 8'd0 : (acc > 255) ? 8'd255 : 8'(acc);
-          acc = finalB + 32768; acc = acc >>> 16;
+          acc = finalB + 32768;
+          acc = acc >>> 16;
           out_b[y*cfg.w+x] = (acc < 0) ? 8'd0 : (acc > 255) ? 8'd255 : 8'(acc);
         end
       end
@@ -576,26 +652,52 @@ package golden_model_pkg;
     real m[3][3], rhs[3];
     real d0, d1, d2, d3;
     begin
-      n = 400; r_max = 1.6;
-      s22=0; s24=0; s26=0; s44=0; s46=0; s66=0; b2=0; b4=0; b6=0;
+      n = 400;
+      r_max = 1.6;
+      s22=0;
+      s24=0;
+      s26=0;
+      s44=0;
+      s46=0;
+      s66=0;
+      b2=0;
+      b4=0;
+      b6=0;
       for (i = 1; i <= n; i = i + 1) begin
         ru = r_max * real'(i) / real'(n);
         rd = ru * (1.0 + kd1*ru*ru + kd2*ru*ru*ru*ru + kd3*ru*ru*ru*ru*ru*ru);
         if (rd > 1.0e-6) begin
           target = ru/rd - 1.0;
-          f2 = rd*rd; f4 = f2*f2; f6 = f4*f2;
-          s22 += f2*f2; s24 += f2*f4; s26 += f2*f6;
-          s44 += f4*f4; s46 += f4*f6; s66 += f6*f6;
-          b2  += f2*target; b4 += f4*target; b6 += f6*target;
+          f2 = rd*rd;
+          f4 = f2*f2;
+          f6 = f4*f2;
+          s22 += f2*f2;
+          s24 += f2*f4;
+          s26 += f2*f6;
+          s44 += f4*f4;
+          s46 += f4*f6;
+          s66 += f6*f6;
+          b2  += f2*target;
+          b4 += f4*target;
+          b6 += f6*target;
         end
       end
       // symmetric 3x3 system:
       // [s22 s24 s26][kc1]   [b2]
       // [s24 s44 s46][kc2] = [b4]
       // [s26 s46 s66][kc3]   [b6]
-      m[0][0]=s22; m[0][1]=s24; m[0][2]=s26; rhs[0]=b2;
-      m[1][0]=s24; m[1][1]=s44; m[1][2]=s46; rhs[1]=b4;
-      m[2][0]=s26; m[2][1]=s46; m[2][2]=s66; rhs[2]=b6;
+      m[0][0]=s22;
+      m[0][1]=s24;
+      m[0][2]=s26;
+      rhs[0]=b2;
+      m[1][0]=s24;
+      m[1][1]=s44;
+      m[1][2]=s46;
+      rhs[1]=b4;
+      m[2][0]=s26;
+      m[2][1]=s46;
+      m[2][2]=s66;
+      rhs[2]=b6;
 
       det = m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1])
           - m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0])
@@ -613,7 +715,9 @@ package golden_model_pkg;
          - m[0][1]*(m[1][0]*rhs[2]-rhs[1]*m[2][0])
          + rhs[0]*(m[1][0]*m[2][1]-m[1][1]*m[2][0]);
 
-      kc1 = d1/det; kc2 = d2/det; kc3 = d3/det;
+      kc1 = d1/det;
+      kc2 = d2/det;
+      kc3 = d3/det;
     end
   endtask
 
@@ -624,22 +728,36 @@ package golden_model_pkg;
     int x, y, cx, cy, ring, step, dxp, dyp;
     real r;
     begin
-      img_r = new[w*h]; img_g = new[w*h]; img_b = new[w*h];
+      img_r = new[w*h];
+      img_g = new[w*h];
+      img_b = new[w*h];
       step = (w/16 > 6) ? w/16 : 6;
-      cx = w/2; cy = h/2;
+      cx = w/2;
+      cy = h/2;
       for (y = 0; y < h; y = y+1) begin
         for (x = 0; x < w; x = x+1) begin
-          img_r[y*w+x] = 250; img_g[y*w+x] = 250; img_b[y*w+x] = 250;
+          img_r[y*w+x] = 250;
+          img_g[y*w+x] = 250;
+          img_b[y*w+x] = 250;
         end
       end
       for (x = 0; x < w; x = x + step)
-        for (y = 0; y < h; y = y+1) begin img_r[y*w+x]=40; img_g[y*w+x]=40; img_b[y*w+x]=40; end
+        for (y = 0; y < h; y = y+1) begin
+          img_r[y*w+x]=40;
+          img_g[y*w+x]=40;
+          img_b[y*w+x]=40;
+        end
       for (y = 0; y < h; y = y + step)
-        for (x = 0; x < w; x = x+1) begin img_r[y*w+x]=40; img_g[y*w+x]=40; img_b[y*w+x]=40; end
+        for (x = 0; x < w; x = x+1) begin
+          img_r[y*w+x]=40;
+          img_g[y*w+x]=40;
+          img_b[y*w+x]=40;
+        end
       for (ring = step; ring < (w<h?w:h)*0.6; ring = ring + step) begin
         for (y = 0; y < h; y = y+1) begin
           for (x = 0; x < w; x = x+1) begin
-            dxp = x-cx; dyp = y-cy;
+            dxp = x-cx;
+            dyp = y-cy;
             r = $sqrt(real'(dxp*dxp+dyp*dyp));
             if (r > real'(ring)-1.0 && r < real'(ring)+1.0) begin
               img_r[y*w+x] = (60 + (ring/step)*40) % 256;
@@ -673,9 +791,15 @@ package golden_model_pkg;
     int r, c;
     begin
       h33 = 1.0;
-      a[0][0]=h11; a[0][1]=h12; a[0][2]=h13;
-      a[1][0]=h21; a[1][1]=h22; a[1][2]=h23;
-      a[2][0]=h31; a[2][1]=h32; a[2][2]=h33;
+      a[0][0]=h11;
+      a[0][1]=h12;
+      a[0][2]=h13;
+      a[1][0]=h21;
+      a[1][1]=h22;
+      a[1][2]=h23;
+      a[2][0]=h31;
+      a[2][1]=h32;
+      a[2][2]=h33;
 
       det = a[0][0]*(a[1][1]*a[2][2]-a[1][2]*a[2][1])
           - a[0][1]*(a[1][0]*a[2][2]-a[1][2]*a[2][0])
@@ -695,9 +819,14 @@ package golden_model_pkg;
       // Normalize so the inverse's own [2][2] element is 1.0 (matching
       // this design's h33=1 convention -- a homography and any scalar
       // multiple of it represent the same projective transform).
-      i11 = adj[0][0]/det/(adj[2][2]/det); i12 = adj[0][1]/det/(adj[2][2]/det); i13 = adj[0][2]/det/(adj[2][2]/det);
-      i21 = adj[1][0]/det/(adj[2][2]/det); i22 = adj[1][1]/det/(adj[2][2]/det); i23 = adj[1][2]/det/(adj[2][2]/det);
-      i31 = adj[2][0]/det/(adj[2][2]/det); i32 = adj[2][1]/det/(adj[2][2]/det);
+      i11 = adj[0][0]/det/(adj[2][2]/det);
+      i12 = adj[0][1]/det/(adj[2][2]/det);
+      i13 = adj[0][2]/det/(adj[2][2]/det);
+      i21 = adj[1][0]/det/(adj[2][2]/det);
+      i22 = adj[1][1]/det/(adj[2][2]/det);
+      i23 = adj[1][2]/det/(adj[2][2]/det);
+      i31 = adj[2][0]/det/(adj[2][2]/det);
+      i32 = adj[2][1]/det/(adj[2][2]/det);
     end
   endtask
 
@@ -723,12 +852,19 @@ package golden_model_pkg;
     logic [7:0] trial_r[], trial_g[], trial_b[];
     int i, j, n, d;
     begin
-      kc1_candidates[0] = 0.05; kc1_candidates[1] = 0.10; kc1_candidates[2] = 0.15;
-      kc1_candidates[3] = 0.20; kc1_candidates[4] = 0.25; kc1_candidates[5] = 0.30;
+      kc1_candidates[0] = 0.05;
+      kc1_candidates[1] = 0.10;
+      kc1_candidates[2] = 0.15;
+      kc1_candidates[3] = 0.20;
+      kc1_candidates[4] = 0.25;
+      kc1_candidates[5] = 0.30;
       kc1_candidates[6] = 0.35;
-      kc2_candidates[0] = 0.0; kc2_candidates[1] = -0.02; kc2_candidates[2] = 0.02;
+      kc2_candidates[0] = 0.0;
+      kc2_candidates[1] = -0.02;
+      kc2_candidates[2] = 0.02;
       best_mae = 1.0e18;
-      best_kc1_q16 = 0; best_kc2_q16 = 0;
+      best_kc1_q16 = 0;
+      best_kc2_q16 = 0;
 
       for (i = 0; i < 7; i = i + 1) begin
         for (j = 0; j < 3; j = j + 1) begin
@@ -737,11 +873,18 @@ package golden_model_pkg;
           full_remap_ref(cfg, model_sel, kc1q, kc2q, 0, 0, 0,
                           0,0,0, 0,0,0, 0,0,
                           warp_r, warp_g, warp_b, trial_r, trial_g, trial_b);
-          acc = 0; n = cfg.w * cfg.h;
+          acc = 0;
+          n = cfg.w * cfg.h;
           for (int p = 0; p < n; p = p + 1) begin
-            d = int'(trial_r[p]) - int'(orig_r[p]); if (d<0) d=-d; acc += d;
-            d = int'(trial_g[p]) - int'(orig_g[p]); if (d<0) d=-d; acc += d;
-            d = int'(trial_b[p]) - int'(orig_b[p]); if (d<0) d=-d; acc += d;
+            d = int'(trial_r[p]) - int'(orig_r[p]);
+            if (d<0) d=-d;
+            acc += d;
+            d = int'(trial_g[p]) - int'(orig_g[p]);
+            if (d<0) d=-d;
+            acc += d;
+            d = int'(trial_b[p]) - int'(orig_b[p]);
+            if (d<0) d=-d;
+            acc += d;
           end
           mae = real'(acc) / real'(n*3);
           if (mae < best_mae) begin

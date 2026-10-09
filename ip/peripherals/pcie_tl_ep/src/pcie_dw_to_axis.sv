@@ -31,21 +31,31 @@ module pcie_dw_to_axis (
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      have_lo <= 1'b0; lo_q <= '0; m_tvalid <= 1'b0;
-      m_tdata <= '0; m_tkeep <= '0; m_tlast <= 1'b0;
+      have_lo <= 1'b0;
+      lo_q <= '0;
+      m_tvalid <= 1'b0;
+      m_tdata <= '0;
+      m_tkeep <= '0;
+      m_tlast <= 1'b0;
     end else begin
       if (m_tvalid & m_tready) m_tvalid <= 1'b0;
       if (dw_valid & can_emit) begin
         if (!have_lo) begin
           if (dw_last) begin                         // single DW packet end
-            m_tdata <= {32'd0, dw_data}; m_tkeep <= 8'h0F;
-            m_tlast <= 1'b1; m_tvalid <= 1'b1;
+            m_tdata <= {32'd0, dw_data};
+            m_tkeep <= 8'h0F;
+            m_tlast <= 1'b1;
+            m_tvalid <= 1'b1;
           end else begin
-            lo_q <= dw_data; have_lo <= 1'b1;
+            lo_q <= dw_data;
+            have_lo <= 1'b1;
           end
         end else begin                               // second DW: emit a beat
-          m_tdata <= {dw_data, lo_q}; m_tkeep <= 8'hFF;
-          m_tlast <= dw_last; m_tvalid <= 1'b1; have_lo <= 1'b0;
+          m_tdata <= {dw_data, lo_q};
+          m_tkeep <= 8'hFF;
+          m_tlast <= dw_last;
+          m_tvalid <= 1'b1;
+          have_lo <= 1'b0;
         end
       end
     end

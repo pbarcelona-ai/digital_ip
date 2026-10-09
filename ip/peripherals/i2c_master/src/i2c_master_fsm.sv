@@ -68,32 +68,75 @@ module i2c_master_fsm (
 
   // Command issue is combinational from the state (engine is idle here)
   always_comb begin
-    bc_valid = 1'b0; bc_cmd = C_START; bc_din = 1'b0;
+    bc_valid = 1'b0;
+    bc_cmd = C_START;
+    bc_din = 1'b0;
     case (state)
-      ST_START_I: begin bc_valid = 1'b1; bc_cmd = C_START; end
-      ST_TXB_I  : begin bc_valid = 1'b1; bc_cmd = C_WR; bc_din = sh[7]; end
-      ST_ACK_I  : begin bc_valid = 1'b1; bc_cmd = C_RD; end
-      ST_RBIT_I : begin bc_valid = 1'b1; bc_cmd = C_RD; end
-      ST_RACK_I : begin bc_valid = 1'b1; bc_cmd = C_WR; bc_din = (left == 16'd1); end
-      ST_STOP_I : begin bc_valid = 1'b1; bc_cmd = C_STOP; end
+      ST_START_I: begin
+        bc_valid = 1'b1;
+        bc_cmd = C_START;
+      end
+      ST_TXB_I  : begin
+        bc_valid = 1'b1;
+        bc_cmd = C_WR;
+        bc_din = sh[7];
+      end
+      ST_ACK_I  : begin
+        bc_valid = 1'b1;
+        bc_cmd = C_RD;
+      end
+      ST_RBIT_I : begin
+        bc_valid = 1'b1;
+        bc_cmd = C_RD;
+      end
+      ST_RACK_I : begin
+        bc_valid = 1'b1;
+        bc_cmd = C_WR;
+        bc_din = (left == 16'd1);
+      end
+      ST_STOP_I : begin
+        bc_valid = 1'b1;
+        bc_cmd = C_STOP;
+      end
       default   : ;
     endcase
   end
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-      state <= ST_IDLE; sh <= '0; nbit <= '0; left <= '0;
-      is_addr <= 1'b0; rw_q <= 1'b0; nostop_q <= 1'b0; nack_f <= 1'b0; arb_f <= 1'b0;
-      done_o <= 1'b0; nack_o <= 1'b0; arb_o <= 1'b0; bc_abort <= 1'b0;
+      state <= ST_IDLE;
+      sh <= '0;
+      nbit <= '0;
+      left <= '0;
+      is_addr <= 1'b0;
+      rw_q <= 1'b0;
+      nostop_q <= 1'b0;
+      nack_f <= 1'b0;
+      arb_f <= 1'b0;
+      done_o <= 1'b0;
+      nack_o <= 1'b0;
+      arb_o <= 1'b0;
+      bc_abort <= 1'b0;
     end else begin
-      done_o <= 1'b0; nack_o <= 1'b0; arb_o <= 1'b0; bc_abort <= 1'b0;
+      done_o <= 1'b0;
+      nack_o <= 1'b0;
+      arb_o <= 1'b0;
+      bc_abort <= 1'b0;
       if (bc_arb && state != ST_IDLE) begin      // lost arbitration: give up
-        arb_f <= 1'b1; bc_abort <= 1'b1; state <= ST_DONE;
+        arb_f <= 1'b1;
+        bc_abort <= 1'b1;
+        state <= ST_DONE;
       end else begin
         case (state)
           ST_IDLE: if (start_i & enable_i) begin
-            sh <= {addr_i, rw_i}; left <= len_i; rw_q <= rw_i; nostop_q <= nostop_i;
-            is_addr <= 1'b1; nbit <= '0; nack_f <= 1'b0; arb_f <= 1'b0;
+            sh <= {addr_i, rw_i};
+            left <= len_i;
+            rw_q <= rw_i;
+            nostop_q <= nostop_i;
+            is_addr <= 1'b1;
+            nbit <= '0;
+            nack_f <= 1'b0;
+            arb_f <= 1'b0;
             state <= ST_START_I;
           end
           ST_START_I: state <= ST_START_W;
@@ -101,15 +144,18 @@ module i2c_master_fsm (
           // ---- transmit one byte (address or data), MSB first ----
           ST_TXB_I: state <= ST_TXB_W;
           ST_TXB_W: if (bc_done) begin
-            sh <= {sh[6:0], 1'b0}; nbit <= nbit + 4'd1;
+            sh <= {sh[6:0], 1'b0};
+            nbit <= nbit + 4'd1;
             state <= state_t'((nbit == 4'd7) ? ST_ACK_I : ST_TXB_I);
           end
           ST_ACK_I: state <= ST_ACK_W;
           ST_ACK_W: if (bc_done) begin
             if (bc_dout) begin                       // NACK from the slave
-              nack_f <= 1'b1; state <= ST_STOP_I;
+              nack_f <= 1'b1;
+              state <= ST_STOP_I;
             end else if (is_addr) begin
-              is_addr <= 1'b0; nbit <= '0;
+              is_addr <= 1'b0;
+              nbit <= '0;
               if (left == 16'd0)  state <= ST_END;
               else if (rw_q)      state <= ST_RBIT_I;
               else                state <= ST_WFETCH;
@@ -119,18 +165,22 @@ module i2c_master_fsm (
             end
           end
           ST_WFETCH: if (s_tvalid) begin
-            sh <= s_tdata; nbit <= '0; state <= ST_TXB_I;
+            sh <= s_tdata;
+            nbit <= '0;
+            state <= ST_TXB_I;
           end
           // ---- receive one byte, then ACK (or NACK if last) ----
           ST_RBIT_I: state <= ST_RBIT_W;
           ST_RBIT_W: if (bc_done) begin
-            sh <= {sh[6:0], bc_dout}; nbit <= nbit + 4'd1;
+            sh <= {sh[6:0], bc_dout};
+            nbit <= nbit + 4'd1;
             state <= state_t'((nbit == 4'd7) ? ST_RPUSH : ST_RBIT_I);
           end
           ST_RPUSH: if (m_tready) state <= ST_RACK_I;
           ST_RACK_I: state <= ST_RACK_W;
           ST_RACK_W: if (bc_done) begin
-            left <= left - 16'd1; nbit <= '0;
+            left <= left - 16'd1;
+            nbit <= '0;
             state <= state_t'((left == 16'd1) ? ST_END : ST_RBIT_I);
           end
           // ---- finish ----
@@ -138,7 +188,9 @@ module i2c_master_fsm (
           ST_STOP_I: state <= ST_STOP_W;
           ST_STOP_W: if (bc_done) state <= ST_DONE;
           ST_DONE: begin
-            done_o <= 1'b1; nack_o <= nack_f; arb_o <= arb_f;
+            done_o <= 1'b1;
+            nack_o <= nack_f;
+            arb_o <= arb_f;
             state <= ST_IDLE;
           end
           default: state <= ST_IDLE;

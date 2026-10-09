@@ -185,67 +185,171 @@ module video_processor #(
   logic cpu_rst_n, pix_rst_n, core_rel;
   wire  core_arst_n = core_rel;
   assign core_rst_n_o = core_rel;
-  reset_sync u_rst_cpu (.clk(cpu_clk), .arst_i(arst_n), .rst_o(cpu_rst_n));
-  reset_sync u_rst_pix (.clk(pix_clk), .arst_i(core_arst_n), .rst_o(pix_rst_n));
+  reset_sync u_rst_cpu (
+    .clk(cpu_clk),
+    .arst_i(arst_n),
+    .rst_o(cpu_rst_n)
+  );
+  reset_sync u_rst_pix (
+    .clk(pix_clk),
+    .arst_i(core_arst_n),
+    .rst_o(pix_rst_n)
+  );
 `ifdef VP_CSI2_RX
   logic byte_rst_n;
-  reset_sync u_rst_byte (.clk(byte_clk), .arst_i(core_arst_n), .rst_o(byte_rst_n));
+  reset_sync u_rst_byte (
+    .clk(byte_clk),
+    .arst_i(core_arst_n),
+    .rst_o(byte_rst_n)
+  );
 `endif
 `ifdef VP_MIPI_TX
   logic tx_byte_rst_n;
-  reset_sync u_rst_tx_byte (.clk(tx_byte_clk), .arst_i(core_arst_n), .rst_o(tx_byte_rst_n));
+  reset_sync u_rst_tx_byte (
+    .clk(tx_byte_clk),
+    .arst_i(core_arst_n),
+    .rst_o(tx_byte_rst_n)
+  );
 `endif
 `ifdef VP_HDMI
   logic tmds_ser_rst_n;
-  reset_sync u_rst_tmds (.clk(tmds_ser_clk), .arst_i(core_arst_n), .rst_o(tmds_ser_rst_n));
+  reset_sync u_rst_tmds (
+    .clk(tmds_ser_clk),
+    .arst_i(core_arst_n),
+    .rst_o(tmds_ser_rst_n)
+  );
 `endif
 `ifdef VP_LVDS
   logic lvds_ser_rst_n;
-  reset_sync u_rst_lvds (.clk(lvds_ser_clk), .arst_i(core_arst_n), .rst_o(lvds_ser_rst_n));
+  reset_sync u_rst_lvds (
+    .clk(lvds_ser_clk),
+    .arst_i(core_arst_n),
+    .rst_o(lvds_ser_rst_n)
+  );
 `endif
 
   // ================================================================ control CPU
-  logic [15:0] c_awaddr, c_araddr; logic [31:0] c_wdata, c_rdata; logic [3:0] c_wstrb; logic [1:0] c_bresp, c_rresp;
+  logic [15:0] c_awaddr, c_araddr;
+  logic [31:0] c_wdata, c_rdata;
+  logic [3:0] c_wstrb;
+  logic [1:0] c_bresp, c_rresp;
   logic c_awvalid, c_awready, c_wvalid, c_wready, c_bvalid, c_bready, c_arvalid, c_arready, c_rvalid, c_rready;
-  logic irq_stats; logic [1:0] irq_frame;
+  logic irq_stats;
+  logic [1:0] irq_frame;
   py_soc #(.CLK_HZ(CPU_HZ), .UART_BAUD(UART_BAUD), .I2C_HZ(I2C_HZ), .SPI_HZ(SPI_HZ),
            .BOOT_ADDR(BOOT_ADDR), .FLASH_CLKDIV(FLASH_CLKDIV), .EXT_EN(1'b1)) u_cpu (
-    .clk(cpu_clk), .rst_n(cpu_rst_n),
-    .start_i(1'b0), .resume_i(1'b0), .resume_pc_i('0),
-    .done_o(), .result_o(), .trap_o(cpu_trap_o), .trap_cause_o(), .trap_pc_o(),
-    .boot_done_o, .boot_err_o, .boot_err_code_o(),
-    .flash_sclk_o, .flash_cs_n_o, .flash_mosi_o, .flash_miso_i,
-    .uart_txd_o, .uart_rxd_i,
-    .i2c_scl_i, .i2c_scl_o, .i2c_scl_t, .i2c_sda_i, .i2c_sda_o, .i2c_sda_t,
-    .spi_sclk_o, .spi_mosi_o, .spi_miso_i, .spi_cs_n_o,
-    .gpio_i, .gpio_o, .gpio_t, .wdt_reset_o, .core_rst_n_o(core_rel),
+    .clk(cpu_clk),
+    .rst_n(cpu_rst_n),
+    .start_i(1'b0),
+    .resume_i(1'b0),
+    .resume_pc_i('0),
+    .done_o(),
+    .result_o(),
+    .trap_o(cpu_trap_o),
+    .trap_cause_o(),
+    .trap_pc_o(),
+    .boot_done_o,
+    .boot_err_o,
+    .boot_err_code_o(),
+    .flash_sclk_o,
+    .flash_cs_n_o,
+    .flash_mosi_o,
+    .flash_miso_i,
+    .uart_txd_o,
+    .uart_rxd_i,
+    .i2c_scl_i,
+    .i2c_scl_o,
+    .i2c_scl_t,
+    .i2c_sda_i,
+    .i2c_sda_o,
+    .i2c_sda_t,
+    .spi_sclk_o,
+    .spi_mosi_o,
+    .spi_miso_i,
+    .spi_cs_n_o,
+    .gpio_i,
+    .gpio_o,
+    .gpio_t,
+    .wdt_reset_o,
+    .core_rst_n_o(core_rel),
     .ext_irq_i({ext_irq_i, irq_frame, irq_stats}),
-    .m_ext_axil_awaddr(c_awaddr), .m_ext_axil_awvalid(c_awvalid), .m_ext_axil_awready(c_awready),
-    .m_ext_axil_wdata(c_wdata), .m_ext_axil_wstrb(c_wstrb), .m_ext_axil_wvalid(c_wvalid), .m_ext_axil_wready(c_wready),
-    .m_ext_axil_bresp(c_bresp), .m_ext_axil_bvalid(c_bvalid), .m_ext_axil_bready(c_bready),
-    .m_ext_axil_araddr(c_araddr), .m_ext_axil_arvalid(c_arvalid), .m_ext_axil_arready(c_arready),
-    .m_ext_axil_rdata(c_rdata), .m_ext_axil_rresp(c_rresp), .m_ext_axil_rvalid(c_rvalid), .m_ext_axil_rready(c_rready));
+    .m_ext_axil_awaddr(c_awaddr),
+    .m_ext_axil_awvalid(c_awvalid),
+    .m_ext_axil_awready(c_awready),
+    .m_ext_axil_wdata(c_wdata),
+    .m_ext_axil_wstrb(c_wstrb),
+    .m_ext_axil_wvalid(c_wvalid),
+    .m_ext_axil_wready(c_wready),
+    .m_ext_axil_bresp(c_bresp),
+    .m_ext_axil_bvalid(c_bvalid),
+    .m_ext_axil_bready(c_bready),
+    .m_ext_axil_araddr(c_araddr),
+    .m_ext_axil_arvalid(c_arvalid),
+    .m_ext_axil_arready(c_arready),
+    .m_ext_axil_rdata(c_rdata),
+    .m_ext_axil_rresp(c_rresp),
+    .m_ext_axil_rvalid(c_rvalid),
+    .m_ext_axil_rready(c_rready)
+  );
 
   // isp_stats frame done (pix_clk pulse) -> intc source 12
-  pulse_sync u_irq_stats (.src_clk(pix_clk), .src_rst_n(pix_rst_n), .pulse_i(stats_done_o), .busy_o(), .drop_o(),
-    .dst_clk(cpu_clk), .dst_rst_n(cpu_rst_n), .pulse_o(irq_stats));
+  pulse_sync u_irq_stats (
+    .src_clk(pix_clk),
+    .src_rst_n(pix_rst_n),
+    .pulse_i(stats_done_o),
+    .busy_o(),
+    .drop_o(),
+    .dst_clk(cpu_clk),
+    .dst_rst_n(cpu_rst_n),
+    .pulse_o(irq_stats)
+  );
 
   // ================================================================ control interconnect (pix_clk)
-  logic [15:0] v_awaddr, v_araddr; logic [31:0] v_wdata, v_rdata; logic [3:0] v_wstrb; logic [1:0] v_bresp, v_rresp;
+  logic [15:0] v_awaddr, v_araddr;
+  logic [31:0] v_wdata, v_rdata;
+  logic [3:0] v_wstrb;
+  logic [1:0] v_bresp, v_rresp;
   logic v_awvalid, v_awready, v_wvalid, v_wready, v_bvalid, v_bready, v_arvalid, v_arready, v_rvalid, v_rready;
   axi4_lite_cdc #(.ADDR_W(16)) u_axil_cdc (
-    .s_clk(cpu_clk), .s_rst_n(cpu_rst_n),
-    .s_axil_awaddr(c_awaddr), .s_axil_awvalid(c_awvalid), .s_axil_awready(c_awready),
-    .s_axil_wdata(c_wdata), .s_axil_wstrb(c_wstrb), .s_axil_wvalid(c_wvalid), .s_axil_wready(c_wready),
-    .s_axil_bresp(c_bresp), .s_axil_bvalid(c_bvalid), .s_axil_bready(c_bready),
-    .s_axil_araddr(c_araddr), .s_axil_arvalid(c_arvalid), .s_axil_arready(c_arready),
-    .s_axil_rdata(c_rdata), .s_axil_rresp(c_rresp), .s_axil_rvalid(c_rvalid), .s_axil_rready(c_rready),
-    .m_clk(pix_clk), .m_rst_n(pix_rst_n),
-    .m_axil_awaddr(v_awaddr), .m_axil_awvalid(v_awvalid), .m_axil_awready(v_awready),
-    .m_axil_wdata(v_wdata), .m_axil_wstrb(v_wstrb), .m_axil_wvalid(v_wvalid), .m_axil_wready(v_wready),
-    .m_axil_bresp(v_bresp), .m_axil_bvalid(v_bvalid), .m_axil_bready(v_bready),
-    .m_axil_araddr(v_araddr), .m_axil_arvalid(v_arvalid), .m_axil_arready(v_arready),
-    .m_axil_rdata(v_rdata), .m_axil_rresp(v_rresp), .m_axil_rvalid(v_rvalid), .m_axil_rready(v_rready));
+    .s_clk(cpu_clk),
+    .s_rst_n(cpu_rst_n),
+    .s_axil_awaddr(c_awaddr),
+    .s_axil_awvalid(c_awvalid),
+    .s_axil_awready(c_awready),
+    .s_axil_wdata(c_wdata),
+    .s_axil_wstrb(c_wstrb),
+    .s_axil_wvalid(c_wvalid),
+    .s_axil_wready(c_wready),
+    .s_axil_bresp(c_bresp),
+    .s_axil_bvalid(c_bvalid),
+    .s_axil_bready(c_bready),
+    .s_axil_araddr(c_araddr),
+    .s_axil_arvalid(c_arvalid),
+    .s_axil_arready(c_arready),
+    .s_axil_rdata(c_rdata),
+    .s_axil_rresp(c_rresp),
+    .s_axil_rvalid(c_rvalid),
+    .s_axil_rready(c_rready),
+    .m_clk(pix_clk),
+    .m_rst_n(pix_rst_n),
+    .m_axil_awaddr(v_awaddr),
+    .m_axil_awvalid(v_awvalid),
+    .m_axil_awready(v_awready),
+    .m_axil_wdata(v_wdata),
+    .m_axil_wstrb(v_wstrb),
+    .m_axil_wvalid(v_wvalid),
+    .m_axil_wready(v_wready),
+    .m_axil_bresp(v_bresp),
+    .m_axil_bvalid(v_bvalid),
+    .m_axil_bready(v_bready),
+    .m_axil_araddr(v_araddr),
+    .m_axil_arvalid(v_arvalid),
+    .m_axil_arready(v_arready),
+    .m_axil_rdata(v_rdata),
+    .m_axil_rresp(v_rresp),
+    .m_axil_rvalid(v_rvalid),
+    .m_axil_rready(v_rready)
+  );
 
   // Slaves: 0 video_pipeline, then vision_system and blur_sharpen when built, then frame_counter
 `ifdef VP_VISION
@@ -269,31 +373,62 @@ module video_processor #(
   endfunction
   localparam logic [NS*32-1:0] VBASE = bus_map(1'b0);
   localparam logic [NS*32-1:0] VMASK = bus_map(1'b1);
-  logic [31:0] b_awaddr, b_araddr, b_wdata; logic [3:0] b_wstrb;
+  logic [31:0] b_awaddr, b_araddr, b_wdata;
+  logic [3:0] b_wstrb;
   logic [NS-1:0] b_awvalid, b_awready, b_wvalid, b_wready, b_bvalid, b_bready, b_arvalid, b_arready, b_rvalid, b_rready;
-  logic [NS*2-1:0] b_bresp, b_rresp; logic [NS*32-1:0] b_rdata;
+  logic [NS*2-1:0] b_bresp, b_rresp;
+  logic [NS*32-1:0] b_rdata;
   py_axil_xbar #(.NSLAVE(NS), .BASE(VBASE), .MASK(VMASK)) u_vbus (
-    .aclk(pix_clk), .aresetn(pix_rst_n),
-    .s_axil_awaddr({16'd0, v_awaddr}), .s_axil_awvalid(v_awvalid), .s_axil_awready(v_awready),
-    .s_axil_wdata(v_wdata), .s_axil_wstrb(v_wstrb), .s_axil_wvalid(v_wvalid), .s_axil_wready(v_wready),
-    .s_axil_bresp(v_bresp), .s_axil_bvalid(v_bvalid), .s_axil_bready(v_bready),
-    .s_axil_araddr({16'd0, v_araddr}), .s_axil_arvalid(v_arvalid), .s_axil_arready(v_arready),
-    .s_axil_rdata(v_rdata), .s_axil_rresp(v_rresp), .s_axil_rvalid(v_rvalid), .s_axil_rready(v_rready),
-    .m_axil_awaddr(b_awaddr), .m_axil_awvalid(b_awvalid), .m_axil_awready(b_awready),
-    .m_axil_wdata(b_wdata), .m_axil_wstrb(b_wstrb), .m_axil_wvalid(b_wvalid), .m_axil_wready(b_wready),
-    .m_axil_bresp(b_bresp), .m_axil_bvalid(b_bvalid), .m_axil_bready(b_bready),
-    .m_axil_araddr(b_araddr), .m_axil_arvalid(b_arvalid), .m_axil_arready(b_arready),
-    .m_axil_rdata(b_rdata), .m_axil_rresp(b_rresp), .m_axil_rvalid(b_rvalid), .m_axil_rready(b_rready));
+    .aclk(pix_clk),
+    .aresetn(pix_rst_n),
+    .s_axil_awaddr({16'd0, v_awaddr}),
+    .s_axil_awvalid(v_awvalid),
+    .s_axil_awready(v_awready),
+    .s_axil_wdata(v_wdata),
+    .s_axil_wstrb(v_wstrb),
+    .s_axil_wvalid(v_wvalid),
+    .s_axil_wready(v_wready),
+    .s_axil_bresp(v_bresp),
+    .s_axil_bvalid(v_bvalid),
+    .s_axil_bready(v_bready),
+    .s_axil_araddr({16'd0, v_araddr}),
+    .s_axil_arvalid(v_arvalid),
+    .s_axil_arready(v_arready),
+    .s_axil_rdata(v_rdata),
+    .s_axil_rresp(v_rresp),
+    .s_axil_rvalid(v_rvalid),
+    .s_axil_rready(v_rready),
+    .m_axil_awaddr(b_awaddr),
+    .m_axil_awvalid(b_awvalid),
+    .m_axil_awready(b_awready),
+    .m_axil_wdata(b_wdata),
+    .m_axil_wstrb(b_wstrb),
+    .m_axil_wvalid(b_wvalid),
+    .m_axil_wready(b_wready),
+    .m_axil_bresp(b_bresp),
+    .m_axil_bvalid(b_bvalid),
+    .m_axil_bready(b_bready),
+    .m_axil_araddr(b_araddr),
+    .m_axil_arvalid(b_arvalid),
+    .m_axil_arready(b_arready),
+    .m_axil_rdata(b_rdata),
+    .m_axil_rresp(b_rresp),
+    .m_axil_rvalid(b_rvalid),
+    .m_axil_rready(b_rready)
+  );
 
   // ================================================================ video pipeline
 `ifdef VP_HDMI
   logic [9:0]  tmds0, tmds1, tmds2, tmds_clk;
 `endif
 `ifdef VP_LVDS
-  logic [27:0] lvds_a, lvds_b; logic [6:0] lvds_clk_word; logic lvds_stb;
+  logic [27:0] lvds_a, lvds_b;
+  logic [6:0] lvds_clk_word;
+  logic lvds_stb;
 `endif
 `ifdef VP_INSERT
-  logic [23:0] im_d, ir_d; logic im_l, im_u, im_v, im_r, ir_l, ir_u, ir_v, ir_r;
+  logic [23:0] im_d, ir_d;
+  logic im_l, im_u, im_v, im_r, ir_l, ir_u, ir_v, ir_r;
 `endif
   logic eof_first, eof_last;                         // end-of-frame markers of the first / last stage
   video_pipeline #(
@@ -301,75 +436,195 @@ module video_processor #(
     .SCALER(SCALER), .DSI_LANES(DSI_LANES), .CSITX_LANES(CSITX_LANES)
   ) u_pipe (
 `ifdef VP_CSI2_RX
-    .byte_clk, .byte_rst_n, .lane_data_i(cam_lane_data_i), .lane_valid_i(cam_lane_valid_i),
+    .byte_clk,
+    .byte_rst_n,
+    .lane_data_i(cam_lane_data_i),
+    .lane_valid_i(cam_lane_valid_i),
 `endif
-    .pix_clk, .pix_rst_n,
-    .s_axil_awaddr(b_awaddr[14:0]), .s_axil_awvalid(b_awvalid[0]), .s_axil_awready(b_awready[0]),
-    .s_axil_wdata(b_wdata), .s_axil_wstrb(b_wstrb), .s_axil_wvalid(b_wvalid[0]), .s_axil_wready(b_wready[0]),
-    .s_axil_bresp(b_bresp[1:0]), .s_axil_bvalid(b_bvalid[0]), .s_axil_bready(b_bready[0]),
-    .s_axil_araddr(b_araddr[14:0]), .s_axil_arvalid(b_arvalid[0]), .s_axil_arready(b_arready[0]),
-    .s_axil_rdata(b_rdata[31:0]), .s_axil_rresp(b_rresp[1:0]), .s_axil_rvalid(b_rvalid[0]), .s_axil_rready(b_rready[0]),
+    .pix_clk,
+    .pix_rst_n,
+    .s_axil_awaddr(b_awaddr[14:0]),
+    .s_axil_awvalid(b_awvalid[0]),
+    .s_axil_awready(b_awready[0]),
+    .s_axil_wdata(b_wdata),
+    .s_axil_wstrb(b_wstrb),
+    .s_axil_wvalid(b_wvalid[0]),
+    .s_axil_wready(b_wready[0]),
+    .s_axil_bresp(b_bresp[1:0]),
+    .s_axil_bvalid(b_bvalid[0]),
+    .s_axil_bready(b_bready[0]),
+    .s_axil_araddr(b_araddr[14:0]),
+    .s_axil_arvalid(b_arvalid[0]),
+    .s_axil_arready(b_arready[0]),
+    .s_axil_rdata(b_rdata[31:0]),
+    .s_axil_rresp(b_rresp[1:0]),
+    .s_axil_rvalid(b_rvalid[0]),
+    .s_axil_rready(b_rready[0]),
 `ifdef VP_HDMI
-    .tmds0_o(tmds0), .tmds1_o(tmds1), .tmds2_o(tmds2), .tmds_clk_o(tmds_clk),
+    .tmds0_o(tmds0),
+    .tmds1_o(tmds1),
+    .tmds2_o(tmds2),
+    .tmds_clk_o(tmds_clk),
 `endif
 `ifdef VP_LVDS
-    .lvds_a_o(lvds_a), .lvds_b_o(lvds_b), .lvds_clk_word_o(lvds_clk_word), .lvds_stb_o(lvds_stb),
+    .lvds_a_o(lvds_a),
+    .lvds_b_o(lvds_b),
+    .lvds_clk_word_o(lvds_clk_word),
+    .lvds_stb_o(lvds_stb),
 `endif
 `ifdef VP_MIPI_TX
-    .tx_byte_clk, .tx_byte_rst_n,
+    .tx_byte_clk,
+    .tx_byte_rst_n,
 `endif
 `ifdef VP_DSI
-    .dsi_lane_data_o, .dsi_lane_valid_o, .dsi_hs_req_o, .dsi_tx_ready_i,
+    .dsi_lane_data_o,
+    .dsi_lane_valid_o,
+    .dsi_hs_req_o,
+    .dsi_tx_ready_i,
 `endif
 `ifdef VP_CSI2_TX
-    .csitx_lane_data_o, .csitx_lane_valid_o, .csitx_hs_req_o, .csitx_tx_ready_i,
+    .csitx_lane_data_o,
+    .csitx_lane_valid_o,
+    .csitx_hs_req_o,
+    .csitx_tx_ready_i,
 `endif
 `ifdef VP_INSERT
-    .ins_m_axis_tdata(im_d), .ins_m_axis_tlast(im_l), .ins_m_axis_tuser(im_u), .ins_m_axis_tvalid(im_v), .ins_m_axis_tready(im_r),
-    .ins_s_axis_tdata(ir_d), .ins_s_axis_tlast(ir_l), .ins_s_axis_tuser(ir_u), .ins_s_axis_tvalid(ir_v), .ins_s_axis_tready(ir_r),
+    .ins_m_axis_tdata(im_d),
+    .ins_m_axis_tlast(im_l),
+    .ins_m_axis_tuser(im_u),
+    .ins_m_axis_tvalid(im_v),
+    .ins_m_axis_tready(im_r),
+    .ins_s_axis_tdata(ir_d),
+    .ins_s_axis_tlast(ir_l),
+    .ins_s_axis_tuser(ir_u),
+    .ins_s_axis_tvalid(ir_v),
+    .ins_s_axis_tready(ir_r),
 `endif
-    .eof_in_o(eof_first), .eof_out_o(eof_last),
+    .eof_in_o(eof_first),
+    .eof_out_o(eof_last),
     .stats_done_o);
 
   // ================================================================ frame counters
   // Interrupt levels (pix_clk) synchronised to cpu_clk; the CPU clears them through STATUS.
   logic [1:0] irq_frame_pix;
-  frame_counter #(.NCH(2)) u_frame_cnt (.clk(pix_clk), .rst_n(pix_rst_n),
-    .eof_i({eof_last, eof_first}), .irq_o(irq_frame_pix),
-    .s_axil_awaddr(b_awaddr[7:0]), .s_axil_awvalid(b_awvalid[S_FC]), .s_axil_awready(b_awready[S_FC]),
-    .s_axil_wdata(b_wdata), .s_axil_wstrb(b_wstrb), .s_axil_wvalid(b_wvalid[S_FC]), .s_axil_wready(b_wready[S_FC]),
-    .s_axil_bresp(b_bresp[S_FC*2 +: 2]), .s_axil_bvalid(b_bvalid[S_FC]), .s_axil_bready(b_bready[S_FC]),
-    .s_axil_araddr(b_araddr[7:0]), .s_axil_arvalid(b_arvalid[S_FC]), .s_axil_arready(b_arready[S_FC]),
-    .s_axil_rdata(b_rdata[S_FC*32 +: 32]), .s_axil_rresp(b_rresp[S_FC*2 +: 2]), .s_axil_rvalid(b_rvalid[S_FC]),
-    .s_axil_rready(b_rready[S_FC]));
-  bit_sync u_irq_frame0 (.clk(cpu_clk), .rst_n(cpu_rst_n), .d_i(irq_frame_pix[0]), .q_o(irq_frame[0]));
-  bit_sync u_irq_frame1 (.clk(cpu_clk), .rst_n(cpu_rst_n), .d_i(irq_frame_pix[1]), .q_o(irq_frame[1]));
+  frame_counter #(.NCH(2)) u_frame_cnt (
+    .clk(pix_clk),
+    .rst_n(pix_rst_n),
+    .eof_i({eof_last, eof_first}),
+    .irq_o(irq_frame_pix),
+    .s_axil_awaddr(b_awaddr[7:0]),
+    .s_axil_awvalid(b_awvalid[S_FC]),
+    .s_axil_awready(b_awready[S_FC]),
+    .s_axil_wdata(b_wdata),
+    .s_axil_wstrb(b_wstrb),
+    .s_axil_wvalid(b_wvalid[S_FC]),
+    .s_axil_wready(b_wready[S_FC]),
+    .s_axil_bresp(b_bresp[S_FC*2 +: 2]),
+    .s_axil_bvalid(b_bvalid[S_FC]),
+    .s_axil_bready(b_bready[S_FC]),
+    .s_axil_araddr(b_araddr[7:0]),
+    .s_axil_arvalid(b_arvalid[S_FC]),
+    .s_axil_arready(b_arready[S_FC]),
+    .s_axil_rdata(b_rdata[S_FC*32 +: 32]),
+    .s_axil_rresp(b_rresp[S_FC*2 +: 2]),
+    .s_axil_rvalid(b_rvalid[S_FC]),
+    .s_axil_rready(b_rready[S_FC])
+  );
+  bit_sync u_irq_frame0 (
+    .clk(cpu_clk),
+    .rst_n(cpu_rst_n),
+    .d_i(irq_frame_pix[0]),
+    .q_o(irq_frame[0])
+  );
+  bit_sync u_irq_frame1 (
+    .clk(cpu_clk),
+    .rst_n(cpu_rst_n),
+    .d_i(irq_frame_pix[1]),
+    .q_o(irq_frame[1])
+  );
 
   // ================================================================ vision_system at the insert point
 `ifdef VP_INSERT
-  logic [23:0] vo_d; logic vo_l, vo_u, vo_v, vo_r;   // after vision_system (or straight from the insert point)
+  logic [23:0] vo_d; // after vision_system (or straight from the insert point)
+  logic vo_l, vo_u, vo_v, vo_r;
 `endif
 `ifdef VP_VISION
-  logic [23:0] va_d, vr_d; logic va_l, va_u, va_v, va_r, vr_l, vr_u, vr_v, vr_r;
-  vs_stream_adapter #(.RET_FIFO(VS_RET_FIFO)) u_vs_adapt (.clk(pix_clk), .rst_n(pix_rst_n),
-    .s_axis_tdata(im_d), .s_axis_tlast(im_l), .s_axis_tuser(im_u), .s_axis_tvalid(im_v), .s_axis_tready(im_r),
-    .m_axis_tdata(va_d), .m_axis_tlast(va_l), .m_axis_tuser(va_u), .m_axis_tvalid(va_v), .m_axis_tready(va_r),
-    .r_s_axis_tdata(vr_d), .r_s_axis_tlast(vr_l), .r_s_axis_tuser(vr_u), .r_s_axis_tvalid(vr_v), .r_s_axis_tready(vr_r),
-    .r_m_axis_tdata(vo_d), .r_m_axis_tlast(vo_l), .r_m_axis_tuser(vo_u), .r_m_axis_tvalid(vo_v), .r_m_axis_tready(vo_r),
-    .frames_o(), .drops_o(), .ret_drops_o());
+  logic [23:0] va_d, vr_d;
+  logic va_l, va_u, va_v, va_r, vr_l, vr_u, vr_v, vr_r;
+  vs_stream_adapter #(.RET_FIFO(VS_RET_FIFO)) u_vs_adapt (
+    .clk(pix_clk),
+    .rst_n(pix_rst_n),
+    .s_axis_tdata(im_d),
+    .s_axis_tlast(im_l),
+    .s_axis_tuser(im_u),
+    .s_axis_tvalid(im_v),
+    .s_axis_tready(im_r),
+    .m_axis_tdata(va_d),
+    .m_axis_tlast(va_l),
+    .m_axis_tuser(va_u),
+    .m_axis_tvalid(va_v),
+    .m_axis_tready(va_r),
+    .r_s_axis_tdata(vr_d),
+    .r_s_axis_tlast(vr_l),
+    .r_s_axis_tuser(vr_u),
+    .r_s_axis_tvalid(vr_v),
+    .r_s_axis_tready(vr_r),
+    .r_m_axis_tdata(vo_d),
+    .r_m_axis_tlast(vo_l),
+    .r_m_axis_tuser(vo_u),
+    .r_m_axis_tvalid(vo_v),
+    .r_m_axis_tready(vo_r),
+    .frames_o(),
+    .drops_o(),
+    .ret_drops_o()
+  );
   vision_system #(.ADDR_W(VS_ADDR_W), .USE_EXT_FB(VS_USE_EXT_FB)) u_vision (
-    .clk(pix_clk), .rst_n(pix_rst_n),
-    .s_axis_tvalid(va_v), .s_axis_tready(va_r), .s_axis_tdata(va_d), .s_axis_tlast(va_l), .s_axis_tuser(va_u),
-    .m_axis_tvalid(vr_v), .m_axis_tready(vr_r), .m_axis_tdata(vr_d), .m_axis_tlast(vr_l), .m_axis_tuser(vr_u),
-    .s_axil_awaddr(b_awaddr[7:0]), .s_axil_awvalid(b_awvalid[S_VS]), .s_axil_awready(b_awready[S_VS]),
-    .s_axil_wdata(b_wdata), .s_axil_wstrb(b_wstrb), .s_axil_wvalid(b_wvalid[S_VS]), .s_axil_wready(b_wready[S_VS]),
-    .s_axil_bresp(b_bresp[S_VS*2 +: 2]), .s_axil_bvalid(b_bvalid[S_VS]), .s_axil_bready(b_bready[S_VS]),
-    .s_axil_araddr(b_araddr[7:0]), .s_axil_arvalid(b_arvalid[S_VS]), .s_axil_arready(b_arready[S_VS]),
-    .s_axil_rdata(b_rdata[S_VS*32 +: 32]), .s_axil_rresp(b_rresp[S_VS*2 +: 2]), .s_axil_rvalid(b_rvalid[S_VS]), .s_axil_rready(b_rready[S_VS]),
-    .sdram_clk, .sdram_cke, .sdram_cs_n, .sdram_ras_n, .sdram_cas_n, .sdram_we_n,
-    .sdram_a, .sdram_ba, .sdram_dqm, .sdram_dq);
+    .clk(pix_clk),
+    .rst_n(pix_rst_n),
+    .s_axis_tvalid(va_v),
+    .s_axis_tready(va_r),
+    .s_axis_tdata(va_d),
+    .s_axis_tlast(va_l),
+    .s_axis_tuser(va_u),
+    .m_axis_tvalid(vr_v),
+    .m_axis_tready(vr_r),
+    .m_axis_tdata(vr_d),
+    .m_axis_tlast(vr_l),
+    .m_axis_tuser(vr_u),
+    .s_axil_awaddr(b_awaddr[7:0]),
+    .s_axil_awvalid(b_awvalid[S_VS]),
+    .s_axil_awready(b_awready[S_VS]),
+    .s_axil_wdata(b_wdata),
+    .s_axil_wstrb(b_wstrb),
+    .s_axil_wvalid(b_wvalid[S_VS]),
+    .s_axil_wready(b_wready[S_VS]),
+    .s_axil_bresp(b_bresp[S_VS*2 +: 2]),
+    .s_axil_bvalid(b_bvalid[S_VS]),
+    .s_axil_bready(b_bready[S_VS]),
+    .s_axil_araddr(b_araddr[7:0]),
+    .s_axil_arvalid(b_arvalid[S_VS]),
+    .s_axil_arready(b_arready[S_VS]),
+    .s_axil_rdata(b_rdata[S_VS*32 +: 32]),
+    .s_axil_rresp(b_rresp[S_VS*2 +: 2]),
+    .s_axil_rvalid(b_rvalid[S_VS]),
+    .s_axil_rready(b_rready[S_VS]),
+    .sdram_clk,
+    .sdram_cke,
+    .sdram_cs_n,
+    .sdram_ras_n,
+    .sdram_cas_n,
+    .sdram_we_n,
+    .sdram_a,
+    .sdram_ba,
+    .sdram_dqm,
+    .sdram_dq
+  );
 `elsif VP_INSERT
-  assign vo_d = im_d; assign vo_l = im_l; assign vo_u = im_u; assign vo_v = im_v; assign im_r = vo_r;
+  assign vo_d = im_d;
+  assign vo_l = im_l;
+  assign vo_u = im_u;
+  assign vo_v = im_v;
+  assign im_r = vo_r;
 `endif
 
   // ================================================================ blur_sharpen after vision_system
@@ -384,7 +639,11 @@ module video_processor #(
     .s_axis_tdata(vo_d), .s_axis_tlast(vo_l), .s_axis_tuser(vo_u), .s_axis_tvalid(vo_v), .s_axis_tready(vo_r),
     .m_axis_tdata(ir_d), .m_axis_tlast(ir_l), .m_axis_tuser(ir_u), .m_axis_tvalid(ir_v), .m_axis_tready(ir_r));
 `elsif VP_INSERT
-  assign ir_d = vo_d; assign ir_l = vo_l; assign ir_u = vo_u; assign ir_v = vo_v; assign vo_r = ir_r;
+  assign ir_d = vo_d;
+  assign ir_l = vo_l;
+  assign ir_u = vo_u;
+  assign ir_v = vo_v;
+  assign vo_r = ir_r;
 `endif
 
   // ================================================================ serializers
@@ -398,7 +657,13 @@ module video_processor #(
     .pix_clk, .pix_rst_n, .words_i({lvds_clk_word, lvds_a}), .stb_i(lvds_stb),
     .ser_clk(lvds_ser_clk), .ser_rst_n(lvds_ser_rst_n), .serial_o(lvds_a_serial_o));
   lvds_serializer #(.NL(5)) u_lvds_ser_b (
-    .pix_clk, .pix_rst_n, .words_i({lvds_clk_word, lvds_b}), .stb_i(lvds_stb),
-    .ser_clk(lvds_ser_clk), .ser_rst_n(lvds_ser_rst_n), .serial_o(lvds_b_serial_o));
+    .pix_clk,
+    .pix_rst_n,
+    .words_i({lvds_clk_word, lvds_b}),
+    .stb_i(lvds_stb),
+    .ser_clk(lvds_ser_clk),
+    .ser_rst_n(lvds_ser_rst_n),
+    .serial_o(lvds_b_serial_o)
+  );
 `endif
 endmodule

@@ -244,8 +244,8 @@ The reference testbench checks the following; the new testbench must cover at le
 System testbench for video_pipeline: MIPI CSI-2 camera in,
 HDMI / DVI out. A camera model mosaics a synthetic RGB scene into an
 RGGB RAW10 image (with black level and two defective pixels) and streams
-it continuously as CSI-2 frames on 2 D-PHY lanes (csi2_lane_driver).
-The TMDS output is decoded by hdmi_sink_model. A bit-exact model of the
+it continuously as CSI-2 frames on 2 D-PHY lanes (csi2_bfm).
+The TMDS output is decoded by hdmi_bfm. A bit-exact model of the
 chain (black level, white balance, defect correction, demosaic, CCM,
 gamma table, CSC, scaler) predicts every output pixel. Scenarios:
   1. full ISP, HDMI, RGB out (CSC bypassed), gamma 2.2 table
@@ -257,7 +257,7 @@ gamma table, CSC, scaler) predicts every output pixel. Scenarios:
   7. a camera header bit error: corrected, image unchanged
   8. the other outputs, same frame: LVDS (decoded OpenLDI VESA words),
      MIPI CSI-2 TX (looped into a second csi2_rx) and MIPI DSI
-     (dsi_rx_model; an init command first, then VSS / HSS and pixel
+     (dsi_bfm; an init command first, then VSS / HSS and pixel
      packets), all compared with the model
 The interfaces follow configuration.sv: excluded ones are not connected
 and not checked. Scenarios 1-7 need the camera input and HDMI; without
