@@ -17,7 +17,11 @@ module axi_stream_fifo_tb;
   logic [1:0] su = 0, mu;
   logic sv = 0, sr, mv, mr = 0;
   logic [6:0] lvl;
-  axi_stream_fifo #(.DATA_W(32), .USER_W(2), .DEPTH(32)) dut (
+  axi_stream_fifo #(
+    .DATA_W(32),
+    .USER_W(2),
+    .DEPTH(32)
+  ) dut (
     .aclk(clk),
     .aresetn(rst_n),
     .s_axis_tdata(sd),

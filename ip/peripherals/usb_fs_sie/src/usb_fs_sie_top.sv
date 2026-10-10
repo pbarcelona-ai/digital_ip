@@ -75,7 +75,11 @@ module usb_fs_sie_top #(
   logic [6*32-1:0] regs, rd;
   logic [5:0]      wr_pulse;
   logic [31:0]     wr_data;
-  usb_axil_regs #(.ADDR_W(8), .NREG(6), .RESET_VALS(RSTV)) u_regs (
+  usb_axil_regs #(
+    .ADDR_W(8),
+    .NREG(6),
+    .RESET_VALS(RSTV)
+  ) u_regs (
     .aclk,
     .aresetn,
     .s_axil_awaddr,
@@ -128,7 +132,10 @@ module usb_fs_sie_top #(
 
   logic rxf_ready, rxf_user;
   logic [LW-1:0] rxf_lvl, txf_lvl;
-  usb_axis_fifo #(.DATA_W(8), .DEPTH(FIFO_DEPTH)) u_rxf (
+  usb_axis_fifo #(
+    .DATA_W(8),
+    .DEPTH(FIFO_DEPTH)
+  ) u_rxf (
     .clk(aclk),
     .rst_n(aresetn),
     .s_tdata(rx_data),
@@ -148,7 +155,10 @@ module usb_fs_sie_top #(
   logic [7:0] tx_data;
   logic tx_valid, tx_last, tx_user, tx_pop;
   logic tx_done, txf_ready_unused;
-  usb_axis_fifo #(.DATA_W(8), .DEPTH(FIFO_DEPTH)) u_txf (
+  usb_axis_fifo #(
+    .DATA_W(8),
+    .DEPTH(FIFO_DEPTH)
+  ) u_txf (
     .clk(aclk),
     .rst_n(aresetn),
     .s_tdata(s_axis_tdata),

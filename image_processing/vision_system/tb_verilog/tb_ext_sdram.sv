@@ -42,8 +42,11 @@ module tb_ext_sdram;
   integer errors = 0;
 
   vision_system #(
-    .USE_EXT_FB(1'b1), .SDRAM_DQ_W(64), .SDRAM_A_W(13),
-    .SDRAM_COL_W(4), .SDRAM_INIT_WAIT_CYCLES(4),
+    .USE_EXT_FB(1'b1),
+    .SDRAM_DQ_W(64),
+    .SDRAM_A_W(13),
+    .SDRAM_COL_W(4),
+    .SDRAM_INIT_WAIT_CYCLES(4),
     .SDRAM_REFRESH_INTERVAL_CYCLES(60)
   ) dut (.*);
 

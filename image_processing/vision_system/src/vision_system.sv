@@ -178,31 +178,69 @@ module vision_system #(
   generate
     if (USE_EXT_FB) begin : g_ext_frame_buffer
       ext_frame_buffer #(
-        .PIX_W(barrel_pkg::PIX_W), .ADDR_W(ADDR_W), .SDRAM_DQ_W(SDRAM_DQ_W),
-        .SDRAM_A_W(SDRAM_A_W), .COL_W(SDRAM_COL_W), .FIFO_DEPTH(SDRAM_FIFO_DEPTH),
+        .PIX_W(barrel_pkg::PIX_W),
+        .ADDR_W(ADDR_W),
+        .SDRAM_DQ_W(SDRAM_DQ_W),
+        .SDRAM_A_W(SDRAM_A_W),
+        .COL_W(SDRAM_COL_W),
+        .FIFO_DEPTH(SDRAM_FIFO_DEPTH),
         .INIT_WAIT_CYCLES(SDRAM_INIT_WAIT_CYCLES),
-        .T_RP_CYCLES(SDRAM_T_RP_CYCLES), .T_RCD_CYCLES(SDRAM_T_RCD_CYCLES),
+        .T_RP_CYCLES(SDRAM_T_RP_CYCLES),
+        .T_RCD_CYCLES(SDRAM_T_RCD_CYCLES),
         .T_RAS_CYCLES(SDRAM_T_RAS_CYCLES),
-        .T_RFC_CYCLES(SDRAM_T_RFC_CYCLES), .T_MRD_CYCLES(SDRAM_T_MRD_CYCLES),
-        .T_WR_CYCLES(SDRAM_T_WR_CYCLES), .CAS_LATENCY(SDRAM_CAS_LATENCY),
+        .T_RFC_CYCLES(SDRAM_T_RFC_CYCLES),
+        .T_MRD_CYCLES(SDRAM_T_MRD_CYCLES),
+        .T_WR_CYCLES(SDRAM_T_WR_CYCLES),
+        .CAS_LATENCY(SDRAM_CAS_LATENCY),
         .REFRESH_INTERVAL_CYCLES(SDRAM_REFRESH_INTERVAL_CYCLES)
       ) u_fb (
-        .clk, .rst_n,
-        .wr_en(fb_wr_en), .wr_ready(fb_wr_ready), .wr_addr(fb_wr_addr), .wr_data(fb_wr_data), .wr_idle(fb_wr_idle),
-        .rd_en(fb_rd_en), .rd_ready(fb_rd_ready),
-        .rd_addr0(fb_rd_addr0), .rd_addr1(fb_rd_addr1), .rd_addr2(fb_rd_addr2), .rd_addr3(fb_rd_addr3),
-        .rd_valid(fb_rd_valid), .rd_data0(fb_rd_data0), .rd_data1(fb_rd_data1),
-        .rd_data2(fb_rd_data2), .rd_data3(fb_rd_data3),
-        .sdram_clk, .sdram_cke, .sdram_cs_n, .sdram_ras_n, .sdram_cas_n, .sdram_we_n,
-        .sdram_a, .sdram_ba, .sdram_dqm, .sdram_dq
+        .clk,
+        .rst_n,
+        .wr_en(fb_wr_en),
+        .wr_ready(fb_wr_ready),
+        .wr_addr(fb_wr_addr),
+        .wr_data(fb_wr_data),
+        .wr_idle(fb_wr_idle),
+        .rd_en(fb_rd_en),
+        .rd_ready(fb_rd_ready),
+        .rd_addr0(fb_rd_addr0),
+        .rd_addr1(fb_rd_addr1),
+        .rd_addr2(fb_rd_addr2),
+        .rd_addr3(fb_rd_addr3),
+        .rd_valid(fb_rd_valid),
+        .rd_data0(fb_rd_data0),
+        .rd_data1(fb_rd_data1),
+        .rd_data2(fb_rd_data2),
+        .rd_data3(fb_rd_data3),
+        .sdram_clk,
+        .sdram_cke,
+        .sdram_cs_n,
+        .sdram_ras_n,
+        .sdram_cas_n,
+        .sdram_we_n,
+        .sdram_a,
+        .sdram_ba,
+        .sdram_dqm,
+        .sdram_dq
       );
     end else begin : g_bram_frame_buffer
-      frame_buffer #(.PIX_W(barrel_pkg::PIX_W), .ADDR_W(ADDR_W)) u_fb (
+      frame_buffer #(
+        .PIX_W(barrel_pkg::PIX_W),
+        .ADDR_W(ADDR_W)
+      ) u_fb (
         .clk,
-        .wr_en(fb_wr_en), .wr_addr(fb_wr_addr), .wr_data(fb_wr_data),
+        .wr_en(fb_wr_en),
+        .wr_addr(fb_wr_addr),
+        .wr_data(fb_wr_data),
         .rd_en(fb_rd_en),
-        .rd_addr0(fb_rd_addr0), .rd_addr1(fb_rd_addr1), .rd_addr2(fb_rd_addr2), .rd_addr3(fb_rd_addr3),
-        .rd_data0(fb_rd_data0), .rd_data1(fb_rd_data1), .rd_data2(fb_rd_data2), .rd_data3(fb_rd_data3)
+        .rd_addr0(fb_rd_addr0),
+        .rd_addr1(fb_rd_addr1),
+        .rd_addr2(fb_rd_addr2),
+        .rd_addr3(fb_rd_addr3),
+        .rd_data0(fb_rd_data0),
+        .rd_data1(fb_rd_data1),
+        .rd_data2(fb_rd_data2),
+        .rd_data3(fb_rd_data3)
       );
       assign fb_wr_ready = 1'b1;
       assign fb_wr_idle = 1'b1;
@@ -225,7 +263,10 @@ module vision_system #(
   endgenerate
 
   // ---- input controller ---------------------------------------------
-  axis_in_ctrl #(.COORD_W(COORD_W), .ADDR_W(ADDR_W)) u_in (
+  axis_in_ctrl #(
+    .COORD_W(COORD_W),
+    .ADDR_W(ADDR_W)
+  ) u_in (
     .clk,
     .rst_n,
     .capture_en,
@@ -246,7 +287,11 @@ module vision_system #(
   );
 
   // ---- output controller ---------------------------------------------
-  axis_out_ctrl #(.COORD_W(COORD_W), .ADDR_W(ADDR_W), .USE_EXT_FB(USE_EXT_FB)) u_out (
+  axis_out_ctrl #(
+    .COORD_W(COORD_W),
+    .ADDR_W(ADDR_W),
+    .USE_EXT_FB(USE_EXT_FB)
+  ) u_out (
     .clk,
     .rst_n,
     .start_output,

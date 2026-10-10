@@ -20,7 +20,10 @@ module afifo_case #(
   logic [15:0] wdata, rdata;
   logic wvalid, wready, rvalid, rready;
   logic [$clog2(DEPTH):0] wlevel;
-  async_fifo #(.DATA_W(16), .DEPTH(DEPTH)) dut (
+  async_fifo #(
+    .DATA_W(16),
+    .DEPTH(DEPTH)
+  ) dut (
     .wclk,
     .wrst_n,
     .wdata,
@@ -90,11 +93,17 @@ endmodule
 module async_fifo_tb;
   int e1, e2;
   bit d1, d2;
-  afifo_case #(.WPER(10.0), .RPER(27.0)) c1 (
+  afifo_case #(
+    .WPER(10.0),
+    .RPER(27.0)
+  ) c1 (
     .errors(e1),
     .done(d1)
   );   // fast write
-  afifo_case #(.WPER(23.0), .RPER(7.0))  c2 (
+  afifo_case #(
+    .WPER(23.0),
+    .RPER(7.0)
+  )  c2 (
     .errors(e2),
     .done(d2)
   );   // fast read

@@ -14,7 +14,10 @@ module fallthrough_fifo_tb;
   logic [15:0] sd = 0, md;
   logic sv = 0, sr, mv, mr = 0;
   logic [3:0] lvl;
-  fallthrough_fifo #(.WIDTH(16), .DEPTH(8)) dut (
+  fallthrough_fifo #(
+    .WIDTH(16),
+    .DEPTH(8)
+  ) dut (
     .clk,
     .rst_n,
     .s_data_i(sd),

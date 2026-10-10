@@ -50,7 +50,17 @@ module blur_filter #(
   output logic               m_axis_tvalid,
   input  logic               m_axis_tready
 );
-  conv2d_filter #(.N(N), .C(C), .CW(CW), .COEF_W(COEF_W), .MAX_W(MAX_W), .BORDER(BORDER),
-    .ID(32'h424C_5552), .KERNEL(conv2d_pkg::blur_kernel(N)), .SHIFT(conv2d_pkg::blur_shift(N)),
-    .RESET_W(RESET_W), .RESET_H(RESET_H)) u_filter (.*);
+  conv2d_filter #(
+    .N(N),
+    .C(C),
+    .CW(CW),
+    .COEF_W(COEF_W),
+    .MAX_W(MAX_W),
+    .BORDER(BORDER),
+    .ID(32'h424C_5552),
+    .KERNEL(conv2d_pkg::blur_kernel(N)),
+    .SHIFT(conv2d_pkg::blur_shift(N)),
+    .RESET_W(RESET_W),
+    .RESET_H(RESET_H)
+  ) u_filter (.*);
 endmodule

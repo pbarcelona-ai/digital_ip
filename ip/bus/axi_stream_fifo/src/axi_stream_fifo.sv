@@ -38,7 +38,10 @@ module axi_stream_fifo #(
   logic [PW-1:0] pd, qd;
   logic mu;
   assign pd = {s_axis_tuser, s_axis_tkeep, s_axis_tdata};
-  ip_axis_fifo #(.DATA_W(PW), .DEPTH(DEPTH)) u_fifo (
+  ip_axis_fifo #(
+    .DATA_W(PW),
+    .DEPTH(DEPTH)
+  ) u_fifo (
     .clk(aclk),
     .rst_n(aresetn),
     .s_tdata(pd),

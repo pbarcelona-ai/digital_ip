@@ -66,7 +66,10 @@ module tb_axil_regbus;
   );
 
   // AXI4-Lite protocol checker + coverage on the DUT port
-  axil_checker #(.ADDR_W(ADDR_W), .NAME("s_axil")) u_axil_chk (
+  axil_checker #(
+    .ADDR_W(ADDR_W),
+    .NAME("s_axil")
+  ) u_axil_chk (
     .clk,
     .rst_n,
     .awaddr,

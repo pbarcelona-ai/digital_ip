@@ -34,7 +34,10 @@ module axis_dma_tb;
   logic m_tvalid, m_tready, m_tlast, s_tvalid, s_tready, s_tlast;
   logic tb_tvalid, tb_tlast;
   logic loop = 0;
-  axis_dma #(.MAX_BURST(16), .FIFO_DEPTH(32)) dut (
+  axis_dma #(
+    .MAX_BURST(16),
+    .FIFO_DEPTH(32)
+  ) dut (
     .aclk,
     .aresetn,
     .s_axil_awaddr,
@@ -89,7 +92,10 @@ module axis_dma_tb;
     .s_axis_tlast(s_tlast),
     .irq_o(irq)
   );
-  axi4_mem_model #(.WORDS(4096), .STALL(30)) mem (
+  axi4_mem_model #(
+    .WORDS(4096),
+    .STALL(30)
+  ) mem (
     .aclk,
     .aresetn,
     .awaddr,

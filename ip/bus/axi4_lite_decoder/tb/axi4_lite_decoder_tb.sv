@@ -16,7 +16,12 @@ module axi4_lite_decoder_tb;
   logic [AW-1:0] a = 0;
   logic [2:0] sel;
   logic miss, multi;
-  axi4_lite_decoder #(.ADDR_W(AW), .NSLAVE(3), .BASE(BASE), .MASK(MASK)) dut (
+  axi4_lite_decoder #(
+    .ADDR_W(AW),
+    .NSLAVE(3),
+    .BASE(BASE),
+    .MASK(MASK)
+  ) dut (
     .addr_i(a),
     .sel_o(sel),
     .miss_o(miss),

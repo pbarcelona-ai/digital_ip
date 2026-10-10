@@ -16,7 +16,11 @@ module true_dual_port_ram_tb;
   logic [5:0] aa = 0, ab = 0;
   logic [15:0] da = 0, db = 0, qa, qb;
   logic conf;
-  true_dual_port_ram #(.WIDTH(16), .DEPTH(64), .DUAL_CLOCK(1)) dut (
+  true_dual_port_ram #(
+    .WIDTH(16),
+    .DEPTH(64),
+    .DUAL_CLOCK(1)
+  ) dut (
     .clk_a(ca),
     .rst_a_n(ra_n),
     .en_a_i(ena),
@@ -37,7 +41,11 @@ module true_dual_port_ram_tb;
   logic [5:0] aa1 = 0, ab1 = 0;
   logic [15:0] da1 = 0, qa1, qb1;
   logic conf1;
-  true_dual_port_ram #(.WIDTH(16), .DEPTH(64), .DUAL_CLOCK(0)) dut1 (
+  true_dual_port_ram #(
+    .WIDTH(16),
+    .DEPTH(64),
+    .DUAL_CLOCK(0)
+  ) dut1 (
     .clk_a(ca),
     .rst_a_n(ra_n),
     .en_a_i(ena1),

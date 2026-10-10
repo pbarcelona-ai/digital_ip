@@ -33,7 +33,12 @@ module conv2d_filter_tb;
   logic [C*CW-1:0] sd, md;
   logic sl, su, sv, sr, ml, mu, mv, mr;
 
-  conv2d_filter #(.N(N), .C(C), .CW(CW), .MAX_W(64)) dut (
+  conv2d_filter #(
+    .N(N),
+    .C(C),
+    .CW(CW),
+    .MAX_W(64)
+  ) dut (
     .clk,
     .rst_n,
     .s_axil_awaddr,
@@ -68,7 +73,11 @@ module conv2d_filter_tb;
     .aclk(clk),
     .*
   );
-  axis_frame_bfm #(.DW(C*CW), .MAXW(MAXW), .MAXH(MAXH)) vid (
+  axis_frame_bfm #(
+    .DW(C*CW),
+    .MAXW(MAXW),
+    .MAXH(MAXH)
+  ) vid (
     .clk,
     .s_tdata(sd),
     .s_tlast(sl),
@@ -81,7 +90,13 @@ module conv2d_filter_tb;
     .m_tvalid(mv),
     .m_tready(mr)
   );
-  conv2d_ref #(.N(N), .C(C), .CW(CW), .MAXW(MAXW), .MAXH(MAXH)) mdl ();
+  conv2d_ref #(
+    .N(N),
+    .C(C),
+    .CW(CW),
+    .MAXW(MAXW),
+    .MAXH(MAXH)
+  ) mdl ();
 
   function automatic logic [25*32-1:0] random_kernel();
     logic [25*32-1:0] kp;

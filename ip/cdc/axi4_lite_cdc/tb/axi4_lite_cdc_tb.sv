@@ -72,7 +72,10 @@ module axi4_lite_cdc_tb;
   logic [8*32-1:0] regs;
   logic [7:0] wrp;
   logic [31:0] wrd;
-  ip_axil_regs #(.ADDR_W(8), .NREG(8)) slave (
+  ip_axil_regs #(
+    .ADDR_W(8),
+    .NREG(8)
+  ) slave (
     .aclk(mclk),
     .aresetn(mresetn),
     .s_axil_awaddr(m_awaddr),

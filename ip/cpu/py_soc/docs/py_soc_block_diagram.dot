@@ -4,30 +4,36 @@
 // Description: Architecture block diagram of py_soc, the Python-bytecode
 //   microcontroller: py_core, the flash boot loader, code / constant memory,
 //   the AXI4-Lite crossbar with its address map, every peripheral with its
-//   py_stream_port FIFOs and pins, interrupt sources, reset and the external
-//   window. Labels are the module (bold) and instance names in py_soc.sv.
+//   py_stream_port FIFOs and pins, interrupt sources, clock generator,
+//   reset and the external window. Arrows run from output to input: from
+//   an input pin into the logic, from the logic out to an output pin. Labels are the module (bold) and instance names in py_soc.sv.
 //   Blocks are pinned to a grid and edges are routed around them (layout=neato,
 //   splines=true): no line passes over or behind a block.
 //   Render: dot -Tsvg py_soc_block_diagram.dot -o py_soc_block_diagram.svg
-// Date: 2026-10-08
+// Date: 2026-10-09
 // ***************
 digraph py_soc {
   layout=neato;
   graph [splines=true, overlap=false, sep="+14", esep="+8", bgcolor="white", pad=0.4, fontname="Helvetica", labelloc=t, labeljust=l,
-         label=<<FONT POINT-SIZE="22"><B>py_soc</B></FONT><FONT POINT-SIZE="13">  Python-bytecode microcontroller (clk domain)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">Bold = module, grey = instance in py_soc.sv. Purple = AXI4-Lite (32-bit), thick = bus master path, red = interrupts, orange = boot. Every window is 256 bytes (MASK 0xFFFF_FF00) except EXT (64 KB).</FONT><BR ALIGN="LEFT"/>>];
+         label=<<FONT POINT-SIZE="22"><B>py_soc</B></FONT><FONT POINT-SIZE="13">  Python-bytecode microcontroller (CPU clock domain)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">Bold = module, grey = instance in py_soc.sv. Purple = AXI4-Lite (32-bit), thick = bus master path, red = interrupts, orange = boot. Every window is 256 bytes (MASK 0xFFFF_FF00) except EXT (64 KB).</FONT><BR ALIGN="LEFT"/>>];
   node [shape=plaintext, fontname="Helvetica", fontsize=10];
   edge [color="#374151", arrowsize=0.7, penwidth=1.2, fontname="Helvetica", fontsize=9];
   ctl [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#f3f4f6" COLOR="#6b7280">
-      <TR><TD ALIGN="LEFT">clk, rst_n</TD></TR>
-      <TR><TD ALIGN="LEFT">start_i, resume_i, resume_pc_i</TD></TR>
-      <TR><TD ALIGN="LEFT">done_o, result_o[33:0]</TD></TR>
-      <TR><TD ALIGN="LEFT">trap_o, trap_cause_o, trap_pc_o</TD></TR>
-      <TR><TD ALIGN="LEFT">boot_done_o, boot_err_o, boot_err_code_o</TD></TR>
-      <TR><TD ALIGN="LEFT">wdt_reset_o</TD></TR></TABLE>>, pos="0,11.5!"];
+      <TR><TD PORT="clk" ALIGN="LEFT">clk (reference clock), rst_n</TD></TR>
+      <TR><TD PORT="run" ALIGN="LEFT">start_i, resume_i, resume_pc_i</TD></TR></TABLE>>, pos="0,11.5!"];
+  ctl_out [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#f3f4f6" COLOR="#6b7280">
+      <TR><TD PORT="core" ALIGN="LEFT">done_o, result_o[33:0], trap_o, trap_cause_o, trap_pc_o</TD></TR>
+      <TR><TD PORT="boot" ALIGN="LEFT">boot_done_o, boot_err_o, boot_err_code_o</TD></TR></TABLE>>, pos="9.6,14.6!"];
+  cgen [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fef3c7" COLOR="#a16207">
+    <TR><TD><B>clk_gen</B> <FONT COLOR="#4b5563">g_clkgen.u_clkgen</FONT> (CLKGEN_EN = 1)</TD></TR>
+    <TR><TD ALIGN="LEFT"><B>dpll</B> u_pll_cpu: clk × CPU_M / (CPU_D × CPU_O)<BR ALIGN="LEFT"/>= CPU clock, runs all of py_soc<BR ALIGN="LEFT"/><B>dpll</B> u_pll_clk: CPU clock × CLK_M / (CLK_D × CLK_O[n])<BR ALIGN="LEFT"/>= clk_o[n], gated by SYSCTL CLK_EN</TD></TR></TABLE>>, pos="4.8,13.2!"];
+  p_clk [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD>cpu_clk_o, cpu_rst_n_o,<BR/>clk_o[NCLK-1:0]</TD></TR></TABLE>>, pos="4.8,15.6!"];
+  p_rst [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD>wdt_reset_o</TD></TR></TABLE>>, pos="0,6.4!"];
+  p_core [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD>core_rst_n_o</TD></TR></TABLE>>, pos="17.4,2.8!"];
   extirq [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD>ext_irq_i[3:0]</TD></TR></TABLE>>, pos="0,1.6!"];
   rst [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fef9c3" COLOR="#a16207">
     <TR><TD><B>reset logic</B> (py_soc.sv)</TD></TR>
-    <TR><TD ALIGN="LEFT">sys_rst_n = rst_n and no watchdog reset<BR ALIGN="LEFT"/>watchdog expiry stretched to WDT_RST_CYCLES<BR ALIGN="LEFT"/>then a fresh boot from flash</TD></TR></TABLE>>, pos="0,8.3!"];
+    <TR><TD ALIGN="LEFT">CPU reset = rst_n AND CPU PLL locked<BR ALIGN="LEFT"/>sys_rst_n = CPU reset and no watchdog reset<BR ALIGN="LEFT"/>watchdog expiry stretched to WDT_RST_CYCLES<BR ALIGN="LEFT"/>then a fresh boot from flash</TD></TR></TABLE>>, pos="0,8.3!"];
   boot [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ffedd5" COLOR="#c2410c">
       <TR><TD><B>py_boot</B> <FONT COLOR="#4b5563">u_boot</FONT></TD></TR>
       <TR><TD ALIGN="LEFT">bus master after reset:<BR ALIGN="LEFT"/>programs u_flash (0xC000),<BR ALIGN="LEFT"/>reads FLASH_D (0xC100)<BR ALIGN="LEFT"/>image "PYC1" at BOOT_ADDR:<BR ALIGN="LEFT"/>header, code, constants, checksum</TD></TR></TABLE>>, pos="4.8,10!"];
@@ -41,7 +47,7 @@ digraph py_soc {
       <TR><TD><B>const_mem</B></TD></TR><TR><TD>2**CONST_AW x 34 bit (256)<BR/>sync read, written by u_boot</TD></TR></TABLE>>, pos="4.8,4.6!"];
   xbar [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#ede9fe" COLOR="#7c3aed">
     <TR><TD COLSPAN="2"><B>py_axil_xbar</B> <FONT COLOR="#4b5563">u_xbar</FONT><BR/>1 master to NS slaves (<B>axi4_lite_decoder</B> ×2), DECERR when unmapped</TD></TR>
-    <TR><TD ALIGN="LEFT">0x0100</TD><TD ALIGN="LEFT">SYSCTL</TD></TR>
+    <TR><TD ALIGN="LEFT">0x0100</TD><TD ALIGN="LEFT">SYSCTL (+ clocks 0x114 / 0x118)</TD></TR>
     <TR><TD ALIGN="LEFT">0x1000</TD><TD ALIGN="LEFT">INTC</TD></TR>
     <TR><TD ALIGN="LEFT">0x2000</TD><TD ALIGN="LEFT">WDT</TD></TR>
     <TR><TD ALIGN="LEFT">0x3000 / 4000 / 5000</TD><TD ALIGN="LEFT">GPIO0 / 1 / 2</TD></TR>
@@ -50,7 +56,7 @@ digraph py_soc {
     <TR><TD ALIGN="LEFT">0xA000 / B000 (+0x100)</TD><TD ALIGN="LEFT">SPI0 / 1 (_D)</TD></TR>
     <TR><TD ALIGN="LEFT">0xC000 (+0x100)</TD><TD ALIGN="LEFT">FLASH (_D)</TD></TR>
     <TR><TD ALIGN="LEFT">0x1_0000-0x1_FFFF</TD><TD ALIGN="LEFT">EXT (EXT_EN = 1)</TD></TR></TABLE>>, pos="14.6,8.6!"];
-  sys [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ede9fe" COLOR="#7c3aed"><TR><TD><B>py_sysctl</B> <FONT COLOR="#4b5563">u_sys</FONT><BR/>RESET_CAUSE, BOOT_STATUS,<BR/>CYCLES, ID</TD></TR></TABLE>>, pos="14.6,4.2!"];
+  sys [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ede9fe" COLOR="#7c3aed"><TR><TD><B>py_sysctl</B> <FONT COLOR="#4b5563">u_sys</FONT><BR/>RESET_CAUSE, BOOT_STATUS, CYCLES, ID,<BR/>CORE_RESET, CLK_EN, CLK_STATUS</TD></TR></TABLE>>, pos="14.6,4.2!"];
   intc [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fee2e2" COLOR="#dc2626"><TR><TD><B>intc_top</B> <FONT COLOR="#4b5563">u_intc</FONT><BR/>NUM_IRQ = 16, edge / level,<BR/>enable, pending, vector</TD></TR></TABLE>>, pos="9.6,2.2!"];
   wdt [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ede9fe" COLOR="#7c3aed"><TR><TD><B>watchdog_top</B> <FONT COLOR="#4b5563">u_wdt</FONT><BR/>pre-timeout IRQ, reset</TD></TR></TABLE>>, pos="14.6,2.0!"];
   gpio [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#dcfce7" COLOR="#15803d"><TR><TD><B>gpio_top</B> ×3 <FONT COLOR="#4b5563">g_gpio[0..2].u_gpio</FONT><BR/>WIDTH = 32, edge interrupts</TD></TR></TABLE>>, pos="20.2,3.8!"];
@@ -63,14 +69,23 @@ digraph py_soc {
   flash [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ffedd5" COLOR="#c2410c">
       <TR><TD><B>spi_flash_ctrl</B> <FONT COLOR="#4b5563">u_flash</FONT><BR/>SPI NOR, mode 0, 3-byte address</TD><TD><B>py_stream_port</B> <FONT COLOR="#4b5563">u_flash_port</FONT><BR/>FLASH_TX/RX_FIFO</TD></TR></TABLE>>, pos="20.2,7.4!"];
   ext [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ffffff" COLOR="#7c3aed" STYLE="dashed"><TR><TD><B>external window</B> (EXT_EN)<BR/>m_ext_axil_* (16-bit offset)</TD></TR></TABLE>>, pos="20.2,5.6!"];
-  p_gpio [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD>gpio_i / gpio_o / gpio_t [95:0]</TD></TR></TABLE>>, pos="25.6,3.8!"];
-  p_uart [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD>uart_txd_o / uart_rxd_i [1:0]</TD></TR></TABLE>>, pos="25.6,13!"];
-  p_i2c [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD>i2c_scl_i/o/t, i2c_sda_i/o/t [1:0]</TD></TR></TABLE>>, pos="25.6,11.2!"];
-  p_spi [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD>spi_sclk_o, spi_mosi_o, spi_miso_i [1:0]<BR/>spi_cs_n_o [3:0]</TD></TR></TABLE>>, pos="25.6,9.4!"];
-  p_flash [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD>flash_sclk_o, flash_cs_n_o,<BR/>flash_mosi_o, flash_miso_i</TD></TR></TABLE>>, pos="25.6,7.4!"];
-  p_ext [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD>m_ext_axil_* (to the system)</TD></TR></TABLE>>, pos="25.6,5.6!"];
+  p_gpio [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD PORT="o" ALIGN="LEFT">out: gpio_o / gpio_t [95:0]</TD></TR><TR><TD PORT="i" ALIGN="LEFT">in: gpio_i [95:0]</TD></TR></TABLE>>, pos="25.6,3.8!"];
+  p_uart [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD PORT="o" ALIGN="LEFT">out: uart_txd_o [1:0]</TD></TR><TR><TD PORT="i" ALIGN="LEFT">in: uart_rxd_i [1:0]</TD></TR></TABLE>>, pos="25.6,13!"];
+  p_i2c [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD PORT="o" ALIGN="LEFT">out: i2c_scl_o/t, i2c_sda_o/t [1:0]</TD></TR><TR><TD PORT="i" ALIGN="LEFT">in: i2c_scl_i, i2c_sda_i [1:0]</TD></TR></TABLE>>, pos="25.6,11.2!"];
+  p_spi [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD PORT="o" ALIGN="LEFT">out: spi_sclk_o, spi_mosi_o [1:0], spi_cs_n_o [3:0]</TD></TR><TR><TD PORT="i" ALIGN="LEFT">in: spi_miso_i [1:0]</TD></TR></TABLE>>, pos="25.6,9.4!"];
+  p_flash [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD PORT="o" ALIGN="LEFT">out: flash_sclk_o, flash_cs_n_o, flash_mosi_o</TD></TR><TR><TD PORT="i" ALIGN="LEFT">in: flash_miso_i</TD></TR></TABLE>>, pos="25.6,7.4!"];
+  p_ext [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD PORT="o" ALIGN="LEFT">out: m_ext_axil_aw*, w*, ar*, bready, rready (to the system)</TD></TR><TR><TD PORT="i" ALIGN="LEFT">in: m_ext_axil_*ready, b*, r* (from the system)</TD></TR></TABLE>>, pos="25.6,5.6!"];
   legend [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3"><TR><TD COLSPAN="2"><B>Groups</B></TD></TR><TR><TD BGCOLOR="#ede9fe" WIDTH="18"> </TD><TD ALIGN="LEFT">processor, bus, system registers</TD></TR><TR><TD BGCOLOR="#ffedd5"> </TD><TD ALIGN="LEFT">boot / flash</TD></TR><TR><TD BGCOLOR="#e0f2fe"> </TD><TD ALIGN="LEFT">code / constant memory</TD></TR><TR><TD BGCOLOR="#dcfce7"> </TD><TD ALIGN="LEFT">peripherals (+ py_stream_port FIFOs)</TD></TR><TR><TD BGCOLOR="#fee2e2"> </TD><TD ALIGN="LEFT">interrupt controller</TD></TR><TR><TD BGCOLOR="#fef9c3"> </TD><TD ALIGN="LEFT">reset</TD></TR><TR><TD BGCOLOR="#f3f4f6"> </TD><TD ALIGN="LEFT">pins / control and status</TD></TR></TABLE>>, pos="0,4.8!"];
-  ctl -> rst [color="#a16207"];
+  ctl:clk -> cgen [color="#a16207", label="clk, rst_n"];
+  cgen -> rst [color="#a16207", label="CPU PLL locked"];
+  cgen -> p_clk [color="#a16207"];
+  sys -> cgen [color="#a16207", style=dashed, label="CLK_EN"];
+  cgen -> sys [color="#a16207", style=dashed, label="locked"];
+  sys -> p_core [color="#a16207", label="CORE_RESET AND locked"];
+  ctl:run -> core [style=dashed, label="start / resume"];
+  core -> ctl_out:core [label="result, trap"];
+  boot -> ctl_out:boot [color="#c2410c", label="boot status"];
+  rst -> p_rst [color="#a16207", label="watchdog reset"];
   rst -> boot [color="#a16207", style=dashed, label="sys_rst_n"];
   boot -> code [color="#c2410c", label="code_we"];
   boot -> cpool [color="#c2410c", label="const_we"];
@@ -89,8 +104,13 @@ digraph py_soc {
   xbar -> spi  [color="#7c3aed", label="regs + _D"];
   xbar -> flash [color="#7c3aed", label="0xC000 / 0xC100"];
   xbar -> ext  [color="#7c3aed", style=dashed, label="slave 20"];
-  gpio -> p_gpio [dir=both]; uart -> p_uart [dir=both]; i2c -> p_i2c [dir=both]; spi -> p_spi [dir=both];
-  flash -> p_flash [dir=both]; ext -> p_ext;
+  // pins: outputs from the logic to the pin, inputs from the pin into the logic
+  gpio:ne -> p_gpio:o:w [label="gpio_o, gpio_t"];  p_gpio:i:w -> gpio:se [label="gpio_i"];
+  uart:ne -> p_uart:o:w [label="txd"];  p_uart:i:w -> uart:se [label="rxd"];
+  i2c:ne -> p_i2c:o:w [label="scl_o/t, sda_o/t"];  p_i2c:i:w -> i2c:se [label="scl_i, sda_i"];
+  spi:ne -> p_spi:o:w [label="sclk, mosi, cs_n"];  p_spi:i:w -> spi:se [label="miso"];
+  flash:ne -> p_flash:o:w [label="sclk, cs_n, mosi"];  p_flash:i:w -> flash:se [label="miso"];
+  ext:ne -> p_ext:o:w [label="AW / W / AR"];  p_ext:i:w -> ext:se [label="B / R"];
   uart  -> intc [color="#dc2626", style=dashed, label="0, 1"];
   i2c   -> intc [color="#dc2626", style=dashed, label="2, 3"];
   spi   -> intc [color="#dc2626", style=dashed, label="4, 5"];

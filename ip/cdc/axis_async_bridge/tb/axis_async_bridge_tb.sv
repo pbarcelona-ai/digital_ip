@@ -17,7 +17,11 @@ module axis_async_bridge_tb;
   logic s_tlast, m_tlast;
   logic [0:0] s_tuser, m_tuser;
   logic s_tvalid, s_tready, m_tvalid, m_tready;
-  axis_async_bridge #(.DATA_W(32), .DEPTH(16), .USER_W(1)) dut (
+  axis_async_bridge #(
+    .DATA_W(32),
+    .DEPTH(16),
+    .USER_W(1)
+  ) dut (
     .s_clk,
     .s_rst_n,
     .s_axis_tdata(s_tdata),

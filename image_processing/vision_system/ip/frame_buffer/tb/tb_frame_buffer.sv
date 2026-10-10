@@ -59,7 +59,11 @@ module tb_frame_buffer;
   logic [ADDR_W-1:0] rd_addr0, rd_addr1, rd_addr2, rd_addr3;
   logic [PIX_W-1:0]  rd_data0, rd_data1, rd_data2, rd_data3;
 
-  frame_buffer #(.PIX_W(PIX_W), .DEPTH(DEPTH), .ADDR_W(ADDR_W)) dut (
+  frame_buffer #(
+    .PIX_W(PIX_W),
+    .DEPTH(DEPTH),
+    .ADDR_W(ADDR_W)
+  ) dut (
     .clk,
     .wr_en,
     .wr_addr,

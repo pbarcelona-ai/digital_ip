@@ -18,7 +18,7 @@ FLOW="$ROOT/../../ip/scripts/synth.ys"
 command -v yosys >/dev/null || { echo "yosys not found"; exit 1; }
 command -v sv2v  >/dev/null || { echo "sv2v not found"; exit 1; }
 OUT="$ROOT/build/yosys"; rm -rf "$OUT"; mkdir -p "$OUT"
-sv2v $(grep -Ev '^\s*(#|$)' "$ROOT/scripts/build.f" | sed "s#^#$ROOT/#") > "$OUT/video_processor.sv2v.v"
+sv2v -DSYNTHESIS $(grep -Ev '^\s*(#|$)' "$ROOT/scripts/build.f" | sed "s#^#$ROOT/#") > "$OUT/video_processor.sv2v.v"
 { echo "# generated from scripts/build.f via sv2v"
   echo "read_verilog -sv $OUT/video_processor.sv2v.v"
   echo "chparam -set VS_USE_EXT_FB 1 video_processor"

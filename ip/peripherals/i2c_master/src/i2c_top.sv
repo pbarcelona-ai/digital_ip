@@ -93,7 +93,11 @@ module i2c_top #(
   logic [5*32-1:0] regs, rd;   // regs use 5 words
   logic [4:0]      wr_pulse;
   logic [31:0]     wr_data;
-  ip_axil_regs #(.ADDR_W(8), .NREG(5), .RESET_VALS(RSTV)) u_regs (
+  ip_axil_regs #(
+    .ADDR_W(8),
+    .NREG(5),
+    .RESET_VALS(RSTV)
+  ) u_regs (
     .aclk,
     .aresetn,
     .s_axil_awaddr,
@@ -130,7 +134,10 @@ module i2c_top #(
   logic [7:0] txf_data;
   logic txf_valid, txf_ready, txf_last, txf_user;
   logic [LW-1:0] txf_lvl, rxf_lvl;
-  ip_axis_fifo #(.DATA_W(8), .DEPTH(FIFO_DEPTH)) u_txf (
+  ip_axis_fifo #(
+    .DATA_W(8),
+    .DEPTH(FIFO_DEPTH)
+  ) u_txf (
     .clk(aclk),
     .rst_n(aresetn),
     .s_tdata(s_axis_tdata),
@@ -149,7 +156,10 @@ module i2c_top #(
   // Read data FIFO
   logic [7:0] rx_data;
   logic rx_valid, rx_ready, rx_last, rxf_user;
-  ip_axis_fifo #(.DATA_W(8), .DEPTH(FIFO_DEPTH)) u_rxf (
+  ip_axis_fifo #(
+    .DATA_W(8),
+    .DEPTH(FIFO_DEPTH)
+  ) u_rxf (
     .clk(aclk),
     .rst_n(aresetn),
     .s_tdata(rx_data),

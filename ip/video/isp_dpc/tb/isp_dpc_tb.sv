@@ -23,7 +23,10 @@ module isp_dpc_tb;
   logic corr;
   logic [PW-1:0] sd, md;
   logic sl, su, sv, sr, ml, mu, mv, mr;
-  isp_dpc #(.PW(PW), .MAX_W(64)) dut (
+  isp_dpc #(
+    .PW(PW),
+    .MAX_W(64)
+  ) dut (
     .clk,
     .rst_n,
     .width_i(W),

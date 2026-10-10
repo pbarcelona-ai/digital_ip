@@ -62,9 +62,18 @@ module ps_case #(parameter real SP = 10.0, parameter real DP = 27.0) (output int
 endmodule
 module pulse_sync_tb;
   int e1, e2, e3;
-  ps_case #(.SP(10.0), .DP(27.0)) a (.errors(e1));
-  ps_case #(.SP(27.0), .DP(10.0)) b (.errors(e2));
-  ps_case #(.SP(10.0), .DP(10.0)) c (.errors(e3));
+  ps_case #(
+    .SP(10.0),
+    .DP(27.0)
+  ) a (.errors(e1));
+  ps_case #(
+    .SP(27.0),
+    .DP(10.0)
+  ) b (.errors(e2));
+  ps_case #(
+    .SP(10.0),
+    .DP(10.0)
+  ) c (.errors(e3));
   initial begin
     if ($test$plusargs("vcd")) begin
       $dumpfile("pulse_sync_tb.vcd");

@@ -92,7 +92,11 @@ module uart_top #(
   logic [4*32-1:0] regs, rd;
   logic [3:0]      wr_pulse;
   logic [31:0]     wr_data;
-  ip_axil_regs #(.ADDR_W(8), .NREG(4), .RESET_VALS(RSTV)) u_regs (
+  ip_axil_regs #(
+    .ADDR_W(8),
+    .NREG(4),
+    .RESET_VALS(RSTV)
+  ) u_regs (
     .aclk,
     .aresetn,
     .s_axil_awaddr,
@@ -140,7 +144,10 @@ module uart_top #(
   logic txf_valid, txf_ready, txf_last, txf_user;
   logic [LW-1:0] txf_level;
   logic txd, tx_busy;
-  ip_axis_fifo #(.DATA_W(8), .DEPTH(FIFO_DEPTH)) u_txf (
+  ip_axis_fifo #(
+    .DATA_W(8),
+    .DEPTH(FIFO_DEPTH)
+  ) u_txf (
     .clk(aclk),
     .rst_n(aresetn),
     .s_tdata(s_axis_tdata),
@@ -195,7 +202,10 @@ module uart_top #(
     .busy_o(rx_busy)
   );
 
-  ip_axis_fifo #(.DATA_W(8), .DEPTH(FIFO_DEPTH)) u_rxf (
+  ip_axis_fifo #(
+    .DATA_W(8),
+    .DEPTH(FIFO_DEPTH)
+  ) u_rxf (
     .clk(aclk),
     .rst_n(aresetn),
     .s_tdata(rx_data),

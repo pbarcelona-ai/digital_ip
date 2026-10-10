@@ -80,7 +80,10 @@ module hdmi_tx_tb;
     .tmds_clk_o(tc)
   );
   logic sink_en = 0;
-  hdmi_bfm #(.MAXW(64), .MAXH(16)) sink (
+  hdmi_bfm #(
+    .MAXW(64),
+    .MAXH(16)
+  ) sink (
     .clk,
     .en(sink_en),
     .ch0(t0),

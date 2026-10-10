@@ -161,8 +161,9 @@ box(1240, 566, 138, 302, "ctl", "Output stage",
     title_size=12, line_size=10.5)
 
 # ------------------------------------------------------------------ arrows
-# AXI-Lite -> regs
-arrow([(158, 155), (205, 155)], "#2563eb", label="", both=True)
+# AXI-Lite: requests (AW / W / AR) in to the registers, responses (B / R) out to the host
+arrow([(158, 147), (205, 147)], "#2563eb")
+arrow([(205, 163), (158, 163)], "#2563eb")
 # regs internal
 arrow([(505, 175), (530, 175)], "#2563eb")
 # cfg bus to coord_gen (and axis_out_ctrl)

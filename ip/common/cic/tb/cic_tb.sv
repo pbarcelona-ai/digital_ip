@@ -20,7 +20,12 @@ module cic_tb;
   logic vi = 0, vo, sat, rerr;
   logic signed [DW-1:0] din = 0;
   logic signed [OW-1:0] dout;
-  cic #(.N(N), .RMAX(RM), .DATA_W(DW), .OUT_W(OW)) dut (
+  cic #(
+    .N(N),
+    .RMAX(RM),
+    .DATA_W(DW),
+    .OUT_W(OW)
+  ) dut (
     .clk,
     .rst_n,
     .r_i(r),

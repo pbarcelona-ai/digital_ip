@@ -11,12 +11,20 @@
 //        (core_rst_n_o high); reset value 0 = held in reset. Cleared by every
 //        system reset (external or watchdog), so the firmware releases it
 //        again after each boot, once the CPU is initialised.
-//   Clock - aclk only. Reset - aresetn (system reset) for the bus, counter
-//   and CORE_RESET, por_n (external reset) for RESET_CAUSE. Latency -
-//   register access through axi4_lite_slave, 2-3 clocks. Errors - accesses
-//   beyond 0x10 return DECERR.
-// Date: 2026-10-01
-module py_sysctl (
+//   0x14 CLK_EN      [NCLK-1:0] enables of the clock generator outputs
+//        (clk_en_o, py_soc clk_o); reset value CLK_EN_RST
+//   0x18 CLK_STATUS  [0] clock generator outputs locked (clk_locked_i;
+//        1 without a clock generator), [1] clock generator present
+//   Clock - aclk only. Reset - aresetn (system reset) for the bus, counter,
+//   CORE_RESET and CLK_EN, por_n (external reset) for RESET_CAUSE.
+//   Latency - register access through axi4_lite_slave, 2-3 clocks.
+//   Errors - accesses beyond 0x18 return DECERR.
+// Date: 2026-10-09
+module py_sysctl #(
+  parameter int            NCLK       = 1,          // clock generator outputs (1..32)
+  parameter logic [NCLK-1:0] CLK_EN_RST = '1,       // CLK_EN reset value
+  parameter bit            CLKGEN     = 1'b0        // clock generator present (CLK_STATUS[1])
+) (
   input  logic        aclk,
   input  logic        aresetn,      // system reset (external or watchdog)
   input  logic        por_n,        // external reset only
@@ -25,6 +33,8 @@ module py_sysctl (
   input  logic        boot_err_i,
   input  logic [2:0]  boot_err_code_i,
   output logic        core_rst_n_o, // CORE_RESET[0]: reset of the logic outside py_soc (0 = in reset)
+  output logic [NCLK-1:0] clk_en_o, // CLK_EN
+  input  logic        clk_locked_i, // clock generator outputs locked
   // AXI4-Lite slave
   input  logic [7:0]  s_axil_awaddr,
   input  logic        s_axil_awvalid,
@@ -50,7 +60,11 @@ module py_sysctl (
   logic [7:0] wr_addr, rd_addr;
   logic [31:0] wr_data, rd_data;
   logic [3:0] wr_strb;
-  axi4_lite_slave #(.ADDR_W(8), .READ_WAIT(0), .MAP_WORDS(5)) u_slv (
+  axi4_lite_slave #(
+    .ADDR_W(8),
+    .READ_WAIT(0),
+    .MAP_WORDS(7)
+  ) u_slv (
     .aclk,
     .aresetn,
     .s_axil_awaddr,
@@ -98,6 +112,12 @@ module py_sysctl (
     else if (wr_en && wr_addr[4:2] == 3'd4)    core_rst_n_o <= wr_data[0];
   end
 
+  // Clock generator output enables
+  always_ff @(posedge aclk) begin
+    if (!aresetn)                              clk_en_o <= CLK_EN_RST;
+    else if (wr_en && wr_addr[4:2] == 3'd5)    clk_en_o <= wr_data[NCLK-1:0];
+  end
+
   logic [31:0] cycles;
   always_ff @(posedge aclk) begin
     if (!aresetn) cycles <= '0;
@@ -110,7 +130,10 @@ module py_sysctl (
       3'd1:    rd_data = {25'd0, boot_err_code_i, 2'd0, boot_err_i, boot_done_i};
       3'd2:    rd_data = cycles;
       3'd3:    rd_data = ID;
-      default: rd_data = {31'd0, core_rst_n_o};
+      3'd4:    rd_data = {31'd0, core_rst_n_o};
+      3'd5:    rd_data = 32'(clk_en_o);
+      3'd6:    rd_data = {30'd0, CLKGEN, clk_locked_i};
+      default: rd_data = '0;
     endcase
   end
 endmodule

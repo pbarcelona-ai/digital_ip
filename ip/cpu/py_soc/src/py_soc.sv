@@ -9,6 +9,11 @@
 //   py_stream_port with its own TX and RX FIFO (*_TX_FIFO / *_RX_FIFO
 //   words, default 16), so receive can be polled (RXDATA valid bit) or
 //   interrupt driven (IRQ_EN).
+//   Every peripheral instance has its own parameter set: UART0 / UART1
+//   (*_BAUD, *_TX_FIFO, *_RX_FIFO), I2C0 / I2C1 (*_HZ, FIFOs), SPI0 / SPI1
+//   (*_HZ, *_DATA_W, FIFOs), FLASH (FLASH_CLKDIV, FIFOs). The shared
+//   UART_BAUD, I2C_HZ, SPI_HZ and *_TX/RX_FIFO parameters are the defaults
+//   of both instances of a kind.
 //
 //   Boot - on every release of reset (rst_n or watchdog) py_boot owns the
 //   bus, copies the pyc.py image from flash address BOOT_ADDR into code and
@@ -45,12 +50,31 @@
 //   the whole system, watchdog included, so it comes back disabled like
 //   any other reset; the system then boots from flash again. Clock - clk
 //   only.
-// Date: 2026-10-01
+//
+//   Clock generator (CLKGEN_EN = 1) - clk is then the reference clock
+//   (REF_KHZ) and rst_n an asynchronous reset. clk_gen (ip/clock/clk_gen,
+//   two all-digital PLLs) makes the CPU clock REF_KHZ * CPU_M / (CPU_D *
+//   CPU_O), a clock multiplier, which runs everything in py_soc (cpu_clk_o),
+//   and NCLK further clocks clk_o[n] = CPU clock * CLK_M / (CLK_D *
+//   CLK_O[n]), phase aligned with each other. The system stays in reset
+//   until the CPU loop is locked (cpu_rst_n_o, synchronous to cpu_clk_o,
+//   for logic outside py_soc in the CPU clock domain). SYSCTL CLK_EN
+//   (0x0114) gates each clk_o[n] (reset value CLK_EN_RST), CLK_STATUS
+//   (0x0118) bit 0 shows the output loop locked, and core_rst_n_o is only
+//   released while it is (CORE_RESET AND locked, registered), so the core
+//   logic reset keeps a single source. With CLKGEN_EN = 0 (default) clk is
+//   the CPU clock, cpu_clk_o = clk, cpu_rst_n_o = rst_n, clk_o = 0. CLK_HZ
+//   is the CPU clock frequency in both cases (checked against the clock
+//   generator setting to 100 ppm). Defaults: CLKGEN_EN = 1, 33.333 MHz
+//   reference, CPU 200 MHz (x24 / 4), one 100 MHz output (x4 / 8); UART
+//   115200 baud, I2C 400 kHz, SPI 10 MHz, boot flash 33 MHz. For synthesis only the PLL oscillators
+//   (dpll_dco) are black boxes; see clk_gen.sv.
+// Date: 2026-10-09
 module py_soc #(
-  parameter int          CLK_HZ       = 100_000_000,
+  parameter int          CLK_HZ       = 200_000_000,  // CPU clock (with CLKGEN_EN: the generated one)
   parameter int          UART_BAUD    = 115_200,
-  parameter int          I2C_HZ       = 100_000,
-  parameter int          SPI_HZ       = 1_000_000,
+  parameter int          I2C_HZ       = 400_000,       // fast mode
+  parameter int          SPI_HZ       = 10_000_000,
   // Data-port FIFO depths in words (powers of two >= 2)
   parameter int          UART_TX_FIFO = 16,
   parameter int          UART_RX_FIFO = 16,
@@ -60,15 +84,59 @@ module py_soc #(
   parameter int          SPI_RX_FIFO  = 16,
   parameter int          FLASH_TX_FIFO = 16,
   parameter int          FLASH_RX_FIFO = 16,
+  // Per instance (default: the shared value above)
+  parameter int          UART0_BAUD    = UART_BAUD,
+  parameter int          UART0_TX_FIFO = UART_TX_FIFO,
+  parameter int          UART0_RX_FIFO = UART_RX_FIFO,
+  parameter int          UART1_BAUD    = UART_BAUD,
+  parameter int          UART1_TX_FIFO = UART_TX_FIFO,
+  parameter int          UART1_RX_FIFO = UART_RX_FIFO,
+  parameter int          I2C0_HZ       = I2C_HZ,
+  parameter int          I2C0_TX_FIFO  = I2C_TX_FIFO,
+  parameter int          I2C0_RX_FIFO  = I2C_RX_FIFO,
+  parameter int          I2C1_HZ       = I2C_HZ,
+  parameter int          I2C1_TX_FIFO  = I2C_TX_FIFO,
+  parameter int          I2C1_RX_FIFO  = I2C_RX_FIFO,
+  parameter int          SPI0_HZ       = SPI_HZ,
+  parameter int          SPI0_DATA_W   = 16,              // max bits per SPI word (<= 24)
+  parameter int          SPI0_TX_FIFO  = SPI_TX_FIFO,
+  parameter int          SPI0_RX_FIFO  = SPI_RX_FIFO,
+  parameter int          SPI1_HZ       = SPI_HZ,
+  parameter int          SPI1_DATA_W   = 16,
+  parameter int          SPI1_TX_FIFO  = SPI_TX_FIFO,
+  parameter int          SPI1_RX_FIFO  = SPI_RX_FIFO,
   parameter int          CODE_AW      = 13,
   parameter int          CONST_AW     = 8,
   parameter logic [23:0] BOOT_ADDR    = 24'h00_0000,   // image location in flash
-  parameter int          FLASH_CLKDIV = 4,             // boot sclk half period in clocks (>= 3)
+  parameter int          FLASH_CLKDIV = 3,             // boot sclk half period in clocks (>= 3): 33 MHz
   parameter int          WDT_RST_CYCLES = 32,          // system reset length after a watchdog expiry
-  parameter bit          EXT_EN       = 1'b0           // decode the external window (m_ext_axil_*)
+  parameter bit          EXT_EN       = 1'b0,          // decode the external window (m_ext_axil_*)
+  // Clock generator (CLKGEN_EN = 1): CPU clock = REF_KHZ * CPU_M / (CPU_D * CPU_O) (= CLK_HZ),
+  // clk_o[n] = CPU clock * CLK_M / (CLK_D * CLK_O[16n +: 16]); see clk_gen.sv
+  // Defaults: 33.333 MHz board clock -> CPU x24 / 4 = 200 MHz -> core clock x4 / 8 = 100 MHz
+  parameter bit          CLKGEN_EN    = 1'b1,
+  parameter longint      REF_KHZ      = 33_333,
+  parameter int          CPU_M        = 24,
+  parameter int          CPU_D        = 1,
+  parameter int          CPU_O        = 4,
+  parameter longint      CPU_VCO_MIN_KHZ = 400_000,
+  parameter longint      CPU_VCO_MAX_KHZ = 1_600_000,
+  parameter int          NCLK         = 1,
+  parameter int          CLK_M        = 4,
+  parameter int          CLK_D        = 1,
+  parameter logic [16*NCLK-1:0] CLK_O = {NCLK{16'd8}},
+  parameter longint      CLK_VCO_MIN_KHZ = 400_000,
+  parameter longint      CLK_VCO_MAX_KHZ = 1_600_000,
+  parameter logic [NCLK-1:0] CLK_EN_RST = '1,          // SYSCTL CLK_EN reset value
+  parameter int          CPU_MISMATCH_PPM = 0,         // PLL oscillator errors (simulation model)
+  parameter int          CLK_MISMATCH_PPM = 0
 ) (
-  input  logic                clk,
-  input  logic                rst_n,
+  input  logic                clk,             // CPU clock, or the reference clock (CLKGEN_EN = 1)
+  input  logic                rst_n,           // synchronous, or asynchronous (CLKGEN_EN = 1)
+  // Clocks (CLKGEN_EN = 1: generated; else cpu_clk_o = clk, clk_o = 0)
+  output logic                cpu_clk_o,
+  output logic                cpu_rst_n_o,     // CPU clock domain reset (synchronous to cpu_clk_o)
+  output logic [NCLK-1:0]     clk_o,
   // Run control / status
   input  logic                start_i,         // restart the program without re-booting
   input  logic                resume_i,
@@ -135,16 +203,72 @@ module py_soc #(
   // The peripherals' internal FIFOs are kept minimal: py_stream_port does the buffering
   localparam int IP_FIFO = 2;
 
+  // ---------------- clocks ----------------
+  // sclk runs everything in py_soc; srst_n is the reset synchronous to it
+  // CLK_HZ is the nominal CPU clock for the peripheral dividers; with the clock generator it must
+  // match REF_KHZ * CPU_M / (CPU_D * CPU_O) within 100 ppm (e.g. 33.333 MHz x 6 = 200 MHz)
+  localparam int SYS_HZ = CLK_HZ;
+  localparam longint PLL_HZ = REF_KHZ * 1000 * CPU_M / (CPU_D * CPU_O);
+  if (CLKGEN_EN && (PLL_HZ - CLK_HZ > CLK_HZ / 10_000 || CLK_HZ - PLL_HZ > CLK_HZ / 10_000)) begin : g_bad_hz
+    $error(
+    "py_soc: CLK_HZ %0d differs from the generated CPU clock %0d Hz",
+    CLK_HZ,
+    PLL_HZ
+  );
+  end
+  logic sclk, srst_n, clk_ok, core_rel;
+  logic [NCLK-1:0] clk_en;
+  if (CLKGEN_EN) begin : g_clkgen
+    logic cpu_locked;
+    clk_gen #(
+      .REF_KHZ(REF_KHZ),
+      .CPU_M(CPU_M),
+      .CPU_D(CPU_D),
+      .CPU_O(CPU_O),
+      .CPU_VCO_MIN_KHZ(CPU_VCO_MIN_KHZ),
+      .CPU_VCO_MAX_KHZ(CPU_VCO_MAX_KHZ),
+      .NCLK(NCLK),
+      .CLK_M(CLK_M),
+      .CLK_D(CLK_D),
+      .CLK_O(CLK_O),
+      .CLK_VCO_MIN_KHZ(CLK_VCO_MIN_KHZ),
+      .CLK_VCO_MAX_KHZ(CLK_VCO_MAX_KHZ),
+      .CPU_MISMATCH_PPM(CPU_MISMATCH_PPM),
+      .CLK_MISMATCH_PPM(CLK_MISMATCH_PPM)
+    ) u_clkgen (
+      .ref_clk(clk),
+      .arst_n(rst_n),
+      .clk_en_i(clk_en),
+      .cpu_clk_o(sclk),
+      .clk_o,
+      .cpu_locked_o(cpu_locked),
+      .clk_locked_o(clk_ok)
+    );
+    assign srst_n = cpu_locked;                        // arst_n AND locked, released on sclk
+    // core logic reset: CORE_RESET while the output clocks are locked, one register (glitch free)
+    always_ff @(posedge sclk or negedge srst_n)
+      if (!srst_n) core_rst_n_o <= 1'b0;
+      else         core_rst_n_o <= core_rel & clk_ok;
+  end else begin : g_no_clkgen
+    assign sclk   = clk;
+    assign srst_n = rst_n;
+    assign clk_ok = 1'b1;
+    assign clk_o  = '0;
+    assign core_rst_n_o = core_rel;
+  end
+  assign cpu_clk_o   = sclk;
+  assign cpu_rst_n_o = srst_n;
+
   // ---------------- reset ----------------
   // The watchdog is reset by its own expiry, so its output is only a trigger:
   // the stretch counter here holds the system in reset.
   logic sys_rst_n, wdt_rst;
   logic [$clog2(WDT_RST_CYCLES+1)-1:0] rst_cnt;
-  always_ff @(posedge clk) begin
-    if (!rst_n)          rst_cnt <= '0;
+  always_ff @(posedge sclk) begin
+    if (!srst_n)         rst_cnt <= '0;
     else if (wdt_rst)    rst_cnt <= WDT_RST_CYCLES;
     else if (rst_cnt != 0) rst_cnt <= rst_cnt - 1'b1;
-    sys_rst_n <= rst_n && !wdt_rst && rst_cnt == 0;
+    sys_rst_n <= srst_n && !wdt_rst && rst_cnt == 0;
   end
   assign wdt_reset_o = wdt_rst || rst_cnt != 0;
 
@@ -165,9 +289,15 @@ module py_soc #(
   logic [3:0] l_wstrb;
   logic        l_awvalid, l_wvalid, l_bready, l_arvalid, l_rready;
 
-  py_boot #(.CODE_AW(CODE_AW), .CONST_AW(CONST_AW), .FLASH_REGS(32'h0000_C000), .FLASH_PORT(32'h0000_C100),
-            .BOOT_ADDR(BOOT_ADDR), .FLASH_CLKDIV(FLASH_CLKDIV)) u_boot (
-    .clk,
+  py_boot #(
+    .CODE_AW(CODE_AW),
+    .CONST_AW(CONST_AW),
+    .FLASH_REGS(32'h0000_C000),
+    .FLASH_PORT(32'h0000_C100),
+    .BOOT_ADDR(BOOT_ADDR),
+    .FLASH_CLKDIV(FLASH_CLKDIV)
+  ) u_boot (
+    .clk(sclk),
     .rst_n(sys_rst_n),
     .busy_o(boot_busy),
     .done_o(boot_done),
@@ -200,7 +330,7 @@ module py_soc #(
   assign boot_done_o = boot_done;
 
   // Start the core in the clock after a successful copy
-  always_ff @(posedge clk) boot_done_q <= sys_rst_n & boot_done;
+  always_ff @(posedge sclk) boot_done_q <= sys_rst_n & boot_done;
   wire boot_start = boot_done & ~boot_done_q;
 
   // ---------------- core ----------------
@@ -215,8 +345,11 @@ module py_soc #(
   trap_e cause;
   assign trap_cause_o = cause;
 
-  py_core #(.CODE_AW(CODE_AW), .CONST_AW(CONST_AW)) u_core (
-    .clk,
+  py_core #(
+    .CODE_AW(CODE_AW),
+    .CONST_AW(CONST_AW)
+  ) u_core (
+    .clk(sclk),
     .rst_n(sys_rst_n),
     .start_i((start_i & boot_done) | boot_start),
     .resume_i,
@@ -268,7 +401,7 @@ module py_soc #(
   // ---------------- code / constant memory (written only by the boot loader) ----------------
   logic [7:0]  code_mem  [2**CODE_AW];
   logic [33:0] const_mem [2**CONST_AW];
-  always_ff @(posedge clk) begin
+  always_ff @(posedge sclk) begin
     if (code_we)  code_mem[code_waddr]   <= code_wdata;
     if (const_we) const_mem[const_waddr] <= const_wdata;
     code_q  <= code_mem[code_addr];
@@ -299,8 +432,12 @@ module py_soc #(
   logic [NS*2-1:0] bresp, rresp;
   logic [NS*32-1:0] rdata;
 
-  py_axil_xbar #(.NSLAVE(NS), .BASE(BASE), .MASK(MASK)) u_xbar (
-    .aclk(clk),
+  py_axil_xbar #(
+    .NSLAVE(NS),
+    .BASE(BASE),
+    .MASK(MASK)
+  ) u_xbar (
+    .aclk(sclk),
     .aresetn(sys_rst_n),
     .s_axil_awaddr(c_awaddr),
     .s_axil_awvalid(c_awvalid),
@@ -381,40 +518,66 @@ module py_soc #(
   end
 
   // ---------------- system control ----------------
-  py_sysctl u_sys (.aclk(clk),
-  .aresetn(sys_rst_n),
-  .por_n(rst_n),
-  .wdt_reset_i(wdt_reset_o),
+  py_sysctl #(
+    .NCLK(NCLK),
+    .CLK_EN_RST(CLK_EN_RST),
+    .CLKGEN(CLKGEN_EN)
+  ) u_sys (
+    .aclk(sclk),
+    .aresetn(sys_rst_n),
+    .por_n(srst_n),
+    .wdt_reset_i(wdt_reset_o),
     .boot_done_i(boot_done),
     .boot_err_i(boot_err_o),
     .boot_err_code_i(boot_err_code_o),
-    .core_rst_n_o, `PY_AXIL_PORT(S_SYS));
+    .core_rst_n_o(core_rel),
+    .clk_en_o(clk_en),
+    .clk_locked_i(clk_ok),
+    `PY_AXIL_PORT(S_SYS));
 
   // ---------------- interrupt controller ----------------
-  intc_top #(.NUM_IRQ(16)) u_intc (.aclk(clk),
-  .aresetn(sys_rst_n), `PY_AXIL_PORT(S_INTC),
+  intc_top #(.NUM_IRQ(16)) u_intc (
+    .aclk(sclk),
+    .aresetn(sys_rst_n),
+    `PY_AXIL_PORT(S_INTC),
     .irq_i(irq_src),
     .irq_o(irq));
 
   // ---------------- watchdog ----------------
-  watchdog_top u_wdt (.aclk(clk),
-  .aresetn(sys_rst_n), `PY_AXIL_PORT(S_WDT),
+  watchdog_top u_wdt (
+    .aclk(sclk),
+    .aresetn(sys_rst_n),
+    `PY_AXIL_PORT(S_WDT),
     .irq_o(irq_src[9]),
     .wdt_reset_o(wdt_rst));
 
   // ---------------- GPIO x3 ----------------
   for (genvar g = 0; g < 3; g++) begin : g_gpio
-    gpio_top #(.WIDTH(32)) u_gpio (.aclk(clk), .aresetn(sys_rst_n), `PY_AXIL_PORT(S_GPIO + g),
-      .gpio_i(gpio_i[g*32 +: 32]), .gpio_o(gpio_o[g*32 +: 32]), .gpio_t(gpio_t[g*32 +: 32]), .irq_o(irq_src[6 + g]));
+    gpio_top #(.WIDTH(32)) u_gpio (
+      .aclk(sclk),
+      .aresetn(sys_rst_n),
+      `PY_AXIL_PORT(S_GPIO + g),
+      .gpio_i(gpio_i[g*32 +: 32]),
+      .gpio_o(gpio_o[g*32 +: 32]),
+      .gpio_t(gpio_t[g*32 +: 32]),
+      .irq_o(irq_src[6 + g]));
   end
 
   // ---------------- UART x2 ----------------
   for (genvar u = 0; u < 2; u++) begin : g_uart
     logic [7:0] tx_d, rx_d;
     logic tx_v, tx_r, tx_l, rx_v, rx_r, rx_l;
-    uart_top #(.CLK_HZ(CLK_HZ), .BAUD(UART_BAUD), .FIFO_DEPTH(IP_FIFO)) u_uart (
-      .aclk(clk),
-      .aresetn(sys_rst_n), `PY_AXIL_PORT(S_UART + 2*u),
+    localparam int BAUD    = u == 0 ? UART0_BAUD : UART1_BAUD;
+    localparam int TX_FIFO = u == 0 ? UART0_TX_FIFO : UART1_TX_FIFO;
+    localparam int RX_FIFO = u == 0 ? UART0_RX_FIFO : UART1_RX_FIFO;
+    uart_top #(
+      .CLK_HZ(SYS_HZ),
+      .BAUD(BAUD),
+      .FIFO_DEPTH(IP_FIFO)
+    ) u_uart (
+      .aclk(sclk),
+      .aresetn(sys_rst_n),
+      `PY_AXIL_PORT(S_UART + 2*u),
       .s_axis_tdata(tx_d),
       .s_axis_tvalid(tx_v),
       .s_axis_tready(tx_r),
@@ -425,9 +588,14 @@ module py_soc #(
       .m_axis_tlast(rx_l),
       .uart_txd_o(uart_txd_o[u]),
       .uart_rxd_i(uart_rxd_i[u]));
-    py_stream_port #(.DATA_W(8), .TX_DEPTH(UART_TX_FIFO), .RX_DEPTH(UART_RX_FIFO)) u_port (
-      .aclk(clk),
-      .aresetn(sys_rst_n), `PY_AXIL_PORT(S_UART + 2*u + 1),
+    py_stream_port #(
+      .DATA_W(8),
+      .TX_DEPTH(TX_FIFO),
+      .RX_DEPTH(RX_FIFO)
+    ) u_port (
+      .aclk(sclk),
+      .aresetn(sys_rst_n),
+      `PY_AXIL_PORT(S_UART + 2*u + 1),
       .m_axis_tdata(tx_d),
       .m_axis_tvalid(tx_v),
       .m_axis_tready(tx_r),
@@ -443,9 +611,17 @@ module py_soc #(
   for (genvar n = 0; n < 2; n++) begin : g_i2c
     logic [7:0] tx_d, rx_d;
     logic tx_v, tx_r, tx_l, rx_v, rx_r, rx_l;
-    i2c_top #(.CLK_HZ(CLK_HZ), .SCL_HZ(I2C_HZ), .FIFO_DEPTH(IP_FIFO)) u_i2c (
-      .aclk(clk),
-      .aresetn(sys_rst_n), `PY_AXIL_PORT(S_I2C + 2*n),
+    localparam int SCL_HZ  = n == 0 ? I2C0_HZ : I2C1_HZ;
+    localparam int TX_FIFO = n == 0 ? I2C0_TX_FIFO : I2C1_TX_FIFO;
+    localparam int RX_FIFO = n == 0 ? I2C0_RX_FIFO : I2C1_RX_FIFO;
+    i2c_top #(
+      .CLK_HZ(SYS_HZ),
+      .SCL_HZ(SCL_HZ),
+      .FIFO_DEPTH(IP_FIFO)
+    ) u_i2c (
+      .aclk(sclk),
+      .aresetn(sys_rst_n),
+      `PY_AXIL_PORT(S_I2C + 2*n),
       .s_axis_tdata(tx_d),
       .s_axis_tvalid(tx_v),
       .s_axis_tready(tx_r),
@@ -460,9 +636,14 @@ module py_soc #(
       .sda_i(i2c_sda_i[n]),
       .sda_o(i2c_sda_o[n]),
       .sda_t(i2c_sda_t[n]));
-    py_stream_port #(.DATA_W(8), .TX_DEPTH(I2C_TX_FIFO), .RX_DEPTH(I2C_RX_FIFO)) u_port (
-      .aclk(clk),
-      .aresetn(sys_rst_n), `PY_AXIL_PORT(S_I2C + 2*n + 1),
+    py_stream_port #(
+      .DATA_W(8),
+      .TX_DEPTH(TX_FIFO),
+      .RX_DEPTH(RX_FIFO)
+    ) u_port (
+      .aclk(sclk),
+      .aresetn(sys_rst_n),
+      `PY_AXIL_PORT(S_I2C + 2*n + 1),
       .m_axis_tdata(tx_d),
       .m_axis_tvalid(tx_v),
       .m_axis_tready(tx_r),
@@ -476,11 +657,22 @@ module py_soc #(
 
   // ---------------- SPI x2 ----------------
   for (genvar s = 0; s < 2; s++) begin : g_spi
-    logic [15:0] tx_d, rx_d;
+    localparam int SCLK_HZ = s == 0 ? SPI0_HZ : SPI1_HZ;
+    localparam int DW      = s == 0 ? SPI0_DATA_W : SPI1_DATA_W;
+    localparam int TX_FIFO = s == 0 ? SPI0_TX_FIFO : SPI1_TX_FIFO;
+    localparam int RX_FIFO = s == 0 ? SPI0_RX_FIFO : SPI1_RX_FIFO;
+    logic [DW-1:0] tx_d, rx_d;
     logic tx_v, tx_r, tx_l, rx_v, rx_r, rx_l;
-    spi_top #(.CLK_HZ(CLK_HZ), .SCLK_HZ(SPI_HZ), .DATA_W(16), .NUM_CS(2), .FIFO_DEPTH(IP_FIFO)) u_spi (
-      .aclk(clk),
-      .aresetn(sys_rst_n), `PY_AXIL_PORT(S_SPI + 2*s),
+    spi_top #(
+      .CLK_HZ(SYS_HZ),
+      .SCLK_HZ(SCLK_HZ),
+      .DATA_W(DW),
+      .NUM_CS(2),
+      .FIFO_DEPTH(IP_FIFO)
+    ) u_spi (
+      .aclk(sclk),
+      .aresetn(sys_rst_n),
+      `PY_AXIL_PORT(S_SPI + 2*s),
       .s_axis_tdata(tx_d),
       .s_axis_tvalid(tx_v),
       .s_axis_tready(tx_r),
@@ -493,9 +685,14 @@ module py_soc #(
       .spi_mosi_o(spi_mosi_o[s]),
       .spi_miso_i(spi_miso_i[s]),
       .spi_cs_n_o(spi_cs_n_o[s*2 +: 2]));
-    py_stream_port #(.DATA_W(16), .TX_DEPTH(SPI_TX_FIFO), .RX_DEPTH(SPI_RX_FIFO)) u_port (
-      .aclk(clk),
-      .aresetn(sys_rst_n), `PY_AXIL_PORT(S_SPI + 2*s + 1),
+    py_stream_port #(
+      .DATA_W(DW),
+      .TX_DEPTH(TX_FIFO),
+      .RX_DEPTH(RX_FIFO)
+    ) u_port (
+      .aclk(sclk),
+      .aresetn(sys_rst_n),
+      `PY_AXIL_PORT(S_SPI + 2*s + 1),
       .m_axis_tdata(tx_d),
       .m_axis_tvalid(tx_v),
       .m_axis_tready(tx_r),
@@ -509,8 +706,10 @@ module py_soc #(
   // ---------------- SPI NOR flash ----------------
   logic [7:0] fl_tx_d, fl_rx_d;
   logic fl_tx_v, fl_tx_r, fl_tx_l, fl_rx_v, fl_rx_r, fl_rx_l;
-  spi_flash_ctrl u_flash (.aclk(clk),
-  .aresetn(sys_rst_n), `PY_AXIL_PORT(S_FLASH),
+  spi_flash_ctrl u_flash (
+    .aclk(sclk),
+    .aresetn(sys_rst_n),
+    `PY_AXIL_PORT(S_FLASH),
     .s_axis_tdata(fl_tx_d),
     .s_axis_tvalid(fl_tx_v),
     .s_axis_tready(fl_tx_r),
@@ -523,9 +722,14 @@ module py_soc #(
     .mosi_o(flash_mosi_o),
     .miso_i(flash_miso_i),
     .irq_o(irq_src[10]));
-  py_stream_port #(.DATA_W(8), .TX_DEPTH(FLASH_TX_FIFO), .RX_DEPTH(FLASH_RX_FIFO)) u_flash_port (
-    .aclk(clk),
-    .aresetn(sys_rst_n), `PY_AXIL_PORT(S_FLASH + 1),
+  py_stream_port #(
+    .DATA_W(8),
+    .TX_DEPTH(FLASH_TX_FIFO),
+    .RX_DEPTH(FLASH_RX_FIFO)
+  ) u_flash_port (
+    .aclk(sclk),
+    .aresetn(sys_rst_n),
+    `PY_AXIL_PORT(S_FLASH + 1),
     .m_axis_tdata(fl_tx_d),
     .m_axis_tvalid(fl_tx_v),
     .m_axis_tready(fl_tx_r),

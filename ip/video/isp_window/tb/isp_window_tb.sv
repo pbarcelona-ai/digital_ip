@@ -38,7 +38,12 @@ module isp_window_tb;
     logic [15:0] wx, wy;
     logic tl, tu, tv, tr;
     int n, total;
-    isp_window #(.N(N), .PW(PW), .MAX_W(MAXW), .BORDER(BD)) dut (
+    isp_window #(
+      .N(N),
+      .PW(PW),
+      .MAX_W(MAXW),
+      .BORDER(BD)
+    ) dut (
       .clk,
       .rst_n,
       .width_i(W),

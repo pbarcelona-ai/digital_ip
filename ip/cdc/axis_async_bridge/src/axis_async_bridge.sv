@@ -57,7 +57,10 @@ module axis_async_bridge #(
   assign wd = {s_axis_tuser, s_axis_tlast, s_axis_tkeep, s_axis_tdata};
   assign s_axis_tready = wready & s_rs[1];
 
-  async_fifo #(.DATA_W(W), .DEPTH(DEPTH)) u_fifo (
+  async_fifo #(
+    .DATA_W(W),
+    .DEPTH(DEPTH)
+  ) u_fifo (
     .wclk(s_clk),
     .wrst_n(s_rs[1]),
     .wdata(wd),

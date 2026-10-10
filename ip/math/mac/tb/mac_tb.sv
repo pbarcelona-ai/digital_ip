@@ -17,9 +17,18 @@ module mac_tb;
   logic fixed_overflow_o, fixed_underflow_o, fixed_inexact_o, fixed_invalid_o;
 
   mac #(
-    .A_WIDTH(8), .B_WIDTH(8), .ACC_WIDTH(16), .OUT_WIDTH(8),
-    .A_SIGNED(1), .B_SIGNED(1), .ACC_SIGNED(1), .OUT_SIGNED(1),
-    .A_FRAC_BITS(4), .B_FRAC_BITS(4), .ACC_FRAC_BITS(4), .SATURATE(1)
+    .A_WIDTH(8),
+    .B_WIDTH(8),
+    .ACC_WIDTH(16),
+    .OUT_WIDTH(8),
+    .A_SIGNED(1),
+    .B_SIGNED(1),
+    .ACC_SIGNED(1),
+    .OUT_SIGNED(1),
+    .A_FRAC_BITS(4),
+    .B_FRAC_BITS(4),
+    .ACC_FRAC_BITS(4),
+    .SATURATE(1)
   ) u_signed_fixed (
     .clk,
     .rst_n,
@@ -41,8 +50,14 @@ module mac_tb;
   logic unsigned_overflow_o, unsigned_underflow_o, unsigned_inexact_o, unsigned_invalid_o;
 
   mac #(
-    .A_WIDTH(8), .B_WIDTH(8), .ACC_WIDTH(16), .OUT_WIDTH(16),
-    .A_SIGNED(0), .B_SIGNED(0), .ACC_SIGNED(0), .OUT_SIGNED(0)
+    .A_WIDTH(8),
+    .B_WIDTH(8),
+    .ACC_WIDTH(16),
+    .OUT_WIDTH(16),
+    .A_SIGNED(0),
+    .B_SIGNED(0),
+    .ACC_SIGNED(0),
+    .OUT_SIGNED(0)
   ) u_unsigned_fixed (
     .clk,
     .rst_n,
@@ -63,7 +78,11 @@ module mac_tb;
   logic fp_overflow_o, fp_underflow_o, fp_inexact_o, fp_invalid_o;
 
   mac #(
-    .A_WIDTH(32), .B_WIDTH(32), .ACC_WIDTH(32), .OUT_WIDTH(32), .FLOATING_POINT(1)
+    .A_WIDTH(32),
+    .B_WIDTH(32),
+    .ACC_WIDTH(32),
+    .OUT_WIDTH(32),
+    .FLOATING_POINT(1)
   ) u_float32 (
     .clk,
     .rst_n,

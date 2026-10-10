@@ -57,7 +57,10 @@ module axis_to_video_tb;
   logic sl, su, sv, sr;
   logic [23:0] rgb;
   logic de_o, hs_o, vs_o, locked, uflow;
-  axis_to_video #(.PIX_W(24), .FIFO_DEPTH(64)) dut (
+  axis_to_video #(
+    .PIX_W(24),
+    .FIFO_DEPTH(64)
+  ) dut (
     .clk,
     .rst_n,
     .tpg_en_i(tpg),

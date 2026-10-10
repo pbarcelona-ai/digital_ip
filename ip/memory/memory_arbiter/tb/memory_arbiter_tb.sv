@@ -24,7 +24,13 @@ module memory_arbiter_tb;
   logic [AW-1:0] maddr;
   logic [DW-1:0] mwd, mrd = 0;
   logic err, clr = 0;
-  memory_arbiter #(.CLIENTS(N), .ADDR_W(AW), .DATA_W(DW), .PRIORITY(0), .MAX_OUT(4)) dut
+  memory_arbiter #(
+    .CLIENTS(N),
+    .ADDR_W(AW),
+    .DATA_W(DW),
+    .PRIORITY(0),
+    .MAX_OUT(4)
+  ) dut
     (
     .clk,
     .rst_n,
@@ -53,7 +59,12 @@ module memory_arbiter_tb;
   logic [N-1:0] rvl_p;
   logic [DW-1:0] rdat_p;
   logic err_p;
-  memory_arbiter #(.CLIENTS(N), .ADDR_W(AW), .DATA_W(DW), .PRIORITY(1)) dutp
+  memory_arbiter #(
+    .CLIENTS(N),
+    .ADDR_W(AW),
+    .DATA_W(DW),
+    .PRIORITY(1)
+  ) dutp
     (
     .clk,
     .rst_n,

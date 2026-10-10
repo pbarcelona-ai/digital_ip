@@ -14,7 +14,10 @@ module priority_encoder_tb;
   logic [2:0] il, ih, ir;
   logic [7:0] ol, oh, orr;
   logic vl, vh, vr;
-  priority_encoder #(.WIDTH(8), .LSB_HIGH(1)) ul (
+  priority_encoder #(
+    .WIDTH(8),
+    .LSB_HIGH(1)
+  ) ul (
     .clk,
     .rst_n,
     .req_i(req),
@@ -22,7 +25,10 @@ module priority_encoder_tb;
     .onehot_o(ol),
     .valid_o(vl)
   );
-  priority_encoder #(.WIDTH(8), .LSB_HIGH(0)) uh (
+  priority_encoder #(
+    .WIDTH(8),
+    .LSB_HIGH(0)
+  ) uh (
     .clk,
     .rst_n,
     .req_i(req),
@@ -30,7 +36,10 @@ module priority_encoder_tb;
     .onehot_o(oh),
     .valid_o(vh)
   );
-  priority_encoder #(.WIDTH(8), .REGISTERED(1)) ur (
+  priority_encoder #(
+    .WIDTH(8),
+    .REGISTERED(1)
+  ) ur (
     .clk,
     .rst_n,
     .req_i(req),

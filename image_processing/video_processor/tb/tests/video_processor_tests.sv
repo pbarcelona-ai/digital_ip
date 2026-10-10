@@ -30,7 +30,9 @@
 //     test_adapter        vision_system processed frames and lost no
 //                         corrected pixel (return FIFO).
 //     test_images         4 colour and 4 monochrome images, one frame each,
-//                         back to back at the camera's frame gap (the
+//                         paced so each image reaches vision_system (the
+//                         next one starts once vision_system can take it,
+//                         at least the camera's frame gap later; the
 //                         camera sets the image format pin GPIO0[30] during
 //                         the gap before each image; the firmware
 //                         reprograms the ISP). Each image's frame at every
@@ -42,15 +44,15 @@
 //                         both - vision_system within 1 LSB of isp_csc,
 //                         blur_sharpen equals conv2d_ref of vision_system,
 //                         HDMI and LVDS equal blur_sharpen. Every image must
-//                         reach isp_csc; an image vs_stream_adapter drops
-//                         (vision_system busy) is reported, not an error,
-//                         but at least one must pass the whole pipeline.
-//                         frame_counter: 8 more first-stage counts, one
-//                         last-stage count per image that passed.
+//                         pass the whole pipeline (none dropped by
+//                         vs_stream_adapter). frame_counter: both counts 0
+//                         before the sequence (cleared by the firmware),
+//                         then 8 at the first and 8 at the last stage.
 //     test_uart_report    the UART 0 report (saved to cpu_bootup.txt) reaches
 //                         "END OF REPORT" with no [FAIL] line and at least
-//                         MIN_PASS [PASS] lines, the last frame counts the
-//                         CPU reported equal the frame_counter's, and the
+//                         MIN_PASS [PASS] lines, the CPU reported every end
+//                         of frame as counts 1, 2, 3, ... at each stage, the
+//                         last ones equal the frame_counter's, and the
 //                         firmware stage is 200.
 //   check() records a failure; the testbench prints TEST PASSED when none.
 //   Image helpers: load_images (input_images/: read each input, generate and
@@ -219,6 +221,7 @@
     check(uart_pass >= MIN_PASS, $sformatf("UART 0 report: %0d [PASS] lines, at least %0d expected", uart_pass, MIN_PASS));
     check(g(G_errors) == 0, $sformatf("firmware reported %0d errors", g(G_errors)));
     // the counts the CPU read at the end-of-frame interrupts: the last ones reported are the final counts
+    check(rep_gaps == 0, $sformatf("UART 0 report: %0d frame counts not reported as 1, 2, 3, ...", rep_gaps));
     check(rep_lines > 0 && rep_first == dut.u_frame_cnt.count[0] && rep_last == dut.u_frame_cnt.count[1],
           $sformatf("UART 0 report: last frame counts reported first %0d, last %0d; frame_counter has %0d, %0d",
                     rep_first, rep_last, dut.u_frame_cnt.count[0], dut.u_frame_cnt.count[1]));
@@ -497,22 +500,24 @@
     return 1;
   endfunction
 
-  // The camera stops streaming live frames and sends the image sequence back to back at its frame
-  // gap (GPIO0[29] high while it lasts); the firmware reprograms the ISP for each image's format during
-  // the gap before it. Waits until the pipeline has drained, then checks every image that reached each
-  // module output. Images dropped by vs_stream_adapter (vision_system busy) are reported, not errors.
+  // The camera stops streaming live frames and sends the image sequence, paced so vision_system takes
+  // every image (each one once it can take it, at least the camera's frame gap after the previous
+  // one; GPIO0[29] high while it lasts); the firmware reprograms the ISP for each image's format
+  // during the gap before it. Waits until the pipeline has drained, then checks every image that reached each
+  // module output. Every image must pass the whole pipeline.
   task automatic test_images();
     realtime t0, tq;
     bit done;
     int c0, c1, passed, dropped;
-    // stop the live frames and let the pipeline empty (both frame counters still for 300 us), so the
-    // counts at the start of the sequence (here and in the CPU) cover exactly the 8 images
+    // stop the live frames; the firmware waits for the pipeline to empty and clears both frame
+    // counters before it listens for the sequence (stage 161), so the sequence is counted from 0
     img_mode = 1;
     t0 = $realtime;                                    // the firmware listens for the sequence (section 7)
     while (g(G_stage) < 161 && $realtime - t0 < 40ms) @(posedge cpu_clk);
     check(g(G_stage) >= 161, "image test: firmware is not waiting for the image sequence (stage 161)");
     c0 = dut.u_frame_cnt.count[0];
     c1 = dut.u_frame_cnt.count[1];
+    check(c0 == 0 && c1 == 0, $sformatf("frame_counter: counts %0d / %0d before the sequence, 0 expected", c0, c1));
     t0 = $realtime;
     tq = $realtime;
     while ($realtime - tq < 300us && $realtime - t0 < 10ms) begin
@@ -524,8 +529,12 @@
       end
     end
     seq_active = 1;
+`ifdef VP_VISION
+    vs_f0 = dut.u_vs_adapt.frames_o;
+`endif
     img_go = 1;
-    $display("[%t] image test: %0d images back to back, frame gap %0d ns (GPIO0[29] = 1)", $realtime, NIMG, frame_gap_ns());
+    $display("[%t] image test: %0d images, each once vision_system can take it, at least %0d ns apart (GPIO0[29] = 1)",
+             $realtime, NIMG, frame_gap_ns());
     t0 = $realtime;
     while (seq_active && $realtime - t0 < 20ms) @(posedge pix_clk);
     check(!seq_active, "image test: the camera did not send the whole sequence");
@@ -553,11 +562,12 @@
       end
       check_image(lab);
     end
-    check(passed > 0, "image test: no image passed the whole pipeline");
-    check(dut.u_frame_cnt.count[0] - c0 == NIMG,
-          $sformatf("frame_counter: %0d first-stage ends of frame for %0d images", dut.u_frame_cnt.count[0] - c0, NIMG));
-    check(dut.u_frame_cnt.count[1] - c1 == passed,
-          $sformatf("frame_counter: %0d last-stage ends of frame, %0d images passed", dut.u_frame_cnt.count[1] - c1, passed));
+    check(passed == NIMG, $sformatf("image test: %0d of %0d images passed the whole pipeline (%0d dropped)", passed, NIMG, dropped));
+    // counted from 0: one frame sent -> count 1, ... the last image -> NIMG at both stages
+    check(dut.u_frame_cnt.count[0] == NIMG,
+          $sformatf("frame_counter: first-stage count %0d after %0d images", dut.u_frame_cnt.count[0], NIMG));
+    check(dut.u_frame_cnt.count[1] == NIMG,
+          $sformatf("frame_counter: last-stage count %0d after %0d images", dut.u_frame_cnt.count[1], NIMG));
     $display("[%t] image test: %0d images in, %0d through the whole pipeline, %0d dropped before vision_system; outputs in %s/",
              $realtime, NIMG, passed, dropped, img_out_dir);
   endtask

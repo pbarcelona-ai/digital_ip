@@ -70,7 +70,12 @@ module axi4_lite_mux #(
   logic wmiss, wmulti;
   logic aw_done, w_done;
   logic [1:0] bresp_q;
-  axi4_lite_decoder #(.ADDR_W(ADDR_W), .NSLAVE(NSLAVE), .BASE(BASE), .MASK(MASK)) u_wdec (
+  axi4_lite_decoder #(
+    .ADDR_W(ADDR_W),
+    .NSLAVE(NSLAVE),
+    .BASE(BASE),
+    .MASK(MASK)
+  ) u_wdec (
     .addr_i(aw_q),
     .sel_o(wsel),
     .miss_o(wmiss),
@@ -159,7 +164,12 @@ module axi4_lite_mux #(
   logic [ADDR_W-1:0] ar_q;
   logic [NSLAVE-1:0] rsel;
   logic rmiss, rmulti;
-  axi4_lite_decoder #(.ADDR_W(ADDR_W), .NSLAVE(NSLAVE), .BASE(BASE), .MASK(MASK)) u_rdec (
+  axi4_lite_decoder #(
+    .ADDR_W(ADDR_W),
+    .NSLAVE(NSLAVE),
+    .BASE(BASE),
+    .MASK(MASK)
+  ) u_rdec (
     .addr_i(ar_q),
     .sel_o(rsel),
     .miss_o(rmiss),

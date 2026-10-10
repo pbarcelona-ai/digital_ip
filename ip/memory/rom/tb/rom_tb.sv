@@ -13,7 +13,10 @@ module rom_tb;
   logic [6:0] a = 0;
   logic [19:0] q;
   logic oob;
-  rom #(.WIDTH(20), .DEPTH(100)) dut (
+  rom #(
+    .WIDTH(20),
+    .DEPTH(100)
+  ) dut (
     .clk,
     .rst_n,
     .en_i(en),

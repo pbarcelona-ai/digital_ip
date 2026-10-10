@@ -63,9 +63,15 @@ module scaler_anisotropic #(
   // probes per pixel and sets the IP_ID. Ports connect by name (.*).
   scaler_mip #(
     .PINGPONG(PINGPONG),
-    .CHANNELS(CHANNELS), .COMP_W(COMP_W), .MAX_W(MAX_W), .MAX_H(MAX_H),
-    .ADDR_W(ADDR_W), .LEVELS(LEVELS), .ANISO_MAX_LOG2(4),
-    .PHASE_BITS(PHASE_BITS), .IP_ID(32'h414E_4953)              // "ANIS"
+    .CHANNELS(CHANNELS),
+    .COMP_W(COMP_W),
+    .MAX_W(MAX_W),
+    .MAX_H(MAX_H),
+    .ADDR_W(ADDR_W),
+    .LEVELS(LEVELS),
+    .ANISO_MAX_LOG2(4),
+    .PHASE_BITS(PHASE_BITS),
+    .IP_ID(32'h414E_4953) // "ANIS"
   ) u_core (.*);
 
 endmodule

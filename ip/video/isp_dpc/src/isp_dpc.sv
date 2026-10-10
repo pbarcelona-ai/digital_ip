@@ -44,7 +44,12 @@ module isp_dpc #(
   logic [25*PW-1:0] win;
   logic [15:0] wx, wy;
   logic wl, wu, wv, wr;
-  isp_window #(.N(5), .PW(PW), .MAX_W(MAX_W), .BORDER(1)) u_win (
+  isp_window #(
+    .N(5),
+    .PW(PW),
+    .MAX_W(MAX_W),
+    .BORDER(1)
+  ) u_win (
     .clk,
     .rst_n,
     .width_i,

@@ -111,7 +111,10 @@ module axis_dma #(
   logic [6*32-1:0] regs, rd;
   logic [5:0] wr_pulse;
   logic [31:0] wr_data;
-  ip_axil_regs #(.ADDR_W(8), .NREG(6)) u_regs (
+  ip_axil_regs #(
+    .ADDR_W(8),
+    .NREG(6)
+  ) u_regs (
     .aclk,
     .aresetn,
     .s_axil_awaddr,
@@ -179,7 +182,10 @@ module axis_dma #(
   logic rd_tv, rd_tr, rd_tl, mu;
   logic [$clog2(FIFO_DEPTH)+1:0] l1, l2;
   logic su;
-  dma_rd_engine #(.ADDR_W(32), .MAX_BURST(MAX_BURST)) u_rd (
+  dma_rd_engine #(
+    .ADDR_W(32),
+    .MAX_BURST(MAX_BURST)
+  ) u_rd (
     .clk(aclk),
     .rst_n(aresetn),
     .start_i(mm_go),
@@ -204,7 +210,10 @@ module axis_dma #(
     .m_tready(rd_tr),
     .m_tlast(rd_tl)
   );
-  ip_axis_fifo #(.DATA_W(32), .DEPTH(FIFO_DEPTH)) u_mm_fifo (
+  ip_axis_fifo #(
+    .DATA_W(32),
+    .DEPTH(FIFO_DEPTH)
+  ) u_mm_fifo (
     .clk(aclk),
     .rst_n(aresetn),
     .s_tdata(rd_t),
@@ -223,7 +232,10 @@ module axis_dma #(
   // S2MM: stream slave -> FIFO -> write engine
   logic [31:0] wr_t;
   logic wr_tv, wr_tr, wr_tl;
-  ip_axis_fifo #(.DATA_W(32), .DEPTH(FIFO_DEPTH)) u_s2_fifo (
+  ip_axis_fifo #(
+    .DATA_W(32),
+    .DEPTH(FIFO_DEPTH)
+  ) u_s2_fifo (
     .clk(aclk),
     .rst_n(aresetn),
     .s_tdata(s_axis_tdata),
@@ -238,7 +250,10 @@ module axis_dma #(
     .m_tready(wr_tr),
     .level_o(l2)
   );
-  dma_wr_engine #(.ADDR_W(32), .MAX_BURST(MAX_BURST)) u_wr (
+  dma_wr_engine #(
+    .ADDR_W(32),
+    .MAX_BURST(MAX_BURST)
+  ) u_wr (
     .clk(aclk),
     .rst_n(aresetn),
     .start_i(s2_go),

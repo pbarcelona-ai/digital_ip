@@ -25,7 +25,11 @@ module axi4_lite_slave_tb;
   logic [7:0] wa, ra;
   logic [31:0] wd, rdd;
   logic [3:0] ws;
-  axi4_lite_slave #(.ADDR_W(8), .READ_WAIT(1), .MAP_WORDS(16)) dut (
+  axi4_lite_slave #(
+    .ADDR_W(8),
+    .READ_WAIT(1),
+    .MAP_WORDS(16)
+  ) dut (
     .aclk,
     .aresetn,
     .s_axil_awaddr,

@@ -11,25 +11,39 @@ module parity_gen_tb;
   always #5 clk = ~clk;
   logic [9:0] d = 0;
   logic pe, po, pre, pro;
-  parity_gen #(.WIDTH(10), .ODD(0)) ue (
+  parity_gen #(
+    .WIDTH(10),
+    .ODD(0)
+  ) ue (
     .clk,
     .rst_n,
     .data_i(d),
     .parity_o(pe)
   );
-  parity_gen #(.WIDTH(10), .ODD(1)) uo (
+  parity_gen #(
+    .WIDTH(10),
+    .ODD(1)
+  ) uo (
     .clk,
     .rst_n,
     .data_i(d),
     .parity_o(po)
   );
-  parity_gen #(.WIDTH(10), .ODD(0), .REGISTERED(1)) ure (
+  parity_gen #(
+    .WIDTH(10),
+    .ODD(0),
+    .REGISTERED(1)
+  ) ure (
     .clk,
     .rst_n,
     .data_i(d),
     .parity_o(pre)
   );
-  parity_gen #(.WIDTH(10), .ODD(1), .REGISTERED(1)) uro (
+  parity_gen #(
+    .WIDTH(10),
+    .ODD(1),
+    .REGISTERED(1)
+  ) uro (
     .clk,
     .rst_n,
     .data_i(d),

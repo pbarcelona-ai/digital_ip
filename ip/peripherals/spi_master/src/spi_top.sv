@@ -94,7 +94,11 @@ module spi_top #(
   logic [4*32-1:0] regs, rd;
   logic [3:0]      wr_pulse;
   logic [31:0]     wr_data;
-  ip_axil_regs #(.ADDR_W(8), .NREG(4), .RESET_VALS(RSTV)) u_regs (
+  ip_axil_regs #(
+    .ADDR_W(8),
+    .NREG(4),
+    .RESET_VALS(RSTV)
+  ) u_regs (
     .aclk,
     .aresetn,
     .s_axil_awaddr,
@@ -124,7 +128,10 @@ module spi_top #(
   logic [DATA_W-1:0] txf_data;
   logic txf_valid, txf_ready, txf_last, txf_user;
   logic [LW-1:0]     txf_lvl, rxf_lvl;
-  ip_axis_fifo #(.DATA_W(DATA_W), .DEPTH(FIFO_DEPTH)) u_txf (
+  ip_axis_fifo #(
+    .DATA_W(DATA_W),
+    .DEPTH(FIFO_DEPTH)
+  ) u_txf (
     .clk(aclk),
     .rst_n(aresetn),
     .s_tdata(s_axis_tdata),
@@ -143,7 +150,10 @@ module spi_top #(
   // Engine
   logic [DATA_W-1:0] rx_data;
   logic rx_last, rx_valid, busy, rxf_ready;
-  spi_engine #(.DATA_W(DATA_W), .NUM_CS(NUM_CS)) u_eng (
+  spi_engine #(
+    .DATA_W(DATA_W),
+    .NUM_CS(NUM_CS)
+  ) u_eng (
     .clk(aclk),
     .rst_n(aresetn),
     .enable_i(regs[0]),
@@ -169,7 +179,10 @@ module spi_top #(
 
   // Receive FIFO
   logic rxf_user;
-  ip_axis_fifo #(.DATA_W(DATA_W), .DEPTH(FIFO_DEPTH)) u_rxf (
+  ip_axis_fifo #(
+    .DATA_W(DATA_W),
+    .DEPTH(FIFO_DEPTH)
+  ) u_rxf (
     .clk(aclk),
     .rst_n(aresetn),
     .s_tdata(rx_data),

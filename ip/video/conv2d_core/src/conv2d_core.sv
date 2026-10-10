@@ -59,7 +59,12 @@ module conv2d_core #(
   // ---------------- window ----------------
   logic [NN*PW-1:0] w_d;
   logic w_l, w_u, w_v, w_r;
-  isp_window #(.N(N), .PW(PW), .MAX_W(MAX_W), .BORDER(BORDER)) u_win (
+  isp_window #(
+    .N(N),
+    .PW(PW),
+    .MAX_W(MAX_W),
+    .BORDER(BORDER)
+  ) u_win (
     .clk,
     .rst_n,
     .width_i,

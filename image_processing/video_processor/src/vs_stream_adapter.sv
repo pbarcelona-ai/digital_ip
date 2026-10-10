@@ -66,7 +66,10 @@ module vs_stream_adapter #(
   logic rf_ready;
   logic [$clog2(RET_FIFO)+1:0] rf_level;
   assign r_s_axis_tready = 1'b1;
-  ip_axis_fifo #(.DATA_W(PIX_W), .DEPTH(RET_FIFO)) u_ret_fifo (
+  ip_axis_fifo #(
+    .DATA_W(PIX_W),
+    .DEPTH(RET_FIFO)
+  ) u_ret_fifo (
     .clk,
     .rst_n,
     .s_tdata(r_s_axis_tdata),

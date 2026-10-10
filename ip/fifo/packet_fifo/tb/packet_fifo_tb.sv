@@ -17,7 +17,10 @@ module packet_fifo_tb;
   logic [15:0] sd = 0, md;
   logic sv = 0, sr, sl = 0, sb = 0, mv, mr = 0, ml, drop;
   logic [4:0] pc;
-  packet_fifo #(.WIDTH(16), .DEPTH(16)) dut (
+  packet_fifo #(
+    .WIDTH(16),
+    .DEPTH(16)
+  ) dut (
     .clk,
     .rst_n,
     .s_data_i(sd),

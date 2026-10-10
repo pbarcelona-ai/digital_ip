@@ -70,7 +70,11 @@ module spi_flash_ctrl (
   logic [8*32-1:0] regs, rd;
   logic [7:0] wr_pulse;
   logic [31:0] wr_data;
-  ip_axil_regs #(.ADDR_W(8), .NREG(8), .RESET_VALS({32'h0, 32'h0, 32'h0, 32'h0, 32'h0, 32'd4, 32'h0, 32'h0})) u_regs (
+  ip_axil_regs #(
+    .ADDR_W(8),
+    .NREG(8),
+    .RESET_VALS({32'h0, 32'h0, 32'h0, 32'h0, 32'h0, 32'd4, 32'h0, 32'h0})
+  ) u_regs (
     .aclk,
     .aresetn,
     .s_axil_awaddr,

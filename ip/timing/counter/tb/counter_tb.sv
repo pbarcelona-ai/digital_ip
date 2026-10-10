@@ -15,7 +15,10 @@ module counter_tb;
   logic [W-1:0] lv, top;
   logic [W-1:0] cu, cd, cr;
   logic wu, wd, wr;
-  counter #(.WIDTH(W), .DIRECTION(0)) uu (
+  counter #(
+    .WIDTH(W),
+    .DIRECTION(0)
+  ) uu (
     .clk,
     .rst_n,
     .en_i(en),
@@ -26,7 +29,10 @@ module counter_tb;
     .count_o(cu),
     .wrap_o(wu)
   );
-  counter #(.WIDTH(W), .DIRECTION(1)) ud (
+  counter #(
+    .WIDTH(W),
+    .DIRECTION(1)
+  ) ud (
     .clk,
     .rst_n,
     .en_i(en),
@@ -37,7 +43,10 @@ module counter_tb;
     .count_o(cd),
     .wrap_o(wd)
   );
-  counter #(.WIDTH(W), .DIRECTION(2)) ur (
+  counter #(
+    .WIDTH(W),
+    .DIRECTION(2)
+  ) ur (
     .clk,
     .rst_n,
     .en_i(en),

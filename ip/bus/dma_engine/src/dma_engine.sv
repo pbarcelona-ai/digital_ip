@@ -98,7 +98,10 @@ module dma_engine #(
   logic [5*32-1:0] regs, rd;
   logic [4:0] wr_pulse;
   logic [31:0] wr_data;
-  ip_axil_regs #(.ADDR_W(8), .NREG(5)) u_regs (
+  ip_axil_regs #(
+    .ADDR_W(8),
+    .NREG(5)
+  ) u_regs (
     .aclk,
     .aresetn,
     .s_axil_awaddr,
@@ -158,7 +161,10 @@ module dma_engine #(
   logic rd_tv, rd_tr, rd_tl, wr_tv, wr_tr, wr_tl, wr_tu;
   logic [$clog2(FIFO_DEPTH)+1:0] lvl;
   logic fu;
-  dma_rd_engine #(.ADDR_W(32), .MAX_BURST(MAX_BURST)) u_rd (
+  dma_rd_engine #(
+    .ADDR_W(32),
+    .MAX_BURST(MAX_BURST)
+  ) u_rd (
     .clk(aclk),
     .rst_n(aresetn),
     .start_i(go),
@@ -183,7 +189,10 @@ module dma_engine #(
     .m_tready(rd_tr),
     .m_tlast(rd_tl)
   );
-  ip_axis_fifo #(.DATA_W(32), .DEPTH(FIFO_DEPTH)) u_fifo (
+  ip_axis_fifo #(
+    .DATA_W(32),
+    .DEPTH(FIFO_DEPTH)
+  ) u_fifo (
     .clk(aclk),
     .rst_n(aresetn),
     .s_tdata(rd_t),
@@ -198,7 +207,10 @@ module dma_engine #(
     .m_tready(wr_tr),
     .level_o(lvl)
   );
-  dma_wr_engine #(.ADDR_W(32), .MAX_BURST(MAX_BURST)) u_wr (
+  dma_wr_engine #(
+    .ADDR_W(32),
+    .MAX_BURST(MAX_BURST)
+  ) u_wr (
     .clk(aclk),
     .rst_n(aresetn),
     .start_i(go),

@@ -23,7 +23,10 @@ module isp_demosaic_tb;
   logic [PW-1:0] sd;
   logic [3*PW-1:0] md;
   logic sl, su, sv, sr, ml, mu, mv, mr;
-  isp_demosaic #(.PW(PW), .MAX_W(64)) dut (
+  isp_demosaic #(
+    .PW(PW),
+    .MAX_W(64)
+  ) dut (
     .clk,
     .rst_n,
     .width_i(W),

@@ -127,7 +127,10 @@ module csi2_tx #(
   // same clock as a line event cannot happen (a line ends before vsync).
   logic [35:0] ev;
   logic ev_v, ev_r;
-  async_fifo #(.DATA_W(36), .DEPTH(16)) u_ev (
+  async_fifo #(
+    .DATA_W(36),
+    .DEPTH(16)
+  ) u_ev (
     .wclk(pclk),
     .wrst_n(prst_n),
     .wdata(ev_w),
@@ -168,7 +171,10 @@ module csi2_tx #(
     else if (cmd_r && ev_v) fs_done <= (e_type == 2'd0 && e_sof && !fs_done);
   end
 
-  mipi_tx_engine #(.NLANES(NLANES), .MAX_W(MAX_W)) u_eng (
+  mipi_tx_engine #(
+    .NLANES(NLANES),
+    .MAX_W(MAX_W)
+  ) u_eng (
     .clk(bclk),
     .rst_n(brst_n),
     .cmd_i(cmd),

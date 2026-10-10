@@ -26,7 +26,10 @@ module tb_axil_split;
   logic [7:0]  m_wstrb;
   logic [3:0]  m_bresp, m_rresp;
 
-  axil_split #(.ADDR_W(ADDR_W), .SEL_BIT(SEL)) dut (
+  axil_split #(
+    .ADDR_W(ADDR_W),
+    .SEL_BIT(SEL)
+  ) dut (
     .clk,
     .rst_n,
     .s_awaddr(awaddr),
@@ -112,7 +115,10 @@ module tb_axil_split;
       end
       if (reg_rd) reg_rdata <= rf[g][reg_raddr[7:2]];
     end
-    axil_checker #(.ADDR_W(ADDR_W), .NAME("m_axil")) u_chk (
+    axil_checker #(
+      .ADDR_W(ADDR_W),
+      .NAME("m_axil")
+    ) u_chk (
       .clk,
       .rst_n,
       .awaddr(m_awaddr[g*ADDR_W +: ADDR_W]),

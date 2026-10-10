@@ -33,7 +33,10 @@ module py_core_tb;
   logic [1:0] bresp, rresp;
   logic awvalid, awready, wvalid, wready, bvalid, bready, arvalid, arready, rvalid, rready;
 
-  py_core #(.CODE_AW(CODE_AW), .CONST_AW(CONST_AW)) dut (
+  py_core #(
+    .CODE_AW(CODE_AW),
+    .CONST_AW(CONST_AW)
+  ) dut (
     .clk,
     .rst_n,
     .start_i(start),

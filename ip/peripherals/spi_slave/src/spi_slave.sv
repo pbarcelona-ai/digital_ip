@@ -49,13 +49,19 @@ module spi_slave #(
   if (WORD_BITS < 1 || WORD_BITS > 32) begin : g_bad $error("spi_slave: WORD_BITS must be 1..32"); end
   localparam int CW = $clog2(WORD_BITS + 1);
   logic sclk_s, cs_s, mosi_s, sclk_d, cs_d;
-  bit_sync #(.STAGES(2), .RESET_VAL(1'b1)) u_cs   (
+  bit_sync #(
+    .STAGES(2),
+    .RESET_VAL(1'b1)
+  ) u_cs   (
     .clk,
     .rst_n,
     .d_i(cs_n_i),
     .q_o(cs_s)
   );
-  bit_sync #(.STAGES(2), .RESET_VAL(CPOL)) u_sclk (
+  bit_sync #(
+    .STAGES(2),
+    .RESET_VAL(CPOL)
+  ) u_sclk (
     .clk,
     .rst_n,
     .d_i(sclk_i),

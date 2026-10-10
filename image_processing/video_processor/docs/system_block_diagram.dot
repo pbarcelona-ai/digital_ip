@@ -27,7 +27,7 @@ digraph video_system {
     i2cdev [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>I2C 0</B> camera sensor CCI<BR/><B>I2C 1</B> HDMI DDC / EDID,<BR/>panel / PMIC, EEPROM</TD></TR></TABLE>>];
     spidev [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>SPI 0</B> panel init / touch<BR/><B>SPI 1</B> ADC, sensors<BR/>(2 chip selects each)</TD></TR></TABLE>>];
     gpiodev [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>GPIO</B> 3 × 32 bits<BR/>camera RESET / PWDN, HDMI HPD,<BR/>panel enable / backlight,<BR/>LEDs, buttons, strap pins</TD></TR></TABLE>>];
-    clkin [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>Oscillator</B> + board reset</TD></TR></TABLE>>];
+    clkin [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>Oscillator</B> 33.333 MHz (ref_clk)<BR/>+ board reset (arst_n)</TD></TR></TABLE>>];
   }
 
   // ======================= FPGA / ASIC =======================
@@ -37,10 +37,8 @@ digraph video_system {
 
     // ---------------- clocks and resets ----------------
     subgraph cluster_clk {
-      label=<<B>Clocks and resets</B>>; style="rounded,dashed"; color="#a16207"; fontcolor="#854d0e"; fontsize=10;
-      pll [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#f3f4f6" COLOR="#6b7280" STYLE="dashed"><TR><TD><B>PLL / MMCM</B> (vendor)<BR/>cpu_clk, pix_clk,<BR/>tmds_ser_clk 10×, lvds_ser_clk 7×,<BR/>tx_byte_clk</TD></TR></TABLE>>];
-      rsts [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fef9c3" COLOR="#a16207"><TR><TD><B>reset_sync</B> (one per domain)<BR/>cpu_clk: arst_n · core domains:<BR/>CPU core reset output only (CORE_RESET)<BR/>+ reset cause, watchdog reset</TD></TR></TABLE>>];
-      pll -> rsts;
+      label=<<B>Core resets</B>>; style="rounded,dashed"; color="#a16207"; fontcolor="#854d0e"; fontsize=10;
+      rsts [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fef9c3" COLOR="#a16207"><TR><TD><B>reset_sync</B> ×5 (one per core domain)<BR/>source: CPU core reset output only<BR/>(CORE_RESET AND video PLL locked)<BR/>cpu_clk domain reset: from py_soc</TD></TR></TABLE>>];
     }
 
     // ---------------- control CPU ----------------
@@ -52,15 +50,21 @@ digraph video_system {
         <TR><TD><B>py_boot</B> <FONT COLOR="#4b5563">u_boot</FONT><BR/>flash → code / const RAM on reset</TD></TR></TABLE>>];
       xbar [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ede9fe" COLOR="#7c3aed"><TR><TD><B>py_axil_xbar</B><BR/><FONT COLOR="#4b5563">u_xbar</FONT><BR/>AXI4-Lite peripheral bus</TD></TR></TABLE>>];
       periph [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#ede9fe" COLOR="#7c3aed">
-        <TR><TD><B>spi_flash_ctrl</B></TD><TD>boot + run-time flash</TD></TR>
-        <TR><TD><B>uart_top</B> ×2</TD><TD>py_stream_port FIFOs</TD></TR>
-        <TR><TD><B>i2c_top</B> ×2</TD><TD>py_stream_port FIFOs</TD></TR>
-        <TR><TD><B>spi_top</B> ×2</TD><TD>py_stream_port FIFOs</TD></TR>
-        <TR><TD><B>gpio_top</B> ×3</TD><TD>32-bit banks</TD></TR>
+        <TR><TD PORT="flash"><B>spi_flash_ctrl</B></TD><TD>boot + run-time flash</TD></TR>
+        <TR><TD PORT="uart"><B>uart_top</B> ×2</TD><TD>py_stream_port FIFOs</TD></TR>
+        <TR><TD PORT="i2c"><B>i2c_top</B> ×2</TD><TD>py_stream_port FIFOs</TD></TR>
+        <TR><TD PORT="spi"><B>spi_top</B> ×2</TD><TD>py_stream_port FIFOs</TD></TR>
+        <TR><TD PORT="gpio"><B>gpio_top</B> ×3</TD><TD>32-bit banks</TD></TR>
         <TR><TD><B>intc_top</B></TD><TD>interrupt controller</TD></TR>
         <TR><TD><B>watchdog_top</B></TD><TD>system reset</TD></TR>
         <TR><TD><B>py_sysctl</B></TD><TD>reset cause, IDs</TD></TR></TABLE>>];
       ext_axi [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ede9fe" COLOR="#7c3aed"><TR><TD><B>external window</B> (EXT_EN = 1)<BR/>0x1_0000–0x1_FFFF → m_ext_axil_*<BR/>ext_irq_i → intc sources 12–15</TD></TR></TABLE>>];
+      pll [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fef3c7" COLOR="#a16207">
+        <TR><TD COLSPAN="2"><B>clk_gen</B> <FONT COLOR="#4b5563">u_clkgen</FONT> · every clock from ref_clk</TD></TR>
+        <TR><TD ALIGN="LEFT"><B>dpll</B> <FONT COLOR="#4b5563">u_pll_cpu</FONT></TD><TD ALIGN="LEFT">ref ×24 = 800 MHz ÷4 → <B>cpu_clk 200 MHz</B></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>dpll</B> <FONT COLOR="#4b5563">u_pll_clk</FONT></TD><TD ALIGN="LEFT">cpu_clk ×35 = 7 GHz ÷70 / ÷7 / ÷10 / ÷56 →<BR ALIGN="LEFT"/><B>pix_clk 100 MHz</B> (core), tmds_ser_clk 1 GHz,<BR ALIGN="LEFT"/>lvds_ser_clk 700 MHz, tx_byte_clk 125 MHz</TD></TR>
+        <TR><TD COLSPAN="2"><FONT COLOR="#4b5563">SYSCTL CLK_EN gates · CLK_STATUS lock · dpll_dco = black box for synthesis</FONT></TD></TR></TABLE>>];
+      pll -> core [color="#a16207", label="cpu_clk", fontcolor="#a16207"];
       core -> xbar [color="#7c3aed"];
       xbar -> periph [color="#7c3aed"];
       xbar -> ext_axi [color="#7c3aed"];
@@ -187,7 +191,8 @@ digraph video_system {
   vs_out -> adapt [penwidth=2.6, color="#c2410c", label="corrected"];
   adapt -> filt [penwidth=2.6, color="#4d7c0f", label="corrected"];
   filt -> ins [penwidth=2.6, color="#4d7c0f", label="filtered"];
-  vs_fb -> sdram [dir=both, label="SDRAM bus"];
+  vs_fb -> sdram [label="sdram_clk, cke, cs_n, ras_n, cas_n,\nwe_n, a, ba, dqm, dq (write)"];
+  sdram -> vs_fb [label="dq (read)", constraint=false];
   hdmi -> tser [penwidth=2.6, label="10b ×4"];
   lvds -> lser [penwidth=2.6, label="7b words"];
   tser -> obuf_h [penwidth=2.6]; obuf_h -> monitor [penwidth=2.6, label="TMDS"];
@@ -195,13 +200,20 @@ digraph video_system {
   mipitx -> dphy_tx [style=dashed]; dphy_tx -> mipidev [style=dashed];
 
   // CPU external interfaces
-  flash -> periph [dir=both, label="SPI: sclk cs_n mosi miso", color="#7c3aed"];
-  console -> periph [dir=both, label="txd / rxd ×2", color="#7c3aed"];
-  i2cdev -> periph [dir=both, label="scl / sda ×2", color="#7c3aed"];
-  spidev -> periph [dir=both, label="sclk mosi miso cs_n ×2", color="#7c3aed"];
-  gpiodev -> periph [dir=both, label="gpio[95:0]", color="#7c3aed"];
-  clkin -> pll [color="#a16207"];
-  i2cdev -> sensor [dir=both, style=dashed, color="#7c3aed", fontcolor="#5b21b6", label="I2C 0 = CCI\nGPIO RESET / PWDN"];
+  // device pins: outputs from the CPU to the device, inputs from the device to the CPU
+  flash -> periph:flash [label="miso", color="#7c3aed"];
+  periph:flash -> flash [label="sclk, cs_n, mosi", color="#7c3aed"];
+  console -> periph:uart [label="rxd ×2", color="#7c3aed"];
+  periph:uart -> console [label="txd ×2", color="#7c3aed"];
+  i2cdev -> periph:i2c [label="scl_i, sda_i ×2", color="#7c3aed"];
+  periph:i2c -> i2cdev [label="scl_o/t, sda_o/t ×2\n(open drain)", color="#7c3aed"];
+  spidev -> periph:spi [label="miso ×2", color="#7c3aed"];
+  periph:spi -> spidev [label="sclk, mosi, cs_n ×2", color="#7c3aed"];
+  gpiodev -> periph:gpio [label="gpio_i[95:0]", color="#7c3aed"];
+  periph:gpio -> gpiodev [label="gpio_o, gpio_t[95:0]", color="#7c3aed"];
+  clkin -> pll [color="#a16207", label="ref_clk", fontcolor="#a16207"];
+  pll -> rsts [color="#a16207", label="core clocks", fontcolor="#a16207"];
+  i2cdev -> sensor [dir=none, style=dashed, color="#7c3aed", fontcolor="#5b21b6", label="I2C 0 = CCI\nGPIO RESET / PWDN"];
 
   // control plane
   ext_axi -> acdc [color="#7c3aed", penwidth=1.8, label="AXI4-Lite"];
@@ -218,7 +230,7 @@ digraph video_system {
   csi -> fcnt [color="#dc2626", style=dashed, label="eof_in_o", fontcolor="#dc2626", constraint=false];
   timing -> fcnt [color="#dc2626", style=dashed, label="eof_out_o", fontcolor="#dc2626", constraint=false];
   fcnt -> periph [color="#dc2626", style=dashed, label="sources 13 / 14", fontcolor="#dc2626", constraint=false];
-  rsts -> core [color="#a16207", style=dashed, label="resets", fontcolor="#a16207", constraint=false];
+
 
   // the camera's control path: I2C 0 configures the sensor (shown above)
   monitor -> legend [style=invis];

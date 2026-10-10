@@ -12,7 +12,7 @@
 #   make lint      Verilator lint of the RTL
 #   make ip-test   full video_pipeline system testbench (library)
 #   make synth     Yosys Xilinx 7-series synthesis -> build/yosys
-#   make diagram   regenerate docs/*block_diagram.svg / .png (Graphviz)
+#   make diagram   regenerate docs/*block_diagram, clock_ / reset_diagram .svg / .png (Graphviz)
 #   make ci        sim + ip-test + synth
 #   make cov       sim + ip-test with Verilator code coverage -> build/coverage/summary.txt
 #   make clean
@@ -51,6 +51,10 @@ diagram:
 	dot -Tpng -Gdpi=110 docs/block_diagram.dot -o docs/block_diagram.png
 	dot -Tsvg docs/system_block_diagram.dot -o docs/system_block_diagram.svg
 	dot -Tpng -Gdpi=100 docs/system_block_diagram.dot -o docs/system_block_diagram.png
+	dot -Tsvg docs/clock_diagram.dot -o docs/clock_diagram.svg
+	dot -Tpng -Gdpi=100 docs/clock_diagram.dot -o docs/clock_diagram.png
+	dot -Tsvg docs/reset_diagram.dot -o docs/reset_diagram.svg
+	dot -Tpng -Gdpi=100 docs/reset_diagram.dot -o docs/reset_diagram.png
 
 ci: sim ip-test synth
 

@@ -85,7 +85,11 @@ module sdio_host #(
   logic [12*32-1:0] regs, rd;
   logic [11:0] wr_pulse;
   logic [31:0] wr_data;
-  ip_axil_regs #(.ADDR_W(8), .NREG(12), .RESET_VALS({32'h0, 32'h0, 32'd100000, 32'd512, 32'd2, 32'h0, 32'h0, 32'h0, 32'h0, 32'h0, 32'h0, 32'h0})) u_regs (
+  ip_axil_regs #(
+    .ADDR_W(8),
+    .NREG(12),
+    .RESET_VALS({32'h0, 32'h0, 32'd100000, 32'd512, 32'd2, 32'h0, 32'h0, 32'h0, 32'h0, 32'h0, 32'h0, 32'h0})
+  ) u_regs (
     .aclk,
     .aresetn,
     .s_axil_awaddr,

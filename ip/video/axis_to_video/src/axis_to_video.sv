@@ -58,7 +58,10 @@ module axis_to_video #(
   logic [PIX_W-1:0] f_data;
   logic f_last, f_user, f_valid, f_ready, f_tuser_unused;
   logic [LW-1:0] level;
-  ip_axis_fifo #(.DATA_W(PIX_W), .DEPTH(FIFO_DEPTH)) u_fifo (
+  ip_axis_fifo #(
+    .DATA_W(PIX_W),
+    .DEPTH(FIFO_DEPTH)
+  ) u_fifo (
     .clk,
     .rst_n,
     .s_tdata(s_axis_tdata),

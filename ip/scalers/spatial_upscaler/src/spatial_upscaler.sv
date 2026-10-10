@@ -73,7 +73,10 @@ module spatial_upscaler #(
   logic [7:0]          m_wstrb;
   logic [3:0]          m_bresp, m_rresp;
 
-  axil_split #(.ADDR_W(ADDR_W), .SEL_BIT(14)) u_split (
+  axil_split #(
+    .ADDR_W(ADDR_W),
+    .SEL_BIT(14)
+  ) u_split (
     .clk,
     .rst_n,
     .s_awaddr(s_axil_awaddr),
@@ -116,8 +119,15 @@ module spatial_upscaler #(
   logic [PIX_W-1:0] mid_tdata;
   logic             mid_tvalid, mid_tready, mid_tuser, mid_tlast;
 
-  scaler_lanczos #(.PINGPONG(PINGPONG), .LINE_BUF(LINE_BUF), .CHANNELS(CHANNELS), .COMP_W(COMP_W), .MAX_W(MAX_W), .MAX_H(MAX_H),
-                   .ADDR_W(14)) u_scaler (
+  scaler_lanczos #(
+    .PINGPONG(PINGPONG),
+    .LINE_BUF(LINE_BUF),
+    .CHANNELS(CHANNELS),
+    .COMP_W(COMP_W),
+    .MAX_W(MAX_W),
+    .MAX_H(MAX_H),
+    .ADDR_W(14)
+  ) u_scaler (
     .clk,
     .rst_n,
     .s_axil_awaddr(m_awaddr[13:0]),
@@ -150,7 +160,12 @@ module spatial_upscaler #(
   );
 
   // ------------------------------------------------------------ stage 2: CAS
-  sharpen_cas #(.CHANNELS(CHANNELS), .COMP_W(COMP_W), .MAX_W(OUT_MAX_W), .ADDR_W(8)) u_sharpen (
+  sharpen_cas #(
+    .CHANNELS(CHANNELS),
+    .COMP_W(COMP_W),
+    .MAX_W(OUT_MAX_W),
+    .ADDR_W(8)
+  ) u_sharpen (
     .clk,
     .rst_n,
     .s_axil_awaddr(m_awaddr[ADDR_W +: 8]),

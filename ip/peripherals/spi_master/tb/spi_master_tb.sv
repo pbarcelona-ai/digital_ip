@@ -33,7 +33,10 @@ module spi_master_tb;
   logic sclk, mosi, miso;
   logic [NUM_CS-1:0] cs_n;
 
-  spi_top #(.FIFO_DEPTH(16), .NUM_CS(NUM_CS)) dut (
+  spi_top #(
+    .FIFO_DEPTH(16),
+    .NUM_CS(NUM_CS)
+  ) dut (
     .aclk,
     .aresetn,
     .s_axil_awaddr,

@@ -19,7 +19,11 @@ module wc_case #(parameter int IB = 4, parameter int OB = 1) (input logic clk, i
   logic ml, mv, mr;
   logic [0:0] mu;
   logic kerr;
-  axi_stream_width_converter #(.IN_BYTES(IB), .OUT_BYTES(OB), .USER_W(1)) dut (
+  axi_stream_width_converter #(
+    .IN_BYTES(IB),
+    .OUT_BYTES(OB),
+    .USER_W(1)
+  ) dut (
     .aclk(clk),
     .aresetn(rst_n),
     .s_axis_tdata(sd),
@@ -113,31 +117,46 @@ module axi_stream_width_converter_tb;
   always #5 clk = ~clk;
   int e0, e1, e2, e3, e4;
   bit d0, d1, d2, d3, d4;
-  wc_case #(4, 1) c0 (
+  wc_case #(
+    4,
+    1
+  ) c0 (
     clk,
     rst_n,
     e0,
     d0
   );
-  wc_case #(4, 2) c1 (
+  wc_case #(
+    4,
+    2
+  ) c1 (
     clk,
     rst_n,
     e1,
     d1
   );
-  wc_case #(1, 4) c2 (
+  wc_case #(
+    1,
+    4
+  ) c2 (
     clk,
     rst_n,
     e2,
     d2
   );
-  wc_case #(2, 4) c3 (
+  wc_case #(
+    2,
+    4
+  ) c3 (
     clk,
     rst_n,
     e3,
     d3
   );
-  wc_case #(4, 4) c4 (
+  wc_case #(
+    4,
+    4
+  ) c4 (
     clk,
     rst_n,
     e4,

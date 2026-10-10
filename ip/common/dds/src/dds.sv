@@ -56,7 +56,12 @@ module dds #(
     else en_d <= en_i | sync_load_i;
   end
   localparam logic signed [OUT_W-1:0] AMP = {1'b0, {(OUT_W-1){1'b1}}};
-  cordic #(.WIDTH(OUT_W), .ZW(ZW), .ITER(ITER), .MODE(0)) u_cordic (
+  cordic #(
+    .WIDTH(OUT_W),
+    .ZW(ZW),
+    .ITER(ITER),
+    .MODE(0)
+  ) u_cordic (
     .clk,
     .rst_n,
     .valid_i(en_d),

@@ -119,3 +119,5 @@ sharpen_filter,video,sharpen_filter
 blur_sharpen,video,blur_sharpen
 py_core,cpu,py_core
 py_soc,cpu,py_soc
+dpll,clock,dpll
+clk_gen,clock,clk_gen

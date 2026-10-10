@@ -1,0 +1,127 @@
+// ***************
+// Filename: reset_diagram.dot
+// Author: FPGA Cores 4 U
+// Description: Reset generation and distribution of video_processor
+//   (src/video_processor.sv). arst_n resets only the CPU system (py_soc),
+//   which stays in reset until its CPU PLL locks; the firmware releases the
+//   core logic through SYSCTL CORE_RESET (core_rst_n_o, only while the
+//   video PLL is locked), synchronised once per clock domain (reset_sync). Fill colour = clock domain of the reset (as in
+//   clock_diagram.dot).
+//   Render: make diagram
+// Date: 2026-10-09
+// ***************
+digraph video_processor_resets {
+  graph [rankdir=LR, newrank=true, compound=true, bgcolor="white", pad=0.3, nodesep=0.3, ranksep=0.55,
+         fontname="Helvetica", fontsize=12, labelloc=t, labeljust=l,
+         label=<<FONT POINT-SIZE="22"><B>video_processor: reset generation and distribution</B></FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">arst_n (external, asynchronous, active low) resets only the CPU system, held until the CPU PLL locks. The core logic stays in reset until the firmware writes SYSCTL CORE_RESET = 1<BR ALIGN="LEFT"/>(with the video PLL locked); every CPU reset (arst_n, PLL lock loss or watchdog) clears CORE_RESET and so puts the core logic back into reset. Each reset_sync asserts asynchronously and releases after 2 flops of its own clock.<BR ALIGN="LEFT"/>Domains tagged `VP_* exist only when that interface is enabled in src/configuration.sv. Bold = library IP module name, grey = instance name.</FONT><BR ALIGN="LEFT"/>>];
+  node  [shape=plaintext, fontname="Helvetica", fontsize=10, margin=0];
+  edge  [arrowsize=0.8, penwidth=2.0, fontname="Helvetica", fontsize=10, color="#374151", fontcolor="#374151"];
+
+  // ======================= board =======================
+  subgraph cluster_board {
+    label=<<B>Board (not in this design)</B>>; style="dashed,rounded"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=11;
+    board_rst [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280">
+      <TR><TD>board reset button / supervisor</TD></TR></TABLE>>];
+  }
+
+  // ======================= video_processor =======================
+  subgraph cluster_top {
+    label=<<FONT POINT-SIZE="15"><B>video_processor</B></FONT>   <FONT COLOR="#6b7280">src/video_processor.sv</FONT>>;
+    style="rounded,filled"; fillcolor="#fbfdff"; color="#1e3a8a"; penwidth=2.2; fontsize=12;
+
+    // ---------- CPU system reset (cpu_clk) ----------
+    cpu_misc [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ede9fe" COLOR="#6d28d9">
+      <TR><TD ALIGN="LEFT"><B>cpu_rst_n domain</B> (cpu_clk), outside py_soc</TD></TR>
+      <TR><TD ALIGN="LEFT"><B>axi4_lite_cdc</B> <FONT COLOR="#4b5563">u_axil_cdc</FONT> slave side</TD></TR>
+      <TR><TD ALIGN="LEFT"><B>pulse_sync</B> <FONT COLOR="#4b5563">u_irq_stats</FONT> dst side · <B>bit_sync</B> ×2 <FONT COLOR="#4b5563">u_irq_frame0/1</FONT></TD></TR></TABLE>>];
+
+    subgraph cluster_cpu {
+      label=<<FONT POINT-SIZE="13"><B>py_soc</B></FONT>  <FONT COLOR="#6b7280">u_cpu · cpu_clk</FONT>>;
+      style="rounded,filled"; fillcolor="#f5f3ff"; color="#7c3aed"; penwidth=1.8; fontsize=11;
+      rs_cpu [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fef9c3" COLOR="#a16207">
+        <TR><TD><B>clk_gen</B> <FONT COLOR="#4b5563">u_clkgen</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>reset_sync</B> <FONT COLOR="#4b5563">u_rst_ref</FONT> (ref_clk): PLL loops</TD></TR>
+        <TR><TD ALIGN="LEFT"><B>reset_sync</B> <FONT COLOR="#4b5563">u_lock_cpu</FONT> (cpu_clk):<BR ALIGN="LEFT"/>arst_n AND CPU PLL locked</TD></TR></TABLE>>];
+      wdt_stretch [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ede9fe" COLOR="#6d28d9">
+        <TR><TD PORT="sys" ALIGN="LEFT"><B>system reset</B><BR ALIGN="LEFT"/>sys_rst_n = rst_n AND no watchdog expiry<BR ALIGN="LEFT"/>(expiry stretched WDT_RST_CYCLES clocks)</TD></TR>
+        <TR><TD PORT="wdt" ALIGN="LEFT"><B>watchdog_top</B> <FONT COLOR="#4b5563">u_wdt</FONT> · expiry → wdt_reset_o</TD></TR></TABLE>>];
+      sys_dom [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ede9fe" COLOR="#6d28d9">
+        <TR><TD ALIGN="LEFT"><B>sys_rst_n domain</B> (cpu_clk)</TD></TR>
+        <TR><TD ALIGN="LEFT">py_core, py_boot, SRAM, bus, intc, watchdog,<BR ALIGN="LEFT"/>UART / I2C / SPI / GPIO, spi_flash_ctrl</TD></TR>
+        <TR><TD ALIGN="LEFT">py_boot reloads the firmware from flash<BR ALIGN="LEFT"/>after every release</TD></TR></TABLE>>];
+      sysctl [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fde68a" COLOR="#a16207">
+        <TR><TD ALIGN="LEFT"><B>py_sysctl</B> SYSCTL 0x0110 <B>CORE_RESET</B>[0]</TD></TR>
+        <TR><TD ALIGN="LEFT">cleared (0 = core in reset) by sys_rst_n,<BR ALIGN="LEFT"/>set to 1 by the firmware after the self-test</TD></TR>
+        <TR><TD ALIGN="LEFT">core_rst_n_o = CORE_RESET AND video PLL<BR ALIGN="LEFT"/>locked (registered on cpu_clk)</TD></TR>
+        <TR><TD ALIGN="LEFT"><FONT COLOR="#4b5563">RESET_CAUSE: por_n = rst_n only</FONT></TD></TR></TABLE>>];
+    }
+
+    // ---------- core logic resets, one reset_sync per domain ----------
+    rs_byte [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fef9c3" COLOR="#a16207"><TR><TD><B>reset_sync</B> <FONT COLOR="#4b5563">u_rst_byte</FONT><BR/>byte_clk</TD></TR></TABLE>>];
+    rs_pix  [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fef9c3" COLOR="#a16207"><TR><TD><B>reset_sync</B> <FONT COLOR="#4b5563">u_rst_pix</FONT><BR/>pix_clk</TD></TR></TABLE>>];
+    rs_tmds [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fef9c3" COLOR="#a16207"><TR><TD><B>reset_sync</B> <FONT COLOR="#4b5563">u_rst_tmds</FONT><BR/>tmds_ser_clk</TD></TR></TABLE>>];
+    rs_lvds [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fef9c3" COLOR="#a16207"><TR><TD><B>reset_sync</B> <FONT COLOR="#4b5563">u_rst_lvds</FONT><BR/>lvds_ser_clk</TD></TR></TABLE>>];
+    rs_txb  [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fef9c3" COLOR="#a16207"><TR><TD><B>reset_sync</B> <FONT COLOR="#4b5563">u_rst_tx_byte</FONT><BR/>tx_byte_clk</TD></TR></TABLE>>];
+
+    subgraph cluster_byte {
+      label=<<B>byte_rst_n domain</B>  <FONT COLOR="#6b7280">byte_clk · `VP_CSI2_RX</FONT>>; style="rounded,filled"; fillcolor="#fff7ed"; color="#ea580c"; fontsize=11;
+      d_byte [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ffedd5" COLOR="#c2410c">
+        <TR><TD ALIGN="LEFT"><B>csi2_rx</B> <FONT COLOR="#4b5563">u_pipe.u_csi</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT">write side of <FONT COLOR="#4b5563">u_pipe.u_cdc</FONT>, src side of <FONT COLOR="#4b5563">u_pipe.u_ps_*</FONT></TD></TR></TABLE>>];
+    }
+    subgraph cluster_pix {
+      label=<<B>pix_rst_n domain</B>  <FONT COLOR="#6b7280">pix_clk</FONT>>; style="rounded,filled"; fillcolor="#f0fdf4"; color="#15803d"; fontsize=11;
+      d_pix [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#dcfce7" COLOR="#15803d">
+        <TR><TD ALIGN="LEFT"><B>py_axil_xbar</B> <FONT COLOR="#4b5563">u_vbus</FONT> · <B>video_pipeline</B> <FONT COLOR="#4b5563">u_pipe</FONT> (pixel side)</TD></TR>
+        <TR><TD ALIGN="LEFT"><B>vs_stream_adapter</B> · <B>vision_system</B> · <B>blur_sharpen</B> · <B>frame_counter</B></TD></TR>
+        <TR><TD ALIGN="LEFT">pix sides of u_axil_cdc, u_irq_stats, u_pipe.u_cdc,<BR ALIGN="LEFT"/>serializers, dsi_tx, csi2_tx</TD></TR></TABLE>>];
+    }
+    subgraph cluster_tmds {
+      label=<<B>tmds_ser_rst_n domain</B>  <FONT COLOR="#6b7280">tmds_ser_clk · `VP_HDMI</FONT>>; style="rounded,filled"; fillcolor="#eff6ff"; color="#1d4ed8"; fontsize=11;
+      d_tmds [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#dbeafe" COLOR="#1d4ed8">
+        <TR><TD ALIGN="LEFT"><B>tmds_serializer</B> <FONT COLOR="#4b5563">u_tmds_ser</FONT> serial side</TD></TR></TABLE>>];
+    }
+    subgraph cluster_lvds {
+      label=<<B>lvds_ser_rst_n domain</B>  <FONT COLOR="#6b7280">lvds_ser_clk · `VP_LVDS</FONT>>; style="rounded,filled"; fillcolor="#f0f9ff"; color="#0369a1"; fontsize=11;
+      d_lvds [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#e0f2fe" COLOR="#0369a1">
+        <TR><TD ALIGN="LEFT"><B>lvds_serializer</B> ×2 <FONT COLOR="#4b5563">u_lvds_ser_a/b</FONT> serial side</TD></TR></TABLE>>];
+    }
+    subgraph cluster_txb {
+      label=<<B>tx_byte_rst_n domain</B>  <FONT COLOR="#6b7280">tx_byte_clk · `VP_DSI / `VP_CSI2_TX</FONT>>; style="rounded,filled"; fillcolor="#fdf2f8"; color="#be185d"; fontsize=11;
+      d_txb [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fce7f3" COLOR="#be185d">
+        <TR><TD ALIGN="LEFT"><B>dsi_tx</B> <FONT COLOR="#4b5563">u_pipe.u_dsi</FONT> · <B>csi2_tx</B> <FONT COLOR="#4b5563">u_pipe.u_csitx</FONT> byte sides</TD></TR></TABLE>>];
+    }
+  }
+
+  // ======================= reset status pins (board side) =======================
+  pin_wdt  [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ffffff" COLOR="#6d28d9" STYLE="dashed"><TR><TD><B>wdt_reset_o</B> (pin)<BR/>watchdog reset active</TD></TR></TABLE>>];
+  pin_core [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ffffff" COLOR="#a16207" STYLE="dashed"><TR><TD><B>core_rst_n_o</B> (pin)<BR/>1 = core logic released</TD></TR></TABLE>>];
+
+  // ======================= reset nets =======================
+  board_rst -> rs_cpu [label="arst_n", penwidth=2.6];
+  rs_cpu -> cpu_misc  [label="cpu_rst_n\n(cpu_rst_n_o)", color="#7c3aed", fontcolor="#6d28d9"];
+  rs_cpu -> wdt_stretch [label="cpu_rst_n", color="#7c3aed", fontcolor="#6d28d9"];
+  wdt_stretch:wdt:e -> pin_wdt [label="wdt_reset_o", color="#7c3aed", fontcolor="#6d28d9", style=dashed];
+  wdt_stretch:sys:e -> sys_dom [label="sys_rst_n", color="#7c3aed", fontcolor="#6d28d9"];
+  wdt_stretch:sys:e -> sysctl  [label="sys_rst_n", color="#7c3aed", fontcolor="#6d28d9"];
+
+  sysctl:e -> rs_txb:w [color="#a16207"];
+  sysctl:e -> rs_lvds:w [color="#a16207"];
+  sysctl:e -> rs_tmds:w [color="#a16207"];
+  sysctl:e -> rs_pix:w [label="core_arst_n", color="#a16207", fontcolor="#a16207"];
+  sysctl:e -> rs_byte:w [color="#a16207"];
+  sysctl:e -> pin_core:w [label="core_rst_n_o", color="#a16207", fontcolor="#a16207", style=dashed];
+
+  rs_byte -> d_byte [label="byte_rst_n", color="#ea580c", fontcolor="#c2410c"];
+  rs_pix  -> d_pix  [label="pix_rst_n", color="#16a34a", fontcolor="#15803d"];
+  rs_tmds -> d_tmds [label="tmds_ser_rst_n", color="#2563eb", fontcolor="#1d4ed8"];
+  rs_lvds -> d_lvds [label="lvds_ser_rst_n", color="#0284c7", fontcolor="#0369a1"];
+  rs_txb  -> d_txb  [label="tx_byte_rst_n", color="#db2777", fontcolor="#be185d"];
+
+  // vertical order (rankdir=LR draws a same-rank chain bottom to top) so that no reset nets
+  // cross: domains in the clock_diagram order, both status pins at the bottom
+  { rank=same; pin_core -> rs_txb -> rs_lvds -> rs_tmds -> rs_pix -> rs_byte [style=invis]; }
+  { rank=same; d_txb -> d_lvds -> d_tmds -> d_pix -> d_byte [style=invis]; }
+  { rank=same; pin_wdt -> sys_dom -> sysctl [style=invis]; }
+  { rank=same; cpu_misc -> wdt_stretch [style=invis]; }
+}

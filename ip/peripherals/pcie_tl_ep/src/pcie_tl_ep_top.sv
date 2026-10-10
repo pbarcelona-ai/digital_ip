@@ -83,7 +83,11 @@ module pcie_tl_ep_top #(
   logic [NREG*32-1:0] regs, rd;
   logic [NREG-1:0]    wr_pulse;
   logic [31:0]        wr_data;
-  pcie_axil_regs #(.ADDR_W(8), .NREG(NREG), .RESET_VALS(RSTV)) u_regs (
+  pcie_axil_regs #(
+    .ADDR_W(8),
+    .NREG(NREG),
+    .RESET_VALS(RSTV)
+  ) u_regs (
     .aclk,
     .aresetn,
     .s_axil_awaddr,
@@ -134,8 +138,12 @@ module pcie_tl_ep_top #(
   logic [15:0] cpl_id;
   logic [31:0] bar0;
   logic        p_rx, p_mwr, p_mrd, p_cfg, p_ur;
-  pcie_tl_target #(.VENDOR_ID(VENDOR_ID), .DEVICE_ID(DEVICE_ID),
-                   .BAR_BITS(BAR_BITS), .RAM_DW(RAM_DW)) u_tgt (
+  pcie_tl_target #(
+    .VENDOR_ID(VENDOR_ID),
+    .DEVICE_ID(DEVICE_ID),
+    .BAR_BITS(BAR_BITS),
+    .RAM_DW(RAM_DW)
+  ) u_tgt (
     .clk(aclk),
     .rst_n(aresetn),
     .rx_dw,
@@ -164,7 +172,10 @@ module pcie_tl_ep_top #(
   // ---- BAR0 stream window -> m_axis FIFO ----
   logic [LW-1:0] mf_lvl;
   logic mf_user;
-  pcie_axis_fifo #(.DATA_W(32), .DEPTH(FIFO_DEPTH)) u_mfifo (
+  pcie_axis_fifo #(
+    .DATA_W(32),
+    .DEPTH(FIFO_DEPTH)
+  ) u_mfifo (
     .clk(aclk),
     .rst_n(aresetn),
     .s_tdata(str_dw),
@@ -184,7 +195,10 @@ module pcie_tl_ep_top #(
   logic [31:0] sf_data;
   logic sf_valid, sf_ready, sf_last, sf_user;
   logic [LW-1:0] sf_lvl;
-  pcie_axis_fifo #(.DATA_W(32), .DEPTH(FIFO_DEPTH)) u_sfifo (
+  pcie_axis_fifo #(
+    .DATA_W(32),
+    .DEPTH(FIFO_DEPTH)
+  ) u_sfifo (
     .clk(aclk),
     .rst_n(aresetn),
     .s_tdata(s_axis_tdata),

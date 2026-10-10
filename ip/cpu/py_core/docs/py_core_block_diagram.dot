@@ -8,7 +8,7 @@
 //   routed around them (neato, splines=true): no line passes over or behind a block.
 //   Render: neato -Tsvg py_core_block_diagram.dot -o py_core_block_diagram.svg
 //   The control state machine is in py_core_fsm.dot.
-// Date: 2026-10-08
+// Date: 2026-10-09
 // ***************
 digraph py_core {
   layout=neato;
@@ -51,11 +51,11 @@ digraph py_core {
       <TR><TD><B>trap unit</B> trap_cause_o, trap_pc_o (= ipc), trap_op_o</TD></TR>
       <TR><TD ALIGN="LEFT">ILLEGAL, TYPE, OVERFLOW, STACK, BUS,<BR ALIGN="LEFT"/>INDEX, IRQ_STATE, FRAME<BR ALIGN="LEFT"/>core stalls; a helper emulates and resumes</TD></TR></TABLE>>, pos="21.5,6!"];
   p_ctl [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#f3f4f6" COLOR="#6b7280">
-      <TR><TD ALIGN="LEFT">start_i, resume_i, resume_pc_i</TD></TR>
-      <TR><TD ALIGN="LEFT">busy_o, done_o, result_o[33:0]</TD></TR>
-      <TR><TD ALIGN="LEFT">trap_o, trap_cause_o, trap_pc_o, trap_op_o</TD></TR></TABLE>>, pos="21.5,9.8!"];
-  p_irq [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD>irq_i (level), in_irq_o</TD></TR></TABLE>>, pos="0,9.8!"];
-  p_axi [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD>m_axil_* (AXI4-Lite master, 32-bit address)</TD></TR></TABLE>>, pos="16,0!"];
+      <TR><TD PORT="run" ALIGN="LEFT">in: start_i, resume_i, resume_pc_i</TD></TR>
+      <TR><TD PORT="res" ALIGN="LEFT">out: busy_o, done_o, result_o[33:0]</TD></TR>
+      <TR><TD PORT="trap" ALIGN="LEFT">out: trap_o, trap_cause_o, trap_pc_o, trap_op_o</TD></TR></TABLE>>, pos="21.5,9.8!"];
+  p_irq [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD PORT="i" ALIGN="LEFT">in: irq_i (level)</TD></TR><TR><TD PORT="o" ALIGN="LEFT">out: in_irq_o</TD></TR></TABLE>>, pos="0,9.8!"];
+  p_axi [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD PORT="o" ALIGN="LEFT">out: m_axil_aw*, w*, ar*, bready, rready</TD></TR><TR><TD PORT="i" ALIGN="LEFT">in: m_axil_*ready, b*, r* (AXI4-Lite master, 32-bit address)</TD></TR></TABLE>>, pos="16,0!"];
   legend [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3"><TR><TD COLSPAN="2"><B>Groups</B></TD></TR><TR><TD BGCOLOR="#ffffff" WIDTH="18"> </TD><TD ALIGN="LEFT">fetch / decode (pc, op, arg)</TD></TR><TR><TD BGCOLOR="#fef3c7"> </TD><TD ALIGN="LEFT">control FSM</TD></TR><TR><TD BGCOLOR="#e0f2fe"> </TD><TD ALIGN="LEFT">py_soc memories</TD></TR><TR><TD BGCOLOR="#ede9fe"> </TD><TD ALIGN="LEFT">datapath</TD></TR><TR><TD BGCOLOR="#fee2e2"> </TD><TD ALIGN="LEFT">interrupt / trap</TD></TR><TR><TD BGCOLOR="#f3f4f6"> </TD><TD ALIGN="LEFT">ports</TD></TR></TABLE>>, pos="21.5,1.2!"];
   codemem -> dec [label="code_data_i (op, operand bytes)"];
   pc -> codemem [label="code_addr_o = pc"];
@@ -65,25 +65,31 @@ digraph py_core {
   ctl -> stack [style=dashed, label="push / pop, sp"];
   ctl -> pc [style=dashed, label="pc + 1"];
   ctl -> bus [style=dashed, label="S_WR / S_RD"];
-  stack -> locals [dir=both, label="STORE_FAST / LOAD_FAST"];
-  stack -> globals [dir=both, label="STORE_GLOBAL / LOAD_GLOBAL"];
+  stack:ne -> locals:nw [label="STORE_FAST"];
+  locals:sw -> stack:e [label="LOAD_FAST"];
+  stack:se -> globals:nw [label="STORE_GLOBAL"];
+  globals:w -> stack:s [label="LOAD_GLOBAL"];
   dec -> locals [label="arg (local index)"];
   frames -> locals [label="fp"];
   dec -> pc [label="JUMP / POP_JUMP_IF_*: pc = arg"];
   alu -> pc [label="tos_truthy", style=dashed];
   stack -> bus [label="address, data"];
   bus -> stack [label="rdata"];
-  bus -> p_axi [color="#7c3aed", penwidth=2.5, dir=both, label="AW / W / B / AR / R"];
-  p_irq -> irq [color="#dc2626"];
+  bus:ne -> p_axi:o:w [color="#7c3aed", penwidth=2.5, label="AW / W / AR"];
+  p_axi:i:w -> bus:se [color="#7c3aed", penwidth=2.5, label="B / R"];
+  p_irq:i:e -> irq [color="#dc2626", label="irq_i"];
+  irq -> p_irq:o:e [color="#dc2626", label="in_irq_o"];
   irq -> pc [color="#dc2626", label="take_irq (in S_FETCH): rstk[fp] = pc, pc = irq_vec"];
   irq -> frames [color="#dc2626", label="handler frame irq_fp"];
   alu -> trap [color="#dc2626", style=dashed, label="overflow / type"];
   bus -> trap [color="#dc2626", style=dashed, label="SLVERR / DECERR"];
   frames -> trap [color="#dc2626", style=dashed, label="depth"];
-  trap -> p_ctl [color="#dc2626"];
-  stack -> p_ctl [label="RETURN_VALUE: result_o = tos"];
-  p_ctl -> ctl [style=dashed, label="start_i / resume_i"];
+  trap -> p_ctl:trap [color="#dc2626"];
+  stack -> p_ctl:res [label="RETURN_VALUE: result_o = tos"];
+  p_ctl:run -> ctl [style=dashed, label="start_i / resume_i"];
   trap -> ctl [color="#dc2626", style=dashed, label="S_TRAP"];
-  frames -> pc [dir=both, label="CALL: rstk[fp] = pc, fp + 1\nRETURN: pc = rstk[fp-1], fp - 1"];
-  stack -> alu [dir=both, label="tos, tos1 ↓\npush alu_r ↑"];
+  frames:sw -> pc:se [label="RETURN: pc = rstk[fp-1], fp - 1"];
+  pc:ne -> frames:nw [label="CALL: rstk[fp] = pc, fp + 1"];
+  stack:sw -> alu:nw [label="tos, tos1"];
+  alu:ne -> stack:s [label="push alu_r"];
 }

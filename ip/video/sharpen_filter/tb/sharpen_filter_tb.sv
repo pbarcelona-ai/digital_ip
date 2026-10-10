@@ -31,7 +31,15 @@ module sharpen_filter_tb;
   logic [C*CW-1:0] sd, md;
   logic sl, su, sv, sr, ml, mu, mv, mr;
 
-  sharpen_filter #(.N(N), .C(C), .CW(CW), .MAX_W(64), .AMOUNT(AMT), .RESET_W(16'd12), .RESET_H(16'd8)) dut (
+  sharpen_filter #(
+    .N(N),
+    .C(C),
+    .CW(CW),
+    .MAX_W(64),
+    .AMOUNT(AMT),
+    .RESET_W(16'd12),
+    .RESET_H(16'd8)
+  ) dut (
     .clk,
     .rst_n,
     .s_axil_awaddr,
@@ -66,7 +74,11 @@ module sharpen_filter_tb;
     .aclk(clk),
     .*
   );
-  axis_frame_bfm #(.DW(C*CW), .MAXW(MAXW), .MAXH(MAXH)) vid (
+  axis_frame_bfm #(
+    .DW(C*CW),
+    .MAXW(MAXW),
+    .MAXH(MAXH)
+  ) vid (
     .clk,
     .s_tdata(sd),
     .s_tlast(sl),
@@ -79,7 +91,13 @@ module sharpen_filter_tb;
     .m_tvalid(mv),
     .m_tready(mr)
   );
-  conv2d_ref #(.N(N), .C(C), .CW(CW), .MAXW(MAXW), .MAXH(MAXH)) mdl ();
+  conv2d_ref #(
+    .N(N),
+    .C(C),
+    .CW(CW),
+    .MAXW(MAXW),
+    .MAXH(MAXH)
+  ) mdl ();
 
   int W = 12, H = 8;
   // test tasks: tests/sharpen_filter_tests.sv

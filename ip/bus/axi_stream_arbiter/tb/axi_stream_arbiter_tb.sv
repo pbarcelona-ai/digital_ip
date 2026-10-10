@@ -23,7 +23,13 @@ module axi_stream_arbiter_tb;
   logic ml, mu, mv, mr = 0;
   logic [1:0] mid;
   logic hog;
-  axi_stream_arbiter #(.NIN(N), .DATA_W(DW), .USER_W(1), .PRIORITY(0), .TIMEOUT(0)) dut (
+  axi_stream_arbiter #(
+    .NIN(N),
+    .DATA_W(DW),
+    .USER_W(1),
+    .PRIORITY(0),
+    .TIMEOUT(0)
+  ) dut (
     .aclk(clk),
     .aresetn(rst_n),
     .s_axis_tdata(sd),
@@ -47,7 +53,12 @@ module axi_stream_arbiter_tb;
   logic [1:0] pid, pk;
   logic [N-1:0] psr;
   logic phog;
-  axi_stream_arbiter #(.NIN(N), .DATA_W(DW), .USER_W(1), .PRIORITY(1)) dutp (
+  axi_stream_arbiter #(
+    .NIN(N),
+    .DATA_W(DW),
+    .USER_W(1),
+    .PRIORITY(1)
+  ) dutp (
     .aclk(clk),
     .aresetn(rst_n),
     .s_axis_tdata(sd),
@@ -69,7 +80,13 @@ module axi_stream_arbiter_tb;
   logic [N-1:0] hv = 4'b0011, hr;
   logic hov, hhog;
   logic [1:0] hid;
-  axi_stream_arbiter #(.NIN(N), .DATA_W(DW), .USER_W(1), .PRIORITY(0), .TIMEOUT(4)) duth (
+  axi_stream_arbiter #(
+    .NIN(N),
+    .DATA_W(DW),
+    .USER_W(1),
+    .PRIORITY(0),
+    .TIMEOUT(4)
+  ) duth (
     .aclk(clk),
     .aresetn(rst_n),
     .s_axis_tdata(sd),

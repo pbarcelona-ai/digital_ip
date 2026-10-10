@@ -39,8 +39,14 @@ module py_soc_tb;
   logic fl_sclk, fl_cs_n, fl_mosi, fl_miso;
   int fl_wip;
 
-  py_soc #(.CLK_HZ(100_000_000), .UART_BAUD(2_000_000), .I2C_HZ(2_000_000), .SPI_HZ(10_000_000),
-           .FLASH_CLKDIV(3)) dut (
+  py_soc #(
+    .CLK_HZ(100_000_000),
+    .UART_BAUD(2_000_000),
+    .I2C_HZ(2_000_000),
+    .SPI_HZ(10_000_000),
+    .FLASH_CLKDIV(3),
+    .CLKGEN_EN(1'b0)
+  ) dut (                // clk is the CPU clock
     .clk,
     .rst_n,
     .start_i(1'b0),

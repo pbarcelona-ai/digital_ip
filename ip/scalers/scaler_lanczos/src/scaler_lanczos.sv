@@ -63,10 +63,18 @@ module scaler_lanczos #(
   // All logic is in scaler_polyphase; this wrapper fixes TAPS = 6 and
   // the IP_ID. Every port is connected by name (.*).
   scaler_polyphase #(
-    .PINGPONG(PINGPONG), .LINE_BUF(LINE_BUF),
-    .CHANNELS(CHANNELS), .COMP_W(COMP_W), .MAX_W(MAX_W), .MAX_H(MAX_H),
-    .ADDR_W(ADDR_W), .TAPS(6), .PHASE_BITS(PHASE_BITS), .COEF_W(COEF_W),
-    .COEF_FRAC(COEF_FRAC), .IP_ID(32'h4C41_4E43)          // "LANC"
+    .PINGPONG(PINGPONG),
+    .LINE_BUF(LINE_BUF),
+    .CHANNELS(CHANNELS),
+    .COMP_W(COMP_W),
+    .MAX_W(MAX_W),
+    .MAX_H(MAX_H),
+    .ADDR_W(ADDR_W),
+    .TAPS(6),
+    .PHASE_BITS(PHASE_BITS),
+    .COEF_W(COEF_W),
+    .COEF_FRAC(COEF_FRAC),
+    .IP_ID(32'h4C41_4E43) // "LANC"
   ) u_core (.*);
 
 endmodule

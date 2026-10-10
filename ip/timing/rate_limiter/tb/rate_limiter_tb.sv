@@ -17,7 +17,11 @@ module rate_limiter_tb;
   logic [15:0] sd = 0, md;
   logic sv = 0, sr, mv, mr = 1;
   logic [5:0] tok;
-  rate_limiter #(.DATA_W(16), .TOKEN_W(6), .PERIOD_W(16)) dut (
+  rate_limiter #(
+    .DATA_W(16),
+    .TOKEN_W(6),
+    .PERIOD_W(16)
+  ) dut (
     .clk,
     .rst_n,
     .refill_period_i(per),

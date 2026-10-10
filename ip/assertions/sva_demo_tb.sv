@@ -19,7 +19,11 @@ module sva_demo_tb;
   logic sl = 0, sv = 0, sr, ml, mv, mr = 0;
   logic [0:0] su = 0, mu;
   logic [10:0] lvl;
-  axi_stream_fifo #(.DATA_W(32), .USER_W(1), .DEPTH(16)) fifo (
+  axi_stream_fifo #(
+    .DATA_W(32),
+    .USER_W(1),
+    .DEPTH(16)
+  ) fifo (
     .aclk,
     .aresetn,
     .s_axis_tdata(sd),
@@ -36,7 +40,10 @@ module sva_demo_tb;
     .m_axis_tready(mr),
     .level_o(lvl)
   );
-  axis_protocol_checker #(.DATA_W(32), .USER_W(1)) chk_in  (
+  axis_protocol_checker #(
+    .DATA_W(32),
+    .USER_W(1)
+  ) chk_in  (
     .aclk,
     .aresetn,
     .tdata(sd),
@@ -46,7 +53,10 @@ module sva_demo_tb;
     .tvalid(sv),
     .tready(sr)
   );
-  axis_protocol_checker #(.DATA_W(32), .USER_W(1)) chk_out (
+  axis_protocol_checker #(
+    .DATA_W(32),
+    .USER_W(1)
+  ) chk_out (
     .aclk,
     .aresetn,
     .tdata(md),
@@ -72,7 +82,10 @@ module sva_demo_tb;
   logic [1:0] bresp, rresp;
   logic [255:0] regs_o, hw_i = 0, hw_set = 0;
   logic [7:0] wrp;
-  axi4_lite_regs #(.ADDR_W(8), .NREG(8)) regs (
+  axi4_lite_regs #(
+    .ADDR_W(8),
+    .NREG(8)
+  ) regs (
     .aclk,
     .aresetn,
     .s_axil_awaddr(awaddr),

@@ -51,7 +51,11 @@ module axi4_lite_regs #(
   logic [ADDR_W-1:0] wa, ra;
   logic [31:0] wd, rdd;
   logic [3:0] ws;
-  axi4_lite_slave #(.ADDR_W(ADDR_W), .READ_WAIT(0), .MAP_WORDS(NREG)) u_slave (
+  axi4_lite_slave #(
+    .ADDR_W(ADDR_W),
+    .READ_WAIT(0),
+    .MAP_WORDS(NREG)
+  ) u_slave (
     .aclk,
     .aresetn,
     .s_axil_awaddr,

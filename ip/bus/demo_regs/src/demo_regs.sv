@@ -60,7 +60,12 @@ module demo_regs (
     hw[4*32 +: 32] = count_i;
     hwset[5*32 +: 32] = trig_clr_i;
   end
-  axi4_lite_regs #(.ADDR_W(5), .NREG(NREG), .ACCESS(ACCESS), .RESET_VALS(RESET_VALS)) u_regs (
+  axi4_lite_regs #(
+    .ADDR_W(5),
+    .NREG(NREG),
+    .ACCESS(ACCESS),
+    .RESET_VALS(RESET_VALS)
+  ) u_regs (
     .aclk,
     .aresetn,
     .s_axil_awaddr,

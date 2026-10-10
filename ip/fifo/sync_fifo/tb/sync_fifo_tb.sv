@@ -15,7 +15,10 @@ module sync_fifo_tb;
   logic wr = 0, rd = 0, rv, full, empty, af, ae, clr = 0, ovf, unf;
   logic [15:0] wdat = 0, rdat;
   logic [4:0] lvl;
-  sync_fifo #(.WIDTH(16), .DEPTH(D)) dut (
+  sync_fifo #(
+    .WIDTH(16),
+    .DEPTH(D)
+  ) dut (
     .clk,
     .rst_n,
     .wr_en_i(wr),

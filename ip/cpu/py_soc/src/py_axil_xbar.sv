@@ -57,13 +57,23 @@ module py_axil_xbar #(
 );
   logic [NSLAVE-1:0] aw_hit, ar_hit;
   logic aw_miss, ar_miss, aw_multi, ar_multi;
-  axi4_lite_decoder #(.ADDR_W(32), .NSLAVE(NSLAVE), .BASE(BASE), .MASK(MASK)) u_dec_aw (
+  axi4_lite_decoder #(
+    .ADDR_W(32),
+    .NSLAVE(NSLAVE),
+    .BASE(BASE),
+    .MASK(MASK)
+  ) u_dec_aw (
     .addr_i(s_axil_awaddr),
     .sel_o(aw_hit),
     .miss_o(aw_miss),
     .multi_o(aw_multi)
   );
-  axi4_lite_decoder #(.ADDR_W(32), .NSLAVE(NSLAVE), .BASE(BASE), .MASK(MASK)) u_dec_ar (
+  axi4_lite_decoder #(
+    .ADDR_W(32),
+    .NSLAVE(NSLAVE),
+    .BASE(BASE),
+    .MASK(MASK)
+  ) u_dec_ar (
     .addr_i(s_axil_araddr),
     .sel_o(ar_hit),
     .miss_o(ar_miss),

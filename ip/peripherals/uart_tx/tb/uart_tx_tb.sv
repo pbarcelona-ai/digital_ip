@@ -16,7 +16,11 @@ module uart_tx_tb;
   logic tick, en = 1, pe = 0, po = 0, s2 = 0, tv = 0, tr, txd, busy;
   logic [3:0] nb = 8;
   logic [7:0] td = 0;
-  baud_generator #(.CLK_HZ(100_000_000), .BAUD(1_000_000), .OVERSAMPLE(16)) bg (
+  baud_generator #(
+    .CLK_HZ(100_000_000),
+    .BAUD(1_000_000),
+    .OVERSAMPLE(16)
+  ) bg (
     .clk,
     .rst_n,
     .en_i(1'b1),

@@ -107,8 +107,15 @@ module scaler_mip #(
   logic [ADDR_W-1:0]  ext_waddr, ext_raddr;
   logic [31:0]        ext_wdata;
 
-  scaler_ctrl #(.PIX_W(PIX_W), .ADDR_W(ADDR_W), .MAX_W(MAX_W), .MAX_H(MAX_H),
-                .IP_ID(IP_ID), .CAPS(CAPS), .NBUF(PINGPONG ? 2 : 1)) u_ctrl (
+  scaler_ctrl #(
+    .PIX_W(PIX_W),
+    .ADDR_W(ADDR_W),
+    .MAX_W(MAX_W),
+    .MAX_H(MAX_H),
+    .IP_ID(IP_ID),
+    .CAPS(CAPS),
+    .NBUF(PINGPONG ? 2 : 1)
+  ) u_ctrl (
     .clk,
     .rst_n,
     .s_axil_awaddr,
@@ -315,10 +322,13 @@ module scaler_mip #(
         radv = adv;
       end
     end
-    banked_framebuf #(.PIX_W(PIX_W), .TAPS(2),
-                      .MAX_W((MAX_W >> k) > 0 ? (MAX_W >> k) : 1),
-                      .MAX_H((MAX_H >> k) > 0 ? (MAX_H >> k) : 1),
-                      .NBUF(PINGPONG ? 2 : 1)) u_fb (
+    banked_framebuf #(
+      .PIX_W(PIX_W),
+      .TAPS(2),
+      .MAX_W((MAX_W >> k) > 0 ? (MAX_W >> k) : 1),
+      .MAX_H((MAX_H >> k) > 0 ? (MAX_H >> k) : 1),
+      .NBUF(PINGPONG ? 2 : 1)
+    ) u_fb (
       .clk,
       .wr_en(we),
       .wr_x(wx),

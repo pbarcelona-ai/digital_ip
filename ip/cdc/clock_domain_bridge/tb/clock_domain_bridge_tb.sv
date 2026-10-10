@@ -15,7 +15,10 @@ module cdb_case #(parameter real SP = 10.0, parameter real DP = 13.0) (output in
   always #(DP/2) mclk = ~mclk;
   logic [31:0] sd = 0, md;
   logic sv = 0, sr, mv, mr = 0;
-  clock_domain_bridge #(.DATA_W(32), .STAGES(2)) dut (
+  clock_domain_bridge #(
+    .DATA_W(32),
+    .STAGES(2)
+  ) dut (
     .s_clk(sclk),
     .s_rst_n(srst),
     .s_data_i(sd),
@@ -67,19 +70,31 @@ endmodule
 module clock_domain_bridge_tb;
   int e0, e1, e2, e3;
   bit d0, d1, d2, d3;
-  cdb_case #(10.0, 27.0) a (
+  cdb_case #(
+    10.0,
+    27.0
+  ) a (
     e0,
     d0
   );
-  cdb_case #(27.0, 10.0) b (
+  cdb_case #(
+    27.0,
+    10.0
+  ) b (
     e1,
     d1
   );
-  cdb_case #(10.0, 10.0) c (
+  cdb_case #(
+    10.0,
+    10.0
+  ) c (
     e2,
     d2
   );
-  cdb_case #(7.0, 11.3) d (
+  cdb_case #(
+    7.0,
+    11.3
+  ) d (
     e3,
     d3
   );

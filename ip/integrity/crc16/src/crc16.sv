@@ -28,5 +28,13 @@ module crc16 #(
   output logic [15:0]           crc_o
 );
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
-  crc_core #(.CRC_W(16), .DATA_W(DATA_W), .POLY(POLY), .INIT(INIT), .REFIN(REFIN), .REFOUT(REFOUT), .XOROUT(XOROUT)) u_core (.*);
+  crc_core #(
+    .CRC_W(16),
+    .DATA_W(DATA_W),
+    .POLY(POLY),
+    .INIT(INIT),
+    .REFIN(REFIN),
+    .REFOUT(REFOUT),
+    .XOROUT(XOROUT)
+  ) u_core (.*);
 endmodule

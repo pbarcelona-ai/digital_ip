@@ -146,8 +146,14 @@ module scaler_bilinear #(
 
   // stages 1-2 : 2x2 window p00 p01 / p10 p11 from the frame buffer
   logic [4*PIX_W-1:0] win;
-  banked_framebuf #(.PIX_W(PIX_W), .TAPS(2), .MAX_W(MAX_W), .MAX_H(MAX_H),
-                  .NBUF(NBUF), .RING(LB_ROWS)) u_fb (
+  banked_framebuf #(
+    .PIX_W(PIX_W),
+    .TAPS(2),
+    .MAX_W(MAX_W),
+    .MAX_H(MAX_H),
+    .NBUF(NBUF),
+    .RING(LB_ROWS)
+  ) u_fb (
     .clk,
     .wr_en(fb_we),
     .wr_x(fb_wx),
@@ -258,9 +264,19 @@ module scaler_bilinear #(
 
   // Control, registers and frame buffers. Instantiated last so every
   // signal it connects to is declared above it.
-  scaler_ctrl #(.PIX_W(PIX_W), .ADDR_W(ADDR_W), .MAX_W(MAX_W), .MAX_H(MAX_H),
-                .IP_ID(IP_ID), .CAPS(CAPS), .NBUF(NBUF), .LB_ROWS(LB_ROWS),
-                .LB_TAPS(WIN_T), .LB_CTR(0), .LB_RND(1 << (16 - PHASE_BITS - 1))) u_ctrl (
+  scaler_ctrl #(
+    .PIX_W(PIX_W),
+    .ADDR_W(ADDR_W),
+    .MAX_W(MAX_W),
+    .MAX_H(MAX_H),
+    .IP_ID(IP_ID),
+    .CAPS(CAPS),
+    .NBUF(NBUF),
+    .LB_ROWS(LB_ROWS),
+    .LB_TAPS(WIN_T),
+    .LB_CTR(0),
+    .LB_RND(1 << (16 - PHASE_BITS - 1))
+  ) u_ctrl (
     .clk,
     .rst_n,
     .s_axil_awaddr,

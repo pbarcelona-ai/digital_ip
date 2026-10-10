@@ -1,0 +1,152 @@
+// ***************
+// Filename: clock_diagram.dot
+// Author: FPGA Cores 4 U
+// Description: Clock generation and distribution of video_processor
+//   (src/video_processor.sv). The 33.333 MHz board clock feeds py_soc's
+//   clock generator (clk_gen: CPU PLL, then the video PLL on cpu_clk); one
+//   lane per clock domain: source (PLL output / camera D-PHY RX) -> the
+//   blocks clocked in that domain -> clocks forwarded out of the chip. Clock-domain crossings are listed in the domain tables and in
+//   the crossing table (no lines between domains). Fill colour = clock domain.
+//   The matching reset diagram is reset_diagram.dot.
+//   Render: make diagram
+// Date: 2026-10-09
+// ***************
+digraph video_processor_clocks {
+  graph [rankdir=LR, newrank=true, compound=true, ordering=out, bgcolor="white", pad=0.3, nodesep=0.35, ranksep=0.7,
+         fontname="Helvetica", fontsize=12, labelloc=t, labeljust=l,
+         label=<<FONT POINT-SIZE="22"><B>video_processor: clock generation and distribution</B></FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">One 33.333 MHz board clock; py_soc's clock generator makes every clock except the camera byte clock. Each lane runs from its source to the blocks it clocks and the clocks forwarded off chip. Bold = library IP module name, grey = instance name.<BR ALIGN="LEFT"/>Domains tagged `VP_* exist only when that interface is enabled in src/configuration.sv. The resets of each domain are in reset_diagram.svg.</FONT><BR ALIGN="LEFT"/>>];
+  node  [shape=plaintext, fontname="Helvetica", fontsize=10, margin=0];
+  edge  [arrowsize=0.8, penwidth=2.2, fontname="Helvetica", fontsize=10];
+
+  // ======================= board (outside video_processor) =======================
+  subgraph cluster_board {
+    label=<<B>Board / vendor (not in this design)</B>>; style="dashed,rounded"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=11;
+    dphy_rx [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280">
+      <TR><TD><B>D-PHY RX</B> (vendor)<BR/>recovered from the camera<BR/>CSI-2 clock lane</TD></TR>
+      <TR><TD PORT="byte" BGCOLOR="#ffedd5" ALIGN="RIGHT"><B>byte_clk</B> 125 MHz (1 Gbit/s / lane)</TD></TR></TABLE>>];
+    osc [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280">
+      <TR><TD><B>Oscillator</B><BR/><B>ref_clk</B> 33.333 MHz</TD></TR></TABLE>>];
+  }
+
+  // ======================= video_processor =======================
+  subgraph cluster_top {
+    label=<<FONT POINT-SIZE="15"><B>video_processor</B></FONT>   <FONT COLOR="#6b7280">src/video_processor.sv</FONT>>;
+    style="rounded,filled"; fillcolor="#fbfdff"; color="#1e3a8a"; penwidth=2.2; fontsize=12;
+
+    // ---------- clock generation: py_soc u_cpu.u_clkgen (clk_gen) ----------
+    subgraph cluster_gen {
+      label=<<B>py_soc</B> <FONT COLOR="#6b7280">u_cpu ·</FONT> <B>clk_gen</B> <FONT COLOR="#6b7280">u_clkgen · parameters REF_KHZ, CPU_M/D/O, VID_M/D, *_O</FONT>>;
+      style="rounded,filled"; fillcolor="#fffbeb"; color="#a16207"; penwidth=1.8; fontsize=11;
+      pll_cpu [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fef3c7" COLOR="#a16207">
+        <TR><TD><B>dpll</B> <FONT COLOR="#4b5563">u_pll_cpu</FONT> · CPU PLL (clock multiplier)</TD></TR>
+        <TR><TD ALIGN="LEFT"><B>dpll_ctrl</B> phase detector, PI filter, lock<BR ALIGN="LEFT"/><B>dpll_dco</B> oscillator ref × 24 = 800 MHz</TD></TR>
+        <TR><TD PORT="cpu" BGCOLOR="#ede9fe" ALIGN="RIGHT">÷ 4 → <B>cpu_clk</B> 200 MHz</TD></TR></TABLE>>];
+      pll_vid [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fef3c7" COLOR="#a16207">
+        <TR><TD><B>dpll</B> <FONT COLOR="#4b5563">u_pll_clk</FONT> · video PLL, reference cpu_clk</TD></TR>
+        <TR><TD ALIGN="LEFT"><B>dpll_ctrl</B> phase detector, PI filter, lock<BR ALIGN="LEFT"/><B>dpll_dco</B> oscillator cpu_clk × 35 = 7 GHz<BR ALIGN="LEFT"/>outputs phase aligned, gated by SYSCTL CLK_EN</TD></TR>
+        <TR><TD PORT="pix"  BGCOLOR="#dcfce7" ALIGN="RIGHT">÷ 70 → <B>pix_clk</B> 100 MHz (core logic)</TD></TR>
+        <TR><TD PORT="tmds" BGCOLOR="#dbeafe" ALIGN="RIGHT">÷ 7 → <B>tmds_ser_clk</B> 1 GHz (10 × pix)</TD></TR>
+        <TR><TD PORT="lvds" BGCOLOR="#e0f2fe" ALIGN="RIGHT">÷ 10 → <B>lvds_ser_clk</B> 700 MHz (7 × pix)</TD></TR>
+        <TR><TD PORT="txb"  BGCOLOR="#fce7f3" ALIGN="RIGHT">÷ 56 → <B>tx_byte_clk</B> 125 MHz</TD></TR></TABLE>>];
+    }
+
+    subgraph cluster_byte {
+      label=<<B>byte_clk domain</B>  <FONT COLOR="#6b7280">`VP_CSI2_RX · reset byte_rst_n</FONT>>; style="rounded,filled"; fillcolor="#fff7ed"; color="#ea580c"; fontsize=11;
+      d_byte [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ffedd5" COLOR="#c2410c">
+        <TR><TD ALIGN="LEFT"><B>csi2_rx</B> <FONT COLOR="#4b5563">u_pipe.u_csi</FONT> · lane merge, ECC, CRC</TD></TR>
+        <TR><TD ALIGN="LEFT" BGCOLOR="#fde68a"><B>axis_async_bridge</B> <FONT COLOR="#4b5563">u_pipe.u_cdc</FONT> write side → pix_clk</TD></TR>
+        <TR><TD ALIGN="LEFT" BGCOLOR="#fde68a"><B>pulse_sync</B> ×5 <FONT COLOR="#4b5563">u_pipe.u_ps_fs/corr/err/crc/ovf</FONT> → pix_clk</TD></TR></TABLE>>];
+    }
+
+    subgraph cluster_cpu {
+      label=<<B>cpu_clk domain</B> 200 MHz  <FONT COLOR="#6b7280">reset cpu_rst_n</FONT>>; style="rounded,filled"; fillcolor="#f5f3ff"; color="#7c3aed"; fontsize=11;
+      d_cpu [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ede9fe" COLOR="#6d28d9">
+        <TR><TD ALIGN="LEFT"><B>py_soc</B> <FONT COLOR="#4b5563">u_cpu</FONT> · py_core, py_boot, SRAM, intc, watchdog, SYSCTL,<BR ALIGN="LEFT"/>2× UART, 2× I2C, 2× SPI, 3× GPIO, spi_flash_ctrl; u_pll_clk loop</TD></TR>
+        <TR><TD ALIGN="LEFT" BGCOLOR="#fde68a"><B>axi4_lite_cdc</B> <FONT COLOR="#4b5563">u_axil_cdc</FONT> slave side → pix_clk</TD></TR>
+        <TR><TD ALIGN="LEFT" BGCOLOR="#fde68a"><B>pulse_sync</B> <FONT COLOR="#4b5563">u_irq_stats</FONT> dst side ← pix_clk</TD></TR>
+        <TR><TD ALIGN="LEFT" BGCOLOR="#fde68a"><B>bit_sync</B> ×2 <FONT COLOR="#4b5563">u_irq_frame0/1</FONT> ← pix_clk</TD></TR></TABLE>>];
+    }
+
+    subgraph cluster_pix {
+      label=<<B>pix_clk domain</B> 100 MHz, core logic  <FONT COLOR="#6b7280">reset pix_rst_n</FONT>>; style="rounded,filled"; fillcolor="#f0fdf4"; color="#15803d"; fontsize=11;
+      d_pix [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#dcfce7" COLOR="#15803d">
+        <TR><TD ALIGN="LEFT"><B>py_axil_xbar</B> <FONT COLOR="#4b5563">u_vbus</FONT> · video register bus</TD></TR>
+        <TR><TD ALIGN="LEFT"><B>video_pipeline</B> <FONT COLOR="#4b5563">u_pipe</FONT> · registers, ISP, scaler, vid_timing_gen,<BR ALIGN="LEFT"/>axis_to_video, hdmi_tx, lvds_tx</TD></TR>
+        <TR><TD ALIGN="LEFT"><B>vs_stream_adapter</B> <FONT COLOR="#4b5563">u_vs_adapt</FONT> · <B>vision_system</B> <FONT COLOR="#4b5563">u_vision</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT"><B>blur_sharpen</B> <FONT COLOR="#4b5563">u_filter</FONT> · <B>frame_counter</B> <FONT COLOR="#4b5563">u_frame_cnt</FONT></TD></TR>
+        <TR><TD ALIGN="LEFT" BGCOLOR="#fde68a">read sides of u_axil_cdc (← cpu_clk), u_pipe.u_cdc, u_pipe.u_ps_* (← byte_clk)</TD></TR>
+        <TR><TD ALIGN="LEFT" BGCOLOR="#fde68a">src sides of u_irq_stats, u_irq_frame0/1 (→ cpu_clk)</TD></TR>
+        <TR><TD ALIGN="LEFT" BGCOLOR="#fde68a">parallel sides of u_tmds_ser, u_lvds_ser_a/b, dsi_tx, csi2_tx</TD></TR></TABLE>>];
+    }
+
+    subgraph cluster_tmds {
+      label=<<B>tmds_ser_clk domain</B>  <FONT COLOR="#6b7280">`VP_HDMI · reset tmds_ser_rst_n</FONT>>; style="rounded,filled"; fillcolor="#eff6ff"; color="#1d4ed8"; fontsize=11;
+      d_tmds [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#dbeafe" COLOR="#1d4ed8">
+        <TR><TD ALIGN="LEFT" BGCOLOR="#fde68a"><B>tmds_serializer</B> <FONT COLOR="#4b5563">u_tmds_ser</FONT> · 10:1 shift, ← pix_clk</TD></TR></TABLE>>];
+    }
+
+    subgraph cluster_lvds {
+      label=<<B>lvds_ser_clk domain</B>  <FONT COLOR="#6b7280">`VP_LVDS · reset lvds_ser_rst_n</FONT>>; style="rounded,filled"; fillcolor="#f0f9ff"; color="#0369a1"; fontsize=11;
+      d_lvds [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#e0f2fe" COLOR="#0369a1">
+        <TR><TD ALIGN="LEFT" BGCOLOR="#fde68a"><B>lvds_serializer</B> ×2 <FONT COLOR="#4b5563">u_lvds_ser_a/b</FONT> · 7:1 shift, ← pix_clk</TD></TR></TABLE>>];
+    }
+
+    subgraph cluster_txb {
+      label=<<B>tx_byte_clk domain</B>  <FONT COLOR="#6b7280">`VP_DSI / `VP_CSI2_TX · reset tx_byte_rst_n</FONT>>; style="rounded,filled"; fillcolor="#fdf2f8"; color="#be185d"; fontsize=11;
+      d_txb [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fce7f3" COLOR="#be185d">
+        <TR><TD ALIGN="LEFT" BGCOLOR="#fde68a"><B>dsi_tx</B> <FONT COLOR="#4b5563">u_pipe.u_dsi</FONT> byte side, ← pix_clk</TD></TR>
+        <TR><TD ALIGN="LEFT" BGCOLOR="#fde68a"><B>csi2_tx</B> <FONT COLOR="#4b5563">u_pipe.u_csitx</FONT> byte side, ← pix_clk</TD></TR></TABLE>>];
+    }
+  }
+
+  // ======================= clocks leaving the chip =======================
+  subgraph cluster_out {
+    label=<<B>Forwarded / generated clock outputs</B>>; style="dashed,rounded"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=11;
+    o_cpu [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ffffff" COLOR="#6d28d9">
+      <TR><TD ALIGN="LEFT"><B>flash_sclk_o</B> = cpu_clk / (2 × FLASH_CLKDIV) = 33 MHz at boot</TD></TR>
+      <TR><TD ALIGN="LEFT"><B>spi_sclk_o</B>[1:0] 10 MHz  ·  <B>i2c_scl_o</B>[1:0] 400 kHz  ·  UART 115200</TD></TR>
+      <TR><TD ALIGN="LEFT"><FONT COLOR="#6b7280">divided in logic (registered), UART uses a baud enable</FONT></TD></TR></TABLE>>];
+    o_pix [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ffffff" COLOR="#15803d">
+      <TR><TD ALIGN="LEFT"><B>sdram_clk</B> = pix_clk 100 MHz  (ext_frame_buffer, VS_USE_EXT_FB;<BR ALIGN="LEFT"/>tied 0 with the on-chip frame buffer)</TD></TR></TABLE>>];
+    o_tmds [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ffffff" COLOR="#1d4ed8">
+      <TR><TD ALIGN="LEFT"><B>tmds_serial_o</B>[3] = TMDS clock channel<BR ALIGN="LEFT"/>(pix_clk pattern 0000011111)</TD></TR></TABLE>>];
+    o_lvds [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ffffff" COLOR="#0369a1">
+      <TR><TD ALIGN="LEFT"><B>lvds_a/b_serial_o</B>[4] = LVDS clock lane<BR ALIGN="LEFT"/>(pix_clk pattern 1100011)</TD></TR></TABLE>>];
+    o_txb [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ffffff" COLOR="#be185d">
+      <TR><TD ALIGN="LEFT">dsi_ / csitx_lane_data_o, hs_req_o → vendor D-PHY TX<BR ALIGN="LEFT"/>(the D-PHY TX drives the clock lane)</TD></TR></TABLE>>];
+  }
+
+  // ======================= clock nets (one lane per domain) =======================
+  osc -> pll_cpu         [color="#a16207", label="ref_clk", fontcolor="#a16207"];
+  dphy_rx:byte:e -> d_byte  [color="#ea580c", label="byte_clk", fontcolor="#c2410c"];
+  pll_cpu:cpu:e  -> d_cpu   [color="#7c3aed", label="cpu_clk", fontcolor="#6d28d9"];
+  pll_cpu:cpu:e  -> pll_vid [color="#7c3aed", label="reference", fontcolor="#6d28d9"];
+  pll_vid:pix:e  -> d_pix   [color="#16a34a", label="pix_clk", fontcolor="#15803d"];
+  pll_vid:tmds:e -> d_tmds  [color="#2563eb", label="tmds_ser_clk", fontcolor="#1d4ed8"];
+  pll_vid:lvds:e -> d_lvds  [color="#0284c7", label="lvds_ser_clk", fontcolor="#0369a1"];
+  pll_vid:txb:e  -> d_txb   [color="#db2777", label="tx_byte_clk", fontcolor="#be185d"];
+
+  d_cpu  -> o_cpu  [color="#7c3aed"];
+  d_pix  -> o_pix  [color="#16a34a"];
+  d_tmds -> o_tmds [color="#2563eb"];
+  d_lvds -> o_lvds [color="#0284c7"];
+  d_txb  -> o_txb  [color="#db2777"];
+
+  // ======================= crossings and legend (no lines) =======================
+  cdc [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3" BGCOLOR="#ffffff" COLOR="#a16207">
+    <TR><TD COLSPAN="3" BGCOLOR="#fde68a"><B>Clock-domain crossings</B></TD></TR>
+    <TR><TD><B>from</B></TD><TD><B>to</B></TD><TD ALIGN="LEFT"><B>synchroniser (instance)</B></TD></TR>
+    <TR><TD BGCOLOR="#ede9fe">cpu_clk</TD><TD BGCOLOR="#dcfce7">pix_clk</TD><TD ALIGN="LEFT">axi4_lite_cdc (u_axil_cdc): CPU access to the video registers</TD></TR>
+    <TR><TD BGCOLOR="#dcfce7">pix_clk</TD><TD BGCOLOR="#ede9fe">cpu_clk</TD><TD ALIGN="LEFT">pulse_sync (u_irq_stats), bit_sync ×2 (u_irq_frame0/1): interrupts 12-14</TD></TR>
+    <TR><TD BGCOLOR="#ffedd5">byte_clk</TD><TD BGCOLOR="#dcfce7">pix_clk</TD><TD ALIGN="LEFT">axis_async_bridge (u_pipe.u_cdc, CSI_FIFO words), pulse_sync ×5 (status)</TD></TR>
+    <TR><TD BGCOLOR="#dcfce7">pix_clk</TD><TD BGCOLOR="#dbeafe">tmds_ser_clk</TD><TD ALIGN="LEFT">tmds_serializer (u_tmds_ser)</TD></TR>
+    <TR><TD BGCOLOR="#dcfce7">pix_clk</TD><TD BGCOLOR="#e0f2fe">lvds_ser_clk</TD><TD ALIGN="LEFT">lvds_serializer (u_lvds_ser_a/b)</TD></TR>
+    <TR><TD BGCOLOR="#dcfce7">pix_clk</TD><TD BGCOLOR="#fce7f3">tx_byte_clk</TD><TD ALIGN="LEFT">dsi_tx (u_pipe.u_dsi), csi2_tx (u_pipe.u_csitx); bit_sync u_dsi_busy → pix_clk</TD></TR></TABLE>>];
+
+  // lane order, top to bottom: byte, cpu, pix, tmds, lvds, txb (rankdir=LR draws a same-rank
+  // chain bottom to top), so that no clock net crosses another
+  { rank=same; d_txb -> d_lvds -> d_tmds -> d_pix -> d_cpu -> d_byte [style=invis]; }
+  { rank=same; o_txb -> o_lvds -> o_tmds -> o_pix -> o_cpu [style=invis]; }
+  // keep the crossing table under the last lane
+  o_txb -> cdc [style=invis];
+}

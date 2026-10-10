@@ -27,8 +27,14 @@ module fb_checker #(parameter int TAPS = 4, parameter int MAX_W = 29, parameter 
   logic [PIX_W-1:0]            ref_img [2][MAX_H][MAX_W];  // written image per buffer
 
   // Device under test
-  banked_framebuf #(.PIX_W(PIX_W), .TAPS(TAPS), .MAX_W(MAX_W), .MAX_H(MAX_H),
-                    .NBUF(NBUF), .RING(RING)) dut (.*);
+  banked_framebuf #(
+    .PIX_W(PIX_W),
+    .TAPS(TAPS),
+    .MAX_W(MAX_W),
+    .MAX_H(MAX_H),
+    .NBUF(NBUF),
+    .RING(RING)
+  ) dut (.*);
 
   // clamp v into [0, hi]
   function automatic int cl(int v, int hi);
@@ -125,33 +131,49 @@ module tb_banked_framebuf;
     .checks(c[4]),
     .done(d[4])
   );
-  fb_checker #(.TAPS(8), .MAX_W(40), .MAX_H(17)) u8 (
+  fb_checker #(
+    .TAPS(8),
+    .MAX_W(40),
+    .MAX_H(17)
+  ) u8 (
     .clk,
     .errors(e[5]),
     .checks(c[5]),
     .done(d[5])
   );
   // double buffer (ping-pong)
-  fb_checker #(.TAPS(2), .NBUF(2)) up2 (
+  fb_checker #(
+    .TAPS(2),
+    .NBUF(2)
+  ) up2 (
     .clk,
     .errors(e[6]),
     .checks(c[6]),
     .done(d[6])
   );
-  fb_checker #(.TAPS(6), .NBUF(2)) up6 (
+  fb_checker #(
+    .TAPS(6),
+    .NBUF(2)
+  ) up6 (
     .clk,
     .errors(e[7]),
     .checks(c[7]),
     .done(d[7])
   );
   // line buffer (ring of RING rows)
-  fb_checker #(.TAPS(4), .RING(8))  ur4 (
+  fb_checker #(
+    .TAPS(4),
+    .RING(8)
+  )  ur4 (
     .clk,
     .errors(e[8]),
     .checks(c[8]),
     .done(d[8])
   );
-  fb_checker #(.TAPS(1), .RING(4))  ur1 (
+  fb_checker #(
+    .TAPS(1),
+    .RING(4)
+  )  ur1 (
     .clk,
     .errors(e[9]),
     .checks(c[9]),

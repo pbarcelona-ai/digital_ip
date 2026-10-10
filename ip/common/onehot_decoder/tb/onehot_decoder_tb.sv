@@ -22,7 +22,10 @@ module onehot_decoder_tb;
     .onehot_o(oc),
     .err_o(ec)
   );
-  onehot_decoder #(.WIDTH(6), .REGISTERED(1)) ur (
+  onehot_decoder #(
+    .WIDTH(6),
+    .REGISTERED(1)
+  ) ur (
     .clk,
     .rst_n,
     .en_i(en),

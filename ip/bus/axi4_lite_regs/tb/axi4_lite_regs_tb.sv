@@ -28,7 +28,12 @@ module axi4_lite_regs_tb;
   logic [32*N-1:0] hw = 0, hws = 0, r;
   logic [N-1:0] wp;
   localparam logic [32*N-1:0] rv = {32'hF00D_0007, 32'hF00D_0006, 32'hF00D_0005, 32'hF00D_0004, 32'hF00D_0003, 32'hF00D_0002, 32'hF00D_0001, 32'hF00D_0000};
-  axi4_lite_regs #(.ADDR_W(8), .NREG(N), .ACCESS(ACC), .RESET_VALS(rv)) dut (
+  axi4_lite_regs #(
+    .ADDR_W(8),
+    .NREG(N),
+    .ACCESS(ACC),
+    .RESET_VALS(rv)
+  ) dut (
     .aclk,
     .aresetn,
     .s_axil_awaddr,

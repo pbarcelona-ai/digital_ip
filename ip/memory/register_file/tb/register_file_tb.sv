@@ -12,7 +12,13 @@ module rf_case #(parameter bit Z = 0, parameter bit BY = 0) (input logic clk, in
   logic [3:0] wa, r0, r1;
   logic [15:0] wd;
   logic [31:0] rd;
-  register_file #(.WIDTH(16), .NREG(16), .NRD(2), .ZERO_REG0(Z), .BYPASS(BY)) dut
+  register_file #(
+    .WIDTH(16),
+    .NREG(16),
+    .NRD(2),
+    .ZERO_REG0(Z),
+    .BYPASS(BY)
+  ) dut
     (
     .clk,
     .rst_n,
@@ -57,17 +63,26 @@ module register_file_tb;
   logic clk = 0, rst_n = 0;
   always #5 clk = ~clk;
   int e0, e1, e2;
-  rf_case #(0, 0) a (
+  rf_case #(
+    0,
+    0
+  ) a (
     clk,
     rst_n,
     e0
   );
-  rf_case #(0, 1) b (
+  rf_case #(
+    0,
+    1
+  ) b (
     clk,
     rst_n,
     e1
   );
-  rf_case #(1, 1) c (
+  rf_case #(
+    1,
+    1
+  ) c (
     clk,
     rst_n,
     e2

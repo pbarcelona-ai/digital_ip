@@ -93,7 +93,11 @@ module blur_sharpen #(
   endfunction
 
   logic [NREG*32-1:0] regs, rd;
-  ip_axil_regs #(.ADDR_W(9), .NREG(NREG), .RESET_VALS(reset_vals())) u_regs (
+  ip_axil_regs #(
+    .ADDR_W(9),
+    .NREG(NREG),
+    .RESET_VALS(reset_vals())
+  ) u_regs (
     .aclk(clk),
     .aresetn(rst_n),
     .s_axil_awaddr,
@@ -170,7 +174,14 @@ module blur_sharpen #(
 
   // ---------------- the two stages ----------------
   logic [15:0] frames;
-  conv2d_core #(.N(N), .C(C), .CW(CW), .COEF_W(COEF_W), .MAX_W(MAX_W), .BORDER(BORDER)) u_stage1 (
+  conv2d_core #(
+    .N(N),
+    .C(C),
+    .CW(CW),
+    .COEF_W(COEF_W),
+    .MAX_W(MAX_W),
+    .BORDER(BORDER)
+  ) u_stage1 (
     .clk,
     .rst_n,
     .width_i(size1[15:0]),
@@ -190,7 +201,14 @@ module blur_sharpen #(
     .frame_o(),
     .sof_wait_o(w1)
   );
-  conv2d_core #(.N(N), .C(C), .CW(CW), .COEF_W(COEF_W), .MAX_W(MAX_W), .BORDER(BORDER)) u_stage2 (
+  conv2d_core #(
+    .N(N),
+    .C(C),
+    .CW(CW),
+    .COEF_W(COEF_W),
+    .MAX_W(MAX_W),
+    .BORDER(BORDER)
+  ) u_stage2 (
     .clk,
     .rst_n,
     .width_i(size2[15:0]),

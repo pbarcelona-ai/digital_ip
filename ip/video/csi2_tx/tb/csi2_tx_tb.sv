@@ -74,7 +74,10 @@ module csi2_tx_tb;
     logic [NL-1:0] lv;
     logic req, rdy = 0, drop, uf;
     logic [31:0] fr;
-    csi2_tx #(.NLANES(NL), .MAX_W(64)) dut (
+    csi2_tx #(
+      .NLANES(NL),
+      .MAX_W(64)
+    ) dut (
       .pclk,
       .prst_n,
       .enable_i(en),

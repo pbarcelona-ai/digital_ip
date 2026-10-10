@@ -17,7 +17,12 @@ module dds_tb;
   logic en = 0, ld = 0, vo, ny;
   logic [PW-1:0] tw = 0, off = 0, pl = 0;
   logic signed [OW-1:0] s, c;
-  dds #(.PHASE_W(PW), .OUT_W(OW), .ZW(16), .ITER(IT)) dut (
+  dds #(
+    .PHASE_W(PW),
+    .OUT_W(OW),
+    .ZW(16),
+    .ITER(IT)
+  ) dut (
     .clk,
     .rst_n,
     .en_i(en),

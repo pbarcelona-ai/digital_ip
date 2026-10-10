@@ -26,10 +26,20 @@ module tb_ext_frame_buffer;
   tri [63:0] sdram_dq;
 
   ext_frame_buffer #(
-    .PIX_W(PIX_W), .ADDR_W(ADDR_W), .SDRAM_DQ_W(64), .SDRAM_A_W(SDRAM_A_W),
-    .COL_W(COL_W), .FIFO_DEPTH(8), .FIFO_AW(3), .INIT_WAIT_CYCLES(4),
-    .T_RP_CYCLES(1), .T_RCD_CYCLES(1), .T_RFC_CYCLES(1),
-    .T_MRD_CYCLES(1), .T_WR_CYCLES(1), .CAS_LATENCY(2),
+    .PIX_W(PIX_W),
+    .ADDR_W(ADDR_W),
+    .SDRAM_DQ_W(64),
+    .SDRAM_A_W(SDRAM_A_W),
+    .COL_W(COL_W),
+    .FIFO_DEPTH(8),
+    .FIFO_AW(3),
+    .INIT_WAIT_CYCLES(4),
+    .T_RP_CYCLES(1),
+    .T_RCD_CYCLES(1),
+    .T_RFC_CYCLES(1),
+    .T_MRD_CYCLES(1),
+    .T_WR_CYCLES(1),
+    .CAS_LATENCY(2),
     .REFRESH_INTERVAL_CYCLES(12)
   ) dut (.*);
 

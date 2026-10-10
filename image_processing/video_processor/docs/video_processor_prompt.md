@@ -30,8 +30,7 @@ existing library IP wherever possible.
 | Port | Dir | Width | Group | Built when | Description |
 |---|---|---|---|---|---|
 | `arst_n` | input | 1 | - | - | - |
-| `cpu_clk` | input | 1 | - | - | - |
-| `pix_clk` | input | 1 | - | - | - |
+| `ref_clk` | input | 1 | - | - | board reference clock (REF_KHZ) |
 | `flash_sclk_o` | output | 1 | CPU external interfaces | - | SPI NOR flash (firmware) |
 | `flash_cs_n_o` | output | 1 | CPU external interfaces | - | - |
 | `flash_mosi_o` | output | 1 | CPU external interfaces | - | - |
@@ -60,12 +59,9 @@ existing library IP wherever possible.
 | `byte_clk` | input | 1 | MIPI CSI-2 camera: D-PHY RX PPI | `VP_CSI2_RX` | - |
 | `cam_lane_data_i` | input | [NLANES*8-1:0] | MIPI CSI-2 camera: D-PHY RX PPI | `VP_CSI2_RX` | - |
 | `cam_lane_valid_i` | input | [NLANES-1:0] | MIPI CSI-2 camera: D-PHY RX PPI | `VP_CSI2_RX` | - |
-| `tmds_ser_clk` | input | 1 | HDMI / DVI: 4 differential output buffers | `VP_HDMI` | - |
 | `tmds_serial_o` | output | [3:0] | HDMI / DVI: 4 differential output buffers | `VP_HDMI` | {clock, ch2, ch1, ch0} |
-| `lvds_ser_clk` | input | 1 | LVDS panel: lanes 0-3 data, lane 4 clock, per link | `VP_LVDS` | - |
 | `lvds_a_serial_o` | output | [4:0] | LVDS panel: lanes 0-3 data, lane 4 clock, per link | `VP_LVDS` | - |
 | `lvds_b_serial_o` | output | [4:0] | LVDS panel: lanes 0-3 data, lane 4 clock, per link | `VP_LVDS` | dual link only, else idle |
-| `tx_byte_clk` | input | 1 | LVDS panel: lanes 0-3 data, lane 4 clock, per link | `VP_MIPI_TX` | - |
 | `dsi_lane_data_o` | output | [DSI_LANES*8-1:0] | LVDS panel: lanes 0-3 data, lane 4 clock, per link | `VP_DSI` | - |
 | `dsi_lane_valid_o` | output | [DSI_LANES-1:0] | LVDS panel: lanes 0-3 data, lane 4 clock, per link | `VP_DSI` | - |
 | `dsi_hs_req_o` | output | 1 | LVDS panel: lanes 0-3 data, lane 4 clock, per link | `VP_DSI` | - |
@@ -115,6 +111,10 @@ Analog / high-speed PHYs are vendor parts outside the technology-independent top
 | `py_axil_xbar` | `py_soc` | 1-to-NSLAVE AXI4-Lite interconnect for a single master with one transaction outstanding per direction (py_core). |
 | `spi_flash_ctrl` | `spi_flash_ctrl` | SPI NOR flash controller (single-bit SPI mode 0, 3-byte addressing, e.g. W25Qxx / S25FL / MX25). |
 | `py_boot` | `py_soc` | Flash boot loader for py_soc. |
+| `dpll_ctrl` | `dpll` | Digital loop of dpll: phase detector, PI loop filter and lock detector. |
+| `dpll_dco` | `dpll` | Digitally controlled oscillator with phase read-out (TDC) and NOUT divided outputs, the analogue part of dpll. |
+| `dpll` | `dpll` | All-digital PLL (ADPLL) with NOUT phase-aligned divided outputs. |
+| `clk_gen` | `clk_gen` | Clock generator: one reference clock in, a CPU clock and NCLK further clocks out, every ratio set by parameters. |
 | `py_sysctl` | `py_soc` | py_soc system control registers. |
 | `py_soc` | `py_soc` | Python microcontroller. py_core plus code/constant memory, a flash boot loader, an AXI4-Lite interconnect and the library peripherals: SPI NOR flash controller, 2x UART, 2x I2C master, 2x SPI master,  |
 | `ip_axil_regs` | `shared/src` | Generic AXI4-Lite slave register file. |
@@ -184,10 +184,17 @@ Blocks written for this system (in the design directory, new in a regenerated de
 External / vendor parts named in the reference design:
 
 ```text
-(single link) or 3.5x (dual link) pix_clk, tx_byte_clk (D-PHY TX).
-byte_clk (D-PHY RX), tmds_ser_clk = 10x pix_clk, lvds_ser_clk = 7x
-no target device is selected; a board wrapper adds the PLL / MMCM, the
-vendor D-PHY RX / TX, differential buffers and I/O pads.
+(CPU PLL oscillator 800 MHz), CPU and peripherals
+(py_soc, held until its CPU PLL locks). Its release starts the boot:
+CORE_RESET (py_soc core_rst_n_o, only while the video PLL is locked).
+For synthesis the PLL oscillators (dpll_dco) are black boxes: replace
+and, from cpu_clk (video PLL oscillator cpu_clk x VID_M / VID_D = x35
+byte_clk (D-PHY RX) is recovered from the camera clock lane: an input.
+no target device is selected; a board wrapper adds the vendor D-PHY
+py_soc, released once its PLL locks)
+them, or clk_gen, with the device PLL / MMCM.
+two digital PLLs: every clock of the
+tx_byte_clk = / TXB_O (56) = 125 MHz, D-PHY TX (1 Gbit/s per lane)
 ```
 
 If another needed function is missing, stop and ask which option to use (new / vendor / third-party / stub / drop).
@@ -199,13 +206,17 @@ Implement this behaviour (from the reference design's specification):
 ```text
 Top level of the video processing system (see
 docs/system_block_diagram.svg). Version 2.0.0. Technology independent:
-no target device is selected; a board wrapper adds the PLL / MMCM, the
-vendor D-PHY RX / TX, differential buffers and I/O pads.
+no target device is selected; a board wrapper adds the vendor D-PHY
+RX / TX, differential buffers and I/O pads. All clocks except the
+camera byte clock are generated inside from one board reference clock.
 
-  u_cpu        py_soc           control CPU: Python bytecode from SPI
-                                flash, 2x UART, 2x I2C, 2x SPI, 96 GPIO,
-                                intc, watchdog; external window
-                                0x1_0000-0x1_FFFF -> video registers
+  u_cpu        py_soc           CPU system: clock generator (clk_gen,
+                                two digital PLLs: every clock of the
+                                design from ref_clk), Python bytecode
+                                CPU booting from SPI flash, 2x UART,
+                                2x I2C, 2x SPI, 96 GPIO, intc, watchdog;
+                                external window 0x1_0000-0x1_FFFF ->
+                                video registers
   u_axil_cdc   axi4_lite_cdc    cpu_clk -> pix_clk
   u_vbus       py_axil_xbar     video register bus (axi4_lite_decoder)
   u_pipe       video_pipeline   CSI-2 RX -> ISP -> [insert] -> scaler ->
@@ -225,9 +236,10 @@ vendor D-PHY RX / TX, differential buffers and I/O pads.
   u_irq_stats  pulse_sync       isp_stats frame done -> intc source 12
   u_tmds_ser   tmds_serializer  10:1 HDMI / DVI
   u_lvds_ser_a/b lvds_serializer 7:1 LVDS links A / B
-  u_rst_*      reset_sync       one per clock domain: cpu_clk from arst_n,
-                                the others from arst_n AND the CPU's
-                                core reset release
+  u_rst_*      reset_sync       one per core clock domain, all from the
+                                CPU system's core reset output only
+                                (the CPU clock domain reset comes from
+                                py_soc, released once its PLL locks)
 
 CPU address map (py_soc, mem32[] in the firmware):
   0x0_0100-0x0_C1FF  py_soc peripherals (see py_soc.sv)
@@ -251,16 +263,37 @@ vertical blanking for the next corrected frame (the display follows
 vision_system's output rate, up to LOCK_MAX extra lines). vision_system
 frames are at most 720 x 720 (barrel_pkg).
 
-Clocks: cpu_clk (CPU, CPU_HZ), pix_clk (video, registers, vision_system),
-byte_clk (D-PHY RX), tmds_ser_clk = 10x pix_clk, lvds_ser_clk = 7x
-(single link) or 3.5x (dual link) pix_clk, tx_byte_clk (D-PHY TX).
+Clocks (defaults; see docs/clock_diagram.svg): ref_clk, the board
+oscillator, 33.333 MHz (REF_KHZ). py_soc's clock generator makes
+  cpu_clk      = ref x CPU_M / (CPU_D x CPU_O) = x24 / 4 = 200 MHz
+                 (CPU PLL oscillator 800 MHz), CPU and peripherals
+and, from cpu_clk (video PLL oscillator cpu_clk x VID_M / VID_D = x35
+= 7 GHz, phase-aligned outputs):
+  pix_clk      = / PIX_O  (70) = 100 MHz, core logic: video pipeline,
+                 registers, vision_system, blur_sharpen, SDRAM
+  tmds_ser_clk = / TMDS_O (7)  = 1 GHz, 10x pix_clk (HDMI 1 Gbit/s)
+  lvds_ser_clk = / LVDS_O (10) = 700 MHz, 7x pix_clk (single link;
+                 dual link 3.5x: LVDS_O = 20)
+  tx_byte_clk  = / TXB_O  (56) = 125 MHz, D-PHY TX (1 Gbit/s per lane)
+byte_clk (D-PHY RX) is recovered from the camera clock lane: an input.
+SYSCTL CLK_EN gates each video clock (reset value CLK_EN_RST: core and
+MIPI byte clocks on, the display serial clocks off until the firmware's
+video set-up turns them on). CPU peripherals, one parameter set per
+instance: UART0 console / UART1 host 115200 baud, I2C0 camera CCI
+400 kHz, I2C1 DDC / EEPROM 100 kHz, SPI0 panel / touch 10 MHz, SPI1
+ADC / sensors 2 MHz, boot flash 33 MHz (FLASH_CLKDIV 3); FIFOs 16 words.
+For synthesis the PLL oscillators (dpll_dco) are black boxes: replace
+them, or clk_gen, with the device PLL / MMCM.
 Reset: arst_n, external, asynchronous active low, resets the CPU system
-(py_soc). Its release starts the boot: py_boot loads the firmware from
-flash, the firmware tests the CPU peripherals and then releases the
-core logic reset by writing SYSCTL CORE_RESET (py_soc core_rst_n_o).
+(py_soc, held until its CPU PLL locks). Its release starts the boot:
+py_boot loads the firmware from flash, the firmware tests the CPU
+peripherals and then releases the core logic reset by writing SYSCTL
+CORE_RESET (py_soc core_rst_n_o, only while the video PLL is locked).
 Until then every other block (video_pipeline, vision_system,
-blur_sharpen, frame_counter, serializers) is held in reset: their reset
-is arst_n AND core_rst_n_o, synchronised per clock domain (reset_sync).
+blur_sharpen, frame_counter, serializers) is held in reset: their only
+reset is the CPU system's reset output core_rst_n_o, synchronised per
+clock domain (reset_sync). arst_n reaches them through the CPU: it
+resets py_soc, which clears CORE_RESET (one cpu_clk edge later).
 core_rst_n_o shows the released state to the board. The watchdog resets
 the CPU (wdt_reset_o shows it), which clears CORE_RESET and so puts the
 core logic back into reset until the firmware has booted again.
@@ -268,7 +301,7 @@ core logic back into reset until the firmware has booted again.
 
 ## 7. Clocks, resets and performance
 
-- Clocks: `cpu_clk`, `pix_clk`, `byte_clk`, `tmds_ser_clk`, `lvds_ser_clk`, `tx_byte_clk`.
+- Clocks: `ref_clk`, `byte_clk`.
 - Resets: `arst_n`; one `reset_sync` per domain.
 - Crossings only through library synchronisers.
 - Resources: Last Yosys result: about 45550 LUTs, 618 DSP48E1, 15 RAMB36E1, 46 RAMB18E1.
@@ -326,8 +359,9 @@ cpu_bootup.txt):
      its self-test, releases it (SYSCTL CORE_RESET). Without that release
      (a self-test failed) the video sections are skipped.
   4. Video set-up, every video register programmed with the camera still
-     stopped: camera out of reset (GPIO0[0]), camera frame gap (end of one
-     frame to the start of the next, FRAME_GAP_NS = 1280 ns, CCI registers
+     stopped: display serial clocks on (SYSCTL CLK_EN), camera out of
+     reset (GPIO0[0]), camera frame gap (end of one frame to the start of
+     the next, FRAME_GAP_NS = 1280 ns, CCI registers
      0x20-0x21 over I2C 0), vision_system identity correction, blur_sharpen
      MODE 3, video_pipeline with the insert point, image format, frame
      counter and statistics interrupts.

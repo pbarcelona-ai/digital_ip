@@ -28,7 +28,10 @@ module reset_ctrl_tb;
   logic [NUM_OUT-1:0] rst_o;
   logic bus_rst_n;
 
-  ip_reset_sync_top #(.NUM_OUT(NUM_OUT), .HOLD_DEFAULT(HOLD)) dut (
+  ip_reset_sync_top #(
+    .NUM_OUT(NUM_OUT),
+    .HOLD_DEFAULT(HOLD)
+  ) dut (
     .aclk,
     .arst_i,
     .s_axil_awaddr(awaddr),

@@ -87,7 +87,11 @@ module edge_event_capture_top #(
   logic [10*32-1:0] regs, rd;
   logic [9:0] wr_pulse;
   logic [31:0] wr_data;
-  ip_axil_regs #(.ADDR_W(8), .NREG(10), .RESET_VALS({32'd0, 32'd0, 32'd0, 32'd0, 32'd0, 32'd0, 32'd0, 32'd0, 32'd0, 32'd1})) u_regs (
+  ip_axil_regs #(
+    .ADDR_W(8),
+    .NREG(10),
+    .RESET_VALS({32'd0, 32'd0, 32'd0, 32'd0, 32'd0, 32'd0, 32'd0, 32'd0, 32'd0, 32'd1})
+  ) u_regs (
     .aclk,
     .aresetn,
     .s_axil_awaddr,
@@ -185,7 +189,10 @@ module edge_event_capture_top #(
     end
   end
   logic fu, fl;
-  ip_axis_fifo #(.DATA_W(DW), .DEPTH(FIFO_DEPTH)) u_fifo (
+  ip_axis_fifo #(
+    .DATA_W(DW),
+    .DEPTH(FIFO_DEPTH)
+  ) u_fifo (
     .clk(aclk),
     .rst_n(aresetn),
     .s_tdata(ev_data),

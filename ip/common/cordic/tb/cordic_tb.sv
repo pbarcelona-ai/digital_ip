@@ -26,7 +26,12 @@ module cordic_tb;
   logic signed [W-1:0] xv, yv;
   logic [W:0] mv;
   logic [ZW-1:0] zv;
-  cordic #(.WIDTH(W), .ZW(ZW), .ITER(IT), .MODE(0)) rot (
+  cordic #(
+    .WIDTH(W),
+    .ZW(ZW),
+    .ITER(IT),
+    .MODE(0)
+  ) rot (
     .clk,
     .rst_n,
     .valid_i(v_i),
@@ -39,7 +44,12 @@ module cordic_tb;
     .mag_o(mo),
     .z_o(zo)
   );
-  cordic #(.WIDTH(W), .ZW(ZW), .ITER(IT), .MODE(1)) vec (
+  cordic #(
+    .WIDTH(W),
+    .ZW(ZW),
+    .ITER(IT),
+    .MODE(1)
+  ) vec (
     .clk,
     .rst_n,
     .valid_i(v_i),

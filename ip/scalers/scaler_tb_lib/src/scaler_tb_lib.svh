@@ -47,7 +47,11 @@ logic [31:0]        ctrl_bits  = '0;
 // purpose). Output stream: handshake rules plus full video framing against
 // the programmed output size.
 int chk_in_w = 0, chk_in_h = 0;
-axis_checker #(.DATA_W(PIX_W), .NAME("s_axis"), .CHECK_FRAMING(1'b0)) u_axis_in_chk (
+axis_checker #(
+  .DATA_W(PIX_W),
+  .NAME("s_axis"),
+  .CHECK_FRAMING(1'b0)
+) u_axis_in_chk (
   .clk,
   .rst_n,
   .tvalid(s_tvalid),
@@ -58,7 +62,11 @@ axis_checker #(.DATA_W(PIX_W), .NAME("s_axis"), .CHECK_FRAMING(1'b0)) u_axis_in_
   .frame_w(chk_in_w),
   .frame_h(chk_in_h)
 );
-axis_checker #(.DATA_W(PIX_W), .NAME("m_axis"), .CHECK_FRAMING(1'b1)) u_axis_out_chk (
+axis_checker #(
+  .DATA_W(PIX_W),
+  .NAME("m_axis"),
+  .CHECK_FRAMING(1'b1)
+) u_axis_out_chk (
   .clk,
   .rst_n,
   .tvalid(m_tvalid),

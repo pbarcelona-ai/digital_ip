@@ -46,7 +46,10 @@ module csi2_raw_unpack_tb;
     logic [OW-1:0] md;
     logic ml, mu, mv, mr;
     int nout;
-    csi2_raw_unpack #(.IN_BYTES(IB), .OUT_W(OW)) dut (
+    csi2_raw_unpack #(
+      .IN_BYTES(IB),
+      .OUT_W(OW)
+    ) dut (
       .clk,
       .rst_n,
       .fmt_i(fmt),

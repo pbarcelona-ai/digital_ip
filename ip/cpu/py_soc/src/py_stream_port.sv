@@ -63,7 +63,11 @@ module py_stream_port #(
   logic [7:0] wr_addr, rd_addr;
   logic [31:0] wr_data, rd_data;
   logic [3:0] wr_strb;
-  axi4_lite_slave #(.ADDR_W(8), .READ_WAIT(1), .MAP_WORDS(4)) u_slv (
+  axi4_lite_slave #(
+    .ADDR_W(8),
+    .READ_WAIT(1),
+    .MAP_WORDS(4)
+  ) u_slv (
     .aclk,
     .aresetn,
     .s_axil_awaddr,
@@ -99,7 +103,10 @@ module py_stream_port #(
   logic tx_push, tx_ready, tx_user;
   logic [$clog2(TX_DEPTH)+1:0] tx_level;
   assign tx_push = wr_en && wr_addr[3:2] == 2'd0;
-  ip_axis_fifo #(.DATA_W(DATA_W), .DEPTH(TX_DEPTH)) u_txf (
+  ip_axis_fifo #(
+    .DATA_W(DATA_W),
+    .DEPTH(TX_DEPTH)
+  ) u_txf (
     .clk(aclk),
     .rst_n(aresetn),
     .s_tdata(wr_data[DATA_W-1:0]),
@@ -121,7 +128,10 @@ module py_stream_port #(
   logic [$clog2(RX_DEPTH)+1:0] rx_level;
   // rd_data is sampled in the same clock as rd_en, so popping then is safe
   assign rx_pop = rd_en && rd_addr[3:2] == 2'd1 && rx_valid;
-  ip_axis_fifo #(.DATA_W(DATA_W), .DEPTH(RX_DEPTH)) u_rxf (
+  ip_axis_fifo #(
+    .DATA_W(DATA_W),
+    .DEPTH(RX_DEPTH)
+  ) u_rxf (
     .clk(aclk),
     .rst_n(aresetn),
     .s_tdata(s_axis_tdata),

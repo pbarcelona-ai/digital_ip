@@ -13,8 +13,9 @@ cpu_bootup.txt):
      its self-test, releases it (SYSCTL CORE_RESET). Without that release
      (a self-test failed) the video sections are skipped.
   4. Video set-up, every video register programmed with the camera still
-     stopped: camera out of reset (GPIO0[0]), camera frame gap (end of one
-     frame to the start of the next, FRAME_GAP_NS = 1280 ns, CCI registers
+     stopped: display serial clocks on (SYSCTL CLK_EN), camera out of
+     reset (GPIO0[0]), camera frame gap (end of one frame to the start of
+     the next, FRAME_GAP_NS = 1280 ns, CCI registers
      0x20-0x21 over I2C 0), vision_system identity correction, blur_sharpen
      MODE 3, video_pipeline with the insert point, image format, frame
      counter and statistics interrupts.
@@ -30,11 +31,13 @@ cpu_bootup.txt):
   7. Frame counters and image sequence: frame_counter counts the ends of
      frame of the first pipeline stage (csi2_raw_unpack, interrupt 13,
      COUNT0) and of the last one (into axis_to_video, interrupt 14, COUNT1);
-     the interrupt handler reads the respective counter at each one. While
-     the camera board sends an image sequence (GPIO0[29] = 1; the frames
-     follow each other at the programmed frame gap), every end of frame is
-     reported on UART 0 with the count read (counts of ends of frame that
-     come faster than a line of text are shown by the next report).
+     the interrupt handler reads the respective counter at each one. Once
+     the pipeline is idle both counters are cleared, so the image sequence
+     (GPIO0[29] = 1; the frames follow each other at least the programmed
+     frame gap apart) is counted from 0: the end of its first frame makes a count 1.
+     Every end of frame is reported on UART 0 as its own line, counts 1, 2,
+     3, ... at each stage (frames that end faster than a line of text are
+     reported right after).
   8. Summary and "END OF REPORT".
 
 Text lives in a string table in flash (pyc.py: a string literal is a handle);
@@ -44,6 +47,13 @@ running, 160 = frame-count report, 161 = waiting for the image sequence, 200 = d
 """
 from machine import mem32          # ignored by pyc: mem32 is native
 from video_init import *           # CPU initialisation, UART text output (pyc.py inlines it)
+
+# ---------------- clock generator outputs (SYSCTL CLK_EN bits) ----------------
+CLK_CORE = 1                       # core logic / pixel clock, 100 MHz
+CLK_TMDS = 2                       # HDMI TMDS serial clock, 10x
+CLK_LVDS = 4                       # LVDS serial clock, 7x
+CLK_MIPI = 8                       # MIPI D-PHY TX byte clock, 125 MHz
+CLK_VIDEO_ALL = CLK_CORE | CLK_TMDS | CLK_LVDS | CLK_MIPI
 
 # ---------------- external window (video_processor) ----------------
 VP = 0x10000                       # video_pipeline (scaler at +0x4000)
@@ -200,6 +210,10 @@ def video_setup():
     global stage
     stage = 4
     heading("4. Video set-up (CPU initialisation complete, camera not streaming)")
+    mem32[SYSCTL + CLK_EN] = CLK_VIDEO_ALL             # display serial clocks on (core / MIPI clocks run from reset)
+    say("  Clocks: core 100 MHz, HDMI TMDS 1 GHz, LVDS 700 MHz, MIPI byte 125 MHz (SYSCTL CLK_EN)")
+    result(mem32[SYSCTL + CLK_EN] == CLK_VIDEO_ALL and mem32[SYSCTL + CLK_STATUS] & 1,
+           "clocks: display serial clocks enabled, clock generator locked")
     mem32[GPIO0 + G_DIR] = mem32[GPIO0 + G_DIR] | CAM_RESET_N | LED_MONO
     mem32[GPIO0 + G_SET] = CAM_RESET_N
     say("  Camera released from reset (GPIO0[0] = 1)")
@@ -425,7 +439,7 @@ def now():
 
 
 def frame_sequence():
-    global stage, fc_new
+    global stage, fc_new, fc_first, fc_last
     stage = 160
     heading("7. Frame counters and image sequence")
     say("  frame_counter @ 0x18400 counts the end of every frame:")
@@ -438,6 +452,26 @@ def frame_sequence():
     puts(", last stage ")
     dec(fc_last)
     nl()
+    # wait until the pipeline is empty (no end of frame for QUIET), then clear both counters:
+    # the sequence is counted from 0, the end of its first frame makes a count 1
+    c0 = mem32[FC + FC_COUNT0]
+    c1 = mem32[FC + FC_COUNT1]
+    t0 = now()
+    while now() - t0 < QUIET:
+        n0 = mem32[FC + FC_COUNT0]
+        n1 = mem32[FC + FC_COUNT1]
+        if n0 != c0 or n1 != c1:
+            c0 = n0
+            c1 = n1
+            t0 = now()
+    irq_disable()
+    mem32[FC + FC_CLEAR] = 3
+    fc_first = 0
+    fc_last = 0
+    fc_new = 0
+    irq_enable()
+    result(mem32[FC + FC_COUNT0] == 0 and mem32[FC + FC_COUNT1] == 0,
+           "FRAME_CNT: pipeline idle, both counters cleared before the image sequence")
     # the start of the sequence is latched by the GPIO0 interrupt (it may be short and over
     # before this point is reached); the counts at its start come from the handler too
     stage = 161                                        # listening for the image sequence
@@ -449,16 +483,18 @@ def frame_sequence():
         return
     puts("  Image sequence (GPIO0[29] rose), frames ")
     dec(FRAME_GAP_NS)
-    puts(" ns apart; counts at its start: first stage ")
+    puts(" ns or more apart; counts at its start: first stage ")
     dec(seq_first)
     puts(", last stage ")
     dec(seq_last)
     nl()
     first0 = seq_first
     last0 = seq_last
-    irq_disable()
-    fc_new = 3                                         # report the counts now, then every new one
-    irq_enable()
+    # one line per end of frame: every count from the last one reported up to the one the handler
+    # read (the counters only advance at an end of frame, so each count is one frame; several frames
+    # can end while a line is being sent)
+    pf = first0
+    pl = last0
     t0 = now()
     seq = 1
     while seq or now() - t0 < QUIET:                   # until the sequence ended and the pipeline is empty
@@ -468,13 +504,15 @@ def frame_sequence():
         f = fc_first
         l = fc_last
         irq_enable()
-        if ev & 1:
+        while pf < f:
+            pf += 1
             puts("  EOF first stage (interrupt 13): frame count ")
-            dec(f)
+            dec(pf)
             nl()
-        if ev & 2:
+        while pl < l:
+            pl += 1
             puts("  EOF last stage  (interrupt 14): frame count ")
-            dec(l)
+            dec(pl)
             nl()
         if ev:
             t0 = now()
@@ -488,8 +526,8 @@ def frame_sequence():
     say(" at the last stage")
     if fc_last - last0 < fc_first - first0:
         say("  (vs_stream_adapter drops frames that arrive while vision_system is busy: a longer gap passes more)")
-    result(fc_first - first0 > 0 and fc_last - last0 > 0,
-           "FRAME_CNT: ends of frame counted at the first and the last stage")
+    result(first0 == 0 and last0 == 0 and fc_first > 0 and fc_last > 0,
+           "FRAME_CNT: counts start at 0, each end of frame adds 1 at the first and the last stage")
 
 
 # ======================================================================= main

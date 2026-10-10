@@ -60,7 +60,12 @@ module video_pipeline_tb;
   logic [15:0] dsi_d, ctx_d;
   logic [1:0] dsi_v, ctx_v;
   logic dsi_req, ctx_req, dsi_rdy = 0, ctx_rdy = 0;
-  video_pipeline #(.NLANES(2), .MAX_W(64), .CSI_FIFO(256), .OUT_FIFO(512)) dut (
+  video_pipeline #(
+    .NLANES(2),
+    .MAX_W(64),
+    .CSI_FIFO(256),
+    .OUT_FIFO(512)
+  ) dut (
 `ifdef VP_CSI2_RX
     .byte_clk,
     .byte_rst_n,
@@ -243,7 +248,10 @@ module video_pipeline_tb;
 `else
   wire sink_en = 1'b0;
 `endif
-  hdmi_bfm #(.MAXW(64), .MAXH(32)) sink (
+  hdmi_bfm #(
+    .MAXW(64),
+    .MAXH(32)
+  ) sink (
     .clk(pix_clk),
     .en(sink_en),
     .ch0(t0),

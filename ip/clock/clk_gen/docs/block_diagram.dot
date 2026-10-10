@@ -1,0 +1,22 @@
+digraph "clk_gen" {
+  graph [rankdir=LR, bgcolor="white", pad=0.25, nodesep=0.35, ranksep=0.65, label="clk_gen RTL hierarchy", labelloc=t, fontname="Helvetica", fontsize=16];
+  node [shape=box, fontname="Helvetica", fontsize=10, margin="0.14,0.08"];
+  edge [color="#52635c", arrowsize=0.7];
+  n0 [label="clk_gen\n(top)", style="rounded,filled", fillcolor="#dcefe8", color="#176b59"];
+  n1 [label="reset_sync\n(u_rst_ref)", style="rounded,filled", fillcolor="#f4f6f5", color="#71817a"];
+  n2 [label="dpll\n(u_pll_cpu)", style="rounded,filled", fillcolor="#f4f6f5", color="#71817a"];
+  n3 [label="dpll_ctrl\n(u_ctrl)", style="rounded,filled", fillcolor="#f4f6f5", color="#71817a"];
+  n4 [label="dpll_dco\n(u_dco)", style="rounded,filled", fillcolor="#f4f6f5", color="#71817a"];
+  n5 [label="reset_sync\n(u_lock_cpu)", style="rounded,filled", fillcolor="#f4f6f5", color="#71817a"];
+  n6 [label="dpll\n(u_pll_clk)", style="rounded,filled", fillcolor="#f4f6f5", color="#71817a"];
+  n7 [label="dpll_ctrl\n(u_ctrl)", style="rounded,filled", fillcolor="#f4f6f5", color="#71817a"];
+  n8 [label="dpll_dco\n(u_dco)", style="rounded,filled", fillcolor="#f4f6f5", color="#71817a"];
+  n0 -> n1;
+  n0 -> n2;
+  n2 -> n3;
+  n2 -> n4;
+  n0 -> n5;
+  n0 -> n6;
+  n6 -> n7;
+  n6 -> n8;
+}

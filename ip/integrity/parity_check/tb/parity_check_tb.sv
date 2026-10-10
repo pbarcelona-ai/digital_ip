@@ -14,7 +14,11 @@ module pc_case #(parameter bit ODD = 0) (input logic clk, input logic rst_n, out
   logic [7:0] d = 0;
   logic p = 0, e, s;
   logic [3:0] c;
-  parity_check #(.WIDTH(8), .ODD(ODD), .CNT_W(4)) dut (
+  parity_check #(
+    .WIDTH(8),
+    .ODD(ODD),
+    .CNT_W(4)
+  ) dut (
     .clk,
     .rst_n,
     .valid_i(v),

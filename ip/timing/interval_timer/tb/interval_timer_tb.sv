@@ -14,7 +14,10 @@ module interval_timer_tb;
   logic start = 0, stop = 0, auto = 1, run, tick, err;
   logic [15:0] iv = 10, rem;
   logic [3:0] ps = 0;
-  interval_timer #(.WIDTH(16), .PRES_W(4)) dut (
+  interval_timer #(
+    .WIDTH(16),
+    .PRES_W(4)
+  ) dut (
     .clk,
     .rst_n,
     .start_i(start),

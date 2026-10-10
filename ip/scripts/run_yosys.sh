@@ -25,7 +25,7 @@ if [ -f "$IPDIR/scripts/sv2v" ]; then
   # scaler family): convert the whole file list with sv2v first, as the
   # scaler flow does
   command -v sv2v >/dev/null || { echo "sv2v not found"; exit 1; }
-  sv2v $(filelist "$IP") > "$OUT/$IP.sv2v.v"
+  sv2v -DSYNTHESIS $(filelist "$IP") > "$OUT/$IP.sv2v.v"     # SYNTHESIS: black boxes (e.g. dpll_dco)
   { echo "# generated from $CAT/$IP/scripts/build.f via sv2v"
     echo "read_verilog -sv $OUT/$IP.sv2v.v"
     echo "hierarchy -check -top $TOP"; } > "$OUT/read_design.ys"

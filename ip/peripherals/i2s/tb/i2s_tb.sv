@@ -174,25 +174,37 @@ module i2s_tb;
   always #5 clk = ~clk;
   int e0, e1, e2, e3;
   bit d0, d1, d2, d3;
-  i2s_case #(16, 1) a (
+  i2s_case #(
+    16,
+    1
+  ) a (
     clk,
     rst_n,
     e0,
     d0
   );
-  i2s_case #(16, 3) b (
+  i2s_case #(
+    16,
+    3
+  ) b (
     clk,
     rst_n,
     e1,
     d1
   );
-  i2s_case #(24, 2) c (
+  i2s_case #(
+    24,
+    2
+  ) c (
     clk,
     rst_n,
     e2,
     d2
   );
-  i2s_case #(32, 1) d (
+  i2s_case #(
+    32,
+    1
+  ) d (
     clk,
     rst_n,
     e3,

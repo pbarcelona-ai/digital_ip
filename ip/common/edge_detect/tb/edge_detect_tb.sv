@@ -13,25 +13,38 @@ module edge_detect_tb;
   always #5 clk = ~clk;
   logic [1:0] d = 0;
   logic [1:0] pr, pf, pb, ps;
-  edge_detect #(.WIDTH(2), .EDGE(0)) ur (
+  edge_detect #(
+    .WIDTH(2),
+    .EDGE(0)
+  ) ur (
     .clk,
     .rst_n,
     .d_i(d),
     .pulse_o(pr)
   );
-  edge_detect #(.WIDTH(2), .EDGE(1)) uf (
+  edge_detect #(
+    .WIDTH(2),
+    .EDGE(1)
+  ) uf (
     .clk,
     .rst_n,
     .d_i(d),
     .pulse_o(pf)
   );
-  edge_detect #(.WIDTH(2), .EDGE(2)) ub (
+  edge_detect #(
+    .WIDTH(2),
+    .EDGE(2)
+  ) ub (
     .clk,
     .rst_n,
     .d_i(d),
     .pulse_o(pb)
   );
-  edge_detect #(.WIDTH(2), .EDGE(0), .SYNC_INPUT(1)) us (
+  edge_detect #(
+    .WIDTH(2),
+    .EDGE(0),
+    .SYNC_INPUT(1)
+  ) us (
     .clk,
     .rst_n,
     .d_i(d),

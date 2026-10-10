@@ -125,7 +125,10 @@ module dsi_tx #(
   assign ev_w = {vs_act && !vs_line_q, pend, pbuf, pwidth};
   logic [18:0] ev;
   logic ev_v, ev_r;
-  async_fifo #(.DATA_W(19), .DEPTH(16)) u_ev (
+  async_fifo #(
+    .DATA_W(19),
+    .DEPTH(16)
+  ) u_ev (
     .wclk(pclk),
     .wrst_n(prst_n),
     .wdata(ev_w),
@@ -144,7 +147,10 @@ module dsi_tx #(
   logic cq_v, cq_r;
   logic [7:0] pb;
   logic pb_v, pb_r;
-  async_fifo #(.DATA_W(25), .DEPTH(16)) u_cmd (
+  async_fifo #(
+    .DATA_W(25),
+    .DEPTH(16)
+  ) u_cmd (
     .wclk(pclk),
     .wrst_n(prst_n),
     .wdata(cmd_i),
@@ -157,7 +163,10 @@ module dsi_tx #(
     .rvalid(cq_v),
     .rready(cq_r)
   );
-  async_fifo #(.DATA_W(8), .DEPTH(256)) u_pay (
+  async_fifo #(
+    .DATA_W(8),
+    .DEPTH(256)
+  ) u_pay (
     .wclk(pclk),
     .wrst_n(prst_n),
     .wdata(cmd_byte_i),
@@ -209,7 +218,10 @@ module dsi_tx #(
   logic eng_busy;
   assign cmd_busy_o = cq_v || (eng_busy && !ev_v);
 
-  mipi_tx_engine #(.NLANES(NLANES), .MAX_W(MAX_W)) u_eng (
+  mipi_tx_engine #(
+    .NLANES(NLANES),
+    .MAX_W(MAX_W)
+  ) u_eng (
     .clk(bclk),
     .rst_n(brst_n),
     .cmd_i(cmd),

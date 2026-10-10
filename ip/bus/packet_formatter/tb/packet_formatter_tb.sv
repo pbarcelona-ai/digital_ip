@@ -18,7 +18,12 @@ module pf_case #(parameter bit TRL = 0, parameter int MINB = 0) (input logic clk
   logic [31:0] trl = 0, sd = 0, md;
   logic [3:0] sk = 4'hF, mk;
   logic sl = 0, sv = 0, sr, ml, mv, mr = 1, aerr;
-  packet_formatter #(.DATA_W(32), .HDR_BYTES(8), .TRAILER(TRL), .MIN_BEATS(MINB)) dut (
+  packet_formatter #(
+    .DATA_W(32),
+    .HDR_BYTES(8),
+    .TRAILER(TRL),
+    .MIN_BEATS(MINB)
+  ) dut (
     .aclk(clk),
     .aresetn(rst_n),
     .hdr_i(hdr),
@@ -42,7 +47,11 @@ module pf_case #(parameter bit TRL = 0, parameter int MINB = 0) (input logic clk
   logic [31:0] qd;
   logic [3:0] qk;
   logic ql, qv;
-  packet_parser #(.DATA_W(32), .HDR_BYTES(8), .STRIP(1)) par (
+  packet_parser #(
+    .DATA_W(32),
+    .HDR_BYTES(8),
+    .STRIP(1)
+  ) par (
     .aclk(clk),
     .aresetn(rst_n),
     .s_axis_tdata(md),
@@ -138,19 +147,28 @@ module packet_formatter_tb;
   always #5 clk = ~clk;
   int e0, e1, e2, ea = 0;
   bit d0, d1, d2;
-  pf_case #(0, 0) a (
+  pf_case #(
+    0,
+    0
+  ) a (
     clk,
     rst_n,
     e0,
     d0
   );
-  pf_case #(1, 6) b (
+  pf_case #(
+    1,
+    6
+  ) b (
     clk,
     rst_n,
     e1,
     d1
   );
-  pf_case #(0, 5) c (
+  pf_case #(
+    0,
+    5
+  ) c (
     clk,
     rst_n,
     e2,

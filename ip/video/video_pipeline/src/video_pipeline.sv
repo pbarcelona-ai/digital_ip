@@ -225,7 +225,10 @@ module video_pipeline #(
   logic [63:0] sp_wdata, sp_rdata;
   logic [7:0] sp_wstrb;
   logic [3:0] sp_bresp, sp_rresp;
-  axil_split #(.ADDR_W(15), .SEL_BIT(14)) u_split (
+  axil_split #(
+    .ADDR_W(15),
+    .SEL_BIT(14)
+  ) u_split (
     .clk,
     .rst_n,
     .s_awaddr(s_axil_awaddr),
@@ -288,7 +291,11 @@ module video_pipeline #(
   logic [NREG*32-1:0] regs, rd;
   logic [NREG-1:0] wr_pulse;
   logic [31:0] wr_data;
-  ip_axil_regs #(.ADDR_W(8), .NREG(NREG), .RESET_VALS(reset_vals())) u_regs (
+  ip_axil_regs #(
+    .ADDR_W(8),
+    .NREG(NREG),
+    .RESET_VALS(reset_vals())
+  ) u_regs (
     .aclk(clk),
     .aresetn(rst_n),
     .s_axil_awaddr(sp_awaddr[7:0]),
@@ -358,7 +365,11 @@ module video_pipeline #(
     .overflow_o(e_ovf)
   );
 
-  axis_async_bridge #(.DATA_W(NLANES*8), .DEPTH(CSI_FIFO), .USER_W(1)) u_cdc (
+  axis_async_bridge #(
+    .DATA_W(NLANES*8),
+    .DEPTH(CSI_FIFO),
+    .USER_W(1)
+  ) u_cdc (
     .s_clk(byte_clk),
     .s_rst_n(byte_rst_n),
     .s_axis_tdata(c_data),
@@ -445,7 +456,10 @@ module video_pipeline #(
   // ================================================================ ISP (pixel clock)
   logic [RW-1:0] u_d;
   logic u_l, u_u, u_v, u_r;
-  csi2_raw_unpack #(.IN_BYTES(NLANES), .OUT_W(RW)) u_unpack (
+  csi2_raw_unpack #(
+    .IN_BYTES(NLANES),
+    .OUT_W(RW)
+  ) u_unpack (
     .clk,
     .rst_n,
     .fmt_i(regs[4*32 +: 6]),
@@ -488,7 +502,10 @@ module video_pipeline #(
 
   logic [RW-1:0] p_d;
   logic p_l, p_u, p_v, p_r, dpc_corr;
-  isp_dpc #(.PW(RW), .MAX_W(MAX_W)) u_dpc (
+  isp_dpc #(
+    .PW(RW),
+    .MAX_W(MAX_W)
+  ) u_dpc (
     .clk,
     .rst_n,
     .width_i(fw),
@@ -510,7 +527,10 @@ module video_pipeline #(
 
   logic [3*RW-1:0] d_d;
   logic d_l, d_u, d_v, d_r;
-  isp_demosaic #(.PW(RW), .MAX_W(MAX_W)) u_demosaic (
+  isp_demosaic #(
+    .PW(RW),
+    .MAX_W(MAX_W)
+  ) u_demosaic (
     .clk,
     .rst_n,
     .width_i(fw),
@@ -600,7 +620,10 @@ module video_pipeline #(
   end
   logic [23:0] gm_d;
   logic gm_l, gm_u, gm_v, gm_r;
-  isp_gamma #(.IN_W(RW), .OUT_W(8)) u_gamma (
+  isp_gamma #(
+    .IN_W(RW),
+    .OUT_W(8)
+  ) u_gamma (
     .clk,
     .rst_n,
     .bypass_i(byp[5]),
@@ -797,16 +820,44 @@ module video_pipeline #(
   end
 
   if (SCALER) begin : g_scaler
-    scaler_bilinear #(.CHANNELS(3), .COMP_W(8), .MAX_W(MAX_W), .MAX_H(4096), .ADDR_W(14), .LINE_BUF(1)) u_scaler (
-      .clk, .rst_n,
-      .s_axil_awaddr(sp_awaddr[15 +: 14]), .s_axil_awvalid(sp_awvalid[1]), .s_axil_awready(sp_awready[1]),
-      .s_axil_wdata(sp_wdata[63:32]), .s_axil_wstrb(sp_wstrb[7:4]), .s_axil_wvalid(sp_wvalid[1]), .s_axil_wready(sp_wready[1]),
-      .s_axil_bresp(sp_bresp[3:2]), .s_axil_bvalid(sp_bvalid[1]), .s_axil_bready(sp_bready[1]),
-      .s_axil_araddr(sp_araddr[15 +: 14]), .s_axil_arvalid(sp_arvalid[1]), .s_axil_arready(sp_arready[1]),
-      .s_axil_rdata(sp_rdata[63:32]), .s_axil_rresp(sp_rresp[3:2]), .s_axil_rvalid(sp_rvalid[1]), .s_axil_rready(sp_rready[1]),
-      .s_axis_tdata(cs_d), .s_axis_tvalid(cs_v && route_now && !in_block), .s_axis_tready(sc_in_r),
-      .s_axis_tuser(cs_u), .s_axis_tlast(cs_l),
-      .m_axis_tdata(sc_d), .m_axis_tvalid(sc_v), .m_axis_tready(sc_r), .m_axis_tuser(sc_u), .m_axis_tlast(sc_l));
+    scaler_bilinear #(
+      .CHANNELS(3),
+      .COMP_W(8),
+      .MAX_W(MAX_W),
+      .MAX_H(4096),
+      .ADDR_W(14),
+      .LINE_BUF(1)
+    ) u_scaler (
+      .clk,
+      .rst_n,
+      .s_axil_awaddr(sp_awaddr[15 +: 14]),
+      .s_axil_awvalid(sp_awvalid[1]),
+      .s_axil_awready(sp_awready[1]),
+      .s_axil_wdata(sp_wdata[63:32]),
+      .s_axil_wstrb(sp_wstrb[7:4]),
+      .s_axil_wvalid(sp_wvalid[1]),
+      .s_axil_wready(sp_wready[1]),
+      .s_axil_bresp(sp_bresp[3:2]),
+      .s_axil_bvalid(sp_bvalid[1]),
+      .s_axil_bready(sp_bready[1]),
+      .s_axil_araddr(sp_araddr[15 +: 14]),
+      .s_axil_arvalid(sp_arvalid[1]),
+      .s_axil_arready(sp_arready[1]),
+      .s_axil_rdata(sp_rdata[63:32]),
+      .s_axil_rresp(sp_rresp[3:2]),
+      .s_axil_rvalid(sp_rvalid[1]),
+      .s_axil_rready(sp_rready[1]),
+      .s_axis_tdata(cs_d),
+      .s_axis_tvalid(cs_v && route_now && !in_block),
+      .s_axis_tready(sc_in_r),
+      .s_axis_tuser(cs_u),
+      .s_axis_tlast(cs_l),
+      .m_axis_tdata(sc_d),
+      .m_axis_tvalid(sc_v),
+      .m_axis_tready(sc_r),
+      .m_axis_tuser(sc_u),
+      .m_axis_tlast(sc_l)
+    );
   end else begin : g_no_scaler
     assign sc_in_r = 1'b0;
     assign sc_v = 1'b0;
@@ -905,7 +956,10 @@ module video_pipeline #(
 
   logic [23:0] v_rgb;
   logic v_de, v_hs, v_vs, locked, underflow;
-  axis_to_video #(.PIX_W(24), .FIFO_DEPTH(OUT_FIFO)) u_out (
+  axis_to_video #(
+    .PIX_W(24),
+    .FIFO_DEPTH(OUT_FIFO)
+  ) u_out (
     .clk,
     .rst_n,
     .tpg_en_i(tpg),

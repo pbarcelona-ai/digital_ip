@@ -35,7 +35,10 @@ module usb_fs_sie_tb;
 
   wire bus_dp, bus_dm;                                       // resolved bus (usb_bfm)
 
-  usb_fs_sie_top #(.CLK_HZ(CLK_HZ), .FIFO_DEPTH(64)) dut (
+  usb_fs_sie_top #(
+    .CLK_HZ(CLK_HZ),
+    .FIFO_DEPTH(64)
+  ) dut (
     .aclk,
     .aresetn,
     .s_axil_awaddr(awaddr),

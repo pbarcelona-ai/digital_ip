@@ -13,7 +13,10 @@ module bit_sync_tb;
   logic clk = 0, rst_n = 0, d = 0;
   always #5 clk = ~clk;
   logic q2, q3;
-  bit_sync #(.STAGES(2), .RESET_VAL(1'b1)) u2 (
+  bit_sync #(
+    .STAGES(2),
+    .RESET_VAL(1'b1)
+  ) u2 (
     .clk,
     .rst_n,
     .d_i(d),

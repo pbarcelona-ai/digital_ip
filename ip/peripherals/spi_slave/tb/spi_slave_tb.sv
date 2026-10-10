@@ -23,7 +23,12 @@ module spi_case #(parameter int NB = 8, parameter bit CPOL = 0, parameter bit CP
   );
   logic [NB-1:0] txd, rxd;
   logic txv, txr, rxv, act, fe, ferr, under;
-  spi_slave #(.WORD_BITS(NB), .CPOL(CPOL), .CPHA(CPHA), .LSB_FIRST(LSB)) dut (
+  spi_slave #(
+    .WORD_BITS(NB),
+    .CPOL(CPOL),
+    .CPHA(CPHA),
+    .LSB_FIRST(LSB)
+  ) dut (
     .clk,
     .rst_n,
     .sclk_i(sclk),
@@ -124,37 +129,68 @@ module spi_slave_tb;
   always #5 clk = ~clk;
   int e0, e1, e2, e3, e4, e5;
   bit d0, d1, d2, d3, d4, d5;
-  spi_case #(8, 0, 0, 0) m0 (
+  spi_case #(
+    8,
+    0,
+    0,
+    0
+  ) m0 (
     clk,
     rst_n,
     e0,
     d0
   );
-  spi_case #(8, 0, 1, 0) m1 (
+  spi_case #(
+    8,
+    0,
+    1,
+    0
+  ) m1 (
     clk,
     rst_n,
     e1,
     d1
   );
-  spi_case #(8, 1, 0, 0) m2 (
+  spi_case #(
+    8,
+    1,
+    0,
+    0
+  ) m2 (
     clk,
     rst_n,
     e2,
     d2
   );
-  spi_case #(8, 1, 1, 0) m3 (
+  spi_case #(
+    8,
+    1,
+    1,
+    0
+  ) m3 (
     clk,
     rst_n,
     e3,
     d3
   );
-  spi_case #(12, 0, 1, 1) m4 (
+  spi_case #(
+    12,
+    0,
+    1,
+    1
+  ) m4 (
     clk,
     rst_n,
     e4,
     d4
   );
-  spi_case #(16, 1, 0, 0, 8) m5 (
+  spi_case #(
+    16,
+    1,
+    0,
+    0,
+    8
+  ) m5 (
     clk,
     rst_n,
     e5,

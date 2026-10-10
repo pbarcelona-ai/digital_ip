@@ -45,8 +45,14 @@ module tb_case #(parameter real SP = 10.0, parameter real DP = 27.0) (output int
 endmodule
 module toggle_sync_tb;
   int e1, e2;
-  tb_case #(.SP(10.0), .DP(27.0)) a (.errors(e1));
-  tb_case #(.SP(27.0), .DP(10.0)) b (.errors(e2));
+  tb_case #(
+    .SP(10.0),
+    .DP(27.0)
+  ) a (.errors(e1));
+  tb_case #(
+    .SP(27.0),
+    .DP(10.0)
+  ) b (.errors(e2));
   initial begin
     if ($test$plusargs("vcd")) begin
       $dumpfile("toggle_sync_tb.vcd");

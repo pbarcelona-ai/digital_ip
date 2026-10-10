@@ -32,7 +32,10 @@ wire [1:0]         bresp, rresp;
 wire [31:0]        rdata;
 
 // AXI4-Lite protocol checker + coverage on the testbench/DUT control link
-axil_checker #(.ADDR_W(ADDR_W), .NAME("s_axil")) u_axil_chk (
+axil_checker #(
+  .ADDR_W(ADDR_W),
+  .NAME("s_axil")
+) u_axil_chk (
   .clk,
   .rst_n,
   .awaddr,

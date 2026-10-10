@@ -20,7 +20,13 @@ module fir_tb;
   logic signed [CW-1:0] cval = 0;
   logic signed [DW-1:0] din = 0;
   logic signed [OW-1:0] dout;
-  fir #(.TAPS(T), .DATA_W(DW), .COEF_W(CW), .OUT_W(OW), .OUT_SHIFT(SH)) dut (
+  fir #(
+    .TAPS(T),
+    .DATA_W(DW),
+    .COEF_W(CW),
+    .OUT_W(OW),
+    .OUT_SHIFT(SH)
+  ) dut (
     .clk,
     .rst_n,
     .coef_we_i(cwe),

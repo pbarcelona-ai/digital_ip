@@ -147,7 +147,8 @@
 <text x="1309.0" y="744" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#374151">bicubic     48</text>
 <text x="1309.0" y="758" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#374151">slow+bil.  71</text>
 <text x="1309.0" y="772" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#374151">slow+bic.  88</text>
-<polyline points="158,155 205,155" fill="none" stroke="#2563eb" stroke-width="1.8" marker-end="url(#e_2563eb)" marker-start="url(#s_2563eb)"/>
+<polyline points="158,147 205,147" fill="none" stroke="#2563eb" stroke-width="1.8" marker-end="url(#e_2563eb)"/>
+<polyline points="205,163 158,163" fill="none" stroke="#2563eb" stroke-width="1.8" marker-end="url(#e_2563eb)"/>
 <polyline points="505,175 530,175" fill="none" stroke="#2563eb" stroke-width="1.8" marker-end="url(#e_2563eb)"/>
 <polyline points="700,248 700,262 1133,262 1133,290" fill="none" stroke="#2563eb" stroke-width="2.4" marker-end="url(#e_2563eb)"/>
 <text x="910" y="257" font-size="10.5" font-weight="normal" text-anchor="middle" fill="#2563eb" font-style="italic">cfg : calib_params_t  +  img_width/height, interp_mode, 1/fx, 1/fy</text>

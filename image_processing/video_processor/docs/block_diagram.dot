@@ -19,7 +19,6 @@ digraph video_processor {
     label=<<B>Board / vendor (not in this design)</B>>; style="dashed,rounded"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=11;
     sensor [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>Camera sensor</B><BR/>RAW10 Bayer, MIPI CSI-2</TD></TR></TABLE>>];
     dphy_rx [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>D-PHY RX</B> (vendor)<BR/>HS bytes per lane (PPI)<BR/>→ byte_clk</TD></TR></TABLE>>];
-    pll [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280"><TR><TD><B>PLL / MMCM</B> (vendor)<BR/>pix_clk, tmds_ser_clk (10x),<BR/>lvds_ser_clk (7x / 3.5x), tx_byte_clk<BR/>arst_n = locked AND board reset</TD></TR></TABLE>>];
     host [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#f3f4f6" COLOR="#6b7280" STYLE="dashed"><TR><TD><B>Host processor</B><BR/>AXI4-Lite master, e.g. <B>py_soc</B><BR/><FONT COLOR="#6b7280">(py_core + spi_flash_ctrl, uart_top,<BR/>i2c_top for sensor setup, gpio_top …;<BR/>needs an AXI master port to connect)</FONT></TD></TR></TABLE>>];
   }
   sensor -> dphy_rx [label="CSI-2\nlanes"];
@@ -29,6 +28,7 @@ digraph video_processor {
     label=<<FONT POINT-SIZE="15"><B>video_processor</B></FONT>   <FONT COLOR="#6b7280">src/video_processor.sv</FONT>>;
     style="rounded,filled"; fillcolor="#fbfdff"; color="#1e3a8a"; penwidth=2.2; fontsize=12;
 
+    pll [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#fef3c7" COLOR="#a16207"><TR><TD><B>py_soc clock generator</B> (u_cpu.u_clkgen)<BR/>pix_clk 100 MHz, tmds_ser_clk 1 GHz (10x),<BR/>lvds_ser_clk 700 MHz (7x), tx_byte_clk 125 MHz<BR/>from the 33.333 MHz board clock</TD></TR></TABLE>>];
     resets [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fef9c3" COLOR="#a16207">
       <TR><TD><B>reset_sync</B> ×5</TD></TR>
       <TR><TD ALIGN="LEFT"><FONT COLOR="#4b5563">u_rst_pix · u_rst_byte · u_rst_tx_byte<BR ALIGN="LEFT"/>u_rst_tmds · u_rst_lvds</FONT><BR ALIGN="LEFT"/>async assert, sync release per domain</TD></TR></TABLE>>];
@@ -151,7 +151,7 @@ digraph video_processor {
   // ======================= top-level connections =======================
   dphy_rx -> csi [label="lane_data / valid\nbyte_clk"];
   host -> split [label="AXI4-Lite\ns_axil_*", color="#7c3aed", fontcolor="#5b21b6"];
-  pll -> resets [label="clocks, arst_n", color="#a16207", fontcolor="#a16207", style=dashed];
+  pll -> resets [label="clocks", color="#a16207", fontcolor="#a16207", style=dashed];
   regs -> blcwb [style=dotted, color="#7c3aed", arrowhead=none, constraint=false];
   split -> scaler [label="0x4000+", style=dotted, color="#7c3aed", fontcolor="#5b21b6", constraint=false];
   tser -> hdmi_con [label="tmds_serial_o[3:0]"];
@@ -161,5 +161,5 @@ digraph video_processor {
   dphy_csi -> legend [style=invis];
 
   // keep inputs on the left, outputs on the right
-  { rank=same; sensor; pll; host; }
+  { rank=same; sensor; host; }
 }

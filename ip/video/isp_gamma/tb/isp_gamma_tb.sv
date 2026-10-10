@@ -22,7 +22,10 @@ module isp_gamma_tb;
   logic [3*IW-1:0] sd;
   logic [3*OW-1:0] md;
   logic sl, su, sv, sr, ml, mu, mv, mr;
-  isp_gamma #(.IN_W(IW), .OUT_W(OW)) dut (
+  isp_gamma #(
+    .IN_W(IW),
+    .OUT_W(OW)
+  ) dut (
     .clk,
     .rst_n,
     .bypass_i(by),

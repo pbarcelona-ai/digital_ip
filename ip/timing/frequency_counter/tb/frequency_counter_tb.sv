@@ -15,7 +15,10 @@ module frequency_counter_tb;
   logic [31:0] cnt; // 100 us gate
   logic v, ov;
   logic [31:0] gate = 10000;
-  frequency_counter #(.COUNT_W(32), .GATE_W(32)) dut (
+  frequency_counter #(
+    .COUNT_W(32),
+    .GATE_W(32)
+  ) dut (
     .clk,
     .rst_n,
     .en_i(en),
@@ -28,7 +31,10 @@ module frequency_counter_tb;
   logic [7:0] cs;
   logic vs, ovs;
   logic sig2 = 0;
-  frequency_counter #(.COUNT_W(8), .GATE_W(16)) dsat (
+  frequency_counter #(
+    .COUNT_W(8),
+    .GATE_W(16)
+  ) dsat (
     .clk,
     .rst_n,
     .en_i(en),

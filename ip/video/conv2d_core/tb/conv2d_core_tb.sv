@@ -27,7 +27,14 @@ module conv2d_core_tb;
   logic [15:0] w, h;
   logic [C*CW-1:0] sd, md;
   logic sl, su, sv, sr, ml, mu, mv, mr, fr;
-  conv2d_core #(.N(N), .C(C), .CW(CW), .COEF_W(COEF_W), .MAX_W(64), .BORDER(1)) dut (
+  conv2d_core #(
+    .N(N),
+    .C(C),
+    .CW(CW),
+    .COEF_W(COEF_W),
+    .MAX_W(64),
+    .BORDER(1)
+  ) dut (
     .clk,
     .rst_n,
     .width_i(w),
@@ -47,7 +54,11 @@ module conv2d_core_tb;
     .frame_o(fr),
     .sof_wait_o()
   );
-  axis_frame_bfm #(.DW(C*CW), .MAXW(MAXW), .MAXH(MAXH)) vid (
+  axis_frame_bfm #(
+    .DW(C*CW),
+    .MAXW(MAXW),
+    .MAXH(MAXH)
+  ) vid (
     .clk,
     .s_tdata(sd),
     .s_tlast(sl),
@@ -60,7 +71,14 @@ module conv2d_core_tb;
     .m_tvalid(mv),
     .m_tready(mr)
   );
-  conv2d_ref #(.N(N), .C(C), .CW(CW), .MAXW(MAXW), .MAXH(MAXH), .BORDER(1)) mdl ();
+  conv2d_ref #(
+    .N(N),
+    .C(C),
+    .CW(CW),
+    .MAXW(MAXW),
+    .MAXH(MAXH),
+    .BORDER(1)
+  ) mdl ();
 
   function automatic logic [25*32-1:0] random_kernel();
     logic [25*32-1:0] kp;

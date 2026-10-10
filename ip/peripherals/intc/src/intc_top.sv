@@ -70,7 +70,10 @@ module intc_top #(
   logic [7*32-1:0] regs, rd;
   logic [6:0]      wr_pulse;
   logic [31:0]     wr_data;
-  ip_axil_regs #(.ADDR_W(8), .NREG(7)) u_regs (
+  ip_axil_regs #(
+    .ADDR_W(8),
+    .NREG(7)
+  ) u_regs (
     .aclk,
     .aresetn,
     .s_axil_awaddr,

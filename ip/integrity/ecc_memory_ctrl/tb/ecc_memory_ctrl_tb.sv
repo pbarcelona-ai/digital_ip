@@ -79,7 +79,11 @@ module ecc_memory_ctrl_tb;
   logic [CW-1:0] inj = 0;
   logic [15:0] sc, dc;
   logic [5:0] ea;
-  ecc_memory_ctrl #(.DATA_W(DW), .DEPTH(D), .SCRUB(1)) dut (
+  ecc_memory_ctrl #(
+    .DATA_W(DW),
+    .DEPTH(D),
+    .SCRUB(1)
+  ) dut (
     .clk,
     .rst_n,
     .req_i(req),

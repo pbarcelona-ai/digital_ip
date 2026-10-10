@@ -16,7 +16,12 @@ module sdp_case #(parameter bit ASYNC = 0, parameter bit BE = 0, parameter real 
   logic [3:0] be = 4'hF;
   logic [5:0] wa = 0, ra = 0;
   logic [31:0] wd = 0, rd;
-  simple_dual_port_ram #(.WIDTH(32), .DEPTH(64), .BYTE_EN(BE), .ASYNC(ASYNC)) dut
+  simple_dual_port_ram #(
+    .WIDTH(32),
+    .DEPTH(64),
+    .BYTE_EN(BE),
+    .ASYNC(ASYNC)
+  ) dut
     (
     .wclk,
     .we_i(we),
@@ -68,9 +73,21 @@ module sdp_case #(parameter bit ASYNC = 0, parameter bit BE = 0, parameter real 
 endmodule
 module simple_dual_port_ram_tb;
   int e0, e1, e2;
-  sdp_case #(0, 0, 10.0) a (e0);
-  sdp_case #(0, 1, 10.0) b (e1);
-  sdp_case #(1, 1, 13.0) c (e2);
+  sdp_case #(
+    0,
+    0,
+    10.0
+  ) a (e0);
+  sdp_case #(
+    0,
+    1,
+    10.0
+  ) b (e1);
+  sdp_case #(
+    1,
+    1,
+    13.0
+  ) c (e2);
   initial begin
     if ($test$plusargs("vcd")) begin
       $dumpfile("simple_dual_port_ram_tb.vcd");

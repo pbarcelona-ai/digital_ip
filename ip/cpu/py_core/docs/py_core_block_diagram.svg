@@ -91,6 +91,27 @@
 <polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="190.78,-559.15 183.78,-561.6 190.78,-564.05 190.78,-559.15"/>
 <text text-anchor="middle" x="249.97" y="-564.4" font-family="Helvetica,sans-Serif" font-size="9.00">code_addr_o = pc</text>
 </g>
+<!-- frames -->
+<g id="node9" class="node">
+<title>frames</title>
+<polygon fill="#ede9fe" stroke="transparent" points="1165,-525.6 1165,-597.6 1330,-597.6 1330,-525.6 1165,-525.6"/>
+<polygon fill="none" stroke="#7c3aed" points="1165.5,-576.6 1165.5,-597.6 1330.5,-597.6 1330.5,-576.6 1165.5,-576.6"/>
+<text text-anchor="start" x="1222" y="-585.6" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">call frames</text>
+<polygon fill="none" stroke="#7c3aed" points="1165.5,-555.6 1165.5,-576.6 1330.5,-576.6 1330.5,-555.6 1165.5,-555.6"/>
+<text text-anchor="start" x="1188" y="-564.6" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">fp</text>
+<text text-anchor="start" x="1198" y="-564.6" font-family="Helvetica,sans-Serif" font-size="10.00"> current frame, frame_full</text>
+<polygon fill="none" stroke="#7c3aed" points="1165.5,-525.6 1165.5,-555.6 1330.5,-555.6 1330.5,-525.6 1165.5,-525.6"/>
+<text text-anchor="start" x="1170.5" y="-543.6" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">rstk</text>
+<text text-anchor="start" x="1188.5" y="-543.6" font-family="Helvetica,sans-Serif" font-size="10.00">[N_FRAMES] return addresses</text>
+<text text-anchor="start" x="1182" y="-533.6" font-family="Helvetica,sans-Serif" font-size="10.00">CALL pushes, RETURN pops</text>
+</g>
+<!-- pc&#45;&gt;frames -->
+<g id="edge33" class="edge">
+<title>pc:ne&#45;&gt;frames:nw</title>
+<path fill="none" stroke="#374151" stroke-width="1.2" d="M480.5,-586.6C480.5,-586.6 588.53,-601.37 675.5,-605.6 831.76,-613.19 871.07,-607.34 1027.5,-605.6 1094.7,-604.85 1175.99,-602.54 1200.3,-601.82"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="1200.58,-604.26 1207.5,-601.6 1200.43,-599.36 1200.58,-604.26"/>
+<text text-anchor="middle" x="793.48" y="-612" font-family="Helvetica,sans-Serif" font-size="9.00">CALL: rstk[fp] = pc, fp + 1</text>
+</g>
 <!-- dec&#45;&gt;constmem -->
 <g id="edge3" class="edge">
 <title>dec&#45;&gt;constmem</title>
@@ -99,7 +120,7 @@
 <text text-anchor="middle" x="223.49" y="-292.23" font-family="Helvetica,sans-Serif" font-size="9.00">const_addr_o = arg</text>
 </g>
 <!-- dec&#45;&gt;pc -->
-<g id="edge13" class="edge">
+<g id="edge15" class="edge">
 <title>dec&#45;&gt;pc</title>
 <path fill="none" stroke="#374151" stroke-width="1.2" d="M455.5,-417.16C455.5,-449.79 455.5,-497.71 455.5,-529.28"/>
 <polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="453.05,-529.54 455.5,-536.54 457.95,-529.54 453.05,-529.54"/>
@@ -135,7 +156,7 @@
 <text text-anchor="start" x="1147" y="-368.6" font-family="Helvetica,sans-Serif" font-size="10.00">lidx = {fp, arg} : LOAD_FAST / STORE_FAST</text>
 </g>
 <!-- dec&#45;&gt;locals -->
-<g id="edge11" class="edge">
+<g id="edge13" class="edge">
 <title>dec&#45;&gt;locals</title>
 <path fill="none" stroke="#374151" stroke-width="1.2" d="M563.05,-365.6C613.33,-358.89 674.1,-351.9 729,-348.6 756.17,-346.97 946.83,-346.97 974,-348.6 1022.82,-351.53 1076.27,-357.39 1122.87,-363.36"/>
 <polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="1122.73,-365.82 1129.99,-364.28 1123.36,-360.96 1122.73,-365.82"/>
@@ -190,21 +211,18 @@
 <text text-anchor="start" x="778.5" y="-168.8" font-family="Helvetica,sans-Serif" font-size="10.00">truthiness: tos_known, tos_truthy</text>
 </g>
 <!-- stack&#45;&gt;alu -->
-<g id="edge29" class="edge">
-<title>stack&#45;&gt;alu</title>
-<path fill="none" stroke="#374151" stroke-width="1.2" d="M851.5,-349.44C851.5,-326.68 851.5,-295.49 851.5,-268.26"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="849.05,-349.47 851.5,-356.47 853.95,-349.47 849.05,-349.47"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="853.95,-268.07 851.5,-261.07 849.05,-268.07 853.95,-268.07"/>
-<text text-anchor="middle" x="825.5" y="-321.35" font-family="Helvetica,sans-Serif" font-size="9.00">tos, tos1 ↓</text>
-<text text-anchor="middle" x="825.5" y="-311.35" font-family="Helvetica,sans-Serif" font-size="9.00">push alu_r ↑</text>
+<g id="edge34" class="edge">
+<title>stack:sw&#45;&gt;alu:nw</title>
+<path fill="none" stroke="#374151" stroke-width="1.2" d="M826.5,-356.6C826.5,-356.6 807.63,-289.66 801.44,-267.69"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="803.76,-266.87 799.5,-260.8 799.04,-268.2 803.76,-266.87"/>
+<text text-anchor="middle" x="796.02" y="-311.56" font-family="Helvetica,sans-Serif" font-size="9.00">tos, tos1</text>
 </g>
 <!-- stack&#45;&gt;locals -->
 <g id="edge9" class="edge">
-<title>stack&#45;&gt;locals</title>
-<path fill="none" stroke="#374151" stroke-width="1.2" d="M973.33,-381.6C1020.67,-381.6 1074.86,-381.6 1122.5,-381.6"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="973.04,-379.15 966.04,-381.6 973.04,-384.05 973.04,-379.15"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="1122.78,-384.05 1129.78,-381.6 1122.78,-379.15 1122.78,-384.05"/>
-<text text-anchor="middle" x="1047.8" y="-374.4" font-family="Helvetica,sans-Serif" font-size="9.00">STORE_FAST / LOAD_FAST</text>
+<title>stack:ne&#45;&gt;locals:nw</title>
+<path fill="none" stroke="#374151" stroke-width="1.2" d="M876.5,-406.6C876.5,-406.6 1165.59,-406.6 1215.27,-406.6"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="1215.5,-409.05 1222.5,-406.6 1215.5,-404.15 1215.5,-409.05"/>
+<text text-anchor="middle" x="1020.4" y="-409.4" font-family="Helvetica,sans-Serif" font-size="9.00">STORE_FAST</text>
 </g>
 <!-- globals -->
 <g id="node10" class="node">
@@ -217,15 +235,14 @@
 <text text-anchor="start" x="1180.5" y="-196.8" font-family="Helvetica,sans-Serif" font-size="10.00">(shared with interrupt handlers)</text>
 </g>
 <!-- stack&#45;&gt;globals -->
-<g id="edge10" class="edge">
-<title>stack&#45;&gt;globals</title>
-<path fill="none" stroke="#374151" stroke-width="1.2" d="M915.9,-353.5C990.49,-320.95 1112.51,-267.71 1185.89,-235.68"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="914.52,-351.43 909.08,-356.47 916.48,-355.92 914.52,-351.43"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="1186.97,-237.89 1192.4,-232.84 1185.01,-233.4 1186.97,-237.89"/>
-<text text-anchor="middle" x="978.27" y="-287.44" font-family="Helvetica,sans-Serif" font-size="9.00">STORE_GLOBAL / LOAD_GLOBAL</text>
+<g id="edge11" class="edge">
+<title>stack:se&#45;&gt;globals:nw</title>
+<path fill="none" stroke="#374151" stroke-width="1.2" d="M876.5,-356.6C876.5,-356.6 1168.91,-252.28 1216.88,-235.16"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="1217.73,-237.46 1223.5,-232.8 1216.08,-232.84 1217.73,-237.46"/>
+<text text-anchor="middle" x="1013.62" y="-287.46" font-family="Helvetica,sans-Serif" font-size="9.00">STORE_GLOBAL</text>
 </g>
 <!-- stack&#45;&gt;bus -->
-<g id="edge15" class="edge">
+<g id="edge17" class="edge">
 <title>stack&#45;&gt;bus</title>
 <path fill="none" stroke="#374151" stroke-width="1.2" d="M890.5,-356.49C917.75,-336.45 951.92,-305.67 967.5,-268.8 988.25,-219.67 988.25,-197.93 967.5,-148.8 955.56,-120.53 932.69,-95.85 910.39,-76.84"/>
 <polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="911.68,-74.73 904.73,-72.13 908.54,-78.49 911.68,-74.73"/>
@@ -234,27 +251,34 @@
 <!-- p_ctl -->
 <g id="node14" class="node">
 <title>p_ctl</title>
-<polygon fill="#f3f4f6" stroke="transparent" points="1544.5,-713.1 1544.5,-770.1 1742.5,-770.1 1742.5,-713.1 1544.5,-713.1"/>
-<polygon fill="none" stroke="#6b7280" points="1544.5,-750.6 1544.5,-769.6 1742.5,-769.6 1742.5,-750.6 1544.5,-750.6"/>
-<text text-anchor="start" x="1548.5" y="-757.6" font-family="Helvetica,sans-Serif" font-size="10.00">start_i, resume_i, resume_pc_i</text>
-<polygon fill="none" stroke="#6b7280" points="1544.5,-731.6 1544.5,-750.6 1742.5,-750.6 1742.5,-731.6 1544.5,-731.6"/>
-<text text-anchor="start" x="1548.5" y="-738.6" font-family="Helvetica,sans-Serif" font-size="10.00">busy_o, done_o, result_o[33:0]</text>
-<polygon fill="none" stroke="#6b7280" points="1544.5,-712.6 1544.5,-731.6 1742.5,-731.6 1742.5,-712.6 1544.5,-712.6"/>
-<text text-anchor="start" x="1548.5" y="-719.6" font-family="Helvetica,sans-Serif" font-size="10.00">trap_o, trap_cause_o, trap_pc_o, trap_op_o</text>
+<polygon fill="#f3f4f6" stroke="transparent" points="1535,-713.1 1535,-770.1 1752,-770.1 1752,-713.1 1535,-713.1"/>
+<polygon fill="none" stroke="#6b7280" points="1535.5,-750.6 1535.5,-769.6 1752.5,-769.6 1752.5,-750.6 1535.5,-750.6"/>
+<text text-anchor="start" x="1539.5" y="-757.6" font-family="Helvetica,sans-Serif" font-size="10.00">in: start_i, resume_i, resume_pc_i</text>
+<polygon fill="none" stroke="#6b7280" points="1535.5,-731.6 1535.5,-750.6 1752.5,-750.6 1752.5,-731.6 1535.5,-731.6"/>
+<text text-anchor="start" x="1539.5" y="-738.6" font-family="Helvetica,sans-Serif" font-size="10.00">out: busy_o, done_o, result_o[33:0]</text>
+<polygon fill="none" stroke="#6b7280" points="1535.5,-712.6 1535.5,-731.6 1752.5,-731.6 1752.5,-712.6 1535.5,-712.6"/>
+<text text-anchor="start" x="1539.5" y="-719.6" font-family="Helvetica,sans-Serif" font-size="10.00">out: trap_o, trap_cause_o, trap_pc_o, trap_op_o</text>
 </g>
 <!-- stack&#45;&gt;p_ctl -->
-<g id="edge25" class="edge">
-<title>stack&#45;&gt;p_ctl</title>
-<path fill="none" stroke="#374151" stroke-width="1.2" d="M883.8,-406.62C959.31,-465.07 1141.6,-605.96 1149,-609.6 1271.94,-670.11 1426.2,-705.62 1529.44,-724.29"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="1529.15,-726.72 1536.47,-725.55 1530.01,-721.9 1529.15,-726.72"/>
-<text text-anchor="middle" x="1117.46" y="-628.6" font-family="Helvetica,sans-Serif" font-size="9.00">RETURN_VALUE: result_o = tos</text>
+<g id="edge29" class="edge">
+<title>stack&#45;&gt;p_ctl:res</title>
+<path fill="none" stroke="#374151" stroke-width="1.2" d="M884.1,-406.8C959.82,-465.32 1141.73,-605.72 1149,-609.6 1292.44,-686.17 1489.32,-730.74 1528.54,-739.14"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="1528.15,-741.56 1535.5,-740.6 1529.15,-736.77 1528.15,-741.56"/>
+<text text-anchor="middle" x="1117.88" y="-630.18" font-family="Helvetica,sans-Serif" font-size="9.00">RETURN_VALUE: result_o = tos</text>
 </g>
 <!-- alu&#45;&gt;pc -->
-<g id="edge14" class="edge">
+<g id="edge16" class="edge">
 <title>alu&#45;&gt;pc</title>
 <path fill="none" stroke="#374151" stroke-width="1.2" stroke-dasharray="5,2" d="M793.07,-260.86C708.95,-335.8 556.43,-471.68 489.05,-531.71"/>
 <polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="487.17,-530.1 483.57,-536.59 490.43,-533.76 487.17,-530.1"/>
 <text text-anchor="middle" x="614.76" y="-404.69" font-family="Helvetica,sans-Serif" font-size="9.00">tos_truthy</text>
+</g>
+<!-- alu&#45;&gt;stack -->
+<g id="edge35" class="edge">
+<title>alu:ne&#45;&gt;stack:s</title>
+<path fill="none" stroke="#374151" stroke-width="1.2" d="M903.5,-260.8C903.5,-260.8 866.48,-329 854.91,-350.31"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="852.69,-349.28 851.5,-356.6 856.99,-351.62 852.69,-349.28"/>
+<text text-anchor="middle" x="855.68" y="-311.17" font-family="Helvetica,sans-Serif" font-size="9.00">push alu_r</text>
 </g>
 <!-- trap -->
 <g id="node13" class="node">
@@ -269,58 +293,56 @@
 <text text-anchor="start" x="1536" y="-444" font-family="Helvetica,sans-Serif" font-size="10.00">core stalls; a helper emulates and resumes</text>
 </g>
 <!-- alu&#45;&gt;trap -->
-<g id="edge21" class="edge">
+<g id="edge25" class="edge">
 <title>alu&#45;&gt;trap</title>
 <path fill="none" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="5,2" d="M959.59,-232.64C1066.09,-257.33 1232.77,-299.18 1373,-348.6 1438.6,-371.72 1510.53,-403.81 1563.72,-428.9"/>
 <polygon fill="#dc2626" stroke="#dc2626" stroke-width="1.2" points="1562.74,-431.15 1570.11,-431.93 1564.83,-426.72 1562.74,-431.15"/>
 <text text-anchor="middle" x="1240.79" y="-317.76" font-family="Helvetica,sans-Serif" font-size="9.00">overflow / type</text>
 </g>
-<!-- frames -->
-<g id="node9" class="node">
-<title>frames</title>
-<polygon fill="#ede9fe" stroke="transparent" points="1165,-525.6 1165,-597.6 1330,-597.6 1330,-525.6 1165,-525.6"/>
-<polygon fill="none" stroke="#7c3aed" points="1165.5,-576.6 1165.5,-597.6 1330.5,-597.6 1330.5,-576.6 1165.5,-576.6"/>
-<text text-anchor="start" x="1222" y="-585.6" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">call frames</text>
-<polygon fill="none" stroke="#7c3aed" points="1165.5,-555.6 1165.5,-576.6 1330.5,-576.6 1330.5,-555.6 1165.5,-555.6"/>
-<text text-anchor="start" x="1188" y="-564.6" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">fp</text>
-<text text-anchor="start" x="1198" y="-564.6" font-family="Helvetica,sans-Serif" font-size="10.00"> current frame, frame_full</text>
-<polygon fill="none" stroke="#7c3aed" points="1165.5,-525.6 1165.5,-555.6 1330.5,-555.6 1330.5,-525.6 1165.5,-525.6"/>
-<text text-anchor="start" x="1170.5" y="-543.6" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">rstk</text>
-<text text-anchor="start" x="1188.5" y="-543.6" font-family="Helvetica,sans-Serif" font-size="10.00">[N_FRAMES] return addresses</text>
-<text text-anchor="start" x="1182" y="-533.6" font-family="Helvetica,sans-Serif" font-size="10.00">CALL pushes, RETURN pops</text>
+<!-- locals&#45;&gt;stack -->
+<g id="edge10" class="edge">
+<title>locals:sw&#45;&gt;stack:e</title>
+<path fill="none" stroke="#374151" stroke-width="1.2" d="M1222.5,-356.6C1222.5,-356.6 1014.96,-376.87 973.61,-380.91"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="973.23,-378.48 966.5,-381.6 973.71,-383.36 973.23,-378.48"/>
+<text text-anchor="middle" x="1067.88" y="-371.91" font-family="Helvetica,sans-Serif" font-size="9.00">LOAD_FAST</text>
 </g>
 <!-- frames&#45;&gt;pc -->
-<g id="edge28" class="edge">
-<title>frames&#45;&gt;pc</title>
-<path fill="none" stroke="#374151" stroke-width="1.2" d="M1149.84,-537.77C1111.9,-529.64 1067.91,-521.6 1027.5,-517.6 988.58,-513.75 714.42,-513.75 675.5,-517.6 625.56,-522.54 570.17,-533.66 527.46,-543.47"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="1149.5,-540.2 1156.86,-539.28 1150.53,-535.41 1149.5,-540.2"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="526.72,-541.13 520.45,-545.1 527.82,-545.91 526.72,-541.13"/>
-<text text-anchor="middle" x="777.67" y="-507.52" font-family="Helvetica,sans-Serif" font-size="9.00">CALL: rstk[fp] = pc, fp + 1</text>
-<text text-anchor="middle" x="777.67" y="-497.52" font-family="Helvetica,sans-Serif" font-size="9.00">RETURN: pc = rstk[fp&#45;1], fp &#45; 1</text>
+<g id="edge32" class="edge">
+<title>frames:sw&#45;&gt;pc:se</title>
+<path fill="none" stroke="#374151" stroke-width="1.2" d="M1207.5,-521.6C1207.5,-521.6 1107.51,-518.49 1027.5,-517.6 871.07,-515.86 831.76,-510.01 675.5,-517.6 601.78,-521.18 512.93,-532.34 487.57,-535.66"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="487.12,-533.25 480.5,-536.6 487.76,-538.11 487.12,-533.25"/>
+<text text-anchor="middle" x="782.98" y="-516.8" font-family="Helvetica,sans-Serif" font-size="9.00">RETURN: pc = rstk[fp&#45;1], fp &#45; 1</text>
 </g>
 <!-- frames&#45;&gt;locals -->
-<g id="edge12" class="edge">
+<g id="edge14" class="edge">
 <title>frames&#45;&gt;locals</title>
 <path fill="none" stroke="#374151" stroke-width="1.2" d="M1247.5,-521.2C1247.5,-488.81 1247.5,-443.95 1247.5,-413.91"/>
 <polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="1249.95,-413.61 1247.5,-406.61 1245.05,-413.61 1249.95,-413.61"/>
 <text text-anchor="middle" x="1243.5" y="-466.8" font-family="Helvetica,sans-Serif" font-size="9.00">fp</text>
 </g>
 <!-- frames&#45;&gt;trap -->
-<g id="edge23" class="edge">
+<g id="edge27" class="edge">
 <title>frames&#45;&gt;trap</title>
 <path fill="none" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="5,2" d="M1338.35,-540.13C1388.61,-528.25 1452.04,-513.25 1508.04,-500.02"/>
 <polygon fill="#dc2626" stroke="#dc2626" stroke-width="1.2" points="1508.93,-502.32 1515.18,-498.33 1507.81,-497.56 1508.93,-502.32"/>
 <text text-anchor="middle" x="1414.86" y="-522.01" font-family="Helvetica,sans-Serif" font-size="9.00">depth</text>
 </g>
+<!-- globals&#45;&gt;stack -->
+<g id="edge12" class="edge">
+<title>globals:w&#45;&gt;stack:s</title>
+<path fill="none" stroke="#374151" stroke-width="1.2" d="M1154.5,-208.8C1154.5,-208.8 901.34,-332.29 857.83,-353.51"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="856.72,-351.33 851.5,-356.6 858.87,-355.73 856.72,-351.33"/>
+<text text-anchor="middle" x="969.15" y="-275.67" font-family="Helvetica,sans-Serif" font-size="9.00">LOAD_GLOBAL</text>
+</g>
 <!-- bus&#45;&gt;stack -->
-<g id="edge16" class="edge">
+<g id="edge18" class="edge">
 <title>bus&#45;&gt;stack</title>
 <path fill="none" stroke="#374151" stroke-width="1.2" d="M798.27,-72.13C774.27,-91.69 748.45,-118.14 735.5,-148.8 714.75,-197.93 714.75,-219.67 735.5,-268.8 749.98,-303.08 780.54,-332.09 806.66,-352.1"/>
 <polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="805.43,-354.24 812.5,-356.49 808.37,-350.33 805.43,-354.24"/>
 <text text-anchor="middle" x="724.5" y="-271.61" font-family="Helvetica,sans-Serif" font-size="9.00">rdata</text>
 </g>
 <!-- bus&#45;&gt;trap -->
-<g id="edge22" class="edge">
+<g id="edge26" class="edge">
 <title>bus&#45;&gt;trap</title>
 <path fill="none" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="5,2" d="M897.92,-72.03C954.74,-115.21 1054.79,-188.3 1147,-240.8 1184.82,-262.33 1423.89,-369.9 1556.01,-428.98"/>
 <polygon fill="#dc2626" stroke="#dc2626" stroke-width="1.2" points="1555.21,-431.31 1562.61,-431.93 1557.21,-426.83 1555.21,-431.31"/>
@@ -329,17 +351,18 @@
 <!-- p_axi -->
 <g id="node16" class="node">
 <title>p_axi</title>
-<polygon fill="#f3f4f6" stroke="transparent" points="1150,-26.5 1150,-45.5 1345,-45.5 1345,-26.5 1150,-26.5"/>
-<polygon fill="none" stroke="#6b7280" points="1150.5,-26 1150.5,-45 1345.5,-45 1345.5,-26 1150.5,-26"/>
-<text text-anchor="start" x="1154.5" y="-33" font-family="Helvetica,sans-Serif" font-size="10.00">m_axil_* (AXI4&#45;Lite master, 32&#45;bit address)</text>
+<polygon fill="#f3f4f6" stroke="transparent" points="1118,-17 1118,-55 1377,-55 1377,-17 1118,-17"/>
+<polygon fill="none" stroke="#6b7280" points="1118.5,-36 1118.5,-55 1377.5,-55 1377.5,-36 1118.5,-36"/>
+<text text-anchor="start" x="1122.5" y="-43" font-family="Helvetica,sans-Serif" font-size="10.00">out: m_axil_aw*, w*, ar*, bready, rready</text>
+<polygon fill="none" stroke="#6b7280" points="1118.5,-17 1118.5,-36 1377.5,-36 1377.5,-17 1118.5,-17"/>
+<text text-anchor="start" x="1122.5" y="-24" font-family="Helvetica,sans-Serif" font-size="10.00">in: m_axil_*ready, b*, r* (AXI4&#45;Lite master, 32&#45;bit address)</text>
 </g>
 <!-- bus&#45;&gt;p_axi -->
-<g id="edge17" class="edge">
-<title>bus&#45;&gt;p_axi</title>
-<path fill="none" stroke="#7c3aed" stroke-width="2.5" d="M973.77,-36C1025.18,-36 1084.6,-36 1134.93,-36"/>
-<polygon fill="#7c3aed" stroke="#7c3aed" stroke-width="2.5" points="973.57,-33.55 966.57,-36 973.57,-38.45 973.57,-33.55"/>
-<polygon fill="#7c3aed" stroke="#7c3aed" stroke-width="2.5" points="1134.96,-38.45 1141.96,-36 1134.96,-33.55 1134.96,-38.45"/>
-<text text-anchor="middle" x="1016.11" y="-38.8" font-family="Helvetica,sans-Serif" font-size="9.00">AW / W / B / AR / R</text>
+<g id="edge19" class="edge">
+<title>bus:ne&#45;&gt;p_axi:w</title>
+<path fill="none" stroke="#7c3aed" stroke-width="2.5" d="M887.5,-72C887.5,-72 1072.34,-51.2 1111.33,-46.81"/>
+<polygon fill="#7c3aed" stroke="#7c3aed" stroke-width="2.5" points="1111.82,-49.22 1118.5,-46 1111.27,-44.35 1111.82,-49.22"/>
+<text text-anchor="middle" x="1027.39" y="-61.81" font-family="Helvetica,sans-Serif" font-size="9.00">AW / W / AR</text>
 </g>
 <!-- irq -->
 <g id="node12" class="node">
@@ -355,51 +378,68 @@
 <text text-anchor="start" x="379.5" y="-706.6" font-family="Helvetica,sans-Serif" font-size="10.00">RETURN_FROM_IRQ restores sp</text>
 </g>
 <!-- irq&#45;&gt;pc -->
-<g id="edge19" class="edge">
+<g id="edge23" class="edge">
 <title>irq&#45;&gt;pc</title>
 <path fill="none" stroke="#dc2626" stroke-width="1.2" d="M455.5,-694.31C455.5,-662.66 455.5,-621.84 455.5,-593.87"/>
 <polygon fill="#dc2626" stroke="#dc2626" stroke-width="1.2" points="457.95,-593.7 455.5,-586.7 453.05,-593.7 457.95,-593.7"/>
 <text text-anchor="middle" x="357" y="-643.03" font-family="Helvetica,sans-Serif" font-size="9.00">take_irq (in S_FETCH): rstk[fp] = pc, pc = irq_vec</text>
 </g>
 <!-- irq&#45;&gt;frames -->
-<g id="edge20" class="edge">
+<g id="edge24" class="edge">
 <title>irq&#45;&gt;frames</title>
 <path fill="none" stroke="#dc2626" stroke-width="1.2" d="M585.4,-712.08C743.67,-676.11 1007.5,-616.15 1149.64,-583.84"/>
 <polygon fill="#dc2626" stroke="#dc2626" stroke-width="1.2" points="1150.45,-586.17 1156.73,-582.23 1149.36,-581.39 1150.45,-586.17"/>
 <text text-anchor="middle" x="832.14" y="-649.37" font-family="Helvetica,sans-Serif" font-size="9.00">handler frame irq_fp</text>
 </g>
+<!-- p_irq -->
+<g id="node15" class="node">
+<title>p_irq</title>
+<polygon fill="#f3f4f6" stroke="transparent" points="61,-722.6 61,-760.6 130,-760.6 130,-722.6 61,-722.6"/>
+<polygon fill="none" stroke="#6b7280" points="61.5,-741.6 61.5,-760.6 130.5,-760.6 130.5,-741.6 61.5,-741.6"/>
+<text text-anchor="start" x="65.5" y="-748.6" font-family="Helvetica,sans-Serif" font-size="10.00">in: irq_i (level)</text>
+<polygon fill="none" stroke="#6b7280" points="61.5,-722.6 61.5,-741.6 130.5,-741.6 130.5,-722.6 61.5,-722.6"/>
+<text text-anchor="start" x="65.5" y="-729.6" font-family="Helvetica,sans-Serif" font-size="10.00">out: in_irq_o</text>
+</g>
+<!-- irq&#45;&gt;p_irq -->
+<g id="edge22" class="edge">
+<title>irq&#45;&gt;p_irq:e</title>
+<path fill="none" stroke="#dc2626" stroke-width="1.2" d="M325.65,-737.6C249.27,-735.25 162.85,-732.6 137.71,-731.82"/>
+<polygon fill="#dc2626" stroke="#dc2626" stroke-width="1.2" points="137.57,-729.37 130.5,-731.6 137.42,-734.26 137.57,-729.37"/>
+<text text-anchor="middle" x="195.45" y="-736.92" font-family="Helvetica,sans-Serif" font-size="9.00">in_irq_o</text>
+</g>
 <!-- trap&#45;&gt;ctl -->
-<g id="edge27" class="edge">
+<g id="edge31" class="edge">
 <title>trap&#45;&gt;ctl</title>
 <path fill="none" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="5,2" d="M1515.42,-477.41C1415.44,-485.33 1273.13,-497.88 1149,-513.6 1109.26,-518.63 1066.67,-524.95 1026.51,-531.33"/>
 <polygon fill="#dc2626" stroke="#dc2626" stroke-width="1.2" points="1026.09,-528.92 1019.56,-532.44 1026.86,-533.76 1026.09,-528.92"/>
 <text text-anchor="middle" x="1248.95" y="-502.84" font-family="Helvetica,sans-Serif" font-size="9.00">S_TRAP</text>
 </g>
 <!-- trap&#45;&gt;p_ctl -->
-<g id="edge24" class="edge">
-<title>trap&#45;&gt;p_ctl</title>
-<path fill="none" stroke="#dc2626" stroke-width="1.2" d="M1643.5,-504.05C1643.5,-555.19 1643.5,-648.48 1643.5,-701.66"/>
-<polygon fill="#dc2626" stroke="#dc2626" stroke-width="1.2" points="1641.05,-701.89 1643.5,-708.89 1645.95,-701.89 1641.05,-701.89"/>
+<g id="edge28" class="edge">
+<title>trap&#45;&gt;p_ctl:trap</title>
+<path fill="none" stroke="#dc2626" stroke-width="1.2" d="M1643.65,-504.09C1643.89,-562.83 1644.35,-675.54 1644.47,-705.27"/>
+<polygon fill="#dc2626" stroke="#dc2626" stroke-width="1.2" points="1642.02,-705.61 1644.5,-712.6 1646.92,-705.59 1642.02,-705.61"/>
 </g>
 <!-- p_ctl&#45;&gt;ctl -->
-<g id="edge26" class="edge">
-<title>p_ctl&#45;&gt;ctl</title>
-<path fill="none" stroke="#374151" stroke-width="1.2" stroke-dasharray="5,2" d="M1536.28,-717.23C1402.72,-686.88 1173.12,-634.69 1016.94,-599.2"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="1017.39,-596.79 1010.02,-597.63 1016.3,-601.57 1017.39,-596.79"/>
-<text text-anchor="middle" x="1238.01" y="-660.2" font-family="Helvetica,sans-Serif" font-size="9.00">start_i / resume_i</text>
-</g>
-<!-- p_irq -->
-<g id="node15" class="node">
-<title>p_irq</title>
-<polygon fill="#f3f4f6" stroke="transparent" points="47.5,-732.1 47.5,-751.1 143.5,-751.1 143.5,-732.1 47.5,-732.1"/>
-<polygon fill="none" stroke="#6b7280" points="47.5,-731.6 47.5,-750.6 143.5,-750.6 143.5,-731.6 47.5,-731.6"/>
-<text text-anchor="start" x="51.5" y="-738.6" font-family="Helvetica,sans-Serif" font-size="10.00">irq_i (level), in_irq_o</text>
+<g id="edge30" class="edge">
+<title>p_ctl:run&#45;&gt;ctl</title>
+<path fill="none" stroke="#374151" stroke-width="1.2" stroke-dasharray="5,2" d="M1535.5,-760.6C1535.5,-760.6 1180.94,-657.44 982.36,-599.67"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.2" points="982.77,-597.24 975.37,-597.64 981.4,-601.95 982.77,-597.24"/>
+<text text-anchor="middle" x="1220.33" y="-681.89" font-family="Helvetica,sans-Serif" font-size="9.00">start_i / resume_i</text>
 </g>
 <!-- p_irq&#45;&gt;irq -->
-<g id="edge18" class="edge">
-<title>p_irq&#45;&gt;irq</title>
-<path fill="none" stroke="#dc2626" stroke-width="1.2" d="M151.75,-741.6C196.41,-741.6 260.76,-741.6 318.75,-741.6"/>
-<polygon fill="#dc2626" stroke="#dc2626" stroke-width="1.2" points="318.79,-744.05 325.79,-741.6 318.79,-739.15 318.79,-744.05"/>
+<g id="edge21" class="edge">
+<title>p_irq:e&#45;&gt;irq</title>
+<path fill="none" stroke="#dc2626" stroke-width="1.2" d="M130.5,-751.6C130.5,-751.6 229.68,-748.55 318.46,-745.82"/>
+<polygon fill="#dc2626" stroke="#dc2626" stroke-width="1.2" points="318.73,-748.26 325.65,-745.6 318.58,-743.36 318.73,-748.26"/>
+<text text-anchor="middle" x="218.66" y="-751.4" font-family="Helvetica,sans-Serif" font-size="9.00">irq_i</text>
+</g>
+<!-- p_axi&#45;&gt;bus -->
+<g id="edge20" class="edge">
+<title>p_axi:w&#45;&gt;bus:se</title>
+<path fill="none" stroke="#7c3aed" stroke-width="2.5" d="M1118.5,-26C1118.5,-26 933.66,-5.2 894.67,-0.81"/>
+<polygon fill="#7c3aed" stroke="#7c3aed" stroke-width="2.5" points="894.73,1.65 887.5,0 894.18,-3.22 894.73,1.65"/>
+<text text-anchor="middle" x="993.11" y="-15.81" font-family="Helvetica,sans-Serif" font-size="9.00">B / R</text>
 </g>
 <!-- legend -->
 <g id="node17" class="node">

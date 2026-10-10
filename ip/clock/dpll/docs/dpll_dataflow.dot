@@ -1,0 +1,25 @@
+digraph "dpll_dataflow" {
+  graph [rankdir=LR, bgcolor="white", pad=0.3, nodesep=0.18, ranksep=0.9, fontname="Helvetica", newrank=true, labelloc=t, labeljust=l, label=<<FONT POINT-SIZE="18"><B>dpll</B> data flow (RTL level)</FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">signal names from ip/clock/dpll/src/dpll.sv; clocks / resets (not drawn): ref_clk, rst_n<BR ALIGN="LEFT"/>box with double border = register (always_ff), ellipse = combinational (assign / always_comb), yellow = sub-module instance; clusters = the always block that drives them<BR ALIGN="LEFT"/>thick teal line = protocol bus (AXI4-Stream / AXI4 / AXI4-Lite, ready and responses implied); a bus signal also used elsewhere is drawn separately</FONT><BR ALIGN="LEFT"/>>];
+  node [fontname="Helvetica", fontsize=9];
+  edge [color="#4b5563", arrowsize=0.6, penwidth=0.9];
+  subgraph cluster_in { label="inputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=min; "in:en_i" }
+    "in:en_i" [shape=box, style="rounded,filled", fillcolor="#dcfce7", color="#15803d", label="en_i\n[NOUT-1:0]"];
+  }
+  subgraph cluster_out { label="outputs"; style="rounded,dashed"; color="#9ca3af"; fontcolor="#4b5563"; fontsize=10;
+    { rank=max; "out:clk_o" "out:locked_o" }
+    "out:clk_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="clk_o\n[NOUT-1:0]"];
+    "out:locked_o" [shape=box, style="rounded,filled", fillcolor="#dbeafe", color="#1d4ed8", label="locked_o"];
+  }
+  "sig:code" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="code\n[CW-1:0]"];
+  "sig:phase" [shape=ellipse, style="filled", fillcolor="#fff7ed", color="#c2410c", label="phase\n[PW-1:0]"];
+  "inst:u_ctrl" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>dpll_ctrl</B><BR/><FONT COLOR="#4b5563">u_ctrl</FONT>>];
+  "inst:u_dco" [shape=box, style="filled", fillcolor="#fef9c3", color="#a16207", label=<<B>dpll_dco</B><BR/><FONT COLOR="#4b5563">u_dco</FONT>>];
+  "in:en_i" -> "inst:u_dco";
+  "inst:u_ctrl" -> "out:locked_o";
+  "inst:u_ctrl" -> "sig:code";
+  "inst:u_dco" -> "out:clk_o";
+  "inst:u_dco" -> "sig:phase";
+  "sig:code" -> "inst:u_dco";
+  "sig:phase" -> "inst:u_ctrl";
+}

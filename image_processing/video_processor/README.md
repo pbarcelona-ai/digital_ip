@@ -22,6 +22,61 @@ differential I/O buffers.
 `docs/block_diagram.svg` shows the video datapath (`u_pipe` and the
 serializers) in more detail.
 
+### Clocks and resets
+
+One board clock, `ref_clk` (33.333 MHz), feeds the clock generator in the
+CPU system (`py_soc` `u_clkgen`, [`ip/clock/clk_gen`](../../ip/clock/clk_gen)):
+two all-digital PLLs ([`ip/clock/dpll`](../../ip/clock/dpll)) make every
+clock of the design except the camera byte clock, which the D-PHY RX
+recovers from the camera.
+
+| Clock | Default | Ratio (parameters) | Used by |
+|-------|---------|--------------------|---------|
+| `cpu_clk` | 200 MHz | ref × `CPU_M` / (`CPU_D` × `CPU_O`) = × 24 / 4 (CPU PLL oscillator 800 MHz) | `py_soc`, CPU side of the crossings |
+| `pix_clk` | 100 MHz | `cpu_clk` × `VID_M` / (`VID_D` × `PIX_O`) = × 35 / 70 (video PLL oscillator 7 GHz) | core logic: video pipeline, registers, vision_system, blur_sharpen, SDRAM |
+| `tmds_ser_clk` | 1 GHz | ÷ `TMDS_O` = 7 (10 × `pix_clk`) | HDMI serializer |
+| `lvds_ser_clk` | 700 MHz | ÷ `LVDS_O` = 10 (7 × `pix_clk`, single link; 20 for dual link) | LVDS serializers |
+| `tx_byte_clk` | 125 MHz | ÷ `TXB_O` = 56 | MIPI DSI / CSI-2 TX (1 Gbit/s per lane) |
+| `byte_clk` | 125 MHz | input from the D-PHY RX | CSI-2 RX |
+
+The video PLL outputs share one oscillator, so the serial clocks are phase
+aligned with `pix_clk` (as the serializers require). SYSCTL `CLK_EN`
+(0x0114) gates each video clock: the core and MIPI byte clocks run from
+reset, the firmware turns the display serial clocks on at its video set-up.
+`CLK_STATUS` (0x0118) shows the lock.
+
+Each CPU peripheral has its own parameter set (rate, and the TX / RX FIFO
+depths of its `py_stream_port`, 16 words by default):
+
+| Peripheral | Use | Rate parameter | Default |
+|------------|-----|----------------|---------|
+| UART 0 | debug console | `UART0_BAUD` | 115200 baud |
+| UART 1 | host / control link | `UART1_BAUD` | 115200 baud |
+| I2C 0 | camera sensor CCI | `I2C0_HZ` | 400 kHz (fast mode) |
+| I2C 1 | HDMI DDC / EDID, EEPROM | `I2C1_HZ` | 100 kHz (standard mode) |
+| SPI 0 | panel initialisation / touch | `SPI0_HZ`, `SPI0_DATA_W` | 10 MHz, 16-bit words |
+| SPI 1 | ADC, sensors | `SPI1_HZ`, `SPI1_DATA_W` | 2 MHz, 16-bit words |
+| SPI NOR flash | firmware | `FLASH_CLKDIV` | 3 (33 MHz at boot) |
+
+FIFO parameters: `UART0_TX_FIFO` / `UART0_RX_FIFO`, ... `FLASH_TX_FIFO` /
+`FLASH_RX_FIFO`. The testbench overrides the rates for a short simulation.
+
+For synthesis only the PLL oscillators (`dpll_dco`, oscillator + phase
+read-out) are black boxes; the loop logic (`dpll_ctrl`) is synthesizable.
+On an FPGA, replace them, or `clk_gen`, with the device PLL / MMCM. The
+7 GHz video oscillator suits the simulation model; a device PLL would use
+separate outputs per ratio.
+
+![clock generation and distribution](docs/clock_diagram.svg)
+
+`arst_n` resets only the CPU system (`py_soc`), held until its CPU PLL
+locks. The core logic is released by the firmware through SYSCTL
+`CORE_RESET` (`core_rst_n_o`, only while the video PLL is locked),
+synchronised once per clock domain by `reset_sync`; every CPU reset
+(`arst_n`, loss of lock or the watchdog) clears `CORE_RESET` again.
+
+![reset generation and distribution](docs/reset_diagram.svg)
+
 ## Directory structure
 
 | Path | Contents |
@@ -36,7 +91,7 @@ serializers) in more detail.
 | `scripts/run_sim.sh` | compile the firmware, run the system test (Icarus), `--lint` for Verilator |
 | `tb/` | `video_processor_tb.sv` system test, its test tasks in `tb/tests/video_processor_tests.sv`, `tb/scripts/build.f` |
 | `synth/run_yosys.sh` | Yosys Xilinx 7-series synthesis (sv2v + library flow) |
-| `docs/` | `system_block_diagram.*`, `block_diagram.*` (`.dot` is the source) |
+| `docs/` | `system_block_diagram.*`, `block_diagram.*`, `clock_diagram.*`, `reset_diagram.*` (`.dot` is the source) |
 | `constraints/` | board constraints (once a board is chosen) |
 | `include/` | shared packages (none yet) |
 | `ci/run_checked.sh` | pass/fail from the log, used by the Makefile |
@@ -55,7 +110,7 @@ make diagram   # re-render the diagrams
 
 | Instance | IP module | Function |
 |----------|-----------|----------|
-| `u_cpu` | `py_soc` (`py_core`, `py_boot`, `py_axil_xbar`, `spi_flash_ctrl`, `uart_top` ×2, `i2c_top` ×2, `spi_top` ×2, `gpio_top` ×3, `intc_top`, `watchdog_top`, `py_sysctl`, `py_stream_port`) | control CPU, `EXT_EN = 1` |
+| `u_cpu` | `py_soc` (`clk_gen` (`dpll` ×2: `dpll_ctrl`, `dpll_dco`), `py_core`, `py_boot`, `py_axil_xbar`, `spi_flash_ctrl`, `uart_top` ×2, `i2c_top` ×2, `spi_top` ×2, `gpio_top` ×3, `intc_top`, `watchdog_top`, `py_sysctl`, `py_stream_port`) | CPU system: every clock (`CLKGEN_EN = 1`), control CPU, `EXT_EN = 1` |
 | `u_axil_cdc` | `axi4_lite_cdc` | CPU register access cpu_clk → pix_clk |
 | `u_vbus` | `py_axil_xbar` (`axi4_lite_decoder`) | video register bus |
 | `u_irq_stats` | `pulse_sync` | statistics-done interrupt pix_clk → cpu_clk |
@@ -67,7 +122,7 @@ make diagram   # re-render the diagrams
 | `u_filter` | `blur_sharpen` (`conv2d_core` ×2, `isp_window`, `ip_axil_regs`) | blur / sharpen after vision_system; MODE 0 blur, 1 sharpen, 2 sharpen→blur, 3 blur→sharpen, 4 pass-through; same latency in every mode |
 | `u_tmds_ser` | `tmds_serializer` | 10:1 TMDS |
 | `u_lvds_ser_a`, `u_lvds_ser_b` | `lvds_serializer` | 7:1 LVDS, links A / B |
-| `u_rst_*` | `reset_sync` | one per clock domain: cpu_clk from `arst_n`; the core domains only from the CPU system's core reset output |
+| `u_rst_*` | `reset_sync` | one per core clock domain, only from the CPU system's core reset output (the cpu_clk domain reset comes from `py_soc`) |
 
 ### CPU address map (`mem32[]` in the firmware)
 
@@ -107,15 +162,16 @@ height (last stage).
 ### Reset and start-up
 
 - **`arst_n`** (external, asynchronous, active low) resets the CPU system. Its release
-  starts the boot: `py_boot` loads the firmware from SPI flash, then the firmware tests
+  starts the CPU PLL; once it locks (about 12 µs), the boot starts: `py_boot` loads the firmware from SPI flash, then the firmware tests
   the CPU peripherals.
 - **Core logic reset:** every other block (`video_pipeline`, `vision_system`,
   `blur_sharpen`, `frame_counter`, the serializers) stays in reset until the firmware,
   after a successful boot with every self-test passed, writes 1 to py_soc SYSCTL
   `CORE_RESET` (0x0110). Its output, `core_rst_n_o`, is the core logic's only reset,
   synchronised into each core clock domain; the `core_rst_n_o` port shows it to the board.
-  `arst_n` reaches the core logic through the CPU: it resets py_soc, which clears
-  `CORE_RESET` at the next cpu_clk edge (so cpu_clk must run for the core to be reset).
+  `core_rst_n_o` is released only while the video PLL is locked. `arst_n` reaches the
+  core logic through the CPU system: it asserts py_soc's CPU reset at once, which
+  clears `core_rst_n_o` asynchronously and `CORE_RESET` with it.
 - **Self-test failed:** the core logic stays in reset and the firmware skips the video sections.
 - **Watchdog reset:** resets the CPU and clears `CORE_RESET`, so the core logic goes back
   into reset until the firmware has booted and released it again.
@@ -141,11 +197,13 @@ UART 0 report (`build/sim/cpu_bootup.txt` in simulation):
 5. Video register dump (skipped with the GPIO0[31] strap).
 6. Video start: camera "stream on", frames counted, outputs checked.
 7. Frame counters and image sequence: the interrupt handler reads COUNT0 at every
-   first-stage end of frame and COUNT1 at every last-stage end of frame; while the camera
-   board sends its image sequence (GPIO0[29] = 1) each end of frame is reported on UART 0
-   with the count read. Frames follow each other at the frame gap; frames that arrive while
-   vision_system is busy are dropped by `vs_stream_adapter` before the last stage (a longer
-   gap passes more of them).
+   first-stage end of frame and COUNT1 at every last-stage end of frame. The counters only
+   advance at an end of frame. Once the pipeline is idle the firmware clears both, so the
+   camera board's image sequence (GPIO0[29] = 1) is counted from 0: one frame sent gives
+   count 1, and so on, at both stages. Every end of frame is reported on UART 0 as its own
+   line (counts 1, 2, 3, ...). Frames follow each other at least the frame gap apart; a frame
+   that arrives while vision_system is busy is dropped by `vs_stream_adapter` before the last
+   stage, so the test's camera paces its images and all 8 reach the last stage (count 8).
 8. Summary and END OF REPORT.
 
 ## Changes made to library IP for this design
@@ -208,8 +266,8 @@ All of these default off, so other users of the library are unaffected.
   6. Image test: 4 colour and 4 monochrome images are read from
      `build/sim/input_images/` (`frame_c_<n>_input.ppm`, `frame_m_<n>_input.ppm`; generated
      with moving shapes when missing, colour as P6, monochrome as P5). The camera model sends
-     them back to back, one RAW10 frame each (colour as an RGGB Bayer mosaic), with the
-     programmed frame gap between frames; it sets the format pin for the next image as soon
+     them one RAW10 frame each (colour as an RGGB Bayer mosaic), each once vision_system can
+     take it and at least the programmed frame gap after the previous one; it sets the format pin for the next image as soon
      as the previous frame's last line is out, so the firmware reprograms the ISP during the
      gap. The frame of each image at the output of every module it reaches (`csi2_raw_unpack`, `isp_blc_wb`, `isp_dpc`,
      `isp_demosaic`, `isp_ccm`, `isp_gamma`, `isp_csc`, `vision_system`, `blur_sharpen`,
@@ -217,9 +275,11 @@ All of these default off, so other users of the library are unaffected.
      (P6) and checked: monochrome passes the ISP unchanged, colour keeps every native
      Bayer sample and comes out in colour, vision_system within ±1 LSB, blur_sharpen
      equal to its model, HDMI and LVDS equal to blur_sharpen. Every image must reach
-     `isp_csc`; images dropped before vision_system are listed (not an error), at least
-     one must pass the whole pipeline, and the frame counter must count all 8 at the
-     first stage and one per passed image at the last.
+     `isp_csc` and pass the whole pipeline: the camera paces the sequence (each image once
+     vision_system can take it, at least the frame gap after the previous one), so
+     `vs_stream_adapter` drops none, and the frame counter must count all 8 at the first
+     and at the last stage.
+     The report must list the counts 1, 2, 3, ... with no gaps.
   7. The UART 0 report (`build/sim/cpu_bootup.txt`) must end with no [FAIL] line, and
      the last frame counts the CPU reported must equal the frame counter's.
 - **`make ip-test`**: the `video_pipeline` system test, with a bit-exact

@@ -72,7 +72,11 @@ module watchdog_top #(
   logic [7:0] wr_pulse;
   logic [31:0] wr_data;
   // CTRL bits: lock is write-once, en cannot be cleared once locked
-  ip_axil_regs #(.ADDR_W(8), .NREG(8), .RESET_VALS(RSTV)) u_regs (
+  ip_axil_regs #(
+    .ADDR_W(8),
+    .NREG(8),
+    .RESET_VALS(RSTV)
+  ) u_regs (
     .aclk,
     .aresetn,
     .s_axil_awaddr,

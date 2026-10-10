@@ -20,7 +20,11 @@ module pp_case #(parameter bit STRIP = 1) (input logic clk, input logic rst_n, o
   logic [HB*8-1:0] hdr, mask, value;
   logic hv, match, runt, drop, lv, dn = 1;
   logic [15:0] len;
-  packet_parser #(.DATA_W(32), .HDR_BYTES(HB), .STRIP(STRIP)) dut (
+  packet_parser #(
+    .DATA_W(32),
+    .HDR_BYTES(HB),
+    .STRIP(STRIP)
+  ) dut (
     .aclk(clk),
     .aresetn(rst_n),
     .s_axis_tdata(sd),

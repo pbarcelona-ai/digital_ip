@@ -63,10 +63,18 @@ module scaler_bicubic #(
   // All logic is in scaler_polyphase; this wrapper fixes TAPS = 4 and
   // the IP_ID. Every port is connected by name (.*).
   scaler_polyphase #(
-    .PINGPONG(PINGPONG), .LINE_BUF(LINE_BUF),
-    .CHANNELS(CHANNELS), .COMP_W(COMP_W), .MAX_W(MAX_W), .MAX_H(MAX_H),
-    .ADDR_W(ADDR_W), .TAPS(4), .PHASE_BITS(PHASE_BITS), .COEF_W(COEF_W),
-    .COEF_FRAC(COEF_FRAC), .IP_ID(32'h4243_5542)          // "BCUB"
+    .PINGPONG(PINGPONG),
+    .LINE_BUF(LINE_BUF),
+    .CHANNELS(CHANNELS),
+    .COMP_W(COMP_W),
+    .MAX_W(MAX_W),
+    .MAX_H(MAX_H),
+    .ADDR_W(ADDR_W),
+    .TAPS(4),
+    .PHASE_BITS(PHASE_BITS),
+    .COEF_W(COEF_W),
+    .COEF_FRAC(COEF_FRAC),
+    .IP_ID(32'h4243_5542) // "BCUB"
   ) u_core (.*);
 
 endmodule

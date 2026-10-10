@@ -75,7 +75,10 @@ module dsi_tx_tb;
     logic [NL*8-1:0] ld;
     logic [NL-1:0] lv;
     logic req, rdy = 0, drop, uf, busy;
-    dsi_tx #(.NLANES(NL), .MAX_W(64)) dut (
+    dsi_tx #(
+      .NLANES(NL),
+      .MAX_W(64)
+    ) dut (
       .pclk,
       .prst_n,
       .video_en_i(ven),

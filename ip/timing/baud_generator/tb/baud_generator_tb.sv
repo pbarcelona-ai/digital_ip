@@ -13,7 +13,11 @@ module bg_case #(parameter int CLK_HZ = 100_000_000, parameter int BAUD = 115200
   localparam real PERIOD = 1.0e9 / CLK_HZ;
   logic clk = 0, rst_n = 0, en = 0, sync = 0, tos, tb_;
   always #(PERIOD/2) clk = ~clk;
-  baud_generator #(.CLK_HZ(CLK_HZ), .BAUD(BAUD), .OVERSAMPLE(OS)) dut (
+  baud_generator #(
+    .CLK_HZ(CLK_HZ),
+    .BAUD(BAUD),
+    .OVERSAMPLE(OS)
+  ) dut (
     .clk,
     .rst_n,
     .en_i(en),
@@ -51,16 +55,36 @@ module bg_case #(parameter int CLK_HZ = 100_000_000, parameter int BAUD = 115200
 endmodule
 module baud_generator_tb;
   int e0, e1, e2, e3;
-  bg_case #(100_000_000, 115200, 16) a (e0);
-  bg_case #(100_000_000, 921600, 8) b (e1);
-  bg_case #(100_000_000, 3_000_000, 4) c (e2);
-  bg_case #(27_000_000, 9600, 16) d (e3);
+  bg_case #(
+    100_000_000,
+    115200,
+    16
+  ) a (e0);
+  bg_case #(
+    100_000_000,
+    921600,
+    8
+  ) b (e1);
+  bg_case #(
+    100_000_000,
+    3_000_000,
+    4
+  ) c (e2);
+  bg_case #(
+    27_000_000,
+    9600,
+    16
+  ) d (e3);
   // override and sync restart on a separate instance
   logic clk = 0, rst_n = 0, sync = 0, tos, tbk;
   always #5 clk = ~clk;
   logic use_reg = 1; // 1/256 of clk -> tick every 256 clocks
   logic [31:0] inc = 32'h0100_0000;
-  baud_generator #(.CLK_HZ(100_000_000), .BAUD(1_000_000), .OVERSAMPLE(4)) dr (
+  baud_generator #(
+    .CLK_HZ(100_000_000),
+    .BAUD(1_000_000),
+    .OVERSAMPLE(4)
+  ) dr (
     .clk,
     .rst_n,
     .en_i(1'b1),

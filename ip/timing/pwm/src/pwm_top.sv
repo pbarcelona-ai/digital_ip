@@ -73,7 +73,11 @@ module pwm_top #(
   logic [NREG*32-1:0] regs;
   logic [NREG-1:0]    wr_pulse;
   logic [31:0]        wr_data;
-  ip_axil_regs #(.ADDR_W(8), .NREG(NREG), .RESET_VALS(RSTV)) u_regs (
+  ip_axil_regs #(
+    .ADDR_W(8),
+    .NREG(NREG),
+    .RESET_VALS(RSTV)
+  ) u_regs (
     .aclk,
     .aresetn,
     .s_axil_awaddr,

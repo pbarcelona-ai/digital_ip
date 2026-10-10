@@ -54,8 +54,12 @@ module ip_reset_sync_top #(
 
   // Bus reset: never affected by the soft reset so registers survive it
   logic bus_active;
-  rst_sync #(.STAGES(STAGES), .ACTIVE_LOW_IN(ACTIVE_LOW_IN),
-             .ACTIVE_LOW_OUT(1'b1), .ASYNC_ASSERT(1'b1)) u_bus_sync (
+  rst_sync #(
+    .STAGES(STAGES),
+    .ACTIVE_LOW_IN(ACTIVE_LOW_IN),
+    .ACTIVE_LOW_OUT(1'b1),
+    .ASYNC_ASSERT(1'b1)
+  ) u_bus_sync (
     .clk(aclk),
     .rst_i(arst_i),
     .hold_i(16'd4),
@@ -67,7 +71,11 @@ module ip_reset_sync_top #(
   logic [4*32-1:0] regs, rd;
   logic [3:0]      wr_pulse;
   logic [31:0]     wr_data;
-  ip_axil_regs #(.ADDR_W(8), .NREG(4), .RESET_VALS(RSTV)) u_regs (
+  ip_axil_regs #(
+    .ADDR_W(8),
+    .NREG(4),
+    .RESET_VALS(RSTV)
+  ) u_regs (
     .aclk(aclk),
     .aresetn(bus_rst_n_o),
     .s_axil_awaddr,
@@ -110,8 +118,12 @@ module ip_reset_sync_top #(
   genvar i;
   generate
     for (i = 0; i < NUM_OUT; i++) begin : g_out
-      (* keep = "true" *) rst_sync #(.STAGES(STAGES), .ACTIVE_LOW_IN(1'b0),
-                 .ACTIVE_LOW_OUT(ACTIVE_LOW_OUT), .ASYNC_ASSERT(1'b1)) u_s (
+      (* keep = "true" *) rst_sync #(
+        .STAGES(STAGES),
+        .ACTIVE_LOW_IN(1'b0),
+        .ACTIVE_LOW_OUT(ACTIVE_LOW_OUT),
+        .ASYNC_ASSERT(1'b1)
+      ) u_s (
         .clk(aclk),
         .rst_i(comb_req),
         .hold_i(regs[47:32]),

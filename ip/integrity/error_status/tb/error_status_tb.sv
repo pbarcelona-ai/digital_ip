@@ -15,7 +15,10 @@ module error_status_tb;
   logic ca = 0, fv, irq;
   logic [2:0] fi;
   logic [3:0] cnt;
-  error_status #(.NERR(8), .CNT_W(4)) dut (
+  error_status #(
+    .NERR(8),
+    .CNT_W(4)
+  ) dut (
     .clk,
     .rst_n,
     .err_i(err),

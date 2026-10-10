@@ -17,7 +17,11 @@ module uart_rx_tb;
   logic tick, en = 1, pe = 0, po = 0, rxd, valid, ferr, perr, busy;
   logic [3:0] nb = 8;
   logic [7:0] data;
-  baud_generator #(.CLK_HZ(100_000_000), .BAUD(1_000_000), .OVERSAMPLE(16)) bg (
+  baud_generator #(
+    .CLK_HZ(100_000_000),
+    .BAUD(1_000_000),
+    .OVERSAMPLE(16)
+  ) bg (
     .clk,
     .rst_n,
     .en_i(1'b1),

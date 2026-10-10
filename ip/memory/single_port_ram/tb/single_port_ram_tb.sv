@@ -13,7 +13,13 @@ module spram_case #(parameter int MODE = 0, parameter bit BE = 0) (input logic c
   logic [3:0] be;
   logic [5:0] a;
   logic [W-1:0] wd, rd;
-  single_port_ram #(.WIDTH(W), .DEPTH(D), .MODE(MODE), .BYTE_EN(BE), .INIT_ZERO(1)) dut
+  single_port_ram #(
+    .WIDTH(W),
+    .DEPTH(D),
+    .MODE(MODE),
+    .BYTE_EN(BE),
+    .INIT_ZERO(1)
+  ) dut
     (
     .clk,
     .rst_n,
@@ -64,22 +70,34 @@ module single_port_ram_tb;
   logic clk = 0, rst_n = 0;
   always #5 clk = ~clk;
   int e0, e1, e2, e3;
-  spram_case #(0, 0) c0 (
+  spram_case #(
+    0,
+    0
+  ) c0 (
     clk,
     rst_n,
     e0
   );
-  spram_case #(1, 0) c1 (
+  spram_case #(
+    1,
+    0
+  ) c1 (
     clk,
     rst_n,
     e1
   );
-  spram_case #(2, 1) c2 (
+  spram_case #(
+    2,
+    1
+  ) c2 (
     clk,
     rst_n,
     e2
   );
-  spram_case #(1, 1) c3 (
+  spram_case #(
+    1,
+    1
+  ) c3 (
     clk,
     rst_n,
     e3

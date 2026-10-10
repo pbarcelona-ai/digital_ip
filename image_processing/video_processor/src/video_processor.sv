@@ -3,13 +3,17 @@
 // Author: FPGA Cores 4 U
 // Description: Top level of the video processing system (see
 //   docs/system_block_diagram.svg). Version 2.0.0. Technology independent:
-//   no target device is selected; a board wrapper adds the PLL / MMCM, the
-//   vendor D-PHY RX / TX, differential buffers and I/O pads.
+//   no target device is selected; a board wrapper adds the vendor D-PHY
+//   RX / TX, differential buffers and I/O pads. All clocks except the
+//   camera byte clock are generated inside from one board reference clock.
 //
-//     u_cpu        py_soc           control CPU: Python bytecode from SPI
-//                                   flash, 2x UART, 2x I2C, 2x SPI, 96 GPIO,
-//                                   intc, watchdog; external window
-//                                   0x1_0000-0x1_FFFF -> video registers
+//     u_cpu        py_soc           CPU system: clock generator (clk_gen,
+//                                   two digital PLLs: every clock of the
+//                                   design from ref_clk), Python bytecode
+//                                   CPU booting from SPI flash, 2x UART,
+//                                   2x I2C, 2x SPI, 96 GPIO, intc, watchdog;
+//                                   external window 0x1_0000-0x1_FFFF ->
+//                                   video registers
 //     u_axil_cdc   axi4_lite_cdc    cpu_clk -> pix_clk
 //     u_vbus       py_axil_xbar     video register bus (axi4_lite_decoder)
 //     u_pipe       video_pipeline   CSI-2 RX -> ISP -> [insert] -> scaler ->
@@ -29,9 +33,10 @@
 //     u_irq_stats  pulse_sync       isp_stats frame done -> intc source 12
 //     u_tmds_ser   tmds_serializer  10:1 HDMI / DVI
 //     u_lvds_ser_a/b lvds_serializer 7:1 LVDS links A / B
-//     u_rst_*      reset_sync       one per clock domain: cpu_clk from arst_n,
-//                                   the others from the CPU system's core
-//                                   reset output only
+//     u_rst_*      reset_sync       one per core clock domain, all from the
+//                                   CPU system's core reset output only
+//                                   (the CPU clock domain reset comes from
+//                                   py_soc, released once its PLL locks)
 //
 //   CPU address map (py_soc, mem32[] in the firmware):
 //     0x0_0100-0x0_C1FF  py_soc peripherals (see py_soc.sv)
@@ -55,13 +60,32 @@
 //   vision_system's output rate, up to LOCK_MAX extra lines). vision_system
 //   frames are at most 720 x 720 (barrel_pkg).
 //
-//   Clocks: cpu_clk (CPU, CPU_HZ), pix_clk (video, registers, vision_system),
-//   byte_clk (D-PHY RX), tmds_ser_clk = 10x pix_clk, lvds_ser_clk = 7x
-//   (single link) or 3.5x (dual link) pix_clk, tx_byte_clk (D-PHY TX).
+//   Clocks (defaults; see docs/clock_diagram.svg): ref_clk, the board
+//   oscillator, 33.333 MHz (REF_KHZ). py_soc's clock generator makes
+//     cpu_clk      = ref x CPU_M / (CPU_D x CPU_O) = x24 / 4 = 200 MHz
+//                    (CPU PLL oscillator 800 MHz), CPU and peripherals
+//   and, from cpu_clk (video PLL oscillator cpu_clk x VID_M / VID_D = x35
+//   = 7 GHz, phase-aligned outputs):
+//     pix_clk      = / PIX_O  (70) = 100 MHz, core logic: video pipeline,
+//                    registers, vision_system, blur_sharpen, SDRAM
+//     tmds_ser_clk = / TMDS_O (7)  = 1 GHz, 10x pix_clk (HDMI 1 Gbit/s)
+//     lvds_ser_clk = / LVDS_O (10) = 700 MHz, 7x pix_clk (single link;
+//                    dual link 3.5x: LVDS_O = 20)
+//     tx_byte_clk  = / TXB_O  (56) = 125 MHz, D-PHY TX (1 Gbit/s per lane)
+//   byte_clk (D-PHY RX) is recovered from the camera clock lane: an input.
+//   SYSCTL CLK_EN gates each video clock (reset value CLK_EN_RST: core and
+//   MIPI byte clocks on, the display serial clocks off until the firmware's
+//   video set-up turns them on). CPU peripherals, one parameter set per
+//   instance: UART0 console / UART1 host 115200 baud, I2C0 camera CCI
+//   400 kHz, I2C1 DDC / EEPROM 100 kHz, SPI0 panel / touch 10 MHz, SPI1
+//   ADC / sensors 2 MHz, boot flash 33 MHz (FLASH_CLKDIV 3); FIFOs 16 words.
+//   For synthesis the PLL oscillators (dpll_dco) are black boxes: replace
+//   them, or clk_gen, with the device PLL / MMCM.
 //   Reset: arst_n, external, asynchronous active low, resets the CPU system
-//   (py_soc). Its release starts the boot: py_boot loads the firmware from
-//   flash, the firmware tests the CPU peripherals and then releases the
-//   core logic reset by writing SYSCTL CORE_RESET (py_soc core_rst_n_o).
+//   (py_soc, held until its CPU PLL locks). Its release starts the boot:
+//   py_boot loads the firmware from flash, the firmware tests the CPU
+//   peripherals and then releases the core logic reset by writing SYSCTL
+//   CORE_RESET (py_soc core_rst_n_o, only while the video PLL is locked).
 //   Until then every other block (video_pipeline, vision_system,
 //   blur_sharpen, frame_counter, serializers) is held in reset: their only
 //   reset is the CPU system's reset output core_rst_n_o, synchronised per
@@ -70,7 +94,7 @@
 //   core_rst_n_o shows the released state to the board. The watchdog resets
 //   the CPU (wdt_reset_o shows it), which clears CORE_RESET and so puts the
 //   core logic back into reset until the firmware has booted again.
-// Date: 2026-10-02
+// Date: 2026-10-09
 module video_processor #(
   // video
   parameter int NLANES      = 2,                 // camera D-PHY lanes (1, 2, 4)
@@ -86,17 +110,48 @@ module video_processor #(
   parameter int VS_RET_FIFO = 1024,              // vision_system return FIFO, words
   // blur_sharpen
   parameter int FILT_N      = 5,                 // kernel size (3 or 5)
-  // CPU
-  parameter int CPU_HZ      = 100_000_000,
-  parameter int UART_BAUD   = 115_200,
-  parameter int I2C_HZ      = 100_000,
-  parameter int SPI_HZ      = 1_000_000,
+  // clocks (py_soc clock generator): board reference -> CPU clock -> video clocks
+  parameter longint REF_KHZ = 33_333,            // board oscillator, 33.333 MHz
+  parameter int CPU_M       = 24,                // CPU PLL: ref x 24 = 800 MHz oscillator
+  parameter int CPU_D       = 1,
+  parameter int CPU_O       = 4,                 // cpu_clk = 800 / 4 = 200 MHz
+  parameter int CPU_HZ      = 200_000_000,       // nominal cpu_clk (peripheral dividers), = the CPU PLL setting
+  parameter int VID_M       = 35,                // video PLL: cpu_clk x 35 = 7 GHz oscillator
+  parameter int VID_D       = 1,
+  parameter int PIX_O       = 70,                // pix_clk (core logic) = 100 MHz
+  parameter int TMDS_O      = 7,                 // tmds_ser_clk = 1 GHz (10x)
+  parameter int LVDS_O      = 10,                // lvds_ser_clk = 700 MHz (7x single, 20 for dual link 3.5x)
+  parameter int TXB_O       = 56,                // tx_byte_clk = 125 MHz
+  parameter logic [3:0] CLK_EN_RST = 4'b1001,    // SYSCTL CLK_EN reset: {byte, LVDS, TMDS, core}
+  parameter int PLL_MISMATCH_PPM = 0,            // PLL oscillator error (simulation model only)
+  // CPU peripherals, one parameter set per instance (FIFOs: py_stream_port words, power of two >= 2)
+  parameter int UART0_BAUD    = 115_200,         // UART 0: debug console
+  parameter int UART0_TX_FIFO = 16,
+  parameter int UART0_RX_FIFO = 16,
+  parameter int UART1_BAUD    = 115_200,         // UART 1: host / control link
+  parameter int UART1_TX_FIFO = 16,
+  parameter int UART1_RX_FIFO = 16,
+  parameter int I2C0_HZ       = 400_000,         // I2C 0: camera sensor CCI, fast mode
+  parameter int I2C0_TX_FIFO  = 16,
+  parameter int I2C0_RX_FIFO  = 16,
+  parameter int I2C1_HZ       = 100_000,         // I2C 1: HDMI DDC / EDID, EEPROM, standard mode
+  parameter int I2C1_TX_FIFO  = 16,
+  parameter int I2C1_RX_FIFO  = 16,
+  parameter int SPI0_HZ       = 10_000_000,      // SPI 0: panel initialisation / touch
+  parameter int SPI0_DATA_W   = 16,              // max bits per SPI word (<= 24)
+  parameter int SPI0_TX_FIFO  = 16,
+  parameter int SPI0_RX_FIFO  = 16,
+  parameter int SPI1_HZ       = 2_000_000,       // SPI 1: ADC, sensors
+  parameter int SPI1_DATA_W   = 16,
+  parameter int SPI1_TX_FIFO  = 16,
+  parameter int SPI1_RX_FIFO  = 16,
   parameter logic [23:0] BOOT_ADDR = 24'h00_0000, // firmware image in flash
-  parameter int FLASH_CLKDIV = 4
+  parameter int FLASH_CLKDIV  = 3,               // boot flash sclk = cpu_clk / 6 = 33 MHz
+  parameter int FLASH_TX_FIFO = 16,
+  parameter int FLASH_RX_FIFO = 16
 ) (
   input  logic                arst_n,
-  input  logic                cpu_clk,
-  input  logic                pix_clk,
+  input  logic                ref_clk,           // board reference clock (REF_KHZ)
   // ---------------- CPU external interfaces ----------------
   output logic                flash_sclk_o,      // SPI NOR flash (firmware)
   output logic                flash_cs_n_o,
@@ -131,17 +186,12 @@ module video_processor #(
 `endif
 `ifdef VP_HDMI
   // ---------------- HDMI / DVI: 4 differential output buffers ----------------
-  input  logic                tmds_ser_clk,
   output logic [3:0]          tmds_serial_o,     // {clock, ch2, ch1, ch0}
 `endif
 `ifdef VP_LVDS
   // ---------------- LVDS panel: lanes 0-3 data, lane 4 clock, per link ----------------
-  input  logic                lvds_ser_clk,
   output logic [4:0]          lvds_a_serial_o,
   output logic [4:0]          lvds_b_serial_o,   // dual link only, else idle
-`endif
-`ifdef VP_MIPI_TX
-  input  logic                tx_byte_clk,
 `endif
 `ifdef VP_DSI
   output logic [DSI_LANES*8-1:0]   dsi_lane_data_o,
@@ -179,17 +229,17 @@ module video_processor #(
   `endif
 `endif
 
+  // ================================================================ clocks
+  // Generated by py_soc's clock generator (clk_gen): see the header
+  logic cpu_clk, pix_clk, tmds_ser_clk, lvds_ser_clk, tx_byte_clk;
+
   // ================================================================ resets
   // CPU system: the external reset. Core logic: only the CPU system's reset output (SYSCTL
   // CORE_RESET, a cpu_clk register that every CPU reset clears), synchronised per clock domain.
+  // cpu_rst_n: from py_soc (arst_n, released on cpu_clk once the CPU PLL is locked)
   logic cpu_rst_n, pix_rst_n, core_rel;
   wire  core_arst_n = core_rel;
   assign core_rst_n_o = core_rel;
-  reset_sync u_rst_cpu (
-    .clk(cpu_clk),
-    .arst_i(arst_n),
-    .rst_o(cpu_rst_n)
-  );
   reset_sync u_rst_pix (
     .clk(pix_clk),
     .arst_i(core_arst_n),
@@ -236,10 +286,55 @@ module video_processor #(
   logic c_awvalid, c_awready, c_wvalid, c_wready, c_bvalid, c_bready, c_arvalid, c_arready, c_rvalid, c_rready;
   logic irq_stats;
   logic [1:0] irq_frame;
-  py_soc #(.CLK_HZ(CPU_HZ), .UART_BAUD(UART_BAUD), .I2C_HZ(I2C_HZ), .SPI_HZ(SPI_HZ),
-           .BOOT_ADDR(BOOT_ADDR), .FLASH_CLKDIV(FLASH_CLKDIV), .EXT_EN(1'b1)) u_cpu (
-    .clk(cpu_clk),
-    .rst_n(cpu_rst_n),
+  py_soc #(
+    .CLK_HZ(CPU_HZ),
+    .UART0_BAUD(UART0_BAUD),
+    .UART0_TX_FIFO(UART0_TX_FIFO),
+    .UART0_RX_FIFO(UART0_RX_FIFO),
+    .UART1_BAUD(UART1_BAUD),
+    .UART1_TX_FIFO(UART1_TX_FIFO),
+    .UART1_RX_FIFO(UART1_RX_FIFO),
+    .I2C0_HZ(I2C0_HZ),
+    .I2C0_TX_FIFO(I2C0_TX_FIFO),
+    .I2C0_RX_FIFO(I2C0_RX_FIFO),
+    .I2C1_HZ(I2C1_HZ),
+    .I2C1_TX_FIFO(I2C1_TX_FIFO),
+    .I2C1_RX_FIFO(I2C1_RX_FIFO),
+    .SPI0_HZ(SPI0_HZ),
+    .SPI0_DATA_W(SPI0_DATA_W),
+    .SPI0_TX_FIFO(SPI0_TX_FIFO),
+    .SPI0_RX_FIFO(SPI0_RX_FIFO),
+    .SPI1_HZ(SPI1_HZ),
+    .SPI1_DATA_W(SPI1_DATA_W),
+    .SPI1_TX_FIFO(SPI1_TX_FIFO),
+    .SPI1_RX_FIFO(SPI1_RX_FIFO),
+    .FLASH_TX_FIFO(FLASH_TX_FIFO),
+    .FLASH_RX_FIFO(FLASH_RX_FIFO),
+    .BOOT_ADDR(BOOT_ADDR),
+    .FLASH_CLKDIV(FLASH_CLKDIV),
+    .EXT_EN(1'b1),
+    .CLKGEN_EN(1'b1),
+    .REF_KHZ(REF_KHZ),
+    .CPU_M(CPU_M),
+    .CPU_D(CPU_D),
+    .CPU_O(CPU_O),
+    .CPU_VCO_MIN_KHZ(400_000),
+    .CPU_VCO_MAX_KHZ(1_600_000),
+    .NCLK(4),
+    .CLK_M(VID_M),
+    .CLK_D(VID_D),
+    .CLK_O({16'(TXB_O), 16'(LVDS_O), 16'(TMDS_O), 16'(PIX_O)}),
+    .CLK_VCO_MIN_KHZ(2_500_000),
+    .CLK_VCO_MAX_KHZ(7_500_000),
+    .CLK_EN_RST(CLK_EN_RST),
+    .CPU_MISMATCH_PPM(PLL_MISMATCH_PPM),
+    .CLK_MISMATCH_PPM(-PLL_MISMATCH_PPM)
+  ) u_cpu (
+    .clk(ref_clk),
+    .rst_n(arst_n),
+    .cpu_clk_o(cpu_clk),
+    .cpu_rst_n_o(cpu_rst_n),
+    .clk_o({tx_byte_clk, lvds_ser_clk, tmds_ser_clk, pix_clk}),
     .start_i(1'b0),
     .resume_i(1'b0),
     .resume_pc_i('0),
@@ -378,7 +473,11 @@ module video_processor #(
   logic [NS-1:0] b_awvalid, b_awready, b_wvalid, b_wready, b_bvalid, b_bready, b_arvalid, b_arready, b_rvalid, b_rready;
   logic [NS*2-1:0] b_bresp, b_rresp;
   logic [NS*32-1:0] b_rdata;
-  py_axil_xbar #(.NSLAVE(NS), .BASE(VBASE), .MASK(VMASK)) u_vbus (
+  py_axil_xbar #(
+    .NSLAVE(NS),
+    .BASE(VBASE),
+    .MASK(VMASK)
+  ) u_vbus (
     .aclk(pix_clk),
     .aresetn(pix_rst_n),
     .s_axil_awaddr({16'd0, v_awaddr}),
@@ -432,8 +531,13 @@ module video_processor #(
 `endif
   logic eof_first, eof_last;                         // end-of-frame markers of the first / last stage
   video_pipeline #(
-    .NLANES(NLANES), .MAX_W(MAX_W), .CSI_FIFO(CSI_FIFO), .OUT_FIFO(OUT_FIFO),
-    .SCALER(SCALER), .DSI_LANES(DSI_LANES), .CSITX_LANES(CSITX_LANES)
+    .NLANES(NLANES),
+    .MAX_W(MAX_W),
+    .CSI_FIFO(CSI_FIFO),
+    .OUT_FIFO(OUT_FIFO),
+    .SCALER(SCALER),
+    .DSI_LANES(DSI_LANES),
+    .CSITX_LANES(CSITX_LANES)
   ) u_pipe (
 `ifdef VP_CSI2_RX
     .byte_clk,
@@ -578,7 +682,10 @@ module video_processor #(
     .drops_o(),
     .ret_drops_o()
   );
-  vision_system #(.ADDR_W(VS_ADDR_W), .USE_EXT_FB(VS_USE_EXT_FB)) u_vision (
+  vision_system #(
+    .ADDR_W(VS_ADDR_W),
+    .USE_EXT_FB(VS_USE_EXT_FB)
+  ) u_vision (
     .clk(pix_clk),
     .rst_n(pix_rst_n),
     .s_axis_tvalid(va_v),

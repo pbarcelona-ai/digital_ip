@@ -40,15 +40,20 @@ Create a new SystemVerilog IP block for the FPGA Cores 4 U digital IP library.
 | `intc_top` | `intc` | Interrupt controller IP with NUM_IRQ sources. |
 | `watchdog_top` | `watchdog` | Watchdog timer IP. Prescaled up-counter with programmable timeout and pre-timeout interrupt, optional window mode (kicks before WINDOW_OPEN are violations), key-protected kick register, write-once loc |
 | `spi_flash_ctrl` | `spi_flash_ctrl` | SPI NOR flash controller (single-bit SPI mode 0, 3-byte addressing, e.g. W25Qxx / S25FL / MX25). |
+| `reset_sync` | `reset_sync` | Reset synchronizer. |
+| `dpll_ctrl` | `dpll` | Digital loop of dpll: phase detector, PI loop filter and lock detector. |
+| `dpll_dco` | `dpll` | Digitally controlled oscillator with phase read-out (TDC) and NOUT divided outputs, the analogue part of dpll. |
+| `dpll` | `dpll` | All-digital PLL (ADPLL) with NOUT phase-aligned divided outputs. |
+| `clk_gen` | `clk_gen` | Clock generator: one reference clock in, a CPU clock and NCLK further clocks out, every ratio set by parameters. |
 
 ## 3. Parameters
 
 | Name | Default | Meaning / legal range |
 |---|---|---|
-| `CLK_HZ` | `100_000_000` | - |
+| `CLK_HZ` | `200_000_000` | CPU clock (with CLKGEN_EN: the generated one) |
 | `UART_BAUD` | `115_200` | - |
-| `I2C_HZ` | `100_000` | - |
-| `SPI_HZ` | `1_000_000` | Data-port FIFO depths in words (powers of two >= 2) |
+| `I2C_HZ` | `400_000` | fast mode |
+| `SPI_HZ` | `10_000_000` | Data-port FIFO depths in words (powers of two >= 2) |
 | `UART_TX_FIFO` | `16` | - |
 | `UART_RX_FIFO` | `16` | - |
 | `I2C_TX_FIFO` | `16` | - |
@@ -56,13 +61,49 @@ Create a new SystemVerilog IP block for the FPGA Cores 4 U digital IP library.
 | `SPI_TX_FIFO` | `16` | - |
 | `SPI_RX_FIFO` | `16` | - |
 | `FLASH_TX_FIFO` | `16` | - |
-| `FLASH_RX_FIFO` | `16` | - |
+| `FLASH_RX_FIFO` | `16` | Per instance (default: the shared value above) |
+| `UART0_BAUD` | `UART_BAUD` | - |
+| `UART0_TX_FIFO` | `UART_TX_FIFO` | - |
+| `UART0_RX_FIFO` | `UART_RX_FIFO` | - |
+| `UART1_BAUD` | `UART_BAUD` | - |
+| `UART1_TX_FIFO` | `UART_TX_FIFO` | - |
+| `UART1_RX_FIFO` | `UART_RX_FIFO` | - |
+| `I2C0_HZ` | `I2C_HZ` | - |
+| `I2C0_TX_FIFO` | `I2C_TX_FIFO` | - |
+| `I2C0_RX_FIFO` | `I2C_RX_FIFO` | - |
+| `I2C1_HZ` | `I2C_HZ` | - |
+| `I2C1_TX_FIFO` | `I2C_TX_FIFO` | - |
+| `I2C1_RX_FIFO` | `I2C_RX_FIFO` | - |
+| `SPI0_HZ` | `SPI_HZ` | - |
+| `SPI0_DATA_W` | `16` | max bits per SPI word (<= 24) |
+| `SPI0_TX_FIFO` | `SPI_TX_FIFO` | - |
+| `SPI0_RX_FIFO` | `SPI_RX_FIFO` | - |
+| `SPI1_HZ` | `SPI_HZ` | - |
+| `SPI1_DATA_W` | `16` | - |
+| `SPI1_TX_FIFO` | `SPI_TX_FIFO` | - |
+| `SPI1_RX_FIFO` | `SPI_RX_FIFO` | - |
 | `CODE_AW` | `13` | - |
 | `CONST_AW` | `8` | - |
 | `BOOT_ADDR` | `24'h00_0000` | image location in flash |
-| `FLASH_CLKDIV` | `4` | boot sclk half period in clocks (>= 3) |
+| `FLASH_CLKDIV` | `3` | boot sclk half period in clocks (>= 3): 33 MHz |
 | `WDT_RST_CYCLES` | `32` | system reset length after a watchdog expiry |
-| `EXT_EN` | `1'b0` | decode the external window (m_ext_axil_*) |
+| `EXT_EN` | `1'b0` | decode the external window (m_ext_axil_*) Clock generator (CLKGEN_EN = 1): CPU clock = REF_KHZ * CPU_M / (CPU_D * CPU_O) (= CLK_HZ), clk_o[n] = CPU clock * CLK_M / (CLK_D * CLK_O[16n +: 16]); see clk_gen.sv Defaults: 33.333 MHz board clock -> CPU x24 / 4 = 200 MHz -> core clock x4 / 8 = 100 MHz |
+| `CLKGEN_EN` | `1'b1` | - |
+| `REF_KHZ` | `33_333` | - |
+| `CPU_M` | `24` | - |
+| `CPU_D` | `1` | - |
+| `CPU_O` | `4` | - |
+| `CPU_VCO_MIN_KHZ` | `400_000` | - |
+| `CPU_VCO_MAX_KHZ` | `1_600_000` | - |
+| `NCLK` | `1` | - |
+| `CLK_M` | `4` | - |
+| `CLK_D` | `1` | - |
+| `CLK_O` | `{NCLK{16'd8}}` | - |
+| `CLK_VCO_MIN_KHZ` | `400_000` | - |
+| `CLK_VCO_MAX_KHZ` | `1_600_000` | - |
+| `CLK_EN_RST` | `'1` | SYSCTL CLK_EN reset value |
+| `CPU_MISMATCH_PPM` | `0` | PLL oscillator errors (simulation model) |
+| `CLK_MISMATCH_PPM` | `0` | - |
 
 Reject illegal values at elaboration with `$error` inside a generate block.
 
@@ -76,8 +117,11 @@ Reject illegal values at elaboration with `$error` inside a generate block.
 
 | Port | Dir | Width | Group | Built when | Description |
 |---|---|---|---|---|---|
-| `clk` | input | 1 | - | - | - |
-| `rst_n` | input | 1 | - | - | - |
+| `clk` | input | 1 | - | - | CPU clock, or the reference clock (CLKGEN_EN = 1) |
+| `rst_n` | input | 1 | - | - | synchronous, or asynchronous (CLKGEN_EN = 1) |
+| `cpu_clk_o` | output | 1 | Clocks (CLKGEN_EN = 1: generated; else cpu_clk_o = clk, clk_o = 0) | - | - |
+| `cpu_rst_n_o` | output | 1 | Clocks (CLKGEN_EN = 1: generated; else cpu_clk_o = clk, clk_o = 0) | - | CPU clock domain reset (synchronous to cpu_clk_o) |
+| `clk_o` | output | [NCLK-1:0] | Clocks (CLKGEN_EN = 1: generated; else cpu_clk_o = clk, clk_o = 0) | - | - |
 | `start_i` | input | 1 | Run control / status | - | restart the program without re-booting |
 | `resume_i` | input | 1 | Run control / status | - | - |
 | `resume_pc_i` | input | [CODE_AW-1:0] | Run control / status | - | - |
@@ -146,6 +190,11 @@ streaming data path (UART, I2C, SPI, flash) goes through a
 py_stream_port with its own TX and RX FIFO (*_TX_FIFO / *_RX_FIFO
 words, default 16), so receive can be polled (RXDATA valid bit) or
 interrupt driven (IRQ_EN).
+Every peripheral instance has its own parameter set: UART0 / UART1
+(*_BAUD, *_TX_FIFO, *_RX_FIFO), I2C0 / I2C1 (*_HZ, FIFOs), SPI0 / SPI1
+(*_HZ, *_DATA_W, FIFOs), FLASH (FLASH_CLKDIV, FIFOs). The shared
+UART_BAUD, I2C_HZ, SPI_HZ and *_TX/RX_FIFO parameters are the defaults
+of both instances of a kind.
 
 Boot - on every release of reset (rst_n or watchdog) py_boot owns the
 bus, copies the pyc.py image from flash address BOOT_ADDR into code and
@@ -182,6 +231,25 @@ expiry is stretched to WDT_RST_CYCLES clocks (wdt_reset_o) and resets
 the whole system, watchdog included, so it comes back disabled like
 any other reset; the system then boots from flash again. Clock - clk
 only.
+
+Clock generator (CLKGEN_EN = 1) - clk is then the reference clock
+(REF_KHZ) and rst_n an asynchronous reset. clk_gen (ip/clock/clk_gen,
+two all-digital PLLs) makes the CPU clock REF_KHZ * CPU_M / (CPU_D *
+CPU_O), a clock multiplier, which runs everything in py_soc (cpu_clk_o),
+and NCLK further clocks clk_o[n] = CPU clock * CLK_M / (CLK_D *
+CLK_O[n]), phase aligned with each other. The system stays in reset
+until the CPU loop is locked (cpu_rst_n_o, synchronous to cpu_clk_o,
+for logic outside py_soc in the CPU clock domain). SYSCTL CLK_EN
+(0x0114) gates each clk_o[n] (reset value CLK_EN_RST), CLK_STATUS
+(0x0118) bit 0 shows the output loop locked, and core_rst_n_o is only
+released while it is (CORE_RESET AND locked, registered), so the core
+logic reset keeps a single source. With CLKGEN_EN = 0 (default) clk is
+the CPU clock, cpu_clk_o = clk, cpu_rst_n_o = rst_n, clk_o = 0. CLK_HZ
+is the CPU clock frequency in both cases (checked against the clock
+generator setting to 100 ppm). Defaults: CLKGEN_EN = 1, 33.333 MHz
+reference, CPU 200 MHz (x24 / 4), one 100 MHz output (x4 / 8); UART
+115200 baud, I2C 400 kHz, SPI 10 MHz, boot flash 33 MHz. For synthesis only the PLL oscillators
+(dpll_dco) are black boxes; see clk_gen.sv.
 ```
 
 Describe and handle the edge cases, error recovery, latency and configuration-change rules stated above; where the text is silent, choose the safe option and document it in the file header.

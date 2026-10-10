@@ -9,13 +9,16 @@
 #   build/sim. Fails unless the log contains TEST PASSED.
 # Date: 2026-10-08
 # ***************
-# Usage: scripts/run_sim.sh [--vcd] [--wave] [--vcd-start=<us>] [--vcd-stop=<us>] [--lint] [--quick]
+# Usage: scripts/run_sim.sh [--vcd] [--wave] [--vcd-start=<us>] [--vcd-stop=<us>] [--lint] [--quick] [--ideal-pll]
 #   --vcd    dump build/sim/video_processor_tb.vcd (+vcd). A whole run is long and
 #            the dump large: --vcd-start / --vcd-stop limit it to a window of
 #            simulated time (microseconds)
 #   --wave   --vcd, then open the VCD in the Surfer waveform viewer (pass or fail)
 #   --quick  sets the GPIO0[31] strap: the firmware skips the CPU and video
-#            register dumps (faster). The UART 0 report is saved to build/sim/cpu_bootup.txt.
+#            register dumps (faster).
+#   --ideal-pll  compile with DPLL_IDEAL: the clock generator's PLLs are plain
+#            clock toggles (clk = #delay ~clk) at the exact ratios instead of
+#            the loop and oscillator models (much faster simulation) The UART 0 report is saved to build/sim/cpu_bootup.txt.
 # Image test: input images are read from build/sim/input_images/ (the
 #   testbench generates frame_c_<n>_input.ppm / frame_m_<n>_input.ppm there
 #   when missing; put your own P5 / P6 files of the same names there to use
@@ -30,10 +33,11 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 filelist() { grep -Ev '^\s*(#|$)' "$ROOT/$1" | sed "s#^#$ROOT/#"; }
-VCD=0; WAVE=0; LINT=0; QUICK=0; VCDWIN=""
+VCD=0; WAVE=0; LINT=0; QUICK=0; VCDWIN=""; DEFS=""
 for a in "$@"; do
   case "$a" in
     --vcd) VCD=1;; --wave) VCD=1; WAVE=1;; --lint) LINT=1;; --quick) QUICK=1;;
+    --ideal-pll) DEFS="$DEFS -DDPLL_IDEAL";;
     --vcd-start=*) VCDWIN="$VCDWIN +vcd_start_us=${a#--vcd-start=}";;
     --vcd-stop=*)  VCDWIN="$VCDWIN +vcd_stop_us=${a#--vcd-stop=}";;
     *) echo "unknown option $a"; exit 2;;
@@ -69,7 +73,7 @@ trap copy_back EXIT
 echo "[video_processor] simulating in $WORK (live report: $WORK/cpu_bootup.txt); results -> $OUT"
 cd "$WORK"
 iverilog -g2012 -Wall -Wno-timescale -s video_processor_tb -o video_processor_tb.vvp -I "$FW" -I "$ROOT/tb/tests" \
-  -DFW_HEX="\"$FW/video_proc.flash.hex\"" $SRCS $TB_SRCS
+  -DFW_HEX="\"$FW/video_proc.flash.hex\"" $DEFS $SRCS $TB_SRCS
 ARGS=""; [ "$VCD" = 1 ] && ARGS="+vcd$VCDWIN"; [ "$QUICK" = 1 ] && ARGS="$ARGS +quick"
 vvp -n video_processor_tb.vvp $ARGS | tee video_processor_tb.log
 grep -q "TEST PASSED" video_processor_tb.log || { echo "[video_processor] SIMULATION FAILED"; exit 1; }

@@ -25,7 +25,10 @@ module pulse_generator_tb;
     .pulse_o(p),
     .start_o(st)
   );
-  pulse_generator #(.WIDTH(12), .INVERT(1)) dinv (
+  pulse_generator #(
+    .WIDTH(12),
+    .INVERT(1)
+  ) dinv (
     .clk,
     .rst_n,
     .en_i(en),

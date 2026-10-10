@@ -21,7 +21,10 @@ module tb_axi_checkers;
   logic       tvalid = 0, tready = 0, tuser = 0, tlast = 0;
   logic [7:0] tdata = 0;
   int         fw = 4, fh = 3;
-  axis_checker #(.DATA_W(8), .NAME("s")) u_s (
+  axis_checker #(
+    .DATA_W(8),
+    .NAME("s")
+  ) u_s (
     .clk,
     .rst_n,
     .tvalid,
@@ -40,7 +43,10 @@ module tb_axi_checkers;
   logic [31:0] wdata = 0, rdata = 0;
   logic [3:0] wstrb = 0;
   logic [1:0] bresp = 0, rresp = 0;
-  axil_checker #(.ADDR_W(8), .NAME("l")) u_l (.*);
+  axil_checker #(
+    .ADDR_W(8),
+    .NAME("l")
+  ) u_l (.*);
 
   // test tasks: tests/axi_checkers_tests.sv
   `include "axi_checkers_tests.sv"

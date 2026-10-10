@@ -26,7 +26,10 @@ module edge_event_capture_tb;
   logic irq;
   logic [TS_W+2*W-1:0] m_tdata;
   logic m_tvalid, m_tready = 1, m_tlast;
-  edge_event_capture_top #(.WIDTH(W), .FIFO_DEPTH(16)) dut (
+  edge_event_capture_top #(
+    .WIDTH(W),
+    .FIFO_DEPTH(16)
+  ) dut (
     .aclk,
     .aresetn,
     .s_axil_awaddr,

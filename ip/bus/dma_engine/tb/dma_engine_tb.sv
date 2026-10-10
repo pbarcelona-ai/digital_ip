@@ -31,7 +31,10 @@ module dma_engine_tb;
   logic arvalid, arready, rlast, rvalid, rready;
   logic [3:0] wstrb;
   logic irq;
-  dma_engine #(.MAX_BURST(16), .FIFO_DEPTH(32)) dut (
+  dma_engine #(
+    .MAX_BURST(16),
+    .FIFO_DEPTH(32)
+  ) dut (
     .aclk,
     .aresetn,
     .s_axil_awaddr,
@@ -78,7 +81,10 @@ module dma_engine_tb;
     .m_axi_rready(rready),
     .irq_o(irq)
   );
-  axi4_mem_model #(.WORDS(4096), .STALL(30)) mem (
+  axi4_mem_model #(
+    .WORDS(4096),
+    .STALL(30)
+  ) mem (
     .aclk,
     .aresetn,
     .awaddr,

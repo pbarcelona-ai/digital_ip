@@ -77,7 +77,11 @@ module conv2d_filter #(
   endfunction
 
   logic [NREG*32-1:0] regs, rd;
-  ip_axil_regs #(.ADDR_W(8), .NREG(NREG), .RESET_VALS(reset_vals())) u_regs (
+  ip_axil_regs #(
+    .ADDR_W(8),
+    .NREG(NREG),
+    .RESET_VALS(reset_vals())
+  ) u_regs (
     .aclk(clk),
     .aresetn(rst_n),
     .s_axil_awaddr,
@@ -122,7 +126,14 @@ module conv2d_filter #(
 
   logic frame;
   logic [15:0] frames;
-  conv2d_core #(.N(N), .C(C), .CW(CW), .COEF_W(COEF_W), .MAX_W(MAX_W), .BORDER(BORDER)) u_core (
+  conv2d_core #(
+    .N(N),
+    .C(C),
+    .CW(CW),
+    .COEF_W(COEF_W),
+    .MAX_W(MAX_W),
+    .BORDER(BORDER)
+  ) u_core (
     .clk,
     .rst_n,
     .width_i(size[15:0]),

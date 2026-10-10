@@ -121,7 +121,10 @@ module sharpen_cas #(
   logic [31:0]       reg_wdata, reg_rdata;
   logic [3:0]        reg_wstrb;
 
-  axil_regbus #(.ADDR_W(ADDR_W), .DATA_W(32)) u_axil (
+  axil_regbus #(
+    .ADDR_W(ADDR_W),
+    .DATA_W(32)
+  ) u_axil (
     .clk,
     .rst_n,
     .s_axil_awaddr,

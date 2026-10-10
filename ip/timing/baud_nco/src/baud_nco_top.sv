@@ -88,7 +88,11 @@ module baud_nco_top #(
   logic [5:0]      wr_pulse;
   logic [31:0]     wr_data;
 
-  ip_axil_regs #(.ADDR_W(8), .NREG(6), .RESET_VALS(RSTV)) u_regs (
+  ip_axil_regs #(
+    .ADDR_W(8),
+    .NREG(6),
+    .RESET_VALS(RSTV)
+  ) u_regs (
     .aclk,
     .aresetn,
     .s_axil_awaddr,

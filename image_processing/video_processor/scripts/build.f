@@ -34,6 +34,10 @@ src/configuration.sv
 ../../ip/cpu/py_soc/src/py_axil_xbar.sv
 ../../ip/peripherals/spi_flash_ctrl/src/spi_flash_ctrl.sv
 ../../ip/cpu/py_soc/src/py_boot.sv
+../../ip/clock/dpll/src/dpll_ctrl.sv
+../../ip/clock/dpll/src/dpll_dco.sv
+../../ip/clock/dpll/src/dpll.sv
+../../ip/clock/clk_gen/src/clk_gen.sv
 ../../ip/cpu/py_soc/src/py_sysctl.sv
 ../../ip/cpu/py_soc/src/py_soc.sv
 # ---- video_pipeline

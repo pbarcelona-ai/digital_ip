@@ -29,7 +29,12 @@ module axi4_lite_mux_tb;
   logic [NS*2-1:0] bre, rre;
   localparam logic [NS*AW-1:0] BASE = {12'h200, 12'h100, 12'h000};
   localparam logic [NS*AW-1:0] MASK = {12'hF00, 12'hF00, 12'hF00};
-  axi4_lite_mux #(.ADDR_W(AW), .NSLAVE(NS), .BASE(BASE), .MASK(MASK)) dut (
+  axi4_lite_mux #(
+    .ADDR_W(AW),
+    .NSLAVE(NS),
+    .BASE(BASE),
+    .MASK(MASK)
+  ) dut (
     .aclk,
     .aresetn,
     .s_axil_awaddr,
@@ -73,7 +78,10 @@ module axi4_lite_mux_tb;
   int slave_reads [NS];
   for (genvar i = 0; i < NS; i++) begin : g_s
     logic [4*32-1:0] r;
-    ip_axil_regs #(.ADDR_W(8), .NREG(4)) s (
+    ip_axil_regs #(
+      .ADDR_W(8),
+      .NREG(4)
+    ) s (
       .aclk,
       .aresetn,
       .s_axil_awaddr(awa[i*AW +: 8]),

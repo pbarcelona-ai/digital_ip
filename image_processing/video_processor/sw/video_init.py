@@ -61,6 +61,8 @@ BOOT_STATUS = 0x04
 CYCLES = 0x08
 SOC_ID = 0x0C
 CORE_RESET = 0x10                  # [0] 1 = release the core logic (video) reset
+CLK_EN = 0x14                      # clock generator output enables
+CLK_STATUS = 0x18                  # [0] clock generator outputs locked [1] clock generator present
 INTC_ENABLE = 0x00
 INTC_EDGE = 0x04
 INTC_PENDING = 0x0C
@@ -382,6 +384,7 @@ def test_sysctl():
     result(mem32[SYSCTL + SOC_ID] == 0x50590100, "SYSCTL: SoC ID reads 0x50590100")
     result(c1 > c0, "SYSCTL: free-running cycle counter advances")
     result(mem32[SYSCTL + BOOT_STATUS] & 1, "SYSCTL: boot-done flag set, no boot error")
+    result(mem32[SYSCTL + CLK_STATUS] == 3, "SYSCTL: clock generator present, all clocks locked")
 
 
 def test_gpio():
@@ -575,7 +578,9 @@ def dump_cpu():
         "BOOT_STATUS  [0] done [1] error [6:4] error code      ",
         "CYCLES       free-running clock cycle counter         ",
         "ID           SoC ID: \"PY\" version 1.0               ",
-        "CORE_RESET   [0] 1 = core logic out of reset          "), 5)
+        "CORE_RESET   [0] 1 = core logic out of reset          ",
+        "CLK_EN       clock output enables                     ",
+        "CLK_STATUS   [0] clocks locked [1] generator present  "), 7)
     say(" INTC @ 0x1000")
     dump(INTC, strings(
         "ENABLE       interrupt enable mask                    ",

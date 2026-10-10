@@ -8,6 +8,9 @@
 #      the new lines indented by block level;
 #   2. one line per port: an instantiation with several port connections
 #      on one line is rewritten as "inst (", one connection per line, ");".
+#   3. one line per parameter: an instantiation's #( ... ) override list
+#      with two entries on a line is rewritten as "#(", one entry per line,
+#      ") inst (".
 #   Everything else is left byte for byte as it was. Every rewritten file
 #   is checked to hold exactly the same token sequence as before (only
 #   whitespace changes), otherwise it is left untouched. Lines that cannot
@@ -354,6 +357,22 @@ def _label_before(lines, n):
     return len(toks) >= 3 and toks[-2].text == ":" and toks[-3].text in ("begin", "end", "fork")
 
 
+def _keep_trailing_comments(pieces):
+    """A comment after an entry's comma on that entry's own line belongs to that entry, not to
+    the next one: move it from the next entry's leading comments to the entry's tail."""
+    out = [list(p) for p in pieces]
+    for i in range(1, len(out)):
+        prev_line = out[i - 1][3]
+        keep = []
+        for c in out[i][0]:
+            if prev_line is not None and c.line == prev_line:
+                out[i - 1][2] = out[i - 1][2] + [c]
+            else:
+                keep.append(c)
+        out[i][0] = keep
+    return [tuple(p) for p in out]
+
+
 # ---------------------------------------------------------------- rule 2
 def find_instances(toks):
     """Yield (start, lparen, rparen, semi) token indices of single-instance instantiations."""
@@ -384,7 +403,9 @@ def find_instances(toks):
             continue
         if k > 0:
             p = toks[sig[k - 1]]
-            if not (p.text in starts or p.kind in ("dir", "define", "attr")):
+            # "begin : label" (named generate block) also starts a statement
+            named = k >= 3 and toks[sig[k - 2]].text == ":" and toks[sig[k - 3]].text == "begin"
+            if not (p.text in starts or p.kind in ("dir", "define", "attr") or named):
                 continue
         k2 = k + 1
         if k2 < len(sig) and toks[sig[k2]].text == "#":
@@ -447,9 +468,10 @@ def rule2(src, unit):
                     in_dir = False
                 if in_dir:
                     continue
-                if u.kind == "dir":
+                if u.kind == "dir" and u.text[1:] in DIRECTIVES:
                     in_dir = True                    # the rest of a directive line is its argument
                     continue
+                # a macro call (e.g. a port-group macro) is a connection of its own
                 if u.kind == "op" and u.text in ("(", "[", "{"): d += 1
                 elif u.kind == "op" and u.text in (")", "]", "}"): d -= 1
                 if d == 0 and u.kind == "op" and u.text == ",":
@@ -460,12 +482,23 @@ def rule2(src, unit):
             by_line = {}
             for k in starts:
                 by_line.setdefault(toks[k].line, []).append(k)
+            line_start = start
+            while line_start > 0 and toks[line_start - 1].kind != "nl": line_start -= 1
+            base = toks[line_start].text if toks[line_start].kind == "ws" else ""
+            if starts and toks[starts[0]].line == toks[lp].line:
+                k = starts[0]                        # first connection on the "inst (" line
+                ws = k - 1 if toks[k - 1].kind == "ws" else k
+                edits.append((ws, k, "\n" + base + unit))
+            ind = base + unit                        # every connection at the port indentation
             for ln_no, ks in by_line.items():
-                if len(ks) < 2:
-                    continue
-                ls = ks[0]
+                k0 = ks[0]
+                ls = k0
                 while ls > 0 and toks[ls - 1].kind != "nl": ls -= 1
-                ind = toks[ls].text if toks[ls].kind == "ws" else ""
+                if all(toks[j].kind == "ws" for j in range(ls, k0)) and toks[k0].line != toks[lp].line:
+                    if ls < k0 and toks[ls].text != ind:
+                        edits.append((ls, k0, ind))  # re-indent a line that starts with a connection
+                    elif ls == k0 and ind:
+                        edits.append((k0, k0, ind))
                 for k in ks[1:]:
                     ws = k - 1 if toks[k - 1].kind == "ws" else k
                     edits.append((ws, k, "\n" + ind))
@@ -491,12 +524,14 @@ def rule2(src, unit):
                 bad = True                                  # line comment inside a connection: leave as is
             text = "".join(t.text for t in body)
             text = re.sub(r"\s*\n\s*", " ", text).strip()
-            pieces.append((lead, text, [t for t in tail if t.kind in ("lcom", "bcom")]))
+            pieces.append((lead, text, [t for t in tail if t.kind in ("lcom", "bcom")],
+                           body[-1].line if body else None))
         if bad:
             continue
+        pieces = _keep_trailing_comments(pieces)
         lines = []
         n = len(pieces)
-        for idx, (lead, text, tail) in enumerate(pieces):
+        for idx, (lead, text, tail, _) in enumerate(pieces):
             for c in lead:
                 lines.append(base + unit + c.text)
             if not text:
@@ -524,6 +559,84 @@ def rule2(src, unit):
     return "".join(out)
 
 
+def rule3(src, unit):
+    """One line per parameter: an instantiation's #( ... ) override list with several entries
+    and a line holding two of them is rewritten as "#(", one entry per line, ")"."""
+    toks = lex(src)
+    edits = []
+    for start, lp, rp, semi in find_instances(toks):
+        hs = next((k for k in range(start + 1, lp) if toks[k].sig() and toks[k].text == "#"), None)
+        if hs is None:
+            continue
+        po = next(k for k in range(hs + 1, lp) if toks[k].sig())          # "(" of the list
+        d, pc = 0, None
+        for k in range(po, lp):
+            if toks[k].kind == "op" and toks[k].text in "([{": d += 1
+            elif toks[k].kind == "op" and toks[k].text in ")]}":
+                d -= 1
+                if d == 0: pc = k; break
+        if pc is None:
+            continue
+        inner = toks[po + 1:pc]
+        if any(t.kind in ("dir", "define") for t in inner):
+            continue
+        entries, cur, d = [], [], 0
+        for t in inner:
+            if t.kind == "op" and t.text in "([{": d += 1
+            elif t.kind == "op" and t.text in ")]}": d -= 1
+            if d == 0 and t.kind == "op" and t.text == ",":
+                entries.append(cur); cur = []
+                continue
+            cur.append(t)
+        entries.append(cur)
+        firsts = [next((t for t in e if t.sig()), None) for e in entries]
+        if len(entries) < 2 or any(f is None for f in firsts):
+            continue
+        lines_of = [f.line for f in firsts]
+        if len(set(lines_of)) == len(lines_of) and toks[po].line not in lines_of:
+            continue                                        # already one entry per line
+        line_start = start
+        while line_start > 0 and toks[line_start - 1].kind != "nl": line_start -= 1
+        base = toks[line_start].text if toks[line_start].kind == "ws" else ""
+        pieces, bad = [], False
+        for e in entries:
+            lead, body, tail, seen = [], [], [], False
+            for t in e:
+                if t.sig(): seen = True; body.extend(tail); tail = []; body.append(t)
+                elif t.kind in ("lcom", "bcom"): (tail if seen else lead).append(t)
+                elif seen: tail.append(t)
+            if any(t.kind == "lcom" for t in body):
+                bad = True
+                break
+            text = re.sub(r"\s*\n\s*", " ", "".join(t.text for t in body)).strip()
+            pieces.append((lead, text, [t for t in tail if t.kind in ("lcom", "bcom")], body[-1].line))
+        if bad:
+            continue
+        pieces = _keep_trailing_comments(pieces)
+        out = []
+        for idx, (lead, text, tail, _) in enumerate(pieces):
+            for c in lead:
+                out.append(base + unit + c.text)
+            ln = base + unit + text + ("," if idx < len(pieces) - 1 else "")
+            for c in tail:
+                ln += " " + c.text
+            out.append(ln)
+        edits.append((hs, pc + 1, "#(\n" + "\n".join(out) + "\n" + base + ")"))
+    if not edits:
+        return src
+    offs, acc = [], 0
+    for t in toks:
+        offs.append(acc); acc += len(t.text)
+    offs.append(acc)
+    res, last = [], 0
+    for s, e, new in sorted(edits):
+        if offs[s] < last:
+            continue
+        res.append(src[last:offs[s]]); res.append(new); last = offs[e]
+    res.append(src[last:])
+    return "".join(res)
+
+
 def process(path, unit_override=None):
     src = open(path, encoding="utf-8").read()
     toks = lex(src)
@@ -532,6 +645,7 @@ def process(path, unit_override=None):
     report = []
     new = "\n".join(rule1(lines, unit, report, path))
     new = rule2(new, unit)
+    new = rule3(new, unit)
     if new == src:
         return src, src, report
     # code tokens must be identical and in order; comments identical (a trailing one may move up)
@@ -562,6 +676,8 @@ def main():
                     fh.write(new)
     for r in reports:
         print(r, file=sys.stderr)
+    for f in changed:
+        print(f"{'would change' if a.check else 'changed'}: {f}")
     print(f"{'would change' if a.check else 'changed'} {len(changed)} of {len(files)} files")
     sys.exit(1 if a.check and changed else 0)
 

@@ -26,7 +26,11 @@ module lfsr_tb;
   logic [6:0] p7;
   logic [7:0] pb;
   logic lkp;
-  lfsr #(.WIDTH(7), .TAPS(7'h60), .SEED(7'h7F)) u7 (
+  lfsr #(
+    .WIDTH(7),
+    .TAPS(7'h60),
+    .SEED(7'h7F)
+  ) u7 (
     .clk,
     .rst_n,
     .en_i(en),
@@ -36,7 +40,11 @@ module lfsr_tb;
     .bit_o(b7),
     .lockup_o(lk7)
   );
-  lfsr #(.WIDTH(15), .TAPS(15'h6000), .SEED(15'h7FFF)) u15 (
+  lfsr #(
+    .WIDTH(15),
+    .TAPS(15'h6000),
+    .SEED(15'h7FFF)
+  ) u15 (
     .clk,
     .rst_n,
     .en_i(en),
@@ -46,7 +54,11 @@ module lfsr_tb;
     .bit_o(b15),
     .lockup_o(lk15)
   );
-  lfsr #(.WIDTH(9), .TAPS(9'h110), .SEED(9'h1FF)) u9 (
+  lfsr #(
+    .WIDTH(9),
+    .TAPS(9'h110),
+    .SEED(9'h1FF)
+  ) u9 (
     .clk,
     .rst_n,
     .en_i(en),
@@ -56,7 +68,12 @@ module lfsr_tb;
     .bit_o(b9),
     .lockup_o(lk9)
   );
-  lfsr #(.WIDTH(7), .TAPS(7'h60), .SEED(7'h7F), .STEPS(8)) up (
+  lfsr #(
+    .WIDTH(7),
+    .TAPS(7'h60),
+    .SEED(7'h7F),
+    .STEPS(8)
+  ) up (
     .clk,
     .rst_n,
     .en_i(en),

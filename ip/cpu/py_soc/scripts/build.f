@@ -20,5 +20,10 @@ src/py_stream_port.sv
 src/py_axil_xbar.sv
 ../../peripherals/spi_flash_ctrl/src/spi_flash_ctrl.sv
 src/py_boot.sv
+../../cdc/reset_sync/src/reset_sync.sv
+../../clock/dpll/src/dpll_ctrl.sv
+../../clock/dpll/src/dpll_dco.sv
+../../clock/dpll/src/dpll.sv
+../../clock/clk_gen/src/clk_gen.sv
 src/py_sysctl.sv
 src/py_soc.sv
