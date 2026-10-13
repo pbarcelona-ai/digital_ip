@@ -91,6 +91,7 @@ module tb_scaler_bilinear;
     tb_init("scaler_bilinear");      // parse plusargs, load +IMG
     reset_dut();
     axil_check(12'h024, 32'h424C_494E);     // IP_ID "BLIN"
+    check_id_block('h0, 32'h424C_494E);      // ID block: ID, VERSION, DATE
     axil_check(12'h028, {8'(PHASE_BITS), 8'(COMP_W), 8'(CHANNELS), 8'd2});
     if (use_file) begin
       run_file_suite();              // +IMG=<file.ppm>

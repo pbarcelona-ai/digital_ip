@@ -33,7 +33,7 @@ module conv2d_filter_tb;
   logic [C*CW-1:0] sd, md;
   logic sl, su, sv, sr, ml, mu, mv, mr;
 
-  conv2d_filter #(
+  conv2d_filter_top #(
     .N(N),
     .C(C),
     .CW(CW),
@@ -114,11 +114,12 @@ module conv2d_filter_tb;
     logic [25*32-1:0] ka, kb;
     int sa, sb;
     repeat (5) @(posedge clk);
+    bfm.base = 'h10;                           // the map after the ID block
     rst_n = 1;
     repeat (5) @(posedge clk);
 
-    rd(16'h00, v);
-    check(v == 32'h4332_4446, $sformatf("ID %h", v));
+    test_id_block();
+
     rd(16'h10, v);
     check(v == {8'd8, 8'd3, 4'd0, 4'd12, 4'd0, 4'd5}, $sformatf("INFO %h", v));
     wr(16'h40, -5);

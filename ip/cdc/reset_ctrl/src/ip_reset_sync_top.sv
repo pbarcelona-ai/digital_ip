@@ -5,15 +5,19 @@
 //   asynchronous external reset for the AXI-Lite bus and for NUM_OUT
 //   replicated user resets (fan-out control). A software reset bit, hold-time
 //   register, reset event counter and status are exposed through an AXI-Lite
-//   register file. Register map - 0x00 CTRL[0]=soft reset (self clearing),
-//   0x04 HOLD cycles, 0x08 STATUS[0]=active [1]=event seen (W1C), 0x0C event
-//   count. Version 1.0.0. Clock - aclk, the external reset arst_i is
+//   register file. The register map
+//   reset_ctrl_regs (u_regs, src/include/reset_ctrl_regs.sv: ID "RSTC" /
+//   VERSION / DATE at 0x00-0x08, 0x10 CTRL[0]=soft reset (self clearing),
+//   0x14 HOLD cycles, 0x18 STATUS[0]=active [1]=event seen (W1C), 0x1C event
+//   count) is reset by the synchronized bus reset of the logic reset_ctrl
+//   (u_core, src/reset_ctrl.sv). Hand-written wrapper (regmap_gen "top":
+//   false) because of that internal bus reset. Version 1.0.0. Clock - aclk, the external reset arst_i is
 //   asynchronous and is synchronized with STAGES flops. Reset - the reset
 //   asserts asynchronously and releases synchronously; outputs are held for
 //   HOLD_DEFAULT clocks or the programmed hold. Latency - release is STAGES+1
 //   clocks after arst_i deasserts plus the hold. Errors - illegal parameters
 //   stop elaboration; out of range AXI-Lite accesses return SLVERR.
-// Date: 2026-09-29
+// Date: 2026-10-12
 module ip_reset_sync_top #(
   parameter int STAGES        = 3,
   parameter int NUM_OUT       = 4,     // replicated reset outputs
@@ -45,38 +49,14 @@ module ip_reset_sync_top #(
   output logic [NUM_OUT-1:0] rst_o,
   output logic        bus_rst_n_o       // synchronized reset for AXI logic
 );
-  localparam logic [31:0] IP_VERSION = 32'h0001_0000;
-  if (STAGES < 2) begin : g_chk_stg $error("%m: STAGES must be >= 2"); end
-  if (NUM_OUT < 1) begin : g_chk_nout $error("%m: NUM_OUT must be >= 1"); end
-  if (HOLD_DEFAULT < 1) begin : g_chk_hold $error("%m: HOLD_DEFAULT must be >= 1"); end
-
-  localparam logic [4*32-1:0] RSTV = {32'd0, 32'd0, 32'(HOLD_DEFAULT), 32'd0};
-
-  // Bus reset: never affected by the soft reset so registers survive it
-  logic bus_active;
-  rst_sync #(
-    .STAGES(STAGES),
-    .ACTIVE_LOW_IN(ACTIVE_LOW_IN),
-    .ACTIVE_LOW_OUT(1'b1),
-    .ASYNC_ASSERT(1'b1)
-  ) u_bus_sync (
-    .clk(aclk),
-    .rst_i(arst_i),
-    .hold_i(16'd4),
-    .rst_o(bus_rst_n_o),
-    .active_o(bus_active)
-  );
-
-  // Register file
-  logic [4*32-1:0] regs, rd;
-  logic [3:0]      wr_pulse;
-  logic [31:0]     wr_data;
-  ip_axil_regs #(
-    .ADDR_W(8),
-    .NREG(4),
-    .RESET_VALS(RSTV)
+  logic        cfg_ctrl, cfg_ctrl_wr, cfg_status_wr;
+  logic [15:0] cfg_hold;
+  logic [1:0]  cfg_status, sts_status;
+  logic [31:0] sts_event_count;
+  reset_ctrl_regs #(
+    .HOLD_RST(HOLD_DEFAULT)
   ) u_regs (
-    .aclk(aclk),
+    .aclk,
     .aresetn(bus_rst_n_o),
     .s_axil_awaddr,
     .s_axil_awvalid,
@@ -95,62 +75,32 @@ module ip_reset_sync_top #(
     .s_axil_rresp,
     .s_axil_rvalid,
     .s_axil_rready,
-    .reg_o(regs),
-    .wr_pulse_o(wr_pulse),
-    .wr_data_o(wr_data),
-    .rd_i(rd)
+    .ctrl_o(cfg_ctrl),
+    .ctrl_wr_o(cfg_ctrl_wr),
+    .hold_o(cfg_hold),
+    .hold_wr_o(),
+    .status_i(sts_status),
+    .status_o(cfg_status),
+    .status_wr_o(cfg_status_wr),
+    .event_count_i(sts_event_count)
   );
-
-  // Soft reset request: written bit 0 of CTRL, stretched by one pulse
-  logic soft_req;
-  always_ff @(posedge aclk) begin
-    if (!bus_rst_n_o) soft_req <= 1'b0;
-    else              soft_req <= wr_pulse[0] & wr_data[0];
-  end
-
-  // Combined request: external reset OR software reset, then synchronized
-  // per output copy. The external part is asynchronous.
-  wire ext_req = ACTIVE_LOW_IN ? ~arst_i : arst_i;
-  wire comb_req = ext_req | soft_req;
-  logic [NUM_OUT-1:0] act;
-  logic               main_active;
-
-  genvar i;
-  generate
-    for (i = 0; i < NUM_OUT; i++) begin : g_out
-      (* keep = "true" *) rst_sync #(
-        .STAGES(STAGES),
-        .ACTIVE_LOW_IN(1'b0),
-        .ACTIVE_LOW_OUT(ACTIVE_LOW_OUT),
-        .ASYNC_ASSERT(1'b1)
-      ) u_s (
-        .clk(aclk),
-        .rst_i(comb_req),
-        .hold_i(regs[47:32]),
-        .rst_o(rst_o[i]),
-        .active_o(act[i])
-      );
-    end
-  endgenerate
-  assign main_active = act[0];
-
-  // Event counter and sticky flag (rising edge of the active flag)
-  logic act_d, seen;
-  logic [31:0] evt_cnt;
-  always_ff @(posedge aclk) begin
-    if (!bus_rst_n_o) begin
-      act_d <= 1'b0;
-      seen <= 1'b0;
-      evt_cnt <= '0;
-    end else begin
-      act_d <= main_active;
-      if (main_active & ~act_d) begin
-        seen    <= 1'b1;
-        evt_cnt <= evt_cnt + 32'd1;
-      end
-      if (wr_pulse[2] & wr_data[1]) seen <= 1'b0;   // W1C
-    end
-  end
-
-  assign rd = {evt_cnt, {30'd0, seen, main_active}, regs[63:32], 32'd0};
+  reset_ctrl #(
+    .STAGES(STAGES),
+    .NUM_OUT(NUM_OUT),
+    .ACTIVE_LOW_IN(ACTIVE_LOW_IN),
+    .ACTIVE_LOW_OUT(ACTIVE_LOW_OUT),
+    .HOLD_DEFAULT(HOLD_DEFAULT)
+  ) u_core (
+    .aclk,
+    .arst_i,
+    .rst_o,
+    .bus_rst_n_o,
+    .cfg_ctrl,
+    .cfg_ctrl_wr,
+    .cfg_hold,
+    .cfg_status,
+    .cfg_status_wr,
+    .sts_status,
+    .sts_event_count
+  );
 endmodule

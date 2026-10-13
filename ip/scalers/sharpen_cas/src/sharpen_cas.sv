@@ -32,18 +32,20 @@
 //   when all four line buffers are in use.
 //
 //   Registers (AXI4-Lite, byte addresses)
-//     0x000 CTRL      [0] ENABLE  [1] BYPASS (pass pixels through unchanged)
-//     0x004 STATUS    [0] BUSY (RO) [1] FRAME_DONE* [2] SOF_ERR* [3] EOL_ERR*  (*W1C)
-//     0x008 SIZE      [15:0] width  [31:16] height
-//     0x020 FRAME_CNT (RO)
-//     0x024 IP_ID     (RO) "SHRP"
-//     0x028 CAPS      (RO) [7:0] 3 (kernel) [15:8] CHANNELS [23:16] COMP_W
-//     0x02C MAX_SIZE  (RO) [15:0] MAX_W
-//     0x040 SHARPNESS [8:0] 0..256  (0 = gentle, 256 = maximum)
+//     0x000 ID        (RO) "SHRP"; 0x004 VERSION (RO) ASCII "d.dd"; 0x008 DATE (RO) BCD
+//                     mm/dd/yyyy; 0x00C reserved
+//     0x010 CTRL      [0] ENABLE  [1] BYPASS (pass pixels through unchanged)
+//     0x014 STATUS    [0] BUSY (RO) [1] FRAME_DONE* [2] SOF_ERR* [3] EOL_ERR*  (*W1C)
+//     0x018 SIZE      [15:0] width  [31:16] height
+//     0x030 FRAME_CNT (RO)
+//     0x034 IP_ID     (RO) "SHRP"
+//     0x038 CAPS      (RO) [7:0] 3 (kernel) [15:8] CHANNELS [23:16] COMP_W
+//     0x03C MAX_SIZE  (RO) [15:0] MAX_W
+//     0x050 SHARPNESS [8:0] 0..256  (0 = gentle, 256 = maximum)
 //
 //   Throughput: 1 pixel / clock (W+1 cycles per line).
 //   Dependencies: axil_regbus
-// Date: 2026-09-26
+// Date: 2026-10-12
 
 module sharpen_cas #(
   parameter int CHANNELS = 3,
@@ -89,6 +91,8 @@ module sharpen_cas #(
   localparam int          M     = (1 << COMP_W) - 1;
   localparam int          XW    = (MAX_W <= 2) ? 1 : $clog2(MAX_W);
   localparam logic [31:0] IP_ID = 32'h5348_5250;              // "SHRP"
+  localparam logic [31:0] IP_VERSION = "1.10";        // VERSION register (stamp_version.py)
+  localparam logic [31:0] IP_DATE    = 32'h10122026;  // DATE register, BCD mm/dd/yyyy
   localparam logic [31:0] CAPS  = {8'd0, 8'(COMP_W), 8'(CHANNELS), 8'd3};
 
   // ===========================================================================
@@ -175,20 +179,20 @@ module sharpen_cas #(
     end else begin
       if (reg_wr) begin
         case (reg_waddr[7:0])
-          8'h00: begin
+          8'h10: begin
             enable <= reg_wdata[0];
             bypass <= reg_wdata[1];
           end
-          8'h04: begin
+          8'h14: begin
             if (reg_wdata[1]) st_done    <= 1'b0;
             if (reg_wdata[2]) st_sof_err <= 1'b0;
             if (reg_wdata[3]) st_eol_err <= 1'b0;
           end
-          8'h08: begin
+          8'h18: begin
             cfg_w <= reg_wdata[15:0];
             cfg_h <= reg_wdata[31:16];
           end
-          8'h40: sharpness <= (reg_wdata[15:0] > 16'd256) ? 9'd256 : reg_wdata[8:0];
+          8'h50: sharpness <= (reg_wdata[15:0] > 16'd256) ? 9'd256 : reg_wdata[8:0];
           default: ;
         endcase
       end
@@ -197,14 +201,17 @@ module sharpen_cas #(
       if (set_eol_err) st_eol_err <= 1'b1;
       if (reg_rd) begin
         case (reg_raddr[7:0])
-          8'h00:   reg_rdata <= {30'd0, bypass, enable};
-          8'h04:   reg_rdata <= {28'd0, st_eol_err, st_sof_err, st_done, active};
-          8'h08:   reg_rdata <= {cfg_h, cfg_w};
-          8'h20:   reg_rdata <= frame_cnt;
-          8'h24:   reg_rdata <= IP_ID;
-          8'h28:   reg_rdata <= CAPS;
-          8'h2C:   reg_rdata <= 32'(MAX_W);
-          8'h40:   reg_rdata <= {23'd0, sharpness};
+          8'h00:   reg_rdata <= IP_ID;        // ID block
+          8'h04:   reg_rdata <= IP_VERSION;
+          8'h08:   reg_rdata <= IP_DATE;
+          8'h10:   reg_rdata <= {30'd0, bypass, enable};
+          8'h14:   reg_rdata <= {28'd0, st_eol_err, st_sof_err, st_done, active};
+          8'h18:   reg_rdata <= {cfg_h, cfg_w};
+          8'h30:   reg_rdata <= frame_cnt;
+          8'h34:   reg_rdata <= IP_ID;
+          8'h38:   reg_rdata <= CAPS;
+          8'h3C:   reg_rdata <= 32'(MAX_W);
+          8'h50:   reg_rdata <= {23'd0, sharpness};
           default: reg_rdata <= '0;
         endcase
       end

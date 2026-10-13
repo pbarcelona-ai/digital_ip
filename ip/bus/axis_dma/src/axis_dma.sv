@@ -6,10 +6,13 @@
 //   AXI-Stream master (tlast on the last word). S2MM accepts an AXI-Stream
 //   slave and writes LEN bytes to memory. Both use burst engines limited to
 //   MAX_BURST beats and 4 KB boundaries, with FIFOs on the stream sides.
-//   AXI-Lite map - 0x00 CTRL [0]mm2s_start [1]s2mm_start (pulses) [2]irq_en,
-//   0x04 MM2S_ADDR, 0x08 MM2S_LEN, 0x0C S2MM_ADDR, 0x10 S2MM_LEN, 0x14 STATUS
+//   Registers on the cfg_* / sts_* ports; axis_dma_top.sv is the block with
+//   its AXI4-Lite register map (src/include/axis_dma_regs.sv: ID "ADMA" /
+//   VERSION / DATE at 0x00-0x08) - 0x10 CTRL [0]mm2s_start [1]s2mm_start
+//   (pulses) [2]irq_en, 0x14 MM2S_ADDR, 0x18 MM2S_LEN, 0x1C S2MM_ADDR,
+//   0x20 S2MM_LEN, 0x24 STATUS
 //   [0]mm2s_busy [1]s2mm_busy [8]mm2s_done [9]s2mm_done [10]mm2s_err
-//   [11]s2mm_err, done and error bits are W1C. Version 1.0.0. Clock - single
+//   [11]s2mm_err, done and error bits are W1C. Clock - single
 //   clock aclk, every input is synchronous to it unless a two-flop
 //   synchronizer is mentioned. Reset - synchronous active low aresetn,
 //   registers take the documented reset values. Latency - AXI-Lite write
@@ -20,31 +23,14 @@
 //   elaboration with an $error. The AXI4 master follows the AXI4 rules of 4
 //   KB burst boundaries; a bus error response stops the transfer and is
 //   reported in STATUS.
-// Date: 2026-09-29
+// Date: 2026-10-12
 module axis_dma #(
   parameter int MAX_BURST  = 16,
   parameter int FIFO_DEPTH = 64
 ) (
+
   input  logic        aclk,
   input  logic        aresetn,
-  // AXI4-Lite slave (register access)
-  input  logic [7:0]  s_axil_awaddr,
-  input  logic        s_axil_awvalid,
-  output logic        s_axil_awready,
-  input  logic [31:0] s_axil_wdata,
-  input  logic [3:0]  s_axil_wstrb,
-  input  logic        s_axil_wvalid,
-  output logic        s_axil_wready,
-  output logic [1:0]  s_axil_bresp,
-  output logic        s_axil_bvalid,
-  input  logic        s_axil_bready,
-  input  logic [7:0]  s_axil_araddr,
-  input  logic        s_axil_arvalid,
-  output logic        s_axil_arready,
-  output logic [31:0] s_axil_rdata,
-  output logic [1:0]  s_axil_rresp,
-  output logic        s_axil_rvalid,
-  input  logic        s_axil_rready,
   // AXI4 memory-mapped master (32 bit data)
   output logic [31:0] m_axi_awaddr,
   output logic [7:0]  m_axi_awlen,
@@ -81,67 +67,23 @@ module axis_dma #(
   input  logic        s_axis_tvalid,
   output logic        s_axis_tready,
   input  logic        s_axis_tlast,
-  output logic        irq_o
+  output logic        irq_o,
+  // register ports
+  input  logic [2:0]  cfg_ctrl,          // CTRL
+  input  logic        cfg_ctrl_wr,       // CTRL write pulse (start)
+  input  logic [31:0] cfg_mm2s_addr,     // MM2S_ADDR
+  input  logic [31:0] cfg_mm2s_len,      // MM2S_LEN
+  input  logic [31:0] cfg_s2mm_addr,     // S2MM_ADDR
+  input  logic [31:0] cfg_s2mm_len,      // S2MM_LEN
+  input  logic [11:0] cfg_status,        // STATUS: data written ...
+  input  logic        cfg_status_wr,     // ... and its write pulse
+  output logic [11:0] sts_status         // STATUS: value read
 );
-  localparam logic [31:0] IP_VERSION = 32'h0001_0000;
   if (MAX_BURST < 1 || MAX_BURST > 256) begin : g_chk_mb $error("%m: MAX_BURST must be 1..256 (AXI4 limit)"); end
   if (FIFO_DEPTH < MAX_BURST) begin : g_chk_fd $error("%m: FIFO_DEPTH must hold a full burst"); end
 
-`ifndef SYNTHESIS
-  // verification-only checks: excluded from code coverage
-  // verilator coverage_off
-  // ---- immediate assertions (simulation only; skipped by synthesis) ----
-  logic ip_chk_b_q, ip_chk_r_q;
-  always @(posedge aclk) begin
-    if (aresetn) begin
-      ip_chk_b_q <= s_axil_bvalid & ~s_axil_bready;
-      ip_chk_r_q <= s_axil_rvalid & ~s_axil_rready;
-      assert (s_axil_bresp == 2'b00 || s_axil_bresp == 2'b10) else $error("%m: reserved BRESP value");
-      assert (s_axil_rresp == 2'b00 || s_axil_rresp == 2'b10) else $error("%m: reserved RRESP value");
-      if (ip_chk_b_q) assert (s_axil_bvalid) else $error("%m: BVALID dropped before BREADY");
-      if (ip_chk_r_q) assert (s_axil_rvalid) else $error("%m: RVALID dropped before RREADY");
-    end else begin
-      ip_chk_b_q <= 1'b0;
-      ip_chk_r_q <= 1'b0;
-    end
-  end
-  // verilator coverage_on
-`endif
-
-  logic [6*32-1:0] regs, rd;
-  logic [5:0] wr_pulse;
-  logic [31:0] wr_data;
-  ip_axil_regs #(
-    .ADDR_W(8),
-    .NREG(6)
-  ) u_regs (
-    .aclk,
-    .aresetn,
-    .s_axil_awaddr,
-    .s_axil_awvalid,
-    .s_axil_awready,
-    .s_axil_wdata,
-    .s_axil_wstrb,
-    .s_axil_wvalid,
-    .s_axil_wready,
-    .s_axil_bresp,
-    .s_axil_bvalid,
-    .s_axil_bready,
-    .s_axil_araddr,
-    .s_axil_arvalid,
-    .s_axil_arready,
-    .s_axil_rdata,
-    .s_axil_rresp,
-    .s_axil_rvalid,
-    .s_axil_rready,
-    .reg_o(regs),
-    .wr_pulse_o(wr_pulse),
-    .wr_data_o(wr_data),
-    .rd_i(rd)
-  );
-
-  wire [31:0] mm_addr = regs[32 +: 32], mm_len = regs[64 +: 32];
-  wire [31:0] s2_addr = regs[96 +: 32], s2_len = regs[128 +: 32];
+  wire [31:0] mm_addr = cfg_mm2s_addr, mm_len = cfg_mm2s_len;
+  wire [31:0] s2_addr = cfg_s2mm_addr, s2_len = cfg_s2mm_len;
   logic rd_busy, wr_busy, rd_done, wr_done, rd_err, wr_err;
   logic mm_go, s2_go, mm_done_f, s2_done_f, mm_err_f, s2_err_f;
   wire mm_ok = (mm_len[1:0] == 2'b00) && (mm_len != 32'd0);
@@ -156,10 +98,10 @@ module axis_dma #(
       mm_err_f <= 1'b0;
       s2_err_f <= 1'b0;
     end else begin
-      mm_go <= wr_pulse[0] & wr_data[0] & ~rd_busy & mm_ok;
-      s2_go <= wr_pulse[0] & wr_data[1] & ~wr_busy & s2_ok;
-      if (wr_pulse[0] & wr_data[0] & ~rd_busy & ~mm_ok) mm_err_f <= 1'b1;
-      if (wr_pulse[0] & wr_data[1] & ~wr_busy & ~s2_ok) s2_err_f <= 1'b1;
+      mm_go <= cfg_ctrl_wr & cfg_ctrl[0] & ~rd_busy & mm_ok;
+      s2_go <= cfg_ctrl_wr & cfg_ctrl[1] & ~wr_busy & s2_ok;
+      if (cfg_ctrl_wr & cfg_ctrl[0] & ~rd_busy & ~mm_ok) mm_err_f <= 1'b1;
+      if (cfg_ctrl_wr & cfg_ctrl[1] & ~wr_busy & ~s2_ok) s2_err_f <= 1'b1;
       if (rd_done) begin
         mm_done_f <= 1'b1;
         if (rd_err) mm_err_f <= 1'b1;
@@ -168,11 +110,11 @@ module axis_dma #(
         s2_done_f <= 1'b1;
         if (wr_err) s2_err_f <= 1'b1;
       end
-      if (wr_pulse[5]) begin
-        if (wr_data[8])  mm_done_f <= 1'b0;
-        if (wr_data[9])  s2_done_f <= 1'b0;
-        if (wr_data[10]) mm_err_f  <= 1'b0;
-        if (wr_data[11]) s2_err_f  <= 1'b0;
+      if (cfg_status_wr) begin
+        if (cfg_status[8])  mm_done_f <= 1'b0;
+        if (cfg_status[9])  s2_done_f <= 1'b0;
+        if (cfg_status[10]) mm_err_f  <= 1'b0;
+        if (cfg_status[11]) s2_err_f  <= 1'b0;
       end
     end
   end
@@ -281,7 +223,6 @@ module axis_dma #(
     .m_axi_bready
   );
 
-  assign irq_o = regs[2] & (mm_done_f | s2_done_f);
-  assign rd = {32'd0, {20'd0, s2_err_f, mm_err_f, s2_done_f, mm_done_f, 6'd0, wr_busy, rd_busy}, regs[4*32 +: 32],
-               regs[3*32 +: 32], regs[2*32 +: 32], regs[32 +: 32], regs[31:0]};
+  assign irq_o = cfg_ctrl[2] & (mm_done_f | s2_done_f);
+  assign sts_status = {s2_err_f, mm_err_f, s2_done_f, mm_done_f, 6'd0, wr_busy, rd_busy};
 endmodule

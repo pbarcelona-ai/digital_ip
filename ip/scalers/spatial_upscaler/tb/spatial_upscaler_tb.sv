@@ -173,7 +173,9 @@ module tb_spatial_upscaler;
     if ($value$plusargs("SHARP=%d", sharp)) ;
     reset_dut();
     axil_check(16'h0024, 32'h4C41_4E43);    // scaler IP_ID "LANC"
+    check_id_block('h0, 32'h4C41_4E43);      // ID block: ID, VERSION, DATE
     axil_check(16'h4024, 32'h5348_5250);    // sharpener IP_ID "SHRP"
+    check_id_block('h4000, 32'h5348_5250);      // ID block: ID, VERSION, DATE
     if (use_file) begin
       run_file_suite();
     end else if (quick) begin

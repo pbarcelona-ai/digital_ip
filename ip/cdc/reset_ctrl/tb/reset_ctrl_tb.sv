@@ -60,7 +60,8 @@ module reset_ctrl_tb;
   // used by task measure_low (tests/reset_ctrl_tests.sv)
   int low_cycles;
   // test tasks: tests/reset_ctrl_tests.sv
-  `include "reset_ctrl_tests.sv"
+  logic [7:0] reg_base = 8'h10;                   // the register map after the ID block
+  logic [1:0] last_bresp;
 
   logic [31:0] rd;
   logic changed_off_edge = 0;
@@ -68,6 +69,7 @@ module reset_ctrl_tb;
   always @(posedge rst_o[0]) if ($time % 10000 != 0 && $realtime > 200)
     if (arst_i == 1'b1 && aclk !== 1'b1) changed_off_edge = 1;
 
+  `include "reset_ctrl_tests.sv"
   initial begin
     if ($test$plusargs("vcd")) begin
       $dumpfile("reset_ctrl_tb.vcd");
@@ -83,57 +85,12 @@ module reset_ctrl_tb;
     wdata = 0;
     wstrb = 0;
 
-    // ---- Test 1: power-up async reset and synchronous release ----
-    arst_i = 0; // asserted before any clock edge
-    #3;
-    check(rst_o == '0, "outputs not asserted asynchronously");
-    #47 arst_i = 1;                       // release (active low input)
-    repeat (3) @(posedge aclk);
-    check(rst_o == '0, "reset released too early (sync stages)");
-    repeat (4 + HOLD) @(posedge aclk);
-    check(rst_o == '1, "reset did not release after stretch");
-    check(bus_rst_n == 1'b1, "bus reset stuck");
-
-    // ---- Test 2: sub-clock glitch is stretched to >= HOLD cycles ----
-    #(CLK_PERIOD*3 + 2.5);
-    arst_i = 0; // 1 ns glitch
-    #1.0 arst_i = 1;
-    #0.1 check(rst_o == '0, "glitch not caught asynchronously");
-    measure_low();
-    check(low_cycles >= HOLD, $sformatf("glitch pulse %0d < HOLD %0d", low_cycles, HOLD));
-    repeat (8) @(posedge aclk);
-
-    // ---- Test 3: register access ----
-    axil_read(8'h04, rd);
-    check(rd == HOLD, "HOLD default readback");
-    axil_write(8'h04, 32'd8);
-    axil_read(8'h04, rd);
-    check(rd == 8, "HOLD write/readback");
-    axil_read(8'h08, rd);
-    check(rd[1] == 1'b1, "sticky event flag should be set by glitch");
-    axil_write(8'h08, 32'h2);             // W1C
-    axil_read(8'h08, rd);
-    check(rd[1] == 1'b0, "sticky flag not cleared by W1C");
-    axil_read(8'h0C, rd);
-    check(rd >= 1, "event counter should have counted the glitch");
-    begin
-      logic [31:0] cnt0;
-      cnt0 = rd;
-      // ---- Test 4: software reset ----
-      axil_write(8'h00, 32'd1);
-      wait (rst_o[0] == 1'b0);
-      check(rst_o == '0, "all copies must assert together");
-      measure_low();
-      check(low_cycles >= 8, "soft reset shorter than HOLD");
-      repeat (6) @(posedge aclk);
-      axil_read(8'h0C, rd);
-      check(rd == cnt0 + 1, "event counter did not increment on soft reset");
-      axil_read(8'h08, rd);
-      check(rd[1] == 1'b1 && rd[0] == 1'b0, "status after soft reset");
-    end
-    // out-of-range access returns SLVERR
-    axil_read(8'h40, rd);
-    check(rresp == 2'b10, "expected SLVERR for out-of-range read");
+    test_power_up();
+    test_id_block();
+    test_glitch();
+    test_registers();
+    test_soft_reset();
+    test_out_of_range();
 
     check(!changed_off_edge, "reset released asynchronously");
     if (errors == 0) $display("TEST PASSED");

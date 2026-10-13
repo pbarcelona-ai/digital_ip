@@ -24,12 +24,19 @@
     end
   endtask
 
+  // Register offsets of the old maps -> addresses: the pipeline registers (old 0x004-0x0FC) and the
+  // scaler's common window (0x4000-0x40FF) are 0x10 higher behind their ID blocks; 0x000 stays the ID
+  function automatic int reg_addr(input int a);
+    if (a < video_pipeline_map_pkg::SCALER_OFFSET) return (a == 0 || a >= 'h100) ? a : a + 'h10;
+    return (a - video_pipeline_map_pkg::SCALER_OFFSET < 'h100) ? a + 'h10 : a;
+  endfunction
+
   task automatic wr(input int a, input int d);
-    bfm.write(15'(a), 32'(d));
+    bfm.write(15'(reg_addr(a)), 32'(d));
   endtask
 
   task automatic rd(input int a, output logic [31:0] d);
-    bfm.read(15'(a), d);
+    bfm.read(15'(reg_addr(a)), d);
   endtask
 
   task automatic camera();

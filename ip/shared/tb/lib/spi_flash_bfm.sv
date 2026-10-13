@@ -4,11 +4,13 @@
 // Description: SPI NOR flash bus functional model (behavioral serial flash device)
 //   driven by sclk / cs_n / mosi, answering on miso. Used by spi_flash_ctrl
 //   and by the py_soc / video_processor system testbenches (boot flash).
-// Date: 2026-10-09
+// Date: 2026-10-11
 `timescale 1ns/1ps
 
-module spi_flash_bfm (input logic sclk, input logic cs_n, input logic mosi, output logic miso, output int wip_cycles);
-  byte mem [0:65535];
+module spi_flash_bfm #(parameter int MEM_BYTES = 65536)  // power of two; addresses wrap at it
+  (input logic sclk, input logic cs_n, input logic mosi, output logic miso, output int wip_cycles);
+  byte mem [0:MEM_BYTES-1];
+  localparam logic [23:0] AMASK = 24'(MEM_BYTES - 1);
   logic wel = 0, wip = 0;
   int bitc = 0, nb = 0;
   logic [7:0] sh, cmd, outb;
@@ -21,7 +23,7 @@ module spi_flash_bfm (input logic sclk, input logic cs_n, input logic mosi, outp
   logic [23:0] erase_a;
   bit pend_wel = 0, pend_wel_clr = 0;
   initial begin
-    for (int i = 0; i < 65536; i++) mem[i] = 8'hFF;
+    for (int i = 0; i < MEM_BYTES; i++) mem[i] = 8'hFF;
     miso = 0;
     wip_cycles = 0;
   end
@@ -56,15 +58,15 @@ module spi_flash_bfm (input logic sclk, input logic cs_n, input logic mosi, outp
         case (cmd)
           8'h03, 8'h0B, 8'h02, 8'h20: begin
             if (nb <= 4) adr = {adr[15:0], sh};
-            if (cmd == 8'h03 && nb == 4) outb = mem[adr[15:0]];
+            if (cmd == 8'h03 && nb == 4) outb = mem[adr & AMASK];
             else if (cmd == 8'h03 && nb > 4) begin
               adr = adr + 1;
-              outb = mem[adr[15:0]];
+              outb = mem[adr & AMASK];
             end
-            if (cmd == 8'h0B && nb == 5) outb = mem[adr[15:0]];
+            if (cmd == 8'h0B && nb == 5) outb = mem[adr & AMASK];
             else if (cmd == 8'h0B && nb > 5) begin
               adr = adr + 1;
-              outb = mem[adr[15:0]];
+              outb = mem[adr & AMASK];
             end
             if (cmd == 8'h02 && nb >= 5 && !ignore) begin
               pg_a.push_back({adr[23:8], adr[7:0]});
@@ -90,7 +92,7 @@ module spi_flash_bfm (input logic sclk, input logic cs_n, input logic mosi, outp
     if (cmd == 8'h02 && !ignore && pg_a.size() > 0) begin
       foreach (pg_a[i]) begin
         ta = pg_a[i];
-        mem[ta[15:0]] = mem[ta[15:0]] & pg_d[i];
+        mem[ta & AMASK] = mem[ta & AMASK] & pg_d[i];
       end
       wip = 1;
       wel = 0;
@@ -103,7 +105,7 @@ module spi_flash_bfm (input logic sclk, input logic cs_n, input logic mosi, outp
       join_none
     end
     if (pend_erase) begin
-      for (int i = 0; i < 4096; i++) mem[{erase_a[15:12], 12'd0} + i] = 8'hFF;
+      for (int i = 0; i < 4096; i++) mem[(erase_a & AMASK & ~24'hFFF) + i] = 8'hFF;
       wip = 1;
       wel = 0;
       fork

@@ -17,6 +17,7 @@ module tb_axil_split;
   localparam int SEL    = 14;
 
   `include "scaler_tb_axil.svh"
+  initial axil_id_block = 0;                         // the split itself has no ID block
 
   // master port signals are declared by the kit (awaddr, awvalid, ...)
   logic [2*ADDR_W-1:0] m_awaddr, m_araddr;

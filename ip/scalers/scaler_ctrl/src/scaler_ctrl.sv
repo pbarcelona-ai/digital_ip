@@ -27,28 +27,39 @@
 //     lb_hold = 1 while row need(next) has not been fully received, and input
 //     row r is accepted only while r < top(oldest in-flight pixel) + LB_ROWS.
 //   Common register map (byte offsets, 32-bit):
-//     0x000 CTRL      [0] ENABLE (RW) - run continuously while set
-//     0x004 STATUS    [0] BUSY [1] FRAME_DONE* [2] SOF_ERR* [3] EOL_ERR*
+//     0x000 ID        (RO) ASCII IP tag (IP_ID, first character in [31:24])
+//     0x004 VERSION   (RO) ASCII "d.dd" (IP_VERSION of the scaler)
+//     0x008 DATE      (RO) BCD mm/dd/yyyy (IP_DATE of the scaler)
+//     0x00C reserved  (reads 0)
+//     0x010 CTRL      [0] ENABLE (RW) - run continuously while set
+//     0x014 STATUS    [0] BUSY [1] FRAME_DONE* [2] SOF_ERR* [3] EOL_ERR*
 //                     [4] CAPTURING [5] GENERATING   (* = write 1 clears)
-//     0x008 IN_SIZE   [15:0] width [31:16] height
-//     0x00C OUT_SIZE  [15:0] width [31:16] height
-//     0x010 STEP_X    unsigned 16.16 source pixels per output pixel
-//     0x014 STEP_Y    unsigned 16.16
-//     0x018 OFFS_X    signed 16.16 source position of output pixel 0
-//     0x01C OFFS_Y    signed 16.16
-//     0x020 FRAME_CNT (RO) frames completed
-//     0x024 IP_ID     (RO) ASCII IP tag
-//     0x028 CAPS      (RO) IP capability word
-//     0x02C MAX_SIZE  (RO) [15:0] MAX_W [31:16] MAX_H
-//     0x040+          forwarded to the IP (1-cycle read latency)
-// Date: 2026-09-26
+//     0x018 IN_SIZE   [15:0] width [31:16] height
+//     0x01C OUT_SIZE  [15:0] width [31:16] height
+//     0x020 STEP_X    unsigned 16.16 source pixels per output pixel
+//     0x024 STEP_Y    unsigned 16.16
+//     0x028 OFFS_X    signed 16.16 source position of output pixel 0
+//     0x02C OFFS_Y    signed 16.16
+//     0x030 FRAME_CNT (RO) frames completed
+//     0x034 IP_ID     (RO) ASCII IP tag (same as ID)
+//     0x038 CAPS      (RO) IP capability word
+//     0x03C MAX_SIZE  (RO) [15:0] MAX_W [31:16] MAX_H
+//     0x050-0x0FF     forwarded to the IP (1-cycle read latency); the IP
+//                     sees these addresses less 0x10 (0x040-0x0EF, the
+//                     offsets its own decoder uses), so the ID block
+//                     does not move its registers internally
+//     0x100+          forwarded to the IP unchanged (coefficient tables)
+//   Writes to the ID block are ignored (the bus always answers OKAY).
+// Date: 2026-10-12
 
 module scaler_ctrl #(
   parameter int          PIX_W   = 24,     // pixel width in bits
   parameter int          ADDR_W  = 14,     // AXI-Lite address width
   parameter int          MAX_W   = 1920,   // frame buffer width (RO reg)
   parameter int          MAX_H   = 1080,   // frame buffer height (RO reg)
-  parameter logic [31:0] IP_ID   = 32'h0,  // value of the IP_ID register
+  parameter logic [31:0] IP_ID   = 32'h0,  // value of the ID / IP_ID registers
+  parameter logic [31:0] IP_VERSION = "1.00",       // VERSION: ASCII "d.dd" of the scaler
+  parameter logic [31:0] IP_DATE    = 32'h0101_2026, // DATE: BCD mm/dd/yyyy of the scaler
   parameter logic [31:0] CAPS    = 32'h0,  // value of the CAPS register
   parameter int          NBUF    = 1,      // 1 = single, 2 = double frame buffer
   parameter int          LB_ROWS = 0,      // > 0: line-buffer mode, ring size
@@ -121,9 +132,9 @@ module scaler_ctrl #(
   // ---------------------------------------------------------------------------
   // AXI-Lite bridge
   // ---------------------------------------------------------------------------
-  logic              reg_wr, reg_rd;
-  logic [ADDR_W-1:0] reg_waddr, reg_raddr;
-  logic [31:0]       reg_wdata, reg_rdata;
+  logic              bus_wr, bus_rd, reg_wr, reg_rd;
+  logic [ADDR_W-1:0] bus_waddr, bus_raddr, reg_waddr, reg_raddr;
+  logic [31:0]       reg_wdata, reg_rdata, bus_rdata;
   logic [3:0]        reg_wstrb;
 
   axil_regbus #(
@@ -149,14 +160,42 @@ module scaler_ctrl #(
     .s_axil_rresp,
     .s_axil_rvalid,
     .s_axil_rready,
-    .reg_wr,
-    .reg_waddr,
+    .reg_wr(bus_wr),
+    .reg_waddr(bus_waddr),
     .reg_wdata,
     .reg_wstrb,
-    .reg_rd,
-    .reg_raddr,
-    .reg_rdata
+    .reg_rd(bus_rd),
+    .reg_raddr(bus_raddr),
+    .reg_rdata(bus_rdata)
   );
+
+  // ID block at 0x00-0x0F; the rest of the 0x000-0x0FF window is the old map moved up by 0x10:
+  // internal address = bus address - 0x10 (below 0x100), 0x100 and up unchanged
+  localparam logic [ADDR_W-1:0] ID_END = ADDR_W'('h10), WIN_END = ADDR_W'('h100);
+  function automatic logic [ADDR_W-1:0] remap(input logic [ADDR_W-1:0] a);
+    return (a < WIN_END) ? a - ID_END : a;
+  endfunction
+  assign reg_wr    = bus_wr && (bus_waddr >= ID_END);   // the ID block is read only
+  assign reg_rd    = bus_rd && (bus_raddr >= ID_END);
+  assign reg_waddr = remap(bus_waddr);
+  assign reg_raddr = remap(bus_raddr);
+  logic        id_q;
+  logic [31:0] id_rdata;
+  always_ff @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      id_q     <= 1'b0;
+      id_rdata <= '0;
+    end else if (bus_rd) begin
+      id_q <= (bus_raddr < ID_END);
+      case (bus_raddr[3:2])
+        2'd0:    id_rdata <= IP_ID;
+        2'd1:    id_rdata <= IP_VERSION;
+        2'd2:    id_rdata <= IP_DATE;
+        default: id_rdata <= '0;
+      endcase
+    end
+  end
+  assign bus_rdata = id_q ? id_rdata : reg_rdata;
 
   // Addresses at or above EXT_BASE belong to the IP-specific registers
   localparam logic [ADDR_W-1:0] EXT_BASE = ADDR_W'('h40);

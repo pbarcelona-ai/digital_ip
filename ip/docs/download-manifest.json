@@ -94,11 +94,31 @@
       "executable": true
     },
     {
+      "path": "scripts/list_tests.py",
+      "executable": true
+    },
+    {
       "path": "scripts/make_block_diagrams.py",
       "executable": false
     },
     {
+      "path": "scripts/make_dataflow_diagrams.py",
+      "executable": false
+    },
+    {
+      "path": "scripts/make_ip_prompts.py",
+      "executable": false
+    },
+    {
+      "path": "scripts/make_system_prompt.py",
+      "executable": false
+    },
+    {
       "path": "scripts/package_ips.py",
+      "executable": false
+    },
+    {
+      "path": "scripts/prompt_common.py",
       "executable": false
     },
     {
@@ -111,6 +131,10 @@
     },
     {
       "path": "scripts/run_all.sh",
+      "executable": true
+    },
+    {
+      "path": "scripts/run_cov.sh",
       "executable": true
     },
     {
@@ -138,7 +162,19 @@
       "executable": true
     },
     {
+      "path": "scripts/split_tb_tests.py",
+      "executable": false
+    },
+    {
+      "path": "scripts/sv_format.py",
+      "executable": false
+    },
+    {
       "path": "scripts/synth.ys",
+      "executable": false
+    },
+    {
+      "path": "scripts/update_readme_diagrams.py",
       "executable": false
     },
     {
@@ -170,12 +206,92 @@
       "executable": false
     },
     {
+      "path": "shared/tb/lib/csi2_bfm.sv",
+      "executable": false
+    },
+    {
+      "path": "shared/tb/lib/dsi_bfm.sv",
+      "executable": false
+    },
+    {
+      "path": "shared/tb/lib/eth_bfm.sv",
+      "executable": false
+    },
+    {
+      "path": "shared/tb/lib/hdmi_bfm.sv",
+      "executable": false
+    },
+    {
+      "path": "shared/tb/lib/i2c_bfm.sv",
+      "executable": false
+    },
+    {
+      "path": "shared/tb/lib/i2s_bfm.sv",
+      "executable": false
+    },
+    {
+      "path": "shared/tb/lib/lvds_bfm.sv",
+      "executable": false
+    },
+    {
+      "path": "shared/tb/lib/pcie_bfm.sv",
+      "executable": false
+    },
+    {
+      "path": "shared/tb/lib/quad_bfm.sv",
+      "executable": false
+    },
+    {
+      "path": "shared/tb/lib/sdio_bfm.sv",
+      "executable": false
+    },
+    {
+      "path": "shared/tb/lib/spi_bfm.sv",
+      "executable": false
+    },
+    {
+      "path": "shared/tb/lib/spi_flash_bfm.sv",
+      "executable": false
+    },
+    {
+      "path": "shared/tb/lib/spi_master_bfm.sv",
+      "executable": false
+    },
+    {
+      "path": "shared/tb/lib/tmds_bfm.sv",
+      "executable": false
+    },
+    {
+      "path": "shared/tb/lib/uart_bfm.sv",
+      "executable": false
+    },
+    {
+      "path": "shared/tb/lib/usb_bfm.sv",
+      "executable": false
+    },
+    {
       "path": "tools/ci/install_tools.sh",
       "executable": true
     },
     {
       "path": "tools/common.mk",
       "executable": false
+    },
+    {
+      "path": "tools/cov/cov_gaps.py",
+      "executable": true
+    },
+    {
+      "path": "tools/cov/cov_report.py",
+      "executable": true
+    },
+    {
+      "path": "tools/cov/iverilog",
+      "executable": true
+    },
+    {
+      "path": "tools/cov/vvp",
+      "executable": true
     },
     {
       "path": "tools/docs/index.html",
@@ -248,6 +364,18 @@
           "executable": false
         },
         {
+          "path": "cdc/reset_ctrl/docs/reset_ctrl_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "cdc/reset_ctrl/docs/reset_ctrl_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "cdc/reset_ctrl/docs/reset_ctrl_prompt.md",
+          "executable": false
+        },
+        {
           "path": "cdc/reset_ctrl/scripts/build.f",
           "executable": false
         },
@@ -266,6 +394,10 @@
         {
           "path": "cdc/reset_ctrl/tb/scripts/build.f",
           "executable": false
+        },
+        {
+          "path": "cdc/reset_ctrl/tb/tests/reset_ctrl_tests.sv",
+          "executable": false
         }
       ]
     },
@@ -275,6 +407,18 @@
       "files": [
         {
           "path": "timing/baud_nco/Makefile",
+          "executable": false
+        },
+        {
+          "path": "timing/baud_nco/docs/baud_nco_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "timing/baud_nco/docs/baud_nco_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/baud_nco/docs/baud_nco_prompt.md",
           "executable": false
         },
         {
@@ -312,6 +456,10 @@
         {
           "path": "timing/baud_nco/tb/scripts/build.f",
           "executable": false
+        },
+        {
+          "path": "timing/baud_nco/tb/tests/baud_nco_tests.sv",
+          "executable": false
         }
       ]
     },
@@ -333,6 +481,18 @@
         },
         {
           "path": "peripherals/uart/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart/docs/uart_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart/docs/uart_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart/docs/uart_prompt.md",
           "executable": false
         },
         {
@@ -360,6 +520,10 @@
           "executable": false
         },
         {
+          "path": "peripherals/uart/tb/tests/uart_tests.sv",
+          "executable": true
+        },
+        {
           "path": "peripherals/uart/tb/uart_tb.sv",
           "executable": false
         }
@@ -379,6 +543,18 @@
         },
         {
           "path": "peripherals/i2c_master/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/i2c_master/docs/i2c_master_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/i2c_master/docs/i2c_master_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/i2c_master/docs/i2c_master_prompt.md",
           "executable": false
         },
         {
@@ -408,6 +584,10 @@
         {
           "path": "peripherals/i2c_master/tb/scripts/build.f",
           "executable": false
+        },
+        {
+          "path": "peripherals/i2c_master/tb/tests/i2c_master_tests.sv",
+          "executable": false
         }
       ]
     },
@@ -432,6 +612,18 @@
           "executable": false
         },
         {
+          "path": "peripherals/spi_master/docs/spi_master_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_master/docs/spi_master_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_master/docs/spi_master_prompt.md",
+          "executable": false
+        },
+        {
           "path": "peripherals/spi_master/scripts/build.f",
           "executable": false
         },
@@ -449,6 +641,10 @@
         },
         {
           "path": "peripherals/spi_master/tb/spi_master_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_master/tb/tests/spi_master_tests.sv",
           "executable": false
         }
       ]
@@ -470,6 +666,18 @@
           "executable": false
         },
         {
+          "path": "peripherals/gpio/docs/gpio_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/gpio/docs/gpio_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/gpio/docs/gpio_prompt.md",
+          "executable": false
+        },
+        {
           "path": "peripherals/gpio/docs/index.html",
           "executable": false
         },
@@ -487,6 +695,10 @@
         },
         {
           "path": "peripherals/gpio/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/gpio/tb/tests/gpio_tests.sv",
           "executable": false
         }
       ]
@@ -512,6 +724,18 @@
           "executable": false
         },
         {
+          "path": "peripherals/intc/docs/intc_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/intc/docs/intc_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/intc/docs/intc_prompt.md",
+          "executable": false
+        },
+        {
           "path": "peripherals/intc/scripts/build.f",
           "executable": false
         },
@@ -525,6 +749,10 @@
         },
         {
           "path": "peripherals/intc/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/intc/tb/tests/intc_tests.sv",
           "executable": false
         }
       ]
@@ -550,6 +778,18 @@
           "executable": false
         },
         {
+          "path": "timing/pwm/docs/pwm_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "timing/pwm/docs/pwm_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/pwm/docs/pwm_prompt.md",
+          "executable": false
+        },
+        {
           "path": "timing/pwm/scripts/build.f",
           "executable": false
         },
@@ -563,6 +803,10 @@
         },
         {
           "path": "timing/pwm/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "timing/pwm/tb/tests/pwm_tests.sv",
           "executable": false
         }
       ]
@@ -588,6 +832,18 @@
           "executable": false
         },
         {
+          "path": "peripherals/quadrature_decoder/docs/quadrature_decoder_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/quadrature_decoder/docs/quadrature_decoder_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/quadrature_decoder/docs/quadrature_decoder_prompt.md",
+          "executable": false
+        },
+        {
           "path": "peripherals/quadrature_decoder/scripts/build.f",
           "executable": false
         },
@@ -601,6 +857,10 @@
         },
         {
           "path": "peripherals/quadrature_decoder/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/quadrature_decoder/tb/tests/quadrature_decoder_tests.sv",
           "executable": false
         }
       ]
@@ -626,6 +886,18 @@
           "executable": false
         },
         {
+          "path": "timing/watchdog/docs/watchdog_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "timing/watchdog/docs/watchdog_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/watchdog/docs/watchdog_prompt.md",
+          "executable": false
+        },
+        {
           "path": "timing/watchdog/scripts/build.f",
           "executable": false
         },
@@ -635,6 +907,10 @@
         },
         {
           "path": "timing/watchdog/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "timing/watchdog/tb/tests/watchdog_tests.sv",
           "executable": false
         },
         {
@@ -660,6 +936,18 @@
           "executable": false
         },
         {
+          "path": "peripherals/edge_event_capture/docs/edge_event_capture_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/edge_event_capture/docs/edge_event_capture_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/edge_event_capture/docs/edge_event_capture_prompt.md",
+          "executable": false
+        },
+        {
           "path": "peripherals/edge_event_capture/docs/index.html",
           "executable": false
         },
@@ -678,6 +966,10 @@
         {
           "path": "peripherals/edge_event_capture/tb/scripts/build.f",
           "executable": false
+        },
+        {
+          "path": "peripherals/edge_event_capture/tb/tests/edge_event_capture_tests.sv",
+          "executable": false
         }
       ]
     },
@@ -687,6 +979,18 @@
       "files": [
         {
           "path": "fifo/async_fifo/Makefile",
+          "executable": false
+        },
+        {
+          "path": "fifo/async_fifo/docs/async_fifo_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "fifo/async_fifo/docs/async_fifo_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "fifo/async_fifo/docs/async_fifo_prompt.md",
           "executable": false
         },
         {
@@ -725,6 +1029,18 @@
       "files": [
         {
           "path": "cdc/axis_async_bridge/Makefile",
+          "executable": false
+        },
+        {
+          "path": "cdc/axis_async_bridge/docs/axis_async_bridge_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "cdc/axis_async_bridge/docs/axis_async_bridge_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "cdc/axis_async_bridge/docs/axis_async_bridge_prompt.md",
           "executable": false
         },
         {
@@ -770,6 +1086,18 @@
           "executable": false
         },
         {
+          "path": "cdc/axi4_lite_cdc/docs/axi4_lite_cdc_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "cdc/axi4_lite_cdc/docs/axi4_lite_cdc_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "cdc/axi4_lite_cdc/docs/axi4_lite_cdc_prompt.md",
+          "executable": false
+        },
+        {
           "path": "cdc/axi4_lite_cdc/docs/block_diagram.dot",
           "executable": false
         },
@@ -800,6 +1128,10 @@
         {
           "path": "cdc/axi4_lite_cdc/tb/scripts/build.f",
           "executable": false
+        },
+        {
+          "path": "cdc/axi4_lite_cdc/tb/tests/axi4_lite_cdc_tests.sv",
+          "executable": false
         }
       ]
     },
@@ -817,6 +1149,18 @@
         },
         {
           "path": "bus/dma_engine/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "bus/dma_engine/docs/dma_engine_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "bus/dma_engine/docs/dma_engine_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "bus/dma_engine/docs/dma_engine_prompt.md",
           "executable": false
         },
         {
@@ -838,6 +1182,10 @@
         {
           "path": "bus/dma_engine/tb/scripts/build.f",
           "executable": false
+        },
+        {
+          "path": "bus/dma_engine/tb/tests/dma_engine_tests.sv",
+          "executable": false
         }
       ]
     },
@@ -847,6 +1195,18 @@
       "files": [
         {
           "path": "bus/axis_dma/Makefile",
+          "executable": false
+        },
+        {
+          "path": "bus/axis_dma/docs/axis_dma_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "bus/axis_dma/docs/axis_dma_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "bus/axis_dma/docs/axis_dma_prompt.md",
           "executable": false
         },
         {
@@ -876,6 +1236,10 @@
         {
           "path": "bus/axis_dma/tb/scripts/build.f",
           "executable": false
+        },
+        {
+          "path": "bus/axis_dma/tb/tests/axis_dma_tests.sv",
+          "executable": false
         }
       ]
     },
@@ -885,6 +1249,18 @@
       "files": [
         {
           "path": "cdc/bit_sync/Makefile",
+          "executable": false
+        },
+        {
+          "path": "cdc/bit_sync/docs/bit_sync_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "cdc/bit_sync/docs/bit_sync_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "cdc/bit_sync/docs/bit_sync_prompt.md",
           "executable": false
         },
         {
@@ -914,6 +1290,10 @@
         {
           "path": "cdc/bit_sync/tb/scripts/build.f",
           "executable": false
+        },
+        {
+          "path": "cdc/bit_sync/tb/tests/bit_sync_tests.sv",
+          "executable": false
         }
       ]
     },
@@ -939,6 +1319,18 @@
         },
         {
           "path": "cdc/toggle_sync/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "cdc/toggle_sync/docs/toggle_sync_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "cdc/toggle_sync/docs/toggle_sync_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "cdc/toggle_sync/docs/toggle_sync_prompt.md",
           "executable": false
         },
         {
@@ -984,6 +1376,18 @@
           "executable": false
         },
         {
+          "path": "cdc/pulse_sync/docs/pulse_sync_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "cdc/pulse_sync/docs/pulse_sync_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "cdc/pulse_sync/docs/pulse_sync_prompt.md",
+          "executable": false
+        },
+        {
           "path": "cdc/pulse_sync/scripts/build.f",
           "executable": false
         },
@@ -1022,6 +1426,18 @@
           "executable": false
         },
         {
+          "path": "cdc/reset_sync/docs/reset_sync_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "cdc/reset_sync/docs/reset_sync_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "cdc/reset_sync/docs/reset_sync_prompt.md",
+          "executable": false
+        },
+        {
           "path": "cdc/reset_sync/scripts/build.f",
           "executable": false
         },
@@ -1035,6 +1451,10 @@
         },
         {
           "path": "cdc/reset_sync/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "cdc/reset_sync/tb/tests/reset_sync_tests.sv",
           "executable": false
         }
       ]
@@ -1053,6 +1473,18 @@
         },
         {
           "path": "common/edge_detect/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "common/edge_detect/docs/edge_detect_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "common/edge_detect/docs/edge_detect_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "common/edge_detect/docs/edge_detect_prompt.md",
           "executable": false
         },
         {
@@ -1094,6 +1526,18 @@
           "executable": false
         },
         {
+          "path": "timing/clock_enable/docs/clock_enable_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "timing/clock_enable/docs/clock_enable_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/clock_enable/docs/clock_enable_prompt.md",
+          "executable": false
+        },
+        {
           "path": "timing/clock_enable/docs/index.html",
           "executable": false
         },
@@ -1112,6 +1556,10 @@
         {
           "path": "timing/clock_enable/tb/scripts/build.f",
           "executable": false
+        },
+        {
+          "path": "timing/clock_enable/tb/tests/clock_enable_tests.sv",
+          "executable": false
         }
       ]
     },
@@ -1129,6 +1577,18 @@
         },
         {
           "path": "timing/counter/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/counter/docs/counter_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "timing/counter/docs/counter_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/counter/docs/counter_prompt.md",
           "executable": false
         },
         {
@@ -1174,6 +1634,18 @@
           "executable": false
         },
         {
+          "path": "timing/timeout_timer/docs/timeout_timer_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "timing/timeout_timer/docs/timeout_timer_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/timeout_timer/docs/timeout_timer_prompt.md",
+          "executable": false
+        },
+        {
           "path": "timing/timeout_timer/scripts/build.f",
           "executable": false
         },
@@ -1183,6 +1655,10 @@
         },
         {
           "path": "timing/timeout_timer/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "timing/timeout_timer/tb/tests/timeout_timer_tests.sv",
           "executable": false
         },
         {
@@ -1209,6 +1685,18 @@
         },
         {
           "path": "common/priority_encoder/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "common/priority_encoder/docs/priority_encoder_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "common/priority_encoder/docs/priority_encoder_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "common/priority_encoder/docs/priority_encoder_prompt.md",
           "executable": false
         },
         {
@@ -1250,6 +1738,18 @@
           "executable": false
         },
         {
+          "path": "common/onehot_decoder/docs/onehot_decoder_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "common/onehot_decoder/docs/onehot_decoder_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "common/onehot_decoder/docs/onehot_decoder_prompt.md",
+          "executable": false
+        },
+        {
           "path": "common/onehot_decoder/scripts/build.f",
           "executable": false
         },
@@ -1285,6 +1785,18 @@
         },
         {
           "path": "memory/single_port_ram/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "memory/single_port_ram/docs/single_port_ram_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "memory/single_port_ram/docs/single_port_ram_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "memory/single_port_ram/docs/single_port_ram_prompt.md",
           "executable": false
         },
         {
@@ -1326,6 +1838,18 @@
           "executable": false
         },
         {
+          "path": "memory/simple_dual_port_ram/docs/simple_dual_port_ram_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "memory/simple_dual_port_ram/docs/simple_dual_port_ram_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "memory/simple_dual_port_ram/docs/simple_dual_port_ram_prompt.md",
+          "executable": false
+        },
+        {
           "path": "memory/simple_dual_port_ram/scripts/build.f",
           "executable": false
         },
@@ -1361,6 +1885,18 @@
         },
         {
           "path": "memory/true_dual_port_ram/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "memory/true_dual_port_ram/docs/true_dual_port_ram_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "memory/true_dual_port_ram/docs/true_dual_port_ram_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "memory/true_dual_port_ram/docs/true_dual_port_ram_prompt.md",
           "executable": false
         },
         {
@@ -1402,6 +1938,18 @@
           "executable": false
         },
         {
+          "path": "memory/rom/docs/rom_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "memory/rom/docs/rom_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "memory/rom/docs/rom_prompt.md",
+          "executable": false
+        },
+        {
           "path": "memory/rom/scripts/build.f",
           "executable": false
         },
@@ -1437,6 +1985,18 @@
         },
         {
           "path": "memory/register_file/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "memory/register_file/docs/register_file_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "memory/register_file/docs/register_file_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "memory/register_file/docs/register_file_prompt.md",
           "executable": false
         },
         {
@@ -1478,6 +2038,18 @@
           "executable": false
         },
         {
+          "path": "fifo/sync_fifo/docs/sync_fifo_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "fifo/sync_fifo/docs/sync_fifo_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "fifo/sync_fifo/docs/sync_fifo_prompt.md",
+          "executable": false
+        },
+        {
           "path": "fifo/sync_fifo/scripts/build.f",
           "executable": false
         },
@@ -1491,6 +2063,10 @@
         },
         {
           "path": "fifo/sync_fifo/tb/sync_fifo_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "fifo/sync_fifo/tb/tests/sync_fifo_tests.sv",
           "executable": false
         }
       ]
@@ -1509,6 +2085,18 @@
         },
         {
           "path": "fifo/fallthrough_fifo/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "fifo/fallthrough_fifo/docs/fallthrough_fifo_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "fifo/fallthrough_fifo/docs/fallthrough_fifo_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "fifo/fallthrough_fifo/docs/fallthrough_fifo_prompt.md",
           "executable": false
         },
         {
@@ -1554,6 +2142,18 @@
           "executable": false
         },
         {
+          "path": "fifo/packet_fifo/docs/packet_fifo_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "fifo/packet_fifo/docs/packet_fifo_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "fifo/packet_fifo/docs/packet_fifo_prompt.md",
+          "executable": false
+        },
+        {
           "path": "fifo/packet_fifo/scripts/build.f",
           "executable": false
         },
@@ -1567,6 +2167,10 @@
         },
         {
           "path": "fifo/packet_fifo/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "fifo/packet_fifo/tb/tests/packet_fifo_tests.sv",
           "executable": false
         }
       ]
@@ -1592,6 +2196,18 @@
           "executable": false
         },
         {
+          "path": "memory/memory_arbiter/docs/memory_arbiter_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "memory/memory_arbiter/docs/memory_arbiter_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "memory/memory_arbiter/docs/memory_arbiter_prompt.md",
+          "executable": false
+        },
+        {
           "path": "memory/memory_arbiter/scripts/build.f",
           "executable": false
         },
@@ -1605,6 +2221,10 @@
         },
         {
           "path": "memory/memory_arbiter/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "memory/memory_arbiter/tb/tests/memory_arbiter_tests.sv",
           "executable": false
         }
       ]
@@ -1630,6 +2250,18 @@
           "executable": false
         },
         {
+          "path": "timing/nco/docs/nco_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "timing/nco/docs/nco_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/nco/docs/nco_prompt.md",
+          "executable": false
+        },
+        {
           "path": "timing/nco/scripts/build.f",
           "executable": false
         },
@@ -1644,6 +2276,10 @@
         {
           "path": "timing/nco/tb/scripts/build.f",
           "executable": false
+        },
+        {
+          "path": "timing/nco/tb/tests/nco_tests.sv",
+          "executable": false
         }
       ]
     },
@@ -1653,6 +2289,18 @@
       "files": [
         {
           "path": "timing/baud_generator/Makefile",
+          "executable": false
+        },
+        {
+          "path": "timing/baud_generator/docs/baud_generator_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "timing/baud_generator/docs/baud_generator_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/baud_generator/docs/baud_generator_prompt.md",
           "executable": false
         },
         {
@@ -1706,6 +2354,18 @@
           "executable": false
         },
         {
+          "path": "timing/pulse_generator/docs/pulse_generator_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "timing/pulse_generator/docs/pulse_generator_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/pulse_generator/docs/pulse_generator_prompt.md",
+          "executable": false
+        },
+        {
           "path": "timing/pulse_generator/scripts/build.f",
           "executable": false
         },
@@ -1719,6 +2379,10 @@
         },
         {
           "path": "timing/pulse_generator/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "timing/pulse_generator/tb/tests/pulse_generator_tests.sv",
           "executable": false
         }
       ]
@@ -1744,6 +2408,18 @@
           "executable": false
         },
         {
+          "path": "timing/frequency_counter/docs/frequency_counter_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "timing/frequency_counter/docs/frequency_counter_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/frequency_counter/docs/frequency_counter_prompt.md",
+          "executable": false
+        },
+        {
           "path": "timing/frequency_counter/docs/index.html",
           "executable": false
         },
@@ -1761,6 +2437,10 @@
         },
         {
           "path": "timing/frequency_counter/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "timing/frequency_counter/tb/tests/frequency_counter_tests.sv",
           "executable": false
         }
       ]
@@ -1786,6 +2466,18 @@
           "executable": false
         },
         {
+          "path": "timing/timestamp_counter/docs/timestamp_counter_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "timing/timestamp_counter/docs/timestamp_counter_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/timestamp_counter/docs/timestamp_counter_prompt.md",
+          "executable": false
+        },
+        {
           "path": "timing/timestamp_counter/scripts/build.f",
           "executable": false
         },
@@ -1795,6 +2487,10 @@
         },
         {
           "path": "timing/timestamp_counter/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "timing/timestamp_counter/tb/tests/timestamp_counter_tests.sv",
           "executable": false
         },
         {
@@ -1824,6 +2520,18 @@
           "executable": false
         },
         {
+          "path": "timing/rate_limiter/docs/rate_limiter_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "timing/rate_limiter/docs/rate_limiter_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/rate_limiter/docs/rate_limiter_prompt.md",
+          "executable": false
+        },
+        {
           "path": "timing/rate_limiter/scripts/build.f",
           "executable": false
         },
@@ -1837,6 +2545,10 @@
         },
         {
           "path": "timing/rate_limiter/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "timing/rate_limiter/tb/tests/rate_limiter_tests.sv",
           "executable": false
         }
       ]
@@ -1862,6 +2574,18 @@
           "executable": false
         },
         {
+          "path": "timing/interval_timer/docs/interval_timer_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "timing/interval_timer/docs/interval_timer_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "timing/interval_timer/docs/interval_timer_prompt.md",
+          "executable": false
+        },
+        {
           "path": "timing/interval_timer/scripts/build.f",
           "executable": false
         },
@@ -1876,6 +2600,10 @@
         {
           "path": "timing/interval_timer/tb/scripts/build.f",
           "executable": false
+        },
+        {
+          "path": "timing/interval_timer/tb/tests/interval_timer_tests.sv",
+          "executable": false
         }
       ]
     },
@@ -1885,6 +2613,18 @@
       "files": [
         {
           "path": "bus/axi4_lite_slave/Makefile",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_slave/docs/axi4_lite_slave_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_slave/docs/axi4_lite_slave_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_slave/docs/axi4_lite_slave_prompt.md",
           "executable": false
         },
         {
@@ -1914,6 +2654,10 @@
         {
           "path": "bus/axi4_lite_slave/tb/scripts/build.f",
           "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_slave/tb/tests/axi4_lite_slave_tests.sv",
+          "executable": false
         }
       ]
     },
@@ -1923,6 +2667,18 @@
       "files": [
         {
           "path": "bus/axi4_lite_regs/Makefile",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_regs/docs/axi4_lite_regs_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_regs/docs/axi4_lite_regs_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_regs/docs/axi4_lite_regs_prompt.md",
           "executable": false
         },
         {
@@ -1954,6 +2710,10 @@
           "executable": false
         },
         {
+          "path": "bus/axi4_lite_regs/tb/tests/axi4_lite_regs_tests.sv",
+          "executable": false
+        },
+        {
           "path": "bus/axi4_lite_slave/src/axi4_lite_slave.sv",
           "executable": false
         }
@@ -1965,6 +2725,18 @@
       "files": [
         {
           "path": "bus/axi4_lite_decoder/Makefile",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_decoder/docs/axi4_lite_decoder_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_decoder/docs/axi4_lite_decoder_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_decoder/docs/axi4_lite_decoder_prompt.md",
           "executable": false
         },
         {
@@ -1994,6 +2766,10 @@
         {
           "path": "bus/axi4_lite_decoder/tb/scripts/build.f",
           "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_decoder/tb/tests/axi4_lite_decoder_tests.sv",
+          "executable": false
         }
       ]
     },
@@ -2007,6 +2783,18 @@
         },
         {
           "path": "bus/axi4_lite_mux/Makefile",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_mux/docs/axi4_lite_mux_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_mux/docs/axi4_lite_mux_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_mux/docs/axi4_lite_mux_prompt.md",
           "executable": false
         },
         {
@@ -2036,6 +2824,10 @@
         {
           "path": "bus/axi4_lite_mux/tb/scripts/build.f",
           "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_mux/tb/tests/axi4_lite_mux_tests.sv",
+          "executable": false
         }
       ]
     },
@@ -2045,6 +2837,18 @@
       "files": [
         {
           "path": "bus/axi_stream_fifo/Makefile",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_fifo/docs/axi_stream_fifo_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_fifo/docs/axi_stream_fifo_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_fifo/docs/axi_stream_fifo_prompt.md",
           "executable": false
         },
         {
@@ -2086,6 +2890,18 @@
           "executable": false
         },
         {
+          "path": "bus/axi_stream_width_converter/docs/axi_stream_width_converter_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_width_converter/docs/axi_stream_width_converter_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_width_converter/docs/axi_stream_width_converter_prompt.md",
+          "executable": false
+        },
+        {
           "path": "bus/axi_stream_width_converter/docs/block_diagram.dot",
           "executable": false
         },
@@ -2124,6 +2940,18 @@
           "executable": false
         },
         {
+          "path": "bus/axi_stream_arbiter/docs/axi_stream_arbiter_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_arbiter/docs/axi_stream_arbiter_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "bus/axi_stream_arbiter/docs/axi_stream_arbiter_prompt.md",
+          "executable": false
+        },
+        {
           "path": "bus/axi_stream_arbiter/docs/block_diagram.dot",
           "executable": false
         },
@@ -2150,6 +2978,10 @@
         {
           "path": "bus/axi_stream_arbiter/tb/scripts/build.f",
           "executable": false
+        },
+        {
+          "path": "bus/axi_stream_arbiter/tb/tests/axi_stream_arbiter_tests.sv",
+          "executable": false
         }
       ]
     },
@@ -2171,6 +3003,18 @@
         },
         {
           "path": "integrity/parity_gen/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "integrity/parity_gen/docs/parity_gen_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "integrity/parity_gen/docs/parity_gen_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "integrity/parity_gen/docs/parity_gen_prompt.md",
           "executable": false
         },
         {
@@ -2212,6 +3056,18 @@
           "executable": false
         },
         {
+          "path": "integrity/parity_check/docs/parity_check_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "integrity/parity_check/docs/parity_check_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "integrity/parity_check/docs/parity_check_prompt.md",
+          "executable": false
+        },
+        {
           "path": "integrity/parity_check/scripts/build.f",
           "executable": false
         },
@@ -2225,6 +3081,10 @@
         },
         {
           "path": "integrity/parity_check/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "integrity/parity_check/tb/tests/parity_check_tests.sv",
           "executable": false
         }
       ]
@@ -2246,6 +3106,18 @@
           "executable": false
         },
         {
+          "path": "integrity/crc8/docs/crc8_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc8/docs/crc8_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc8/docs/crc8_prompt.md",
+          "executable": false
+        },
+        {
           "path": "integrity/crc8/docs/index.html",
           "executable": false
         },
@@ -2263,6 +3135,10 @@
         },
         {
           "path": "integrity/crc8/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc8/tb/tests/crc8_tests.sv",
           "executable": false
         }
       ]
@@ -2284,6 +3160,18 @@
           "executable": false
         },
         {
+          "path": "integrity/crc16/docs/crc16_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc16/docs/crc16_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc16/docs/crc16_prompt.md",
+          "executable": false
+        },
+        {
           "path": "integrity/crc16/docs/index.html",
           "executable": false
         },
@@ -2301,6 +3189,10 @@
         },
         {
           "path": "integrity/crc16/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc16/tb/tests/crc16_tests.sv",
           "executable": false
         }
       ]
@@ -2322,6 +3214,18 @@
           "executable": false
         },
         {
+          "path": "integrity/crc32/docs/crc32_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc32/docs/crc32_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc32/docs/crc32_prompt.md",
+          "executable": false
+        },
+        {
           "path": "integrity/crc32/docs/index.html",
           "executable": false
         },
@@ -2339,6 +3243,10 @@
         },
         {
           "path": "integrity/crc32/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "integrity/crc32/tb/tests/crc32_tests.sv",
           "executable": false
         }
       ]
@@ -2360,6 +3268,18 @@
           "executable": false
         },
         {
+          "path": "integrity/checksum/docs/checksum_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "integrity/checksum/docs/checksum_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "integrity/checksum/docs/checksum_prompt.md",
+          "executable": false
+        },
+        {
           "path": "integrity/checksum/docs/index.html",
           "executable": false
         },
@@ -2377,6 +3297,10 @@
         },
         {
           "path": "integrity/checksum/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "integrity/checksum/tb/tests/checksum_tests.sv",
           "executable": false
         }
       ]
@@ -2402,6 +3326,18 @@
           "executable": false
         },
         {
+          "path": "integrity/lfsr/docs/lfsr_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "integrity/lfsr/docs/lfsr_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "integrity/lfsr/docs/lfsr_prompt.md",
+          "executable": false
+        },
+        {
           "path": "integrity/lfsr/scripts/build.f",
           "executable": false
         },
@@ -2415,6 +3351,10 @@
         },
         {
           "path": "integrity/lfsr/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "integrity/lfsr/tb/tests/lfsr_tests.sv",
           "executable": false
         }
       ]
@@ -2436,6 +3376,18 @@
           "executable": false
         },
         {
+          "path": "integrity/error_status/docs/error_status_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "integrity/error_status/docs/error_status_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "integrity/error_status/docs/error_status_prompt.md",
+          "executable": false
+        },
+        {
           "path": "integrity/error_status/docs/index.html",
           "executable": false
         },
@@ -2453,6 +3405,10 @@
         },
         {
           "path": "integrity/error_status/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "integrity/error_status/tb/tests/error_status_tests.sv",
           "executable": false
         }
       ]
@@ -2482,6 +3438,18 @@
           "executable": false
         },
         {
+          "path": "peripherals/spi_slave/docs/spi_slave_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_slave/docs/spi_slave_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_slave/docs/spi_slave_prompt.md",
+          "executable": false
+        },
+        {
           "path": "peripherals/spi_slave/scripts/build.f",
           "executable": false
         },
@@ -2495,6 +3463,10 @@
         },
         {
           "path": "peripherals/spi_slave/tb/spi_slave_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_slave/tb/tests/spi_slave_tests.sv",
           "executable": false
         }
       ]
@@ -2517,6 +3489,18 @@
         },
         {
           "path": "cdc/clock_domain_bridge/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "cdc/clock_domain_bridge/docs/clock_domain_bridge_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "cdc/clock_domain_bridge/docs/clock_domain_bridge_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "cdc/clock_domain_bridge/docs/clock_domain_bridge_prompt.md",
           "executable": false
         },
         {
@@ -2566,11 +3550,27 @@
           "executable": false
         },
         {
+          "path": "peripherals/uart_tx/docs/uart_tx_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart_tx/docs/uart_tx_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart_tx/docs/uart_tx_prompt.md",
+          "executable": false
+        },
+        {
           "path": "peripherals/uart_tx/scripts/build.f",
           "executable": false
         },
         {
           "path": "peripherals/uart_tx/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart_tx/tb/tests/uart_tx_tests.sv",
           "executable": false
         },
         {
@@ -2608,11 +3608,27 @@
           "executable": false
         },
         {
+          "path": "peripherals/uart_rx/docs/uart_rx_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart_rx/docs/uart_rx_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart_rx/docs/uart_rx_prompt.md",
+          "executable": false
+        },
+        {
           "path": "peripherals/uart_rx/scripts/build.f",
           "executable": false
         },
         {
           "path": "peripherals/uart_rx/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart_rx/tb/tests/uart_rx_tests.sv",
           "executable": false
         },
         {
@@ -2642,6 +3658,18 @@
           "executable": false
         },
         {
+          "path": "common/cordic/docs/cordic_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "common/cordic/docs/cordic_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "common/cordic/docs/cordic_prompt.md",
+          "executable": false
+        },
+        {
           "path": "common/cordic/docs/index.html",
           "executable": false
         },
@@ -2659,6 +3687,10 @@
         },
         {
           "path": "common/cordic/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "common/cordic/tb/tests/cordic_tests.sv",
           "executable": false
         }
       ]
@@ -2684,6 +3716,18 @@
           "executable": false
         },
         {
+          "path": "common/dds/docs/dds_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "common/dds/docs/dds_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "common/dds/docs/dds_prompt.md",
+          "executable": false
+        },
+        {
           "path": "common/dds/docs/index.html",
           "executable": false
         },
@@ -2701,6 +3745,10 @@
         },
         {
           "path": "common/dds/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "common/dds/tb/tests/dds_tests.sv",
           "executable": false
         },
         {
@@ -2726,6 +3774,18 @@
           "executable": false
         },
         {
+          "path": "common/fir/docs/fir_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "common/fir/docs/fir_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "common/fir/docs/fir_prompt.md",
+          "executable": false
+        },
+        {
           "path": "common/fir/docs/index.html",
           "executable": false
         },
@@ -2743,6 +3803,10 @@
         },
         {
           "path": "common/fir/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "common/fir/tb/tests/fir_tests.sv",
           "executable": false
         }
       ]
@@ -2764,6 +3828,18 @@
           "executable": false
         },
         {
+          "path": "common/cic/docs/cic_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "common/cic/docs/cic_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "common/cic/docs/cic_prompt.md",
+          "executable": false
+        },
+        {
           "path": "common/cic/docs/index.html",
           "executable": false
         },
@@ -2782,6 +3858,10 @@
         {
           "path": "common/cic/tb/scripts/build.f",
           "executable": false
+        },
+        {
+          "path": "common/cic/tb/tests/cic_tests.sv",
+          "executable": false
         }
       ]
     },
@@ -2799,6 +3879,18 @@
         },
         {
           "path": "integrity/ecc_memory_ctrl/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "integrity/ecc_memory_ctrl/docs/ecc_memory_ctrl_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "integrity/ecc_memory_ctrl/docs/ecc_memory_ctrl_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "integrity/ecc_memory_ctrl/docs/ecc_memory_ctrl_prompt.md",
           "executable": false
         },
         {
@@ -2824,6 +3916,10 @@
         {
           "path": "integrity/ecc_memory_ctrl/tb/scripts/build.f",
           "executable": false
+        },
+        {
+          "path": "integrity/ecc_memory_ctrl/tb/tests/ecc_memory_ctrl_tests.sv",
+          "executable": false
         }
       ]
     },
@@ -2848,6 +3944,18 @@
           "executable": false
         },
         {
+          "path": "bus/packet_parser/docs/packet_parser_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "bus/packet_parser/docs/packet_parser_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "bus/packet_parser/docs/packet_parser_prompt.md",
+          "executable": false
+        },
+        {
           "path": "bus/packet_parser/scripts/build.f",
           "executable": false
         },
@@ -2861,6 +3969,10 @@
         },
         {
           "path": "bus/packet_parser/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "bus/packet_parser/tb/tests/packet_parser_tests.sv",
           "executable": false
         }
       ]
@@ -2886,6 +3998,18 @@
           "executable": false
         },
         {
+          "path": "bus/packet_formatter/docs/packet_formatter_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "bus/packet_formatter/docs/packet_formatter_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "bus/packet_formatter/docs/packet_formatter_prompt.md",
+          "executable": false
+        },
+        {
           "path": "bus/packet_formatter/scripts/build.f",
           "executable": false
         },
@@ -2899,6 +4023,10 @@
         },
         {
           "path": "bus/packet_formatter/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "bus/packet_formatter/tb/tests/packet_formatter_tests.sv",
           "executable": false
         },
         {
@@ -2921,6 +4049,18 @@
         },
         {
           "path": "peripherals/i2s/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/i2s/docs/i2s_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/i2s/docs/i2s_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/i2s/docs/i2s_prompt.md",
           "executable": false
         },
         {
@@ -2966,6 +4106,18 @@
           "executable": false
         },
         {
+          "path": "peripherals/eth_mac_if/docs/eth_mac_if_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/eth_mac_if/docs/eth_mac_if_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/eth_mac_if/docs/eth_mac_if_prompt.md",
+          "executable": false
+        },
+        {
           "path": "peripherals/eth_mac_if/docs/index.html",
           "executable": false
         },
@@ -2983,6 +4135,10 @@
         },
         {
           "path": "peripherals/eth_mac_if/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "peripherals/eth_mac_if/tb/tests/eth_mac_if_tests.sv",
           "executable": false
         }
       ]
@@ -3008,6 +4164,18 @@
           "executable": false
         },
         {
+          "path": "peripherals/spi_flash_ctrl/docs/spi_flash_ctrl_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_flash_ctrl/docs/spi_flash_ctrl_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_flash_ctrl/docs/spi_flash_ctrl_prompt.md",
+          "executable": false
+        },
+        {
           "path": "peripherals/spi_flash_ctrl/scripts/build.f",
           "executable": false
         },
@@ -3021,6 +4189,10 @@
         },
         {
           "path": "peripherals/spi_flash_ctrl/tb/spi_flash_ctrl_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_flash_ctrl/tb/tests/spi_flash_ctrl_tests.sv",
           "executable": false
         }
       ]
@@ -3046,6 +4218,18 @@
           "executable": false
         },
         {
+          "path": "peripherals/sdio_host/docs/sdio_host_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/sdio_host/docs/sdio_host_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/sdio_host/docs/sdio_host_prompt.md",
+          "executable": false
+        },
+        {
           "path": "peripherals/sdio_host/scripts/build.f",
           "executable": false
         },
@@ -3059,6 +4243,10 @@
         },
         {
           "path": "peripherals/sdio_host/tb/sdio_host_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/sdio_host/tb/tests/sdio_host_tests.sv",
           "executable": false
         }
       ]
@@ -3088,6 +4276,18 @@
           "executable": false
         },
         {
+          "path": "bus/demo_regs/docs/demo_regs_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "bus/demo_regs/docs/demo_regs_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "bus/demo_regs/docs/demo_regs_prompt.md",
+          "executable": false
+        },
+        {
           "path": "bus/demo_regs/docs/index.html",
           "executable": false
         },
@@ -3105,6 +4305,10 @@
         },
         {
           "path": "bus/demo_regs/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "bus/demo_regs/tb/tests/demo_regs_tests.sv",
           "executable": false
         }
       ]
@@ -3127,6 +4331,18 @@
         },
         {
           "path": "peripherals/pcie_tl_ep/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "peripherals/pcie_tl_ep/docs/pcie_tl_ep_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/pcie_tl_ep/docs/pcie_tl_ep_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/pcie_tl_ep/docs/pcie_tl_ep_prompt.md",
           "executable": false
         },
         {
@@ -3168,6 +4384,10 @@
         {
           "path": "peripherals/pcie_tl_ep/tb/scripts/build.f",
           "executable": false
+        },
+        {
+          "path": "peripherals/pcie_tl_ep/tb/tests/pcie_tl_ep_tests.sv",
+          "executable": false
         }
       ]
     },
@@ -3189,6 +4409,18 @@
         },
         {
           "path": "peripherals/usb_fs_sie/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "peripherals/usb_fs_sie/docs/usb_fs_sie_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "peripherals/usb_fs_sie/docs/usb_fs_sie_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "peripherals/usb_fs_sie/docs/usb_fs_sie_prompt.md",
           "executable": false
         },
         {
@@ -3220,6 +4452,10 @@
           "executable": false
         },
         {
+          "path": "peripherals/usb_fs_sie/tb/tests/usb_fs_sie_tests.sv",
+          "executable": false
+        },
+        {
           "path": "peripherals/usb_fs_sie/tb/usb_fs_sie_tb.sv",
           "executable": false
         }
@@ -3235,6 +4471,18 @@
         },
         {
           "path": "scalers/axi_checkers/README.md",
+          "executable": false
+        },
+        {
+          "path": "scalers/axi_checkers/docs/axi_checkers_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "scalers/axi_checkers/docs/axi_checkers_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "scalers/axi_checkers/docs/axi_checkers_prompt.md",
           "executable": false
         },
         {
@@ -3268,6 +4516,10 @@
         {
           "path": "scalers/axi_checkers/tb/scripts/build.f",
           "executable": false
+        },
+        {
+          "path": "scalers/axi_checkers/tb/tests/axi_checkers_tests.sv",
+          "executable": false
         }
       ]
     },
@@ -3285,6 +4537,18 @@
         },
         {
           "path": "scalers/axil_regbus/README.md",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/docs/axil_regbus_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/docs/axil_regbus_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/docs/axil_regbus_prompt.md",
           "executable": false
         },
         {
@@ -3330,6 +4594,10 @@
         {
           "path": "scalers/axil_regbus/tb/scripts/build.f",
           "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/tb/tests/axil_regbus_tests.sv",
+          "executable": false
         }
       ]
     },
@@ -3351,6 +4619,18 @@
         },
         {
           "path": "scalers/axil_split/README.md",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_split/docs/axil_split_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_split/docs/axil_split_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_split/docs/axil_split_prompt.md",
           "executable": false
         },
         {
@@ -3396,6 +4676,10 @@
         {
           "path": "scalers/axil_split/tb/scripts/build.f",
           "executable": false
+        },
+        {
+          "path": "scalers/axil_split/tb/tests/axil_split_tests.sv",
+          "executable": false
         }
       ]
     },
@@ -3409,6 +4693,18 @@
         },
         {
           "path": "scalers/banked_framebuf/README.md",
+          "executable": false
+        },
+        {
+          "path": "scalers/banked_framebuf/docs/banked_framebuf_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "scalers/banked_framebuf/docs/banked_framebuf_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "scalers/banked_framebuf/docs/banked_framebuf_prompt.md",
           "executable": false
         },
         {
@@ -3454,6 +4750,10 @@
         {
           "path": "scalers/banked_framebuf/tb/scripts/build.f",
           "executable": false
+        },
+        {
+          "path": "scalers/banked_framebuf/tb/tests/banked_framebuf_tests.sv",
+          "executable": false
         }
       ]
     },
@@ -3498,6 +4798,18 @@
           "executable": false
         },
         {
+          "path": "scalers/scaler_anisotropic/docs/scaler_anisotropic_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_anisotropic/docs/scaler_anisotropic_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_anisotropic/docs/scaler_anisotropic_prompt.md",
+          "executable": false
+        },
+        {
           "path": "scalers/scaler_anisotropic/run.sh",
           "executable": true
         },
@@ -3535,6 +4847,10 @@
         },
         {
           "path": "scalers/scaler_anisotropic/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_anisotropic/tb/tests/scaler_anisotropic_tests.sv",
           "executable": false
         },
         {
@@ -3592,6 +4908,18 @@
           "executable": false
         },
         {
+          "path": "scalers/scaler_bicubic/docs/scaler_bicubic_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_bicubic/docs/scaler_bicubic_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_bicubic/docs/scaler_bicubic_prompt.md",
+          "executable": false
+        },
+        {
           "path": "scalers/scaler_bicubic/run.sh",
           "executable": true
         },
@@ -3630,6 +4958,10 @@
         {
           "path": "scalers/scaler_bicubic/tb/scripts/build.f",
           "executable": false
+        },
+        {
+          "path": "scalers/scaler_bicubic/tb/tests/scaler_bicubic_tests.sv",
+          "executable": true
         },
         {
           "path": "scalers/scaler_ctrl/src/scaler_ctrl.sv",
@@ -3686,6 +5018,18 @@
           "executable": false
         },
         {
+          "path": "scalers/scaler_bilinear/docs/scaler_bilinear_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_bilinear/docs/scaler_bilinear_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_bilinear/docs/scaler_bilinear_prompt.md",
+          "executable": false
+        },
+        {
           "path": "scalers/scaler_bilinear/run.sh",
           "executable": true
         },
@@ -3726,6 +5070,10 @@
           "executable": false
         },
         {
+          "path": "scalers/scaler_bilinear/tb/tests/scaler_bilinear_tests.sv",
+          "executable": false
+        },
+        {
           "path": "scalers/scaler_ctrl/src/scaler_ctrl.sv",
           "executable": false
         },
@@ -3757,6 +5105,18 @@
         },
         {
           "path": "scalers/scaler_ctrl/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_ctrl/docs/scaler_ctrl_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_ctrl/docs/scaler_ctrl_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_ctrl/docs/scaler_ctrl_prompt.md",
           "executable": false
         },
         {
@@ -3798,6 +5158,10 @@
         {
           "path": "scalers/scaler_ctrl/tb/scripts/build.f",
           "executable": false
+        },
+        {
+          "path": "scalers/scaler_ctrl/tb/tests/scaler_ctrl_tests.sv",
+          "executable": false
         }
       ]
     },
@@ -3815,6 +5179,18 @@
         },
         {
           "path": "scalers/scaler_dda/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_dda/docs/scaler_dda_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_dda/docs/scaler_dda_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_dda/docs/scaler_dda_prompt.md",
           "executable": false
         },
         {
@@ -3855,6 +5231,10 @@
         },
         {
           "path": "scalers/scaler_dda/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_dda/tb/tests/scaler_dda_tests.sv",
           "executable": false
         }
       ]
@@ -3908,6 +5288,18 @@
           "executable": false
         },
         {
+          "path": "scalers/scaler_edge_directed/docs/scaler_edge_directed_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_edge_directed/docs/scaler_edge_directed_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_edge_directed/docs/scaler_edge_directed_prompt.md",
+          "executable": false
+        },
+        {
           "path": "scalers/scaler_edge_directed/run.sh",
           "executable": true
         },
@@ -3945,6 +5337,10 @@
         },
         {
           "path": "scalers/scaler_edge_directed/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_edge_directed/tb/tests/scaler_edge_directed_tests.sv",
           "executable": false
         }
       ]
@@ -3998,6 +5394,18 @@
           "executable": false
         },
         {
+          "path": "scalers/scaler_lanczos/docs/scaler_lanczos_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_lanczos/docs/scaler_lanczos_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_lanczos/docs/scaler_lanczos_prompt.md",
+          "executable": false
+        },
+        {
           "path": "scalers/scaler_lanczos/run.sh",
           "executable": true
         },
@@ -4035,6 +5443,10 @@
         },
         {
           "path": "scalers/scaler_lanczos/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_lanczos/tb/tests/scaler_lanczos_tests.sv",
           "executable": false
         },
         {
@@ -4092,6 +5504,18 @@
           "executable": false
         },
         {
+          "path": "scalers/scaler_mip/docs/scaler_mip_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_mip/docs/scaler_mip_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_mip/docs/scaler_mip_prompt.md",
+          "executable": false
+        },
+        {
           "path": "scalers/scaler_mip/run.sh",
           "executable": true
         },
@@ -4129,6 +5553,10 @@
         },
         {
           "path": "scalers/scaler_mip/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_mip/tb/tests/scaler_mip_tests.sv",
           "executable": false
         }
       ]
@@ -4182,6 +5610,18 @@
           "executable": false
         },
         {
+          "path": "scalers/scaler_nearest/docs/scaler_nearest_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_nearest/docs/scaler_nearest_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_nearest/docs/scaler_nearest_prompt.md",
+          "executable": false
+        },
+        {
           "path": "scalers/scaler_nearest/run.sh",
           "executable": true
         },
@@ -4219,6 +5659,10 @@
         },
         {
           "path": "scalers/scaler_nearest/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_nearest/tb/tests/scaler_nearest_tests.sv",
           "executable": false
         }
       ]
@@ -4272,6 +5716,18 @@
           "executable": false
         },
         {
+          "path": "scalers/scaler_polyphase/docs/scaler_polyphase_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_polyphase/docs/scaler_polyphase_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_polyphase/docs/scaler_polyphase_prompt.md",
+          "executable": false
+        },
+        {
           "path": "scalers/scaler_polyphase/run.sh",
           "executable": true
         },
@@ -4309,6 +5765,10 @@
         },
         {
           "path": "scalers/scaler_polyphase/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_polyphase/tb/tests/scaler_polyphase_tests.sv",
           "executable": false
         }
       ]
@@ -4366,6 +5826,18 @@
           "executable": false
         },
         {
+          "path": "scalers/scaler_trilinear/docs/scaler_trilinear_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_trilinear/docs/scaler_trilinear_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_trilinear/docs/scaler_trilinear_prompt.md",
+          "executable": false
+        },
+        {
           "path": "scalers/scaler_trilinear/run.sh",
           "executable": true
         },
@@ -4403,6 +5875,10 @@
         },
         {
           "path": "scalers/scaler_trilinear/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_trilinear/tb/tests/scaler_trilinear_tests.sv",
           "executable": false
         }
       ]
@@ -4444,6 +5920,18 @@
           "executable": false
         },
         {
+          "path": "scalers/sharpen_cas/docs/sharpen_cas_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "scalers/sharpen_cas/docs/sharpen_cas_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "scalers/sharpen_cas/docs/sharpen_cas_prompt.md",
+          "executable": false
+        },
+        {
           "path": "scalers/sharpen_cas/run.sh",
           "executable": true
         },
@@ -4481,6 +5969,10 @@
         },
         {
           "path": "scalers/sharpen_cas/tb/sharpen_cas_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/sharpen_cas/tb/tests/sharpen_cas_tests.sv",
           "executable": false
         }
       ]
@@ -4550,6 +6042,18 @@
           "executable": false
         },
         {
+          "path": "scalers/spatial_upscaler/docs/spatial_upscaler_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "scalers/spatial_upscaler/docs/spatial_upscaler_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "scalers/spatial_upscaler/docs/spatial_upscaler_prompt.md",
+          "executable": false
+        },
+        {
           "path": "scalers/spatial_upscaler/run.sh",
           "executable": true
         },
@@ -4588,6 +6092,10 @@
         {
           "path": "scalers/spatial_upscaler/tb/spatial_upscaler_tb.sv",
           "executable": false
+        },
+        {
+          "path": "scalers/spatial_upscaler/tb/tests/spatial_upscaler_tests.sv",
+          "executable": false
         }
       ]
     },
@@ -4609,6 +6117,18 @@
         },
         {
           "path": "math/mac/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "math/mac/docs/mac_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "math/mac/docs/mac_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "math/mac/docs/mac_prompt.md",
           "executable": false
         },
         {
@@ -4645,6 +6165,2160 @@
         },
         {
           "path": "math/mac/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "math/mac/tb/tests/mac_tests.sv",
+          "executable": false
+        }
+      ]
+    },
+    "csi2_rx": {
+      "category": "video",
+      "top": "csi2_rx",
+      "files": [
+        {
+          "path": "video/csi2_rx/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_rx/docs/csi2_rx_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_rx/docs/csi2_rx_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_rx/docs/csi2_rx_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_rx/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_rx/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_rx/src/csi2_rx.sv",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_rx/tb/csi2_rx_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_rx/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_rx/tb/tests/csi2_rx_tests.sv",
+          "executable": false
+        }
+      ]
+    },
+    "csi2_raw_unpack": {
+      "category": "video",
+      "top": "csi2_raw_unpack",
+      "files": [
+        {
+          "path": "video/csi2_raw_unpack/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_raw_unpack/docs/csi2_raw_unpack_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_raw_unpack/docs/csi2_raw_unpack_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_raw_unpack/docs/csi2_raw_unpack_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_raw_unpack/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_raw_unpack/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_raw_unpack/src/csi2_raw_unpack.sv",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_raw_unpack/tb/csi2_raw_unpack_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_raw_unpack/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_raw_unpack/tb/tests/csi2_raw_unpack_tests.sv",
+          "executable": false
+        }
+      ]
+    },
+    "isp_window": {
+      "category": "video",
+      "top": "isp_window",
+      "files": [
+        {
+          "path": "video/isp_window/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/isp_window/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/isp_window/docs/isp_window_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/isp_window/docs/isp_window_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/isp_window/docs/isp_window_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/isp_window/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/isp_window/src/isp_window.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_window/tb/isp_window_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_window/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/isp_window/tb/tests/isp_window_tests.sv",
+          "executable": false
+        }
+      ]
+    },
+    "isp_blc_wb": {
+      "category": "video",
+      "top": "isp_blc_wb",
+      "files": [
+        {
+          "path": "video/isp_blc_wb/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/isp_blc_wb/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/isp_blc_wb/docs/isp_blc_wb_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/isp_blc_wb/docs/isp_blc_wb_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/isp_blc_wb/docs/isp_blc_wb_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/isp_blc_wb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/isp_blc_wb/src/isp_blc_wb.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_blc_wb/tb/isp_blc_wb_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_blc_wb/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/isp_blc_wb/tb/tests/isp_blc_wb_tests.sv",
+          "executable": false
+        }
+      ]
+    },
+    "isp_dpc": {
+      "category": "video",
+      "top": "isp_dpc",
+      "files": [
+        {
+          "path": "video/isp_dpc/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/isp_dpc/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/isp_dpc/docs/isp_dpc_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/isp_dpc/docs/isp_dpc_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/isp_dpc/docs/isp_dpc_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/isp_dpc/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/isp_dpc/src/isp_dpc.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_dpc/tb/isp_dpc_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_dpc/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/isp_dpc/tb/tests/isp_dpc_tests.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_window/src/isp_window.sv",
+          "executable": false
+        }
+      ]
+    },
+    "isp_demosaic": {
+      "category": "video",
+      "top": "isp_demosaic",
+      "files": [
+        {
+          "path": "video/isp_demosaic/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/isp_demosaic/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/isp_demosaic/docs/isp_demosaic_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/isp_demosaic/docs/isp_demosaic_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/isp_demosaic/docs/isp_demosaic_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/isp_demosaic/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/isp_demosaic/src/isp_demosaic.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_demosaic/tb/isp_demosaic_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_demosaic/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/isp_demosaic/tb/tests/isp_demosaic_tests.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_window/src/isp_window.sv",
+          "executable": false
+        }
+      ]
+    },
+    "isp_ccm": {
+      "category": "video",
+      "top": "isp_ccm",
+      "files": [
+        {
+          "path": "video/isp_ccm/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/isp_ccm/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/isp_ccm/docs/isp_ccm_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/isp_ccm/docs/isp_ccm_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/isp_ccm/docs/isp_ccm_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/isp_ccm/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/isp_ccm/src/isp_ccm.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_ccm/tb/isp_ccm_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_ccm/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/isp_ccm/tb/tests/isp_ccm_tests.sv",
+          "executable": false
+        }
+      ]
+    },
+    "isp_gamma": {
+      "category": "video",
+      "top": "isp_gamma",
+      "files": [
+        {
+          "path": "video/isp_gamma/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/isp_gamma/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/isp_gamma/docs/isp_gamma_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/isp_gamma/docs/isp_gamma_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/isp_gamma/docs/isp_gamma_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/isp_gamma/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/isp_gamma/src/isp_gamma.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_gamma/tb/isp_gamma_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_gamma/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/isp_gamma/tb/tests/isp_gamma_tests.sv",
+          "executable": false
+        }
+      ]
+    },
+    "isp_csc": {
+      "category": "video",
+      "top": "isp_csc",
+      "files": [
+        {
+          "path": "video/isp_csc/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/isp_csc/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/isp_csc/docs/isp_csc_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/isp_csc/docs/isp_csc_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/isp_csc/docs/isp_csc_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/isp_csc/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/isp_csc/src/isp_csc.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_csc/tb/isp_csc_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_csc/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/isp_csc/tb/tests/isp_csc_tests.sv",
+          "executable": false
+        }
+      ]
+    },
+    "isp_stats": {
+      "category": "video",
+      "top": "isp_stats",
+      "files": [
+        {
+          "path": "video/isp_stats/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/isp_stats/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/isp_stats/docs/isp_stats_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/isp_stats/docs/isp_stats_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/isp_stats/docs/isp_stats_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/isp_stats/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/isp_stats/src/isp_stats.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_stats/tb/isp_stats_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_stats/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/isp_stats/tb/tests/isp_stats_tests.sv",
+          "executable": false
+        }
+      ]
+    },
+    "vid_timing_gen": {
+      "category": "video",
+      "top": "vid_timing_gen",
+      "files": [
+        {
+          "path": "video/vid_timing_gen/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/vid_timing_gen/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/vid_timing_gen/docs/vid_timing_gen_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/vid_timing_gen/docs/vid_timing_gen_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/vid_timing_gen/docs/vid_timing_gen_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/vid_timing_gen/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/vid_timing_gen/src/vid_timing_gen.sv",
+          "executable": false
+        },
+        {
+          "path": "video/vid_timing_gen/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/vid_timing_gen/tb/tests/vid_timing_gen_tests.sv",
+          "executable": false
+        },
+        {
+          "path": "video/vid_timing_gen/tb/vid_timing_gen_tb.sv",
+          "executable": false
+        }
+      ]
+    },
+    "axis_to_video": {
+      "category": "video",
+      "top": "axis_to_video",
+      "files": [
+        {
+          "path": "video/axis_to_video/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/axis_to_video/docs/axis_to_video_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/axis_to_video/docs/axis_to_video_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/axis_to_video/docs/axis_to_video_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/axis_to_video/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/axis_to_video/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/axis_to_video/src/axis_to_video.sv",
+          "executable": false
+        },
+        {
+          "path": "video/axis_to_video/tb/axis_to_video_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "video/axis_to_video/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/axis_to_video/tb/tests/axis_to_video_tests.sv",
+          "executable": false
+        },
+        {
+          "path": "video/vid_timing_gen/src/vid_timing_gen.sv",
+          "executable": false
+        }
+      ]
+    },
+    "tmds_encoder": {
+      "category": "video",
+      "top": "tmds_encoder",
+      "files": [
+        {
+          "path": "video/tmds_encoder/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/tmds_encoder/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/tmds_encoder/docs/tmds_encoder_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/tmds_encoder/docs/tmds_encoder_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/tmds_encoder/docs/tmds_encoder_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/tmds_encoder/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/tmds_encoder/src/tmds_encoder.sv",
+          "executable": false
+        },
+        {
+          "path": "video/tmds_encoder/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/tmds_encoder/tb/tests/tmds_encoder_tests.sv",
+          "executable": false
+        },
+        {
+          "path": "video/tmds_encoder/tb/tmds_encoder_tb.sv",
+          "executable": false
+        }
+      ]
+    },
+    "hdmi_tx": {
+      "category": "video",
+      "top": "hdmi_tx",
+      "files": [
+        {
+          "path": "video/hdmi_tx/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/hdmi_tx/docs/hdmi_tx_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/hdmi_tx/docs/hdmi_tx_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/hdmi_tx/docs/hdmi_tx_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/hdmi_tx/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/hdmi_tx/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/hdmi_tx/src/hdmi_tx.sv",
+          "executable": false
+        },
+        {
+          "path": "video/hdmi_tx/tb/hdmi_tx_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "video/hdmi_tx/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/hdmi_tx/tb/tests/hdmi_tx_tests.sv",
+          "executable": false
+        },
+        {
+          "path": "video/tmds_encoder/src/tmds_encoder.sv",
+          "executable": false
+        },
+        {
+          "path": "video/vid_timing_gen/src/vid_timing_gen.sv",
+          "executable": false
+        }
+      ]
+    },
+    "tmds_serializer": {
+      "category": "video",
+      "top": "tmds_serializer",
+      "files": [
+        {
+          "path": "video/tmds_serializer/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/tmds_serializer/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/tmds_serializer/docs/tmds_serializer_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/tmds_serializer/docs/tmds_serializer_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/tmds_serializer/docs/tmds_serializer_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/tmds_serializer/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/tmds_serializer/src/tmds_serializer.sv",
+          "executable": false
+        },
+        {
+          "path": "video/tmds_serializer/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/tmds_serializer/tb/tests/tmds_serializer_tests.sv",
+          "executable": false
+        },
+        {
+          "path": "video/tmds_serializer/tb/tmds_serializer_tb.sv",
+          "executable": false
+        }
+      ]
+    },
+    "video_pipeline": {
+      "category": "video",
+      "top": "video_pipeline",
+      "files": [
+        {
+          "path": "cdc/axis_async_bridge/src/axis_async_bridge.sv",
+          "executable": false
+        },
+        {
+          "path": "cdc/bit_sync/src/bit_sync.sv",
+          "executable": false
+        },
+        {
+          "path": "cdc/pulse_sync/src/pulse_sync.sv",
+          "executable": false
+        },
+        {
+          "path": "fifo/async_fifo/src/async_fifo.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_regbus/src/axil_regbus.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/axil_split/src/axil_split.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/banked_framebuf/src/banked_framebuf.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_bilinear/src/scaler_bilinear.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_ctrl/src/scaler_ctrl.sv",
+          "executable": false
+        },
+        {
+          "path": "scalers/scaler_dda/src/scaler_dda.sv",
+          "executable": false
+        },
+        {
+          "path": "video/axis_to_video/src/axis_to_video.sv",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_raw_unpack/src/csi2_raw_unpack.sv",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_rx/src/csi2_rx.sv",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_tx/src/csi2_tx.sv",
+          "executable": false
+        },
+        {
+          "path": "video/dsi_tx/src/dsi_tx.sv",
+          "executable": false
+        },
+        {
+          "path": "video/hdmi_tx/src/hdmi_tx.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_blc_wb/src/isp_blc_wb.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_ccm/src/isp_ccm.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_csc/src/isp_csc.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_demosaic/src/isp_demosaic.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_dpc/src/isp_dpc.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_gamma/src/isp_gamma.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_stats/src/isp_stats.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_window/src/isp_window.sv",
+          "executable": false
+        },
+        {
+          "path": "video/lvds_tx/src/lvds_tx.sv",
+          "executable": false
+        },
+        {
+          "path": "video/mipi_line_buf/src/mipi_line_buf.sv",
+          "executable": false
+        },
+        {
+          "path": "video/mipi_tx_engine/src/mipi_tx_engine.sv",
+          "executable": false
+        },
+        {
+          "path": "video/tmds_encoder/src/tmds_encoder.sv",
+          "executable": false
+        },
+        {
+          "path": "video/vid_timing_gen/src/vid_timing_gen.sv",
+          "executable": false
+        },
+        {
+          "path": "video/video_pipeline/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/video_pipeline/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/video_pipeline/docs/video_pipeline_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/video_pipeline/docs/video_pipeline_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/video_pipeline/docs/video_pipeline_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/video_pipeline/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/video_pipeline/scripts/sv2v",
+          "executable": false
+        },
+        {
+          "path": "video/video_pipeline/src/configuration.sv",
+          "executable": false
+        },
+        {
+          "path": "video/video_pipeline/src/video_pipeline.sv",
+          "executable": false
+        },
+        {
+          "path": "video/video_pipeline/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/video_pipeline/tb/tests/video_pipeline_tests.sv",
+          "executable": false
+        },
+        {
+          "path": "video/video_pipeline/tb/video_pipeline_tb.sv",
+          "executable": false
+        }
+      ]
+    },
+    "csi2_tx": {
+      "category": "video",
+      "top": "csi2_tx",
+      "files": [
+        {
+          "path": "cdc/bit_sync/src/bit_sync.sv",
+          "executable": false
+        },
+        {
+          "path": "cdc/pulse_sync/src/pulse_sync.sv",
+          "executable": false
+        },
+        {
+          "path": "fifo/async_fifo/src/async_fifo.sv",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_rx/src/csi2_rx.sv",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_tx/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_tx/docs/csi2_tx_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_tx/docs/csi2_tx_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_tx/docs/csi2_tx_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_tx/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_tx/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_tx/src/csi2_tx.sv",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_tx/tb/csi2_tx_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_tx/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/csi2_tx/tb/tests/csi2_tx_tests.sv",
+          "executable": false
+        },
+        {
+          "path": "video/mipi_line_buf/src/mipi_line_buf.sv",
+          "executable": false
+        },
+        {
+          "path": "video/mipi_tx_engine/src/mipi_tx_engine.sv",
+          "executable": false
+        },
+        {
+          "path": "video/vid_timing_gen/src/vid_timing_gen.sv",
+          "executable": false
+        }
+      ]
+    },
+    "dsi_tx": {
+      "category": "video",
+      "top": "dsi_tx",
+      "files": [
+        {
+          "path": "cdc/bit_sync/src/bit_sync.sv",
+          "executable": false
+        },
+        {
+          "path": "cdc/pulse_sync/src/pulse_sync.sv",
+          "executable": false
+        },
+        {
+          "path": "fifo/async_fifo/src/async_fifo.sv",
+          "executable": false
+        },
+        {
+          "path": "video/dsi_tx/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/dsi_tx/docs/dsi_tx_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/dsi_tx/docs/dsi_tx_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/dsi_tx/docs/dsi_tx_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/dsi_tx/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/dsi_tx/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/dsi_tx/src/dsi_tx.sv",
+          "executable": false
+        },
+        {
+          "path": "video/dsi_tx/tb/dsi_tx_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "video/dsi_tx/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/dsi_tx/tb/tests/dsi_tx_tests.sv",
+          "executable": false
+        },
+        {
+          "path": "video/mipi_line_buf/src/mipi_line_buf.sv",
+          "executable": false
+        },
+        {
+          "path": "video/mipi_tx_engine/src/mipi_tx_engine.sv",
+          "executable": false
+        },
+        {
+          "path": "video/vid_timing_gen/src/vid_timing_gen.sv",
+          "executable": false
+        }
+      ]
+    },
+    "lvds_tx": {
+      "category": "video",
+      "top": "lvds_tx",
+      "files": [
+        {
+          "path": "video/lvds_tx/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/lvds_tx/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/lvds_tx/docs/lvds_tx_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/lvds_tx/docs/lvds_tx_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/lvds_tx/docs/lvds_tx_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/lvds_tx/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/lvds_tx/src/lvds_tx.sv",
+          "executable": false
+        },
+        {
+          "path": "video/lvds_tx/tb/lvds_tx_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "video/lvds_tx/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/lvds_tx/tb/tests/lvds_tx_tests.sv",
+          "executable": false
+        },
+        {
+          "path": "video/vid_timing_gen/src/vid_timing_gen.sv",
+          "executable": false
+        }
+      ]
+    },
+    "lvds_serializer": {
+      "category": "video",
+      "top": "lvds_serializer",
+      "files": [
+        {
+          "path": "video/lvds_serializer/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/lvds_serializer/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/lvds_serializer/docs/lvds_serializer_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/lvds_serializer/docs/lvds_serializer_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/lvds_serializer/docs/lvds_serializer_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/lvds_serializer/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/lvds_serializer/src/lvds_serializer.sv",
+          "executable": false
+        },
+        {
+          "path": "video/lvds_serializer/tb/lvds_serializer_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "video/lvds_serializer/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/lvds_serializer/tb/tests/lvds_serializer_tests.sv",
+          "executable": false
+        }
+      ]
+    },
+    "conv2d_core": {
+      "category": "video",
+      "top": "conv2d_core",
+      "files": [
+        {
+          "path": "video/conv2d_core/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_core/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_core/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_core/docs/conv2d_core_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_core/docs/conv2d_core_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_core/docs/conv2d_core_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_core/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_core/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_core/scripts/sv2v",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_core/src/conv2d_core.sv",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_core/src/conv2d_pkg.sv",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_core/tb/conv2d_core_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_core/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_core/tb/tests/conv2d_core_tests.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_window/src/isp_window.sv",
+          "executable": false
+        },
+        {
+          "path": "video/video_tb_lib/axis_frame_bfm.sv",
+          "executable": false
+        },
+        {
+          "path": "video/video_tb_lib/conv2d_ref.sv",
+          "executable": false
+        }
+      ]
+    },
+    "conv2d_filter": {
+      "category": "video",
+      "top": "conv2d_filter",
+      "files": [
+        {
+          "path": "video/conv2d_core/src/conv2d_core.sv",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_core/src/conv2d_pkg.sv",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_filter/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_filter/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_filter/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_filter/docs/conv2d_filter_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_filter/docs/conv2d_filter_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_filter/docs/conv2d_filter_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_filter/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_filter/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_filter/scripts/sv2v",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_filter/src/conv2d_filter.sv",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_filter/tb/conv2d_filter_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_filter/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_filter/tb/tests/conv2d_filter_tests.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_window/src/isp_window.sv",
+          "executable": false
+        },
+        {
+          "path": "video/video_tb_lib/axis_frame_bfm.sv",
+          "executable": false
+        },
+        {
+          "path": "video/video_tb_lib/conv2d_ref.sv",
+          "executable": false
+        }
+      ]
+    },
+    "blur_filter": {
+      "category": "video",
+      "top": "blur_filter",
+      "files": [
+        {
+          "path": "video/blur_filter/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/blur_filter/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "video/blur_filter/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "video/blur_filter/docs/blur_filter_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/blur_filter/docs/blur_filter_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/blur_filter/docs/blur_filter_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/blur_filter/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/blur_filter/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/blur_filter/scripts/sv2v",
+          "executable": false
+        },
+        {
+          "path": "video/blur_filter/src/blur_filter.sv",
+          "executable": false
+        },
+        {
+          "path": "video/blur_filter/tb/blur_filter_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "video/blur_filter/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/blur_filter/tb/tests/blur_filter_tests.sv",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_core/src/conv2d_core.sv",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_core/src/conv2d_pkg.sv",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_filter/src/conv2d_filter.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_window/src/isp_window.sv",
+          "executable": false
+        },
+        {
+          "path": "video/video_tb_lib/axis_frame_bfm.sv",
+          "executable": false
+        },
+        {
+          "path": "video/video_tb_lib/conv2d_ref.sv",
+          "executable": false
+        }
+      ]
+    },
+    "sharpen_filter": {
+      "category": "video",
+      "top": "sharpen_filter",
+      "files": [
+        {
+          "path": "video/conv2d_core/src/conv2d_core.sv",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_core/src/conv2d_pkg.sv",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_filter/src/conv2d_filter.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_window/src/isp_window.sv",
+          "executable": false
+        },
+        {
+          "path": "video/sharpen_filter/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/sharpen_filter/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "video/sharpen_filter/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "video/sharpen_filter/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/sharpen_filter/docs/sharpen_filter_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/sharpen_filter/docs/sharpen_filter_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/sharpen_filter/docs/sharpen_filter_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/sharpen_filter/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/sharpen_filter/scripts/sv2v",
+          "executable": false
+        },
+        {
+          "path": "video/sharpen_filter/src/sharpen_filter.sv",
+          "executable": false
+        },
+        {
+          "path": "video/sharpen_filter/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/sharpen_filter/tb/sharpen_filter_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "video/sharpen_filter/tb/tests/sharpen_filter_tests.sv",
+          "executable": false
+        },
+        {
+          "path": "video/video_tb_lib/axis_frame_bfm.sv",
+          "executable": false
+        },
+        {
+          "path": "video/video_tb_lib/conv2d_ref.sv",
+          "executable": false
+        }
+      ]
+    },
+    "blur_sharpen": {
+      "category": "video",
+      "top": "blur_sharpen",
+      "files": [
+        {
+          "path": "video/blur_sharpen/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/blur_sharpen/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "video/blur_sharpen/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "video/blur_sharpen/docs/blur_sharpen_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/blur_sharpen/docs/blur_sharpen_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/blur_sharpen/docs/blur_sharpen_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/blur_sharpen/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/blur_sharpen/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/blur_sharpen/scripts/sv2v",
+          "executable": false
+        },
+        {
+          "path": "video/blur_sharpen/src/blur_sharpen.sv",
+          "executable": false
+        },
+        {
+          "path": "video/blur_sharpen/tb/blur_sharpen_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "video/blur_sharpen/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/blur_sharpen/tb/tests/blur_sharpen_tests.sv",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_core/src/conv2d_core.sv",
+          "executable": false
+        },
+        {
+          "path": "video/conv2d_core/src/conv2d_pkg.sv",
+          "executable": false
+        },
+        {
+          "path": "video/isp_window/src/isp_window.sv",
+          "executable": false
+        },
+        {
+          "path": "video/video_tb_lib/axis_frame_bfm.sv",
+          "executable": false
+        },
+        {
+          "path": "video/video_tb_lib/conv2d_ref.sv",
+          "executable": false
+        }
+      ]
+    },
+    "frame_counter": {
+      "category": "video",
+      "top": "frame_counter",
+      "files": [
+        {
+          "path": "video/frame_counter/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/frame_counter/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "video/frame_counter/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "video/frame_counter/docs/frame_counter_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/frame_counter/docs/frame_counter_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/frame_counter/docs/frame_counter_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/frame_counter/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/frame_counter/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/frame_counter/src/frame_counter.sv",
+          "executable": false
+        },
+        {
+          "path": "video/frame_counter/tb/frame_counter_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "video/frame_counter/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/frame_counter/tb/tests/frame_counter_tests.sv",
+          "executable": false
+        }
+      ]
+    },
+    "vs_stream_adapter": {
+      "category": "video",
+      "top": "vs_stream_adapter",
+      "files": [
+        {
+          "path": "video/vs_stream_adapter/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/vs_stream_adapter/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "video/vs_stream_adapter/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "video/vs_stream_adapter/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/vs_stream_adapter/docs/vs_stream_adapter_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/vs_stream_adapter/docs/vs_stream_adapter_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/vs_stream_adapter/docs/vs_stream_adapter_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/vs_stream_adapter/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/vs_stream_adapter/src/vs_stream_adapter.sv",
+          "executable": false
+        },
+        {
+          "path": "video/vs_stream_adapter/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/vs_stream_adapter/tb/tests/vs_stream_adapter_tests.sv",
+          "executable": false
+        },
+        {
+          "path": "video/vs_stream_adapter/tb/vs_stream_adapter_tb.sv",
+          "executable": false
+        }
+      ]
+    },
+    "object_tracker": {
+      "category": "video",
+      "top": "object_tracker",
+      "files": [
+        {
+          "path": "video/object_tracker/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/object_tracker/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "video/object_tracker/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "video/object_tracker/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/object_tracker/docs/object_tracker_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/object_tracker/docs/object_tracker_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/object_tracker/docs/object_tracker_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/object_tracker/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/object_tracker/src/object_tracker.sv",
+          "executable": false
+        },
+        {
+          "path": "video/object_tracker/tb/object_tracker_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "video/object_tracker/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/object_tracker/tb/tests/object_tracker_tests.sv",
+          "executable": false
+        },
+        {
+          "path": "video/video_tb_lib/axis_frame_bfm.sv",
+          "executable": false
+        },
+        {
+          "path": "video/video_tb_lib/track_ref.sv",
+          "executable": false
+        }
+      ]
+    },
+    "symbol_overlay": {
+      "category": "video",
+      "top": "symbol_overlay",
+      "files": [
+        {
+          "path": "video/symbol_overlay/Makefile",
+          "executable": false
+        },
+        {
+          "path": "video/symbol_overlay/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "video/symbol_overlay/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "video/symbol_overlay/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "video/symbol_overlay/docs/symbol_overlay_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "video/symbol_overlay/docs/symbol_overlay_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "video/symbol_overlay/docs/symbol_overlay_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "video/symbol_overlay/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/symbol_overlay/src/symbol_overlay.sv",
+          "executable": false
+        },
+        {
+          "path": "video/symbol_overlay/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "video/symbol_overlay/tb/symbol_overlay_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "video/symbol_overlay/tb/tests/symbol_overlay_tests.sv",
+          "executable": false
+        },
+        {
+          "path": "video/video_tb_lib/axis_frame_bfm.sv",
+          "executable": false
+        },
+        {
+          "path": "video/video_tb_lib/track_ref.sv",
+          "executable": false
+        }
+      ]
+    },
+    "py_core": {
+      "category": "cpu",
+      "top": "py_core",
+      "files": [
+        {
+          "path": "cpu/py_core/Makefile",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_core/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_core/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_core/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_core/docs/py_core_block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_core/docs/py_core_block_diagram.png",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_core/docs/py_core_block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_core/docs/py_core_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_core/docs/py_core_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_core/docs/py_core_fsm.dot",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_core/docs/py_core_fsm.png",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_core/docs/py_core_fsm.svg",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_core/docs/py_core_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_core/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_core/scripts/sv2v",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_core/src/py_core.sv",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_core/src/py_core_pkg.sv",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_core/tb/py_core_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_core/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_core/tb/tests/py_core_tests.sv",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_core/tools/pyc.py",
+          "executable": false
+        }
+      ]
+    },
+    "py_soc": {
+      "category": "cpu",
+      "top": "py_soc",
+      "files": [
+        {
+          "path": "bus/axi4_lite_decoder/src/axi4_lite_decoder.sv",
+          "executable": false
+        },
+        {
+          "path": "bus/axi4_lite_slave/src/axi4_lite_slave.sv",
+          "executable": false
+        },
+        {
+          "path": "cdc/reset_sync/src/reset_sync.sv",
+          "executable": false
+        },
+        {
+          "path": "clock/clk_gen/src/clk_gen.sv",
+          "executable": false
+        },
+        {
+          "path": "clock/dpll/src/dpll.sv",
+          "executable": false
+        },
+        {
+          "path": "clock/dpll/src/dpll_ctrl.sv",
+          "executable": false
+        },
+        {
+          "path": "clock/dpll/src/dpll_dco.sv",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_core/src/py_core.sv",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_core/src/py_core_pkg.sv",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_soc/Makefile",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_soc/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_soc/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_soc/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_soc/docs/py_soc_block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_soc/docs/py_soc_block_diagram.png",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_soc/docs/py_soc_block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_soc/docs/py_soc_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_soc/docs/py_soc_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_soc/docs/py_soc_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_soc/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_soc/scripts/run_test.sh",
+          "executable": true
+        },
+        {
+          "path": "cpu/py_soc/scripts/sv2v",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_soc/src/py_axil_xbar.sv",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_soc/src/py_boot.sv",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_soc/src/py_soc.sv",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_soc/src/py_stream_port.sv",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_soc/src/py_sysctl.sv",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_soc/tb/programs/selftest.py",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_soc/tb/py_soc_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_soc/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "cpu/py_soc/tb/tests/py_soc_tests.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/gpio/src/gpio_top.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/i2c_master/src/i2c_bit_ctrl.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/i2c_master/src/i2c_master_fsm.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/i2c_master/src/i2c_top.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/intc/src/intc_top.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_flash_ctrl/src/spi_flash_ctrl.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_master/src/spi_engine.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/spi_master/src/spi_top.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart/src/uart_baud.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart/src/uart_rx.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart/src/uart_top.sv",
+          "executable": false
+        },
+        {
+          "path": "peripherals/uart/src/uart_tx.sv",
+          "executable": false
+        },
+        {
+          "path": "timing/watchdog/src/watchdog_top.sv",
+          "executable": false
+        }
+      ]
+    },
+    "dpll": {
+      "category": "clock",
+      "top": "dpll",
+      "files": [
+        {
+          "path": "clock/dpll/Makefile",
+          "executable": false
+        },
+        {
+          "path": "clock/dpll/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "clock/dpll/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "clock/dpll/docs/dpll_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "clock/dpll/docs/dpll_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "clock/dpll/docs/dpll_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "clock/dpll/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "clock/dpll/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "clock/dpll/src/dpll.sv",
+          "executable": false
+        },
+        {
+          "path": "clock/dpll/src/dpll_ctrl.sv",
+          "executable": false
+        },
+        {
+          "path": "clock/dpll/src/dpll_dco.sv",
+          "executable": false
+        },
+        {
+          "path": "clock/dpll/tb/dpll_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "clock/dpll/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "clock/dpll/tb/tests/dpll_tests.sv",
+          "executable": false
+        }
+      ]
+    },
+    "clk_gen": {
+      "category": "clock",
+      "top": "clk_gen",
+      "files": [
+        {
+          "path": "cdc/reset_sync/src/reset_sync.sv",
+          "executable": false
+        },
+        {
+          "path": "clock/clk_gen/Makefile",
+          "executable": false
+        },
+        {
+          "path": "clock/clk_gen/docs/block_diagram.dot",
+          "executable": false
+        },
+        {
+          "path": "clock/clk_gen/docs/block_diagram.svg",
+          "executable": false
+        },
+        {
+          "path": "clock/clk_gen/docs/clk_gen_dataflow.dot",
+          "executable": false
+        },
+        {
+          "path": "clock/clk_gen/docs/clk_gen_dataflow.svg",
+          "executable": false
+        },
+        {
+          "path": "clock/clk_gen/docs/clk_gen_prompt.md",
+          "executable": false
+        },
+        {
+          "path": "clock/clk_gen/docs/index.html",
+          "executable": false
+        },
+        {
+          "path": "clock/clk_gen/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "clock/clk_gen/src/clk_gen.sv",
+          "executable": false
+        },
+        {
+          "path": "clock/clk_gen/tb/clk_gen_tb.sv",
+          "executable": false
+        },
+        {
+          "path": "clock/clk_gen/tb/scripts/build.f",
+          "executable": false
+        },
+        {
+          "path": "clock/clk_gen/tb/tests/clk_gen_tests.sv",
+          "executable": false
+        },
+        {
+          "path": "clock/dpll/src/dpll.sv",
+          "executable": false
+        },
+        {
+          "path": "clock/dpll/src/dpll_ctrl.sv",
+          "executable": false
+        },
+        {
+          "path": "clock/dpll/src/dpll_dco.sv",
           "executable": false
         }
       ]

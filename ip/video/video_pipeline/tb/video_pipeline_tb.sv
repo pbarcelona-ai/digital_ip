@@ -338,6 +338,13 @@ module video_pipeline_tb;
 
     rd(16'h00, v);
     check(v == 32'h5650_4950, $sformatf("ID %h", v));
+    bfm.read(15'h004, v);                              // ID block: VERSION "d.dd", DATE BCD mm/dd/yyyy
+    check(v[23:16] == "." && v[31:24] >= "0" && v[31:24] <= "9" && v == dut.u_regs.IP_VERSION,
+          $sformatf("VERSION %h (\"%s\")", v, v));
+    bfm.read(15'h008, v);
+    check(v == dut.u_regs.IP_DATE && v[31:24] >= 8'h01 && v[31:24] <= 8'h12 && v[15:0] >= 16'h2000, $sformatf("DATE %h", v));
+    bfm.read(15'h4000, v);                             // the scaler's ID block
+    check(v == "BLIN", $sformatf("scaler ID %h", v));
     begin
       logic [31:0] cfg; // scaler is built (parameter)
       cfg = 32'h20;

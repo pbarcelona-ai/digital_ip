@@ -95,7 +95,8 @@ module pcie_tl_ep_tb;
   int          rp_n;
 
   // test tasks: tests/pcie_tl_ep_tests.sv
-  `include "pcie_tl_ep_tests.sv"
+  logic [7:0] reg_base = 8'h10;                   // the register map after the ID block
+  logic [1:0] last_bresp;
 
   // Stream window capture
   logic [31:0] str_q [$];
@@ -106,6 +107,7 @@ module pcie_tl_ep_tb;
   end
 
   logic [31:0] rd;
+  `include "pcie_tl_ep_tests.sv"
   initial begin
     if ($test$plusargs("vcd")) begin
       $dumpfile("sim/pcie_tl_ep_tb.vcd");
@@ -124,142 +126,18 @@ module pcie_tl_ep_tb;
     aresetn = 1;
     repeat (3) @(posedge aclk);
 
-    // ---- T1: CfgRd0 of the ID register ----
-    pcie.cfg_tlp(0, 0, 8'h11, 0);
-    wait_pkt();
-    check_cpl(1, 1, 3'b000, 8'h11, 12'd4, 7'd0, "CfgRd0 id");
-    check(rp_n == 4 && rp[3] == 32'h5678_1234, $sformatf("ID data %h", rp[3]));
-    check(rp[1][31:16] == 16'h0100, "completer ID not captured from config request");
-
-    // ---- T2: BAR0 sizing ----
-    pcie.cfg_tlp(1, 4, 8'h12, 32'hFFFF_FFFF);
-    wait_pkt();
-    check_cpl(0, 0, 3'b000, 8'h12, 12'd4, 7'd0, "CfgWr0 bar");
-    pcie.cfg_tlp(0, 4, 8'h13, 0);
-    wait_pkt();
-    check(rp_n == 4 && rp[3] == 32'hFFFF_E000, $sformatf("BAR0 size probe %h", rp[3]));
-
-    // ---- T3: program BAR0 and command (mem + bus master) ----
-    pcie.cfg_tlp(1, 4, 8'h14, BAR_BASE);
-    wait_pkt();
-    pcie.cfg_tlp(0, 4, 8'h15, 0);
-    wait_pkt();
-    check(rp[3] == BAR_BASE, "BAR0 readback");
-    pcie.cfg_tlp(1, 1, 8'h16, 32'h0000_0006);
-    wait_pkt();
-    pcie.cfg_tlp(0, 1, 8'h17, 0);
-    wait_pkt();
-    check(rp[3][15:0] == 16'h0006, "command readback");
-    axil_read(8'h10, rd);
-    check(rd[1:0] == 2'b11, "STATUS mem_en/bus_master");
-    axil_read(8'h18, rd);
-    check(rd == BAR_BASE, "BAR0 register");
-
-    // ---- T4: memory write then read, 3DW headers ----
-    pcie.mem_wr(BAR_BASE + 32'h10, 4, 0, 4'hF, 4'hF, 8'h20, 32'h11);
-    no_pkt("posted write");
-    pcie.mem_rd(BAR_BASE + 32'h10, 4, 0, 4'hF, 4'hF, 8'h21);
-    wait_pkt();
-    check_cpl(1, 4, 3'b000, 8'h21, 12'd16, 7'h10, "MRd 4DW");
-    check(rp_n == 7 && rp[3] == 32'h11 && rp[4] == 32'h12 && rp[5] == 32'h13 &&
-          rp[6] == 32'h14, "MRd data mismatch");
-
-    // ---- T5: byte enables (bytes 0 and 2 written) ----
-    pcie.mem_wr(BAR_BASE + 32'h10, 1, 0, 4'b0101, 4'b0000, 8'h22, 32'hAABB_CCDD);
-    pcie.mem_rd(BAR_BASE + 32'h10, 1, 0, 4'hF, 4'h0, 8'h23);
-    wait_pkt();
-    check(rp_n == 4 && rp[3] == 32'h00BB_00DD, $sformatf("byte enable merge %h", rp[3]));
-
-    // ---- T6: 4DW header memory read ----
-    pcie.mem_rd(BAR_BASE + 32'h14, 3, 1, 4'hF, 4'hF, 8'h24);
-    wait_pkt();
-    check_cpl(1, 3, 3'b000, 8'h24, 12'd12, 7'h14, "MRd 4DW header");
-    check(rp[3] == 32'h12 && rp[4] == 32'h13 && rp[5] == 32'h14, "4DW MRd data");
-
-    // ---- T7: partial byte enables shrink the byte count ----
-    pcie.mem_rd(BAR_BASE + 32'h14, 2, 0, 4'b1100, 4'b0011, 8'h25);
-    wait_pkt();
-    check_cpl(1, 2, 3'b000, 8'h25, 12'd4, 7'h16, "MRd partial BE");
-
-    // ---- T8: stream window (upper BAR half) ----
-    pcie.mem_wr(BAR_BASE + 32'h1000, 5, 0, 4'hF, 4'hF, 8'h26, 32'hC0DE_0000);
-    repeat (40) @(posedge aclk);
-    check(str_q.size() == 5, $sformatf("stream window got %0d words", str_q.size()));
-    if (str_q.size() == 5) begin
-      for (int i = 0; i < 5; i++) check(str_q[i] == 32'hC0DE_0000 + i, "stream data");
-      check(str_l_q[4] == 1 && str_l_q[0] == 0, "stream tlast on the last word only");
-    end
-
-    // ---- T9: unsupported request handling ----
-    pcie.mem_rd(32'hB000_0000, 1, 0, 4'hF, 4'h0, 8'h27);
-    wait_pkt();
-    check_cpl(0, 0, 3'b001, 8'h27, 12'd4, 7'd0, "UR for bad address");
-    pcie.mem_wr(32'hB000_0000, 2, 0, 4'hF, 4'hF, 8'h28, 32'h0);
-    no_pkt("posted write to bad address");
-    pcie.tlp[0] = pcie.dw0(3'b000, 5'b00010, 1);
-    pcie.tlp[1] = {HOST_ID, 8'h29, 4'h0, 4'hF};
-    pcie.tlp[2] = 32'h100; // I/O read
-    pcie.tlp_n = 3;
-    pcie.send_tlp();
-    wait_pkt();
-    check_cpl(0, 0, 3'b001, 8'h29, 12'd4, 7'd0, "UR for I/O read");
-    pcie.mem_rd(BAR_BASE + 32'h10, 1, 0, 4'hF, 4'h0, 8'h2A); // still alive
-    wait_pkt();
-    check(rp[3] == 32'h00BB_00DD, "endpoint recovered after UR");
-
-    // ---- T10: DMA memory writes to host (3DW then 4DW header) ----
-    axil_write(8'h04, 32'h1234_5000);
-    axil_write(8'h08, 32'h0);
-    axil_write(8'h0C, 32'd4);
-    axil_write(8'h00, 32'h1);
-    for (int i = 0; i < 8; i++) begin
-      @(posedge aclk);
-      #1 s_d = 32'hD0D0_0000 + i;
-      s_v = 1;
-      s_l = (i == 7);
-      wait (s_r);
-      @(posedge aclk);
-      #1 s_v = 0;
-      s_l = 0;
-    end
-    wait_pkt();
-    check(rp_n == 7 && rp[0] == pcie.dw0(3'b010, 5'b00000, 4), "DMA TLP0 header");
-    check(rp[1] == {16'h0100, 8'h00, 4'hF, 4'hF}, $sformatf("DMA TLP0 dw1 %h", rp[1]));
-    check(rp[2] == 32'h1234_5000, "DMA TLP0 address");
-    for (int i = 0; i < 4; i++) check(rp[3+i] == 32'hD0D0_0000 + i, "DMA TLP0 data");
-    wait_pkt();
-    check(rp_n == 7 && rp[2] == 32'h1234_5010 && rp[1][15:8] == 8'h01, "DMA TLP1 address/tag");
-    for (int i = 0; i < 4; i++) check(rp[3+i] == 32'hD0D0_0004 + i, "DMA TLP1 data");
-    axil_write(8'h00, 32'h0);
-    axil_write(8'h04, 32'h0000_0100); // > 4 GB
-    axil_write(8'h08, 32'h0000_0001);
-    axil_write(8'h0C, 32'd1);
-    axil_write(8'h00, 32'h1);
-    @(posedge aclk);
-    #1 s_d = 32'hFEED_BEEF;
-    s_v = 1;
-    s_l = 1;
-    wait (s_r);
-    @(posedge aclk);
-    #1 s_v = 0;
-    s_l = 0;
-    wait_pkt();
-    check(rp_n == 5 && rp[0] == pcie.dw0(3'b011, 5'b00000, 1), "DMA 4DW header fmt");
-    check(rp[1][7:0] == 8'h0F, "single DW write must use lastBE = 0 and firstBE = F");
-    check(rp[2] == 32'h1 && rp[3] == 32'h100 && rp[4] == 32'hFEED_BEEF, "DMA 4DW address/data");
-    axil_write(8'h00, 32'h0);
-
-    // ---- T11: counters ----
-    axil_read(8'h1C, rd);
-    check(rd == 18, $sformatf("RX_TLP counter %0d", rd));
-    axil_read(8'h20, rd);
-    check(rd == 4, $sformatf("MWR counter %0d", rd));
-    axil_read(8'h28, rd);
-    check(rd == 7, $sformatf("CFG counter %0d", rd));
-    axil_read(8'h2C, rd);
-    check(rd == 2, $sformatf("UR counter %0d", rd));
-    axil_read(8'h30, rd);
-    check(rd == 3, $sformatf("DMA TLP counter %0d", rd));
+    test_id_block();
+    test_cfg_id();
+    test_bar_sizing();
+    test_bar_program();
+    test_mem_rw();
+    test_byte_enables();
+    test_4dw_read();
+    test_partial_be();
+    test_stream_window();
+    test_unsupported();
+    test_dma();
+    test_counters();
 
     if (errors == 0) $display("TEST PASSED");
     else             $display("TEST FAILED (%0d errors)", errors);

@@ -46,9 +46,31 @@
 //       LVDS) is saved as output_images/<module>_<c|m>_<n>_output.ppm (P6).
 //       Frames are labelled on their way through the pipeline.
 //       Plusargs: +IMG_IN_DIR=<dir>, +IMG_OUT_DIR=<dir>.
+//     - pedestrian tracking: an animated GIF (gif_io reader; default
+//       tb/images/pedestrian_walk.gif, 128 x 96 black-and-white street
+//       video of a pedestrian, 50 frames = 5 s, made by
+//       tb/scripts/make_pedestrian_gif.py) sets the tracking frame size: the
+//       GIF's own (width a multiple of 4, height even, scaled down to fit
+//       320 x 240), loaded at start-up into the camera's control registers
+//       0x30-0x33 (width, height, high byte first), which the firmware reads
+//       over I2C 0 to reprogram every block (stage 170), and its base name
+//       into registers 0x40-0x4F (the overlay's upper-left text). The camera then sends
+//       one RAW10 frame per GIF frame; GPIO0[29] is high while it lasts.
+//       The frames at the tracker input (after blur_sharpen), at the
+//       overlay output and on HDMI are captured, with each frame's overlay
+//       settings, tracker window and results; the HDMI frames are written
+//       as an animated GIF with the input's frame times (gif_io writer;
+//       gif-output/<input name>_tracked.gif) and read back. LVDS
+//       is checked before this and its serial clock is stopped for it.
+//       Plusargs: +GIF_IN=<file> (any animated GIF),
+//       +GIF_BW (convert a colour GIF to black and white; otherwise it is
+//       sent in colour as an RGGB mosaic), +GIF_DIR=<dir> (GIF outputs,
+//       default gif-output), +GIF_IN_DIR=<dir> (the input sequence as sent,
+//       default gif-input), +GIF_OUT=<file>, +GIF_FRAMES=<n>
+//       (send only the first n frames, a shorter run).
 //   The test tasks are in tests/video_processor_tests.sv (`included).
 //   Prints TEST PASSED on success.
-// Date: 2026-10-08
+// Date: 2026-10-11
 `timescale 1ns/1ps
 module video_processor_tb;
   `include "video_proc_syms.svh"
@@ -64,11 +86,12 @@ module video_processor_tb;
   wire tmds_ser_clk = dut.tmds_ser_clk, lvds_ser_clk = dut.lvds_ser_clk;
   bit cam_run = 1;                                   // the camera stops after the video checks
   localparam int UART_BAUD = 6_250_000;              // report speed: the UART allows baud * 16 <= f_clk / 2
-  localparam int MIN_PASS = 27;
-  localparam logic [3:0] CLK_EN_IDLE = 4'b1001;      // core and MIPI byte clocks only                      // [PASS] lines the firmware report must contain
+  localparam int MIN_PASS = 31;                      // [PASS] lines the firmware report must contain
+  localparam logic [3:0] CLK_EN_IDLE = 4'b1001;      // core and MIPI byte clocks only
+  localparam logic [3:0] CLK_EN_TRACK = 4'b1011;     // tracking test: LVDS serial clock stopped (simulation speed)
   int errors = 0;
   initial begin
-    #150ms;
+    #300ms;
     $display("ERROR: simulation timeout (firmware stage %0d)", g(G_stage));
     $display("TEST FAILED");
     $finish;
@@ -100,7 +123,8 @@ module video_processor_tb;
 
   video_processor #(
     .NLANES(2),
-    .MAX_W(64),
+    .MAX_W(320),                                     // tracking test frames up to 320 x 240
+    .VS_RET_FIFO(131072),                            // a whole 320 x 240 frame
     .CSI_FIFO(256),
     .OUT_FIFO(512),
     .UART0_BAUD(UART_BAUD),
@@ -185,7 +209,7 @@ module video_processor_tb;
 `endif
 
   // ---------------- board: flash, I2C, camera ----------------
-  spi_flash_bfm flash (
+  spi_flash_bfm #(.MEM_BYTES(1 << 17)) flash (   // 128 KB: boot image + 1024-slot string table
     .sclk(fl_sclk),
     .cs_n(fl_cs_n),
     .mosi(fl_mosi),
@@ -239,6 +263,84 @@ module video_processor_tb;
   int   img_next = 0;                                // next image of the sequence
   int   vs_f0 = 0;                                   // vs_stream_adapter frames_o when the sequence starts
   string img_in_dir = "input_images", img_out_dir = "output_images";
+
+  // ---------------- tracking test: GIF in, captures, GIF out ----------------
+  // Frame size: the GIF's own (width rounded down to a multiple of 4 for RAW10 packing, height to
+  // an even number for the Bayer pattern), scaled down keeping the aspect ratio when larger than
+  // GMAXW x GMAXH (the DUT's MAX_W / VS_RET_FIFO and the HDMI sink are sized for it), at least 16 x 16.
+  localparam int GMAXW = 320, GMAXH = 240, GMAXF = 64;
+  localparam int LAB_GIF = 1000;                     // camera label of GIF frame 0
+  int   gw = 128, gh = 96;                           // tracking frame size (camera registers 0x30-0x33)
+  gif_io #(
+    .MAXW(GMAXW),
+    .MAXH(GMAXH),
+    .MAXF(GMAXF)
+  ) gin ();    // input sequence
+  gif_io #(
+    .MAXW(GMAXW),
+    .MAXH(GMAXH),
+    .MAXF(GMAXF)
+  ) gout ();   // HDMI frames written as the output GIF
+  gif_io #(
+    .MAXW(GMAXW),
+    .MAXH(GMAXH),
+    .MAXF(GMAXF)
+  ) gchk ();   // the output GIF read back
+  gif_io #(
+    .MAXW(GMAXW),
+    .MAXH(GMAXH),
+    .MAXF(GMAXF)
+  ) trk_in (); // frames at the tracker input (blur_sharpen out)
+  gif_io #(
+    .MAXW(GMAXW),
+    .MAXH(GMAXH),
+    .MAXF(GMAXF)
+  ) ovl_out ();// frames out of the overlay
+  track_ref #(
+    .MAXW(GMAXW),
+    .MAXH(GMAXH),
+    .NOBJ(4)
+  ) trm ();     // object_tracker / symbol_overlay models
+  string gif_in = "input_images/pedestrian_walk.gif", gif_dir = "gif-output", gif_in_dir = "gif-input", gif_out = "";
+  int   gif_n = 0, gif_next = 0;                     // frames to send, next one
+  bit   gif_go = 0, gif_on = 0;                      // sending; capturing
+  bit   gif_bw = 0, gif_colour = 0;                  // +GIF_BW: convert a colour GIF to black and white
+  logic [511:0] ovl_act [GMAXF];                     // overlay objects applied to each frame
+  logic [383:0] ovl_txt [GMAXF];                     // and its 4 texts {COLOR, POS, CTRL}
+  logic [511:0] ovl_chr [GMAXF];                     // their characters
+  logic [19:0] ovl_fnum [GMAXF];                     // its frame number (BCD)
+  bit   ovl_en [GMAXF];
+  int   trk_win [GMAXF][4];                          // tracker window of each frame (x0, y0, x1, y1)
+  logic [31:0] trk_ctrl [GMAXF], trk_thr [GMAXF];
+  int   trk_n [GMAXF], trk_bx [GMAXF], trk_by [GMAXF];
+  bit   trk_done [GMAXF], hdmi_saved [GMAXF];
+  int   fo_k = -1, fo_x = 0, fo_y = 0, ir_k = -1, ir_x = 0, ir_y = 0, ir_done = -1, hdmi_frames = 0;
+  int   fc_snap0 = -1, fc_snap1 = -1;                // frame counts when the tracking section starts
+  // SYSCTL CLK_EN overridden by the testbench (simulation speed only): clocks(en) from the first call on
+  logic [3:0] clk_en_tb;
+  bit clk_en_ovr = 0;
+  initial begin
+    wait (clk_en_ovr);
+    force dut.u_cpu.clk_en = clk_en_tb;
+  end
+  task automatic clocks(input logic [3:0] en);
+    clk_en_tb = en;
+    clk_en_ovr = 1;
+  endtask
+  // Firmware set-up report (stages 4-5: every register write reported, every register printed; the
+  // camera is not streaming): the display serial clocks (HDMI TMDS, LVDS) are held low until the
+  // video start (stage 6). Simulation speed only: the clock generator, its lock and the SYSCTL CLK_EN
+  // register are untouched (the serial clock nets are forced, not the enables), and no video reaches
+  // the displays before stage 6.
+  initial begin
+    while (g(G_stage) < 4) @(posedge cpu_clk);
+    force dut.tmds_ser_clk = 1'b0;
+    force dut.lvds_ser_clk = 1'b0;
+    $display("[%t] set-up report: display serial clocks held until the video start (simulation speed)", $realtime);
+    while (g(G_stage) < 6 && g(G_stage) != 200) @(posedge cpu_clk);
+    release dut.tmds_ser_clk;
+    release dut.lvds_ser_clk;
+  end
   initial for (int t = 0; t < NT; t++) begin
     tap_x[t] = 0;
     tap_y[t] = 2 * H;
@@ -266,8 +368,19 @@ module video_processor_tb;
     wait (cam_on);
     $display("[%t] camera released from reset and streaming (I2C 0x36 reg 0x01 = 1)", $realtime);
     while (cam_run) begin
-      int lab;
-      if (!img_mode) lab = -1;                         // live: the synthetic raw[][] image
+      int lab, fw, fh;
+      if (gif_go && gif_next < gif_n) begin            // tracking sequence: the next GIF frame
+`ifdef VP_VISION
+        if (gif_next > 0) begin                        // paced like the image sequence
+          wait (dut.u_vs_adapt.frames_o >= vs_f0 + gif_next);
+          wait (dut.u_vs_adapt.m_axis_tready && dut.u_vs_adapt.ret_empty);
+          @(posedge byte_clk);
+        end
+`endif
+        lab = LAB_GIF + gif_next;
+        gif_next++;
+      end
+      else if (!img_mode) lab = -1;                    // live: the synthetic raw[][] image
       else if (img_go && img_next < NIMG) begin
 `ifdef VP_VISION
         // pace the sequence: the next image once vision_system has taken the previous one and can
@@ -284,14 +397,17 @@ module video_processor_tb;
       else lab = -2;                                   // waiting for the start, or sequence sent: idle
       if (lab == -2) @(posedge byte_clk);
       else begin
-        lq_push(T_UNPACK, lab);                        // label of this frame, in camera order
+        fw = (lab >= LAB_GIF) ? gw : W;
+        fh = (lab >= LAB_GIF) ? gh : H;
+        lq_push(T_UNPACK, (lab >= LAB_GIF) ? -3 : lab); // label of this frame, in camera order
         cam.gap = 4;
         cam.csi_pay.delete();
         cam.csi_packet(2'd0, 6'h00, 16'(cam_frames + 1));
         cam.send_pkt();
-        for (int y = 0; y < H; y++) begin
+        for (int y = 0; y < fh; y++) begin
           cam.csi_px.delete();
-          for (int x = 0; x < W; x++) cam.csi_px.push_back(lab < 0 ? 10'(raw[y][x]) : sensor_px(lab, x, y));
+          for (int x = 0; x < fw; x++)
+            cam.csi_px.push_back(lab >= LAB_GIF ? gif_px(lab - LAB_GIF, x, y) : lab < 0 ? 10'(raw[y][x]) : sensor_px(lab, x, y));
           cam.csi_pack_raw10();
           cam.csi_packet(2'd0, 6'h2B, 16'(cam.csi_pay.size()));
           cam.gap = 110;
@@ -301,6 +417,11 @@ module video_processor_tb;
         // ISP during the frame gap; after the last image the sequence ends
         if (img_mode && img_next < NIMG) mono_sel = (img_next >= 4);
         if (img_mode && lab == NIMG - 1) seq_active = 0;
+        if (lab == LAB_GIF + gif_n - 1) seq_active = 0;  // tracking sequence sent
+        if (lab >= LAB_GIF) begin
+          $display("[%t] camera: GIF frame %0d of %0d sent", $realtime, lab - LAB_GIF + 1, gif_n);
+          $fflush();
+        end
         cam.csi_pay.delete();
         cam.csi_packet(2'd0, 6'h01, 16'(cam_frames + 1));
         cam.gap = (frame_gap_ns() + 7) / 8;
@@ -328,8 +449,8 @@ module video_processor_tb;
   wire sink_en = 1'b0;
 `endif
   hdmi_bfm #(
-    .MAXW(64),
-    .MAXH(32)
+    .MAXW(320),
+    .MAXH(240)
   ) sink (
     .clk(trclk),
     .en(sink_en),
@@ -419,21 +540,143 @@ module video_processor_tb;
     if (dut.vr_v && dut.vr_r) tap_pixel(T_VISION, dut.vr_d, dut.vr_l, dut.vr_u);
 `endif
 `ifdef VP_FILTER
-    if (dut.ir_v && dut.ir_r) tap_pixel(T_FILTER, dut.ir_d, dut.ir_l, dut.ir_u);
+    if (dut.fo_v && dut.fo_r) tap_pixel(T_FILTER, dut.fo_d, dut.fo_l, dut.fo_u);
 `endif
   end
   // HDMI: the sink counts a frame at the next frame's vsync edge
   always @(sink.frames) display_done(T_HDMI);
+
+  // Tracking test captures. Before the sequence the pipeline is empty, so the k-th frame at a point
+  // after the sequence started is GIF frame k. At the tracker input: the frame, the overlay objects
+  // and tracker window taken at its start, the tracker results at its end (done_o); at the overlay
+  // output: the frame with the symbols.
+`ifdef VP_TRACK
+  always @(posedge pix_clk) if (gif_on) begin
+    if (dut.fo_v && dut.fo_r) begin
+      if (dut.fo_u) begin
+        fo_k++;
+        fo_x = 0;
+        fo_y = 0;
+        if (fo_k < GMAXF) begin
+          ovl_act[fo_k] = dut.u_overlay.u_core.cur;
+          ovl_en[fo_k] = dut.u_overlay.u_core.cur_en;
+          ovl_txt[fo_k] = dut.u_overlay.u_core.tcur;
+          ovl_chr[fo_k] = dut.u_overlay.u_core.ccur;
+          ovl_fnum[fo_k] = dut.u_overlay.u_core.fcur;
+          trk_win[fo_k][0] = dut.u_track.u_core.cwx0;
+          trk_win[fo_k][1] = dut.u_track.u_core.cwy0;
+          trk_win[fo_k][2] = dut.u_track.u_core.cwx1;
+          trk_win[fo_k][3] = dut.u_track.u_core.cwy1;
+          trk_ctrl[fo_k] = dut.u_track.u_core.ctrl;
+          trk_thr[fo_k] = 32'(dut.u_track.u_core.thresh_r);
+        end
+      end
+      if (fo_k >= 0 && fo_k < GMAXF && fo_y < gh && fo_x < gw) trk_in.set_px(fo_k, fo_x, fo_y, dut.fo_d);
+      if (dut.fo_l) begin
+        fo_x = 0;
+        fo_y++;
+      end else fo_x++;
+    end
+    if (dut.u_track.u_core.done_o && fo_k >= 0 && fo_k < GMAXF) begin
+      trk_n[fo_k] = dut.u_track.u_core.res_n;
+      trk_bx[fo_k] = {16'(dut.u_track.u_core.res_x1), 16'(dut.u_track.u_core.res_x0)};
+      trk_by[fo_k] = {16'(dut.u_track.u_core.res_y1), 16'(dut.u_track.u_core.res_y0)};
+      trk_done[fo_k] = 1;
+    end
+    if (dut.ir_v && dut.ir_r) begin
+      if (dut.ir_u) begin
+        ir_k++;
+        ir_x = 0;
+        ir_y = 0;
+      end
+      if (ir_k >= 0 && ir_k < GMAXF && ir_y < gh && ir_x < gw) ovl_out.set_px(ir_k, ir_x, ir_y, dut.ir_d);
+      if (dut.ir_l) begin
+        ir_x = 0;
+        ir_y++;
+        if (ir_y == gh) ir_done = ir_k;
+      end else ir_x++;
+    end
+  end
+`endif
+  // HDMI frame complete: the frame the overlay delivered last (genlock, see display_done)
+  always @(sink.frames) if (gif_on && ir_done >= 0 && ir_done < GMAXF && !hdmi_saved[ir_done]) begin
+    for (int y = 0; y < gh; y++) for (int x = 0; x < gw; x++) gout.set_px(ir_done, x, y, sink.frame[y][x]);
+    gout.delay_cs[ir_done] = gin.delay_cs[ir_done];
+    hdmi_saved[ir_done] = 1;
+    hdmi_frames++;
+  end
 
   // ---------------- UART 0 receiver: the firmware report -> cpu_bootup.txt ----------------
   localparam real UART_BIT = 1.0e9 / UART_BAUD;      // ns
   int uart_fd, uart_lines = 0, uart_pass = 0, uart_fail = 0;
   bit uart_end = 0;
   string uart_line = "";
-  int rep_first = 0, rep_last = 0, rep_lines = 0;    // last frame counts the CPU reported (section 7)
-  int rep_gaps = 0, rep_n;                           // reports that were not the previous count + 1
-  string eof_first_txt = "  EOF first stage (interrupt 13): frame count ";
-  string eof_last_txt  = "  EOF last stage  (interrupt 14): frame count ";
+  // Frame event transcript: "  [<time> us] <event>" lines (firmware events.py), checked against the
+  // markers frame_counter logged, in the order the testbench saw them (hw_ev queue, below)
+  localparam int NEV = 5, EVMAX = 256;
+  string ev_txt [NEV] = '{"IRQ 13: COUNT0 = ", "IRQ 14: COUNT1 = ", "vision_system takes frame ",
+                          "vision_system outputs frame ", "tracker frame "};
+  int rep_sec = 7;                                   // report section: 7 image sequence, 8 tracking
+  int rep_lines = 0, rep_bad = 0, rep_t = 0;         // event lines; mismatches; last time reported
+  int rep_n [2][NEV];                                // last count reported per section and channel
+  int rep_time [NEV][EVMAX];                         // time reported for channel / count (this section)
+  int hw_ev [$];                                     // logged markers {channel, count}, in marker order
+  int hw_ts [$];                                     // and their timestamps
+  initial for (int s = 0; s < 2; s++) for (int c = 0; c < NEV; c++) rep_n[s][c] = 0;
+  always @(posedge pix_clk) if (dut.pix_rst_n) begin
+    if (dut.u_frame_cnt.u_regs.ev_en_wr_o) begin   // log restarted (emptied by the CPU)
+      hw_ev.delete();
+      hw_ts.delete();
+    end
+    for (int c = 0; c < NEV; c++)
+      if (dut.u_frame_cnt.u_core.eof_i[c] && dut.u_frame_cnt.u_core.ev_en[c]) begin
+        hw_ev.push_back((c << 24) | (dut.u_frame_cnt.u_core.n_count[c] & 24'hFFFFFF));
+        hw_ts.push_back(dut.u_frame_cnt.u_core.ts);
+      end
+  end
+
+  // one transcript line: the next logged marker, in order, with its time; counts 1, 2, 3, ... per
+  // channel; times never go back; a frame's events in pipeline order
+  task automatic report_event(input string line);
+    int p, t, c, n;
+    string rest;
+    p = 0;
+    while (p < line.len() && line[p] != "]") p++;
+    rest = line.substr(3, p - 4);                      // "  [<t> us] "
+    t = rest.atoi();
+    rest = line.substr(p + 2, line.len() - 1);
+    c = -1;
+    for (int k = 0; k < NEV; k++)
+      if (c < 0 && rest.len() > ev_txt[k].len() && rest.substr(0, ev_txt[k].len() - 1) == ev_txt[k]) c = k;
+    if (c < 0) return;                                 // not an event line
+    rest = rest.substr(ev_txt[c].len(), rest.len() - 1);
+    n = rest.atoi();
+    rep_lines++;
+    if (hw_ev.size() == 0 || hw_ev[0] != ((c << 24) | n) || hw_ts[0] != t) begin
+      rep_bad++;
+      if (rep_bad < 6) $display("ERROR @%0t: transcript \"%s\": next logged marker is channel %0d count %0d at %0d us", $time,
+                                line, hw_ev.size() ? hw_ev[0] >> 24 : -1, hw_ev.size() ? hw_ev[0] & 24'hFFFFFF : -1,
+                                hw_ts.size() ? hw_ts[0] : -1);
+    end
+    if (hw_ev.size() > 0) begin
+      void'(hw_ev.pop_front());
+      void'(hw_ts.pop_front());
+    end
+    if (t < rep_t || n != rep_n[rep_sec - 7][c] + 1) begin
+      rep_bad++;
+      if (rep_bad < 6) $display("ERROR @%0t: transcript \"%s\": time or count out of sequence", $time, line);
+    end
+    rep_t = t;
+    rep_n[rep_sec - 7][c] = n;
+    if (n < EVMAX) rep_time[c][n] = t;
+    // the frame's earlier events (first stage; into, out of vision_system; tracker) before the last stage
+    if (c == 1 && n < EVMAX) for (int k = 0; k < NEV; k++)
+      if (k != 1 && rep_n[rep_sec - 7][k] >= n && rep_time[k][n] > t) begin
+        rep_bad++;
+        if (rep_bad < 6) $display("ERROR @%0t: frame %0d: %s at %0d us after its last-stage end at %0d us", $time, n,
+                                  ev_txt[k], rep_time[k][n], t);
+      end
+  endtask
   uart_bfm #(.BIT_NS(UART_BIT)) uart0 (                // receiver on UART 0 (its rxd is the loopback)
     .txd(),
     .rxd(uart_txd[0])
@@ -453,19 +696,11 @@ module video_processor_tb;
     if (uart_line.len() >= 8 && uart_line.substr(0, 7) == "  [PASS]") uart_pass++;
     if (uart_line.len() >= 8 && uart_line.substr(0, 7) == "  [FAIL]") uart_fail++;
     if (uart_line == "END OF REPORT") uart_end = 1;
-    // "  EOF first / last stage (interrupt 13 / 14): frame count <n>" (the CPU's frame count reports)
-    if (uart_line.len() > eof_first_txt.len() && uart_line.substr(0, eof_first_txt.len() - 1) == eof_first_txt) begin
-      void'($sscanf(uart_line.substr(eof_first_txt.len(), uart_line.len() - 1), "%d", rep_n));
-      if (rep_n != rep_first + 1) rep_gaps++;         // counts run 1, 2, 3, ...: one per end of frame
-      rep_first = rep_n;
-      rep_lines++;
+    if (uart_line.len() > 2 && uart_line.substr(0, 1) == "8.") begin   // section 8: counts from 0 again
+      rep_sec = 8;
+      rep_t = 0;
     end
-    if (uart_line.len() > eof_last_txt.len() && uart_line.substr(0, eof_last_txt.len() - 1) == eof_last_txt) begin
-      void'($sscanf(uart_line.substr(eof_last_txt.len(), uart_line.len() - 1), "%d", rep_n));
-      if (rep_n != rep_last + 1) rep_gaps++;
-      rep_last = rep_n;
-      rep_lines++;
-    end
+    if (uart_line.len() > 12 && uart_line.substr(0, 2) == "  [") report_event(uart_line);
   end
 
   // ---------------- tests ----------------
@@ -478,9 +713,15 @@ module video_processor_tb;
     $timeformat(-6, 1, " us", 10);
     void'($value$plusargs("IMG_IN_DIR=%s", img_in_dir));
     void'($value$plusargs("IMG_OUT_DIR=%s", img_out_dir));
+    void'($value$plusargs("GIF_IN=%s", gif_in));
+    void'($value$plusargs("GIF_DIR=%s", gif_dir));
+    void'($value$plusargs("GIF_IN_DIR=%s", gif_in_dir));
+    void'($value$plusargs("GIF_OUT=%s", gif_out));
+    gif_bw = $test$plusargs("GIF_BW");
     load_images();                                     // input_images/: read, or generate when missing
     $readmemh(`FW_HEX, flash.mem);
     repeat (5) @(posedge cpu_clk);
+    gif_setup();                                       // tracking GIF: frame size -> camera registers
     #3 arst_n = 1;
     sink.hdmi = 1;
     sink.vs_active = 1;
@@ -493,9 +734,10 @@ module video_processor_tb;
     test_lvds();
     test_adapter();
     test_images();                                     // 4 colour + 4 monochrome images, every module output saved
+    test_tracking();                                   // pedestrian GIF: search, track, dashed box; GIF out
     // video checked: stop the display serial clocks (SYSCTL CLK_EN forced, simulation speed only)
     // and the camera, then wait for the rest of the firmware report
-    force dut.u_cpu.clk_en = CLK_EN_IDLE;
+    clocks(CLK_EN_IDLE);
     cam_run = 0;
     $display("[%t] video checks done; serial clocks and camera stopped, waiting for the report", $realtime);
     test_uart_report();

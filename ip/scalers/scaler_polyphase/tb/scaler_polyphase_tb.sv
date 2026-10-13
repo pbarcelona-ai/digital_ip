@@ -114,6 +114,7 @@ module tb_scaler_polyphase;
     tb_init("scaler_polyphase");      // parse plusargs, load +IMG
     reset_dut();
     axil_check(12'h024, 32'h504F_4C59);     // IP_ID "POLY"
+    check_id_block('h0, 32'h504F_4C59);      // ID block: ID, VERSION, DATE
     axil_check(12'h040, {8'(COEF_FRAC), 8'(COEF_W), 8'(PHASE_BITS), 8'(TAPS)});
     check_default_tables();
     kind = KERNEL_LANCZOS; // Lanczos-4 (8 taps)

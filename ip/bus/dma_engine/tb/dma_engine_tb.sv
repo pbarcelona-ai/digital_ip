@@ -31,7 +31,7 @@ module dma_engine_tb;
   logic arvalid, arready, rlast, rvalid, rready;
   logic [3:0] wstrb;
   logic irq;
-  dma_engine #(
+  dma_engine_top #(
     .MAX_BURST(16),
     .FIFO_DEPTH(32)
   ) dut (
@@ -122,37 +122,14 @@ module dma_engine_tb;
     aresetn = 1;
     repeat (2) @(posedge aclk);
     for (int i = 0; i < 4096; i++) mem.mem[i] = (i < 1024) ? $urandom : 32'hFFFF_FFFF;
-    // ---- Test 1: small aligned copy (one burst) ----
-    run_dma(32'h0000_0000, 32'h0000_2000, 32'd64);
-    check(rd[8] == 1 && rd[9] == 0, $sformatf("test1 status %h", rd));
-    check(irq == 1, "irq");
-    verify(32'h0, 32'h2000, 16, "t1");
-    check(mem.mem[32'h2000/4 + 16] === 32'hFFFF_FFFF, "t1 overrun past end");
-    // ---- Test 2: both source and destination cross 4 KB, length not a burst multiple ----
-    run_dma(32'h0000_0F00, 32'h0000_2F40, 32'd768);
-    check(rd[8] == 1 && rd[9] == 0, $sformatf("test2 status %h", rd));
-    verify(32'h0F00, 32'h2F40, 192, "t2");
-    check(mem.mem[32'h2F40/4 - 1] === 32'hFFFF_FFFF, "t2 underrun before dst");
-    check(mem.mem[32'h2F40/4 + 192] === 32'hFFFF_FFFF, "t2 overrun after dst");
-    // ---- Test 3: 17 words ----
-    run_dma(32'h0000_0210, 32'h0000_2100, 32'd68);
-    verify(32'h0210, 32'h2100, 17, "t3");
-    check(mem.mem[32'h2100/4 + 17] === 32'hFFFF_FFFF, "t3 overrun");
-    check(mem.max_awlen <= 15, $sformatf("burst longer than MAX_BURST (%0d)", mem.max_awlen));
-    // ---- Test 4: destination beyond memory -> SLVERR -> error flag ----
-    run_dma(32'h0000_0000, 32'h0000_3FF0, 32'd64);
-    check(rd[9] == 1, $sformatf("test4 error flag %h", rd));
-    // ---- Test 5: invalid length is rejected ----
-    bfm.write(8'h10, 32'h300);
-    bfm.write(8'h0C, 32'd6);
-    bfm.write(8'h00, 32'h1);
-    repeat (20) @(posedge aclk);
-    bfm.read(8'h10, rd);
-    check(rd[9] == 1 && rd[0] == 0 && rd[8] == 0, $sformatf("test5 status %h", rd));
-    // flags W1C and irq drop
-    bfm.write(8'h10, 32'h300);
-    bfm.read(8'h10, rd);
-    check(rd[9:8] == 0, "W1C");
+    bfm.base = 'h10;                                 // the map after the ID block
+    test_id_block();
+    test_small();
+    test_cross_4k();
+    test_17_words();
+    test_bus_error();
+    test_bad_len();
+
     check(bfm.resp_errors == 0, "axi errors");
     if (errors == 0) $display("TEST PASSED");
     else $display("TEST FAILED (%0d errors)", errors);

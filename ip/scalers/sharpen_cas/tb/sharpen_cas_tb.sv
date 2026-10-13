@@ -129,6 +129,7 @@ module tb_sharpen_cas;
     if ($value$plusargs("SHARP=%d", sharp)) ;
     reset_dut();
     axil_check(12'h024, 32'h5348_5250);           // IP_ID "SHRP"
+    check_id_block('h0, 32'h5348_5250);      // ID block: ID, VERSION, DATE
     axil_check(12'h028, {8'd0, 8'(COMP_W), 8'(CHANNELS), 8'd3});
     axil_check(12'h02C, 32'(MAX_W));
     axil_check(12'h040, 128);                     // reset SHARPNESS

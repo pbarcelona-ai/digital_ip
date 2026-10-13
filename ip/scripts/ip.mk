@@ -6,17 +6,21 @@ SYNTH_TOOL ?= $(SYNTHESIS)
 VCD ?= 0
 SIMOPT := $(if $(filter 1,$(VCD)),--vcd,)
 
-.PHONY: all help test sim run cov wave yosys synth python-test docs diagrams diagram-check clean
+.PHONY: all help test sim run cov wave yosys synth python-test docs diagrams diagram-check clean list-tests
 all: help
 
 help:
-	@printf '%s\n' 'Targets: test (or sim), wave, yosys (or synth), docs, diagrams, diagram-check, clean' \
+	@printf '%s\n' 'Targets: test (or sim), list-tests, cov, wave, yosys (or synth), docs, diagrams, diagram-check, clean' \
+	  '  make list-tests     name and description of each test available to run' \
 	  '  make test [VCD=1]   simulate; VCD=1 also dumps the testbench VCD (build/sim/<ip>/<tb>.vcd)' \
 	  '  make cov            simulate with Verilator code coverage (build/coverage/<ip>/summary.txt)' \
 	  '  make wave           simulate with the VCD dump and open it in the Surfer waveform viewer'
 
 test sim run:
 	@SIM="$(SIM)" PYTHON_SIM="$(PYTHON_SIM)" "$(IP_ROOT)/scripts/run_sim.sh" "$(IP)" $(SIMOPT)
+
+list-tests:
+	@python3 "$(IP_ROOT)/scripts/list_tests.py" "$(CURDIR)"
 
 cov:
 	@SIM="$(SIM)" PYTHON_SIM="$(PYTHON_SIM)" "$(IP_ROOT)/scripts/run_cov.sh" "$(IP_ROOT)/build/coverage/$(IP)" "$(IP_ROOT)/scripts/run_sim.sh" "$(IP)"
@@ -41,6 +45,7 @@ synplify:
 docs:
 	@python3 "$(IP_ROOT)/scripts/gen_docs.py"
 	@python3 "$(IP_ROOT)/scripts/package_ips.py"
+	@python3 "$(IP_ROOT)/scripts/gen_readmes.py" --only $(IP)
 
 diagrams:
 	@python3 "$(IP_ROOT)/scripts/make_block_diagrams.py" "$(IP)"

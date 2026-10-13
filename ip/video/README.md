@@ -117,7 +117,9 @@ with skew, filler bytes, CSI-2 packet builder), `hdmi_bfm`
 (independent TMDS decoder that checks HDMI framing and InfoFrames) and
 `dsi_bfm` (DSI packet decoder with ECC / checksum checks and a timed
 packet log), `axis_frame_bfm` (frame driver / monitor with random gaps and
-back-pressure) and `conv2d_ref` (convolution reference model).
+back-pressure), `conv2d_ref` (convolution reference model), `track_ref`
+(object_tracker measurement and symbol_overlay drawing models) and `gif_io`
+(animated GIF reader / writer: LZW, palettes, interlace, disposal, resampling).
 
 ## Spatial filters: blur and sharpen
 
@@ -141,6 +143,22 @@ back-pressure) and `conv2d_ref` (convolution reference model).
 
 Kernels are defined in `conv2d_core/src/conv2d_pkg.sv`. Each stage uses
 N·N·C multipliers (75 for 5×5 RGB) and N−1 line buffers.
+
+## Tracking, overlay and stream glue
+
+```
+  AXI4-Stream ──┬──────────────────────► symbol_overlay ──► AXI4-Stream
+                │ (tap)                   ▲ boxes, crosshairs (COMMIT per frame)
+                ▼                         │
+          object_tracker ── box, count ──► CPU tracking loop (AXI4-Lite)
+```
+
+| IP | Function |
+|----|----------|
+| `object_tracker` | passive tap: per frame, the bounding box, count and x / y sums of the pixels darker (or brighter) than THRESH inside a search window (taken at the frame start), with a horizontal run filter (MIN_RUN) against noise; done_o pulse and FRAMES count |
+| `symbol_overlay` | draws up to NOBJ (4) objects and NTXT (4) texts over the stream, one clock of latency: rectangle outline, filled box or crosshair, solid or dashed, colour or 50 % blend; texts of up to 16 characters (3 × 5 font, scale 1x / 2x / 4x, optional backdrop, optional frame number counted by the overlay); everything applies together at the next frame start after COMMIT |
+| `frame_counter` | NCH 32-bit frame counters with per-channel level interrupts (write 1 to clear) and CLEAR, and an event log: every marker of the enabled channels in the order it happened, with the channel's count and a timestamp (TS_DIV clocks per tick), read and removed by the CPU |
+| `vs_stream_adapter` | glue between a live stream and a whole-frame processor that cannot be back-pressured (vision_system): frame admission (whole frames dropped while busy), GAP idle clocks after every line, a return FIFO with overflow count |
 
 ## Running
 
@@ -232,6 +250,7 @@ Data-flow diagrams are generated from the RTL by `ip/scripts/make_dataflow_diagr
 | `csi2_rx` | - | - | [data flow](csi2_rx/docs/csi2_rx_dataflow.svg) |
 | `csi2_tx` | - | - | [data flow](csi2_tx/docs/csi2_tx_dataflow.svg) |
 | `dsi_tx` | - | - | [data flow](dsi_tx/docs/dsi_tx_dataflow.svg) |
+| `frame_counter` | - | [hierarchy](frame_counter/docs/block_diagram.svg) | [data flow](frame_counter/docs/frame_counter_dataflow.svg) |
 | `hdmi_tx` | - | - | [data flow](hdmi_tx/docs/hdmi_tx_dataflow.svg) |
 | `isp_blc_wb` | - | - | [data flow](isp_blc_wb/docs/isp_blc_wb_dataflow.svg) |
 | `isp_ccm` | - | - | [data flow](isp_ccm/docs/isp_ccm_dataflow.svg) |
@@ -245,9 +264,12 @@ Data-flow diagrams are generated from the RTL by `ip/scripts/make_dataflow_diagr
 | `lvds_tx` | - | - | [data flow](lvds_tx/docs/lvds_tx_dataflow.svg) |
 | `mipi_line_buf` | - | - | [data flow](mipi_line_buf/docs/mipi_line_buf_dataflow.svg) |
 | `mipi_tx_engine` | - | - | [data flow](mipi_tx_engine/docs/mipi_tx_engine_dataflow.svg) |
+| `object_tracker` | - | [hierarchy](object_tracker/docs/block_diagram.svg) | [data flow](object_tracker/docs/object_tracker_dataflow.svg) |
 | `sharpen_filter` | - | [hierarchy](sharpen_filter/docs/block_diagram.svg) | [data flow](sharpen_filter/docs/sharpen_filter_dataflow.svg) |
+| `symbol_overlay` | - | [hierarchy](symbol_overlay/docs/block_diagram.svg) | [data flow](symbol_overlay/docs/symbol_overlay_dataflow.svg) |
 | `tmds_encoder` | - | - | [data flow](tmds_encoder/docs/tmds_encoder_dataflow.svg) |
 | `tmds_serializer` | - | - | [data flow](tmds_serializer/docs/tmds_serializer_dataflow.svg) |
 | `vid_timing_gen` | - | - | [data flow](vid_timing_gen/docs/vid_timing_gen_dataflow.svg) |
 | `video_pipeline` | - | - | [data flow](video_pipeline/docs/video_pipeline_dataflow.svg) |
+| `vs_stream_adapter` | - | [hierarchy](vs_stream_adapter/docs/block_diagram.svg) | [data flow](vs_stream_adapter/docs/vs_stream_adapter_dataflow.svg) |
 <!-- diagrams:end -->

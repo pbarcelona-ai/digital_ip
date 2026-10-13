@@ -61,10 +61,10 @@ module quadrature_decoder_tb;
   );
   int errors = 0;
   logic [31:0] rd;
-  // test tasks: tests/quadrature_decoder_tests.sv
-  `include "quadrature_decoder_tests.sv"
   int vel_samples[$];
   always @(posedge aclk) if (m_tvalid && m_tready) vel_samples.push_back($signed(m_tdata));
+  // test tasks: tests/quadrature_decoder_tests.sv
+  `include "quadrature_decoder_tests.sv"
   initial begin
     if ($test$plusargs("vcd")) begin
       $dumpfile("quadrature_decoder_tb.vcd");
@@ -73,73 +73,17 @@ module quadrature_decoder_tb;
     repeat (4) @(posedge aclk);
     aresetn = 1;
     repeat (2) @(posedge aclk);
-    bfm.write(8'h00, 32'h0301);                    // en, filter = 3 clocks
-    bfm.write(8'h0C, 32'd400);                     // velocity window 400 clocks
-    // ---- Test 1: 40 forward steps ----
-    repeat (40) step(1, 12);
-    repeat (8) @(posedge aclk);
-    bfm.read(8'h04, rd);
-    check($signed(rd) == 40, $sformatf("position %0d exp 40", $signed(rd)));
-    bfm.read(8'h10, rd);
-    check(rd[0] == 1, "direction forward");
-    // ---- Test 2: 15 reverse steps ----
-    repeat (15) step(0, 12);
-    repeat (8) @(posedge aclk);
-    bfm.read(8'h04, rd);
-    check($signed(rd) == 25, $sformatf("position %0d exp 25", $signed(rd)));
-    bfm.read(8'h10, rd);
-    check(rd[0] == 0, "direction reverse");
-    // ---- Test 3: short glitch on A (1 clock) must be filtered ----
-    enc.glitch_a(1);
-    repeat (10) @(posedge aclk);
-    bfm.read(8'h04, rd);
-    check($signed(rd) == 25, "glitch changed position");
-    // ---- Test 4: illegal jump (both bits change) ----
-    enc.jump(2'b11, 10);
-    bfm.read(8'h14, rd);
-    check(rd == 0, $sformatf("unexpected errors %0d", rd));
-    // 01 -> 10 double transition: 00 first
-    step(1, 12); // st 3, 0  (00)
-    step(1, 12);
-    enc.jump(2'b11, 10);
-    bfm.read(8'h14, rd);
-    check(rd == 1, $sformatf("error count %0d exp 1", rd));
-    bfm.read(8'h10, rd);
-    check(rd[1] == 1, "error flag");
-    bfm.write(8'h10, 32'h2);
-    bfm.read(8'h10, rd);
-    check(rd[1] == 0, "error W1C");
-    // ---- Test 5: index latch and clear ----
-    bfm.read(8'h04, rd);
-    begin
-      logic [31:0] p0;
-      p0 = rd;
-      enc.index(10);
-      bfm.read(8'h18, rd);
-      check(rd == p0, $sformatf("index pos %0d vs %0d", $signed(rd), $signed(p0)));
-    end
-    bfm.read(8'h10, rd);
-    check(rd[2] == 1, "index flag");
-    bfm.write(8'h00, 32'h0305);                        // index clears position
-    enc.index(10);
-    repeat (5) @(posedge aclk);
-    bfm.read(8'h04, rd);
-    check(rd == 0, "position not cleared by index");
-    // ---- Test 6: position load ----
-    bfm.write(8'h04, 32'd1000);
-    repeat (2) @(posedge aclk);
-    bfm.read(8'h04, rd);
-    check(rd == 1000, "position load");
-    // ---- Test 7: velocity samples: 1 count per 20 clocks -> ~20 counts / 400 ----
-    vel_samples.delete();
-    repeat (100) step(1, 20);
-    check(vel_samples.size() >= 4, "no velocity samples");
-    begin
-      int mx;
-      mx = 0;
-      foreach (vel_samples[i]) if (vel_samples[i] > mx) mx = vel_samples[i];
-      check(mx >= 19 && mx <= 21, $sformatf("velocity max %0d exp ~20", mx));
-    end
+    bfm.base = 'h10;                                 // the map after the ID block
+    test_id_block();
+    test_setup();
+    test_forward();
+    test_reverse();
+    test_glitch();
+    test_illegal();
+    test_index();
+    test_load();
+    test_velocity();
+
     check(bfm.resp_errors == 0, "axi errors");
     if (errors == 0) $display("TEST PASSED");
     else $display("TEST FAILED (%0d errors)", errors);

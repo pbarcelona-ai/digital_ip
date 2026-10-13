@@ -4,3 +4,7 @@ ci/logs/
 *.vvp
 *.vcd
 *.fst
+.DS_Store
+../.DS_Store
+../../.DS_Store
+*/*/__pycache__/

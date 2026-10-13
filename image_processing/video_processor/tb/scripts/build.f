@@ -15,4 +15,6 @@
 ../../ip/shared/tb/lib/csi2_bfm.sv
 ../../ip/shared/tb/lib/hdmi_bfm.sv
 ../../ip/video/video_tb_lib/conv2d_ref.sv
+../../ip/video/video_tb_lib/gif_io.sv
+../../ip/video/video_tb_lib/track_ref.sv
 tb/video_processor_tb.sv

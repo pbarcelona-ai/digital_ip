@@ -32,59 +32,62 @@
 //   external frame buffer (axis_dma + DRAM) before axis_to_video for
 //   independent frame rates.
 //
-//   AXI4-Lite (pix_clk), ADDR_W = 15: 0x0000-0x00FF pipeline registers,
-//   0x4000-0x7FFF the scaler's own map (scaler_ctrl, base 0x4000).
-//     0x000 ID          RO "VPIP"
-//     0x004 CTRL        [0] output enable [1] HDMI (0 = DVI) [2] TPG
+//   AXI4-Lite (pix_clk), ADDR_W = 15 (src/video_pipeline_map_pkg.sv):
+//   0x0000-0x01FF pipeline registers, 0x4000-0x7FFF the scaler's own map
+//   (scaler_ctrl, base 0x4000).
+//     0x000 ID          RO "VPIP"; 0x004 VERSION RO ASCII "d.dd"; 0x008 DATE RO BCD
+//                       mm/dd/yyyy (the ID block); register k of the old map is at
+//                       0x10 + 4 k (src/include/video_pipeline_regs.sv / .json / .md):
+//     0x014 CTRL        [0] output enable [1] HDMI (0 = DVI) [2] TPG
 //                       [3] genlock [5:4] CFA (0 RGGB 1 GRBG 2 GBRG 3 BGGR)
 //                       [6] CSC BT.709 (0 = BT.601)
 //                       [7] insert: route the stream after isp_csc out
 //                       through ins_m_axis_* and back in on ins_s_axis_*
 //                       (`VP_INSERT; taken at the next frame start)
-//     0x008 BYPASS      [0] BLC [1] WB [2] DPC [3] demosaic [4] CCM [5] gamma
+//     0x018 BYPASS      [0] BLC [1] WB [2] DPC [3] demosaic [4] CCM [5] gamma
 //                       [6] CSC [7] scaler          (reset 0xC0: RGB out, no scaler)
-//     0x00C STATUS      RO [0] output locked to the camera
-//     0x010 CSI         [5:0] data type (reset 0x2B RAW10) [7:6] virtual channel
-//     0x014 FRAME_SIZE  [15:0] camera width [31:16] height
-//     0x018-0x024 BLC   R, Gr, Gb, B black levels
-//     0x028-0x030 WB    R, G, B gains Q4.8 (reset 0x100)
-//     0x034 DPC_THR     defect threshold (reset 64)
-//     0x038-0x058 CCM   coefficients c00..c22, signed Q5.10 (reset identity)
-//     0x05C-0x064 CCM   offsets R, G, B (signed)
-//     0x068 GAMMA_ADDR  table index for the next GAMMA_DATA write
-//     0x06C GAMMA_DATA  [7:0] writes table[index], index auto-increments
-//     0x070 STAT_THR    clip threshold (10-bit, reset 1000)
-//     0x074-0x07C STAT  RO sums of R, G, B (low 32 bits) of the last frame
-//     0x080 STAT_PIX    RO pixels, 0x084 STAT_CLIP RO clipped pixels
-//     0x088 STAT_FRAMES RO
-//     0x08C-0x0A8 VTG   h active, h front porch, h sync, h back porch,
+//     0x01C STATUS      RO [0] output locked to the camera
+//     0x020 CSI         [5:0] data type (reset 0x2B RAW10) [7:6] virtual channel
+//     0x024 FRAME_SIZE  [15:0] camera width [31:16] height
+//     0x028-0x034 BLC   R, Gr, Gb, B black levels
+//     0x038-0x040 WB    R, G, B gains Q4.8 (reset 0x100)
+//     0x044 DPC_THR     defect threshold (reset 64)
+//     0x048-0x068 CCM   coefficients c00..c22, signed Q5.10 (reset identity)
+//     0x06C-0x074 CCM   offsets R, G, B (signed)
+//     0x078 GAMMA_ADDR  table index for the next GAMMA_DATA write
+//     0x07C GAMMA_DATA  [7:0] writes table[index], index auto-increments
+//     0x080 STAT_THR    clip threshold (10-bit, reset 1000)
+//     0x084-0x08C STAT  RO sums of R, G, B (low 32 bits) of the last frame
+//     0x090 STAT_PIX    RO pixels, 0x094 STAT_CLIP RO clipped pixels
+//     0x098 STAT_FRAMES RO
+//     0x09C-0x0B8 VTG   h active, h front porch, h sync, h back porch,
 //                       v active, v front porch, v sync, v back porch
-//     0x0AC SYNC_POL    [0] hsync [1] vsync active high
-//     0x0B0 LOCK_MAX    genlock: max extra blanking lines (reset 1023)
-//     0x0B4 START_LEVEL pixels buffered before a frame starts (reset 16)
-//     0x0B8 AVI         [6:0] VIC [9:8] picture aspect [11:10] RGB range
+//     0x0BC SYNC_POL    [0] hsync [1] vsync active high
+//     0x0C0 LOCK_MAX    genlock: max extra blanking lines (reset 1023)
+//     0x0C4 START_LEVEL pixels buffered before a frame starts (reset 16)
+//     0x0C8 AVI         [6:0] VIC [9:8] picture aspect [11:10] RGB range
 //                       (colour space and colorimetry follow CSC settings)
-//     0x0BC CSI_FRAMES  RO, 0x0C0 ECC_CORR RO, 0x0C4 ECC_ERR RO,
-//     0x0C8 CRC_ERR RO, 0x0CC UNDERFLOWS RO, 0x0D0 DPC_CORR RO,
-//     0x0D4 CSI_OVERFLOW RO (CSI words lost: the bridge FIFO was full)
-//     0x0D8 OUT_CTRL    [0] LVDS dual link [1] LVDS 18 bpp [2] LVDS JEIDA
+//     0x0CC CSI_FRAMES  RO, 0x0D0 ECC_CORR RO, 0x0D4 ECC_ERR RO,
+//     0x0D8 CRC_ERR RO, 0x0DC UNDERFLOWS RO, 0x0E0 DPC_CORR RO,
+//     0x0E4 CSI_OVERFLOW RO (CSI words lost: the bridge FIFO was full)
+//     0x0E8 OUT_CTRL    [0] LVDS dual link [1] LVDS 18 bpp [2] LVDS JEIDA
 //                       [4] DSI video [5] DSI EoTp [7:6] DSI virtual channel
 //                       [8] CSI-2 TX enable [9] CSI-2 TX YUV422 [11:10] its VC
-//     0x0DC DSI_GAPS    [15:0] LP clocks after a sync packet, [31:16] after pixels
-//     0x0E0 CSITX_GAP   LP clocks between CSI-2 TX packets
-//     0x0E4 DSI_CMD     write: queue a DSI command {[24] long, [23:16] data
+//     0x0EC DSI_GAPS    [15:0] LP clocks after a sync packet, [31:16] after pixels
+//     0x0F0 CSITX_GAP   LP clocks between CSI-2 TX packets
+//     0x0F4 DSI_CMD     write: queue a DSI command {[24] long, [23:16] data
 //                       type, [15:0] data / word count} (sent with DSI video off)
-//     0x0E8 DSI_CMD_BYTE write: [7:0] next payload byte of a long command
-//     0x0EC TX_STATUS   RO [0] DSI command queue busy
-//     0x0F0 DSI_DROPS   RO lines DSI could not send in time
-//     0x0F4 CSITX_DROPS RO lines CSI-2 TX could not send in time
-//     0x0F8 CSITX_FRAMES RO frames sent by CSI-2 TX
+//     0x0F8 DSI_CMD_BYTE write: [7:0] next payload byte of a long command
+//     0x0FC TX_STATUS   RO [0] DSI command queue busy
+//     0x100 DSI_DROPS   RO lines DSI could not send in time
+//     0x104 CSITX_DROPS RO lines CSI-2 TX could not send in time
+//     0x108 CSITX_FRAMES RO frames sent by CSI-2 TX
 //   The DSI, CSI-2 TX and LVDS outputs carry the same timed video as HDMI;
 //   panels need RGB (CSC bypassed), CSI-2 YUV422 needs YCbCr (CSC on).
 //   Scaler settings: clear its CTRL.ENABLE, wait for STATUS.BUSY = 0, then
 //   change sizes / steps and enable it again (scaler_ctrl does not support
 //   changing them while a frame is being generated).
-//     0x0FC BUILD_CFG   RO interfaces built: [0] CSI-2 RX [1] HDMI [2] LVDS
+//     0x10C BUILD_CFG   RO interfaces built: [0] CSI-2 RX [1] HDMI [2] LVDS
 //                       [3] DSI [4] CSI-2 TX [5] scaler [6] insert point
 //   External interfaces are included or excluded with the `defines in
 //   configuration.sv (compiled first, see scripts/build.f); an excluded
@@ -225,9 +228,9 @@ module video_pipeline #(
   logic [63:0] sp_wdata, sp_rdata;
   logic [7:0] sp_wstrb;
   logic [3:0] sp_bresp, sp_rresp;
-  axil_split #(
-    .ADDR_W(15),
-    .SEL_BIT(14)
+  axil_split #(                                   // video_pipeline_map_pkg: registers / scaler
+    .ADDR_W(video_pipeline_map_pkg::ADDR_W),
+    .SEL_BIT(video_pipeline_map_pkg::SPLIT_BIT)
   ) u_split (
     .clk,
     .rst_n,
@@ -267,38 +270,21 @@ module video_pipeline #(
     .m_rready(sp_rready)
   );
 
+  // ---------------- registers (src/include/video_pipeline_regs.sv, generated from its JSON):
+  // ID "VPIP" / VERSION / DATE at 0x00-0x08, register k of the map at 0x10 + 4 k (k = 1..63);
+  // regs / rd keep that indexing (regs[k*32 +: 32]: value written, rd[k*32 +: 32]: value read)
   localparam int NREG = 64;
-  function automatic logic [NREG*32-1:0] reset_vals();
-    logic [NREG*32-1:0] v;
-    v = '0;
-    v[2*32 +: 32]  = 32'h0000_00C0;              // BYPASS: CSC, scaler
-    v[4*32 +: 32]  = 32'h0000_002B;              // CSI: RAW10, VC 0
-    v[10*32 +: 32] = 32'd256;
-    v[11*32 +: 32] = 32'd256;
-    v[12*32 +: 32] = 32'd256;
-    v[13*32 +: 32] = 32'd64;
-    v[14*32 +: 32] = 32'd1024;
-    v[18*32 +: 32] = 32'd1024;
-    v[22*32 +: 32] = 32'd1024;
-    v[28*32 +: 32] = 32'd1000;
-    v[44*32 +: 32] = 32'd1023;
-    v[45*32 +: 32] = 32'd16;
-    v[46*32 +: 32] = {20'd0, 2'd0, 2'd2, 1'b0, 7'd0};   // aspect 16:9, VIC 0
-    v[55*32 +: 32] = {16'd6, 16'd10};                    // DSI gaps
-    v[56*32 +: 32] = 32'd8;                              // CSI-2 TX gap
-    reset_vals = v;
-  endfunction
   logic [NREG*32-1:0] regs, rd;
-  logic [NREG-1:0] wr_pulse;
-  logic [31:0] wr_data;
-  ip_axil_regs #(
-    .ADDR_W(8),
-    .NREG(NREG),
-    .RESET_VALS(reset_vals())
-  ) u_regs (
-    .aclk(clk),
-    .aresetn(rst_n),
-    .s_axil_awaddr(sp_awaddr[7:0]),
+  logic [31:0] gamma_data_d, dsi_cmd_d, dsi_cmd_byte_d;
+  logic        gamma_addr_wr, gamma_data_wr, dsi_cmd_wr, dsi_cmd_byte_wr;
+  assign regs[0 +: 32] = '0;
+  assign regs[27*32 +: 32] = gamma_data_d;
+  assign regs[57*32 +: 32] = dsi_cmd_d;
+  assign regs[58*32 +: 32] = dsi_cmd_byte_d;
+  video_pipeline_regs u_regs (
+    .clk(clk),
+    .rst_n(rst_n),
+    .s_axil_awaddr(sp_awaddr[8:0]),
     .s_axil_awvalid(sp_awvalid[0]),
     .s_axil_awready(sp_awready[0]),
     .s_axil_wdata(sp_wdata[31:0]),
@@ -308,17 +294,120 @@ module video_pipeline #(
     .s_axil_bresp(sp_bresp[1:0]),
     .s_axil_bvalid(sp_bvalid[0]),
     .s_axil_bready(sp_bready[0]),
-    .s_axil_araddr(sp_araddr[7:0]),
+    .s_axil_araddr(sp_araddr[8:0]),
     .s_axil_arvalid(sp_arvalid[0]),
     .s_axil_arready(sp_arready[0]),
     .s_axil_rdata(sp_rdata[31:0]),
     .s_axil_rresp(sp_rresp[1:0]),
     .s_axil_rvalid(sp_rvalid[0]),
     .s_axil_rready(sp_rready[0]),
-    .reg_o(regs),
-    .wr_pulse_o(wr_pulse),
-    .wr_data_o(wr_data),
-    .rd_i(rd)
+    .ctrl_o(regs[1*32 +: 32]),
+    .ctrl_wr_o(),
+    .bypass_o(regs[2*32 +: 32]),
+    .bypass_wr_o(),
+    .status_i(rd[3*32 +: 32]),
+    .csi_o(regs[4*32 +: 32]),
+    .csi_wr_o(),
+    .frame_size_o(regs[5*32 +: 32]),
+    .frame_size_wr_o(),
+    .blc_r_o(regs[6*32 +: 32]),
+    .blc_r_wr_o(),
+    .blc_gr_o(regs[7*32 +: 32]),
+    .blc_gr_wr_o(),
+    .blc_gb_o(regs[8*32 +: 32]),
+    .blc_gb_wr_o(),
+    .blc_b_o(regs[9*32 +: 32]),
+    .blc_b_wr_o(),
+    .wb_r_o(regs[10*32 +: 32]),
+    .wb_r_wr_o(),
+    .wb_g_o(regs[11*32 +: 32]),
+    .wb_g_wr_o(),
+    .wb_b_o(regs[12*32 +: 32]),
+    .wb_b_wr_o(),
+    .dpc_thr_o(regs[13*32 +: 32]),
+    .dpc_thr_wr_o(),
+    .ccm_c00_o(regs[14*32 +: 32]),
+    .ccm_c00_wr_o(),
+    .ccm_c01_o(regs[15*32 +: 32]),
+    .ccm_c01_wr_o(),
+    .ccm_c02_o(regs[16*32 +: 32]),
+    .ccm_c02_wr_o(),
+    .ccm_c10_o(regs[17*32 +: 32]),
+    .ccm_c10_wr_o(),
+    .ccm_c11_o(regs[18*32 +: 32]),
+    .ccm_c11_wr_o(),
+    .ccm_c12_o(regs[19*32 +: 32]),
+    .ccm_c12_wr_o(),
+    .ccm_c20_o(regs[20*32 +: 32]),
+    .ccm_c20_wr_o(),
+    .ccm_c21_o(regs[21*32 +: 32]),
+    .ccm_c21_wr_o(),
+    .ccm_c22_o(regs[22*32 +: 32]),
+    .ccm_c22_wr_o(),
+    .ccm_off_r_o(regs[23*32 +: 32]),
+    .ccm_off_r_wr_o(),
+    .ccm_off_g_o(regs[24*32 +: 32]),
+    .ccm_off_g_wr_o(),
+    .ccm_off_b_o(regs[25*32 +: 32]),
+    .ccm_off_b_wr_o(),
+    .gamma_addr_o(regs[26*32 +: 32]),
+    .gamma_addr_wr_o(gamma_addr_wr),
+    .gamma_data_o(gamma_data_d),
+    .gamma_data_wr_o(gamma_data_wr),
+    .stat_thr_o(regs[28*32 +: 32]),
+    .stat_thr_wr_o(),
+    .stat_sum_r_i(rd[29*32 +: 32]),
+    .stat_sum_g_i(rd[30*32 +: 32]),
+    .stat_sum_b_i(rd[31*32 +: 32]),
+    .stat_pix_i(rd[32*32 +: 32]),
+    .stat_clip_i(rd[33*32 +: 32]),
+    .stat_frames_i(rd[34*32 +: 32]),
+    .h_active_o(regs[35*32 +: 32]),
+    .h_active_wr_o(),
+    .h_fp_o(regs[36*32 +: 32]),
+    .h_fp_wr_o(),
+    .h_sync_o(regs[37*32 +: 32]),
+    .h_sync_wr_o(),
+    .h_bp_o(regs[38*32 +: 32]),
+    .h_bp_wr_o(),
+    .v_active_o(regs[39*32 +: 32]),
+    .v_active_wr_o(),
+    .v_fp_o(regs[40*32 +: 32]),
+    .v_fp_wr_o(),
+    .v_sync_o(regs[41*32 +: 32]),
+    .v_sync_wr_o(),
+    .v_bp_o(regs[42*32 +: 32]),
+    .v_bp_wr_o(),
+    .sync_pol_o(regs[43*32 +: 32]),
+    .sync_pol_wr_o(),
+    .lock_max_o(regs[44*32 +: 32]),
+    .lock_max_wr_o(),
+    .start_level_o(regs[45*32 +: 32]),
+    .start_level_wr_o(),
+    .avi_o(regs[46*32 +: 32]),
+    .avi_wr_o(),
+    .csi_frames_i(rd[47*32 +: 32]),
+    .ecc_corr_i(rd[48*32 +: 32]),
+    .ecc_err_i(rd[49*32 +: 32]),
+    .crc_err_i(rd[50*32 +: 32]),
+    .underflows_i(rd[51*32 +: 32]),
+    .dpc_corr_i(rd[52*32 +: 32]),
+    .csi_overflow_i(rd[53*32 +: 32]),
+    .out_ctrl_o(regs[54*32 +: 32]),
+    .out_ctrl_wr_o(),
+    .dsi_gaps_o(regs[55*32 +: 32]),
+    .dsi_gaps_wr_o(),
+    .csitx_gap_o(regs[56*32 +: 32]),
+    .csitx_gap_wr_o(),
+    .dsi_cmd_o(dsi_cmd_d),
+    .dsi_cmd_wr_o(dsi_cmd_wr),
+    .dsi_cmd_byte_o(dsi_cmd_byte_d),
+    .dsi_cmd_byte_wr_o(dsi_cmd_byte_wr),
+    .tx_status_i(rd[59*32 +: 32]),
+    .dsi_drops_i(rd[60*32 +: 32]),
+    .csitx_drops_i(rd[61*32 +: 32]),
+    .csitx_frames_i(rd[62*32 +: 32]),
+    .build_cfg_i(rd[63*32 +: 32])
   );
 
   wire        out_en  = regs[1*32 + 0], hdmi_mode = regs[1*32 + 1], tpg = regs[1*32 + 2], lock_en = regs[1*32 + 3];
@@ -609,11 +698,11 @@ module video_pipeline #(
       g_wd <= '0;
     end
     else begin
-      g_we <= wr_pulse[27];
-      if (wr_pulse[26]) gidx <= wr_data[RW-1:0];
-      if (wr_pulse[27]) begin
+      g_we <= gamma_data_wr;
+      if (gamma_addr_wr) gidx <= regs[26*32 +: RW];
+      if (gamma_data_wr) begin
         g_wa <= gidx;
-        g_wd <= wr_data[7:0];
+        g_wd <= gamma_data_d[7:0];
         gidx <= gidx + 1'b1;
       end
     end
@@ -1033,7 +1122,7 @@ module video_pipeline #(
 `ifdef VP_DSI
   dsi_tx #(.NLANES(DSI_LANES), .MAX_W(MAX_W)) u_dsi (.pclk(clk), .prst_n(rst_n), .video_en_i(oc[4]),
     .hs_pol_i(regs[43*32 + 0]), .vs_pol_i(regs[43*32 + 1]), .rgb_i(v_rgb), .de_i(v_de), .hs_i(v_hs), .vs_i(v_vs),
-    .cmd_wr_i(wr_pulse[57]), .cmd_i(wr_data[24:0]), .cmd_byte_wr_i(wr_pulse[58]), .cmd_byte_i(wr_data[7:0]),
+    .cmd_wr_i(dsi_cmd_wr), .cmd_i(dsi_cmd_d[24:0]), .cmd_byte_wr_i(dsi_cmd_byte_wr), .cmd_byte_i(dsi_cmd_byte_d[7:0]),
     .line_drop_o(dsi_drop), .bclk(tx_byte_clk), .brst_n(tx_byte_rst_n),
     .vc_i(oc_s2[7:6]), .eotp_i(oc_s2[5]), .sync_gap_i(dg_s2[15:0]), .line_gap_i(dg_s2[31:16]),
     .lane_data_o(dsi_lane_data_o), .lane_valid_o(dsi_lane_valid_o), .hs_req_o(dsi_hs_req_o), .tx_ready_i(dsi_tx_ready_i),
@@ -1094,7 +1183,6 @@ module video_pipeline #(
   end
   always_comb begin
     rd = regs;
-    rd[0*32 +: 32]  = 32'h5650_4950;             // "VPIP"
     rd[3*32 +: 32]  = {31'd0, locked};
     rd[27*32 +: 32] = '0;
     rd[29*32 +: 32] = st_r[31:0];

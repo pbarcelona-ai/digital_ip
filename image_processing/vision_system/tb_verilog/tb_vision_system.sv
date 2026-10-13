@@ -40,33 +40,33 @@ module tb_vision_system;
   localparam int CLK_PERIOD_NS = 10;   // 100 MHz
   localparam int LINE_GAP      = barrel_pkg::LINE_GAP_CYCLES;
 
-  localparam int REG_STATUS     = 8'h04;
-  localparam int REG_IMG_WIDTH  = 8'h08;
-  localparam int REG_IMG_HEIGHT = 8'h0C;
-  localparam int REG_K1         = 8'h10;
-  localparam int REG_K2         = 8'h14;
-  localparam int REG_K3         = 8'h18;
-  localparam int REG_CENTER_X   = 8'h1C;
-  localparam int REG_CENTER_Y   = 8'h20;
-  localparam int REG_SCALE      = 8'h24;
-  localparam int REG_VERSION    = 8'h28;
-  localparam int REG_INTERP_MODE= 8'h2C;
-  localparam int REG_CALIB_MODE = 8'h30;
-  localparam int REG_FX         = 8'h34;
-  localparam int REG_FY         = 8'h38;
-  localparam int REG_CX         = 8'h3C;
-  localparam int REG_CY         = 8'h40;
-  localparam int REG_P1         = 8'h44;
-  localparam int REG_P2         = 8'h48;
-  localparam int REG_MODEL_SEL  = 8'h4C;
-  localparam int REG_H11        = 8'h50;
-  localparam int REG_H12        = 8'h54;
-  localparam int REG_H13        = 8'h58;
-  localparam int REG_H21        = 8'h5C;
-  localparam int REG_H22        = 8'h60;
-  localparam int REG_H23        = 8'h64;
-  localparam int REG_H31        = 8'h68;
-  localparam int REG_H32        = 8'h6C;
+  localparam int REG_STATUS     = 8'h14;
+  localparam int REG_IMG_WIDTH  = 8'h18;
+  localparam int REG_IMG_HEIGHT = 8'h1C;
+  localparam int REG_K1         = 8'h20;
+  localparam int REG_K2         = 8'h24;
+  localparam int REG_K3         = 8'h28;
+  localparam int REG_CENTER_X   = 8'h2C;
+  localparam int REG_CENTER_Y   = 8'h30;
+  localparam int REG_SCALE      = 8'h34;
+  localparam int REG_VERSION    = 8'h04;   // ID block VERSION (ASCII "d.dd")
+  localparam int REG_INTERP_MODE= 8'h3C;
+  localparam int REG_CALIB_MODE = 8'h40;
+  localparam int REG_FX         = 8'h44;
+  localparam int REG_FY         = 8'h48;
+  localparam int REG_CX         = 8'h4C;
+  localparam int REG_CY         = 8'h50;
+  localparam int REG_P1         = 8'h54;
+  localparam int REG_P2         = 8'h58;
+  localparam int REG_MODEL_SEL  = 8'h5C;
+  localparam int REG_H11        = 8'h60;
+  localparam int REG_H12        = 8'h64;
+  localparam int REG_H13        = 8'h68;
+  localparam int REG_H21        = 8'h6C;
+  localparam int REG_H22        = 8'h70;
+  localparam int REG_H23        = 8'h74;
+  localparam int REG_H31        = 8'h78;
+  localparam int REG_H32        = 8'h7C;
 
   // ---- clock / reset ----------------------------------------------------
   logic clk = 0, rst_n = 0;
@@ -221,8 +221,11 @@ module tb_vision_system;
     $display("test images: square %0dx%0d, portrait %0dx%0d, landscape %0dx%0d",
               sq_w, sq_h, pt_w, pt_h, ls_w, ls_h);
 
+    axil_read(8'h00, version_val);                    // ID block: ID "VSYS", VERSION, DATE
+    if (version_val != "VSYS") $fatal(1, "vision_system ID 0x%08h, expected \"VSYS\"", version_val);
     axil_read(REG_VERSION, version_val);
-    $display("core VERSION = 0x%08h", version_val);
+    $display("core VERSION = \"%s\" (0x%08h)", version_val, version_val);
+    if (version_val[23:16] != ".") $fatal(1, "VERSION 0x%08h is not ASCII \"d.dd\"", version_val);
 
     overall_pass = 0;
     overall_any_fail = 0;

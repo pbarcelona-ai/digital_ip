@@ -72,6 +72,8 @@ module scaler_edge_directed #(
   // Identification: IP_ID = ASCII "EDGE";
   // CAPS = {PHASE_BITS, COMP_W, CHANNELS, taps}
   localparam logic [31:0] IP_ID = 32'h4544_4745;             // "EDGE"
+  localparam logic [31:0] IP_VERSION = "1.10";        // VERSION register (stamp_version.py)
+  localparam logic [31:0] IP_DATE    = 32'h10122026;  // DATE register, BCD mm/dd/yyyy
   localparam logic [31:0] CAPS  = {8'(PHASE_BITS), 8'(COMP_W), 8'(CHANNELS), 8'd2};
   localparam int          ONE   = 1 << PHASE_BITS;
   localparam int          WW    = 2 * PHASE_BITS + 1;       // weight width
@@ -386,6 +388,8 @@ module scaler_edge_directed #(
     .MAX_W(MAX_W),
     .MAX_H(MAX_H),
     .IP_ID(IP_ID),
+    .IP_VERSION(IP_VERSION),
+    .IP_DATE(IP_DATE),
     .CAPS(CAPS),
     .NBUF(NBUF),
     .LB_ROWS(LB_ROWS),

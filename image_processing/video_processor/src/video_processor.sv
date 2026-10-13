@@ -25,11 +25,22 @@
 //                                   video_pipeline insert point (CTRL[7])
 //     u_filter     blur_sharpen     blur / sharpen after vision_system, same
 //                                   insert loop (MODE 0-3, 4 = pass-through)
+//     u_track      object_tracker   target search: bounding box of the object
+//                                   pixels in a search window, per frame, for
+//                                   the CPU's tracking loop (passive tap after
+//                                   blur_sharpen)
+//     u_overlay    symbol_overlay   boxes / crosshairs drawn over the video
+//                                   (the tracked target: dashed box), last in
+//                                   the insert loop
 //     u_frame_cnt  frame_counter    frames out of the first pipeline stage
 //                                   (csi2_raw_unpack) and into the last one
 //                                   (axis_to_video): end-of-frame interrupts
 //                                   13 / 14 (bit_sync to cpu_clk) and their
-//                                   counts for the CPU
+//                                   counts; plus frames into and out of
+//                                   vision_system and measured by
+//                                   object_tracker; every marker time
+//                                   stamped (us) in its event log, so the CPU
+//                                   reports them in the order they happened
 //     u_irq_stats  pulse_sync       isp_stats frame done -> intc source 12
 //     u_tmds_ser   tmds_serializer  10:1 HDMI / DVI
 //     u_lvds_ser_a/b lvds_serializer 7:1 LVDS links A / B
@@ -38,12 +49,16 @@
 //                                   (the CPU clock domain reset comes from
 //                                   py_soc, released once its PLL locks)
 //
-//   CPU address map (py_soc, mem32[] in the firmware):
+//   CPU address map (src/video_processor_map_pkg.sv, which imports
+//   py_soc_map_pkg and video_pipeline_map_pkg; the decoder u_vbus below, the
+//   testbench and the firmware read it; mem32[] in the firmware):
 //     0x0_0100-0x0_C1FF  py_soc peripherals (see py_soc.sv)
 //     0x1_0000-0x1_7FFF  video_pipeline (0x1_4000+ scaler)
 //     0x1_8000-0x1_80FF  vision_system (axi_lite_regs)          `VP_VISION
 //     0x1_8200-0x1_83FF  blur_sharpen                           `VP_FILTER
 //     0x1_8400-0x1_84FF  frame_counter
+//     0x1_8500-0x1_85FF  object_tracker                         `VP_TRACK
+//     0x1_8800-0x1_8BFF  symbol_overlay                         `VP_TRACK
 //   Interrupts: intc source 12 = isp_stats frame done (configure it as an
 //   edge source), 13 = end of frame at the first pipeline stage, 14 = end of
 //   frame at the last stage (frame_counter STATUS, level: write 1 to clear),
@@ -51,9 +66,11 @@
 //
 //   Configuration (src/configuration.sv): `VP_CSI2_RX, `VP_HDMI, `VP_LVDS,
 //   `VP_DSI, `VP_CSI2_TX select the external video interfaces, `VP_VISION
-//   adds vision_system and `VP_FILTER blur_sharpen, both in the
-//   video_pipeline insert loop (`VP_INSERT, enabled by CTRL[7]):
-//     insert point -> [vs_stream_adapter -> vision_system] -> [blur_sharpen] -> back
+//   adds vision_system, `VP_FILTER blur_sharpen and `VP_TRACK object_tracker
+//   with symbol_overlay, all in the video_pipeline insert loop (`VP_INSERT,
+//   enabled by CTRL[7]):
+//     insert point -> [vs_stream_adapter -> vision_system] -> [blur_sharpen]
+//       -> [object_tracker (tap) -> symbol_overlay] -> back
 //   With vision_system in the path, keep CTRL.LOCK (genlock) set: there is
 //   no frame buffer to repeat a frame, so each display frame waits in
 //   vertical blanking for the next corrected frame (the display follows
@@ -94,7 +111,7 @@
 //   core_rst_n_o shows the released state to the board. The watchdog resets
 //   the CPU (wdt_reset_o shows it), which clears CORE_RESET and so puts the
 //   core logic back into reset until the firmware has booted again.
-// Date: 2026-10-09
+// Date: 2026-10-11
 module video_processor #(
   // video
   parameter int NLANES      = 2,                 // camera D-PHY lanes (1, 2, 4)
@@ -146,6 +163,7 @@ module video_processor #(
   parameter int SPI1_TX_FIFO  = 16,
   parameter int SPI1_RX_FIFO  = 16,
   parameter logic [23:0] BOOT_ADDR = 24'h00_0000, // firmware image in flash
+  parameter int CPU_CODE_AW   = 14,              // CPU code memory 2**CPU_CODE_AW bytes (16 KB: firmware with register logging)
   parameter int FLASH_CLKDIV  = 3,               // boot flash sclk = cpu_clk / 6 = 33 MHz
   parameter int FLASH_TX_FIFO = 16,
   parameter int FLASH_RX_FIFO = 16
@@ -311,6 +329,7 @@ module video_processor #(
     .FLASH_TX_FIFO(FLASH_TX_FIFO),
     .FLASH_RX_FIFO(FLASH_RX_FIFO),
     .BOOT_ADDR(BOOT_ADDR),
+    .CODE_AW(CPU_CODE_AW),
     .FLASH_CLKDIV(FLASH_CLKDIV),
     .EXT_EN(1'b1),
     .CLKGEN_EN(1'b1),
@@ -446,7 +465,8 @@ module video_processor #(
     .m_axil_rready(v_rready)
   );
 
-  // Slaves: 0 video_pipeline, then vision_system and blur_sharpen when built, then frame_counter
+  // Slaves: 0 video_pipeline, then vision_system and blur_sharpen when built, then frame_counter, then
+  // object_tracker and symbol_overlay when built
 `ifdef VP_VISION
   localparam int NV = 1;
 `else
@@ -457,13 +477,24 @@ module video_processor #(
 `else
   localparam int NF = 0;
 `endif
-  localparam int NS = 2 + NV + NF, S_VS = 1, S_FLT = 1 + NV, S_FC = 1 + NV + NF;
+`ifdef VP_TRACK
+  localparam int NT = 1;
+`else
+  localparam int NT = 0;
+`endif
+  localparam int NS = 2 + NV + NF + 2 * NT, S_VS = 1, S_FLT = 1 + NV, S_FC = 1 + NV + NF, S_TRK = 2 + NV + NF,
+                 S_OVL = 3 + NV + NF;
+  // windows from the memory map package (src/video_processor_map_pkg.sv)
   function automatic logic [NS*32-1:0] bus_map(input bit mask);
     logic [NS*32-1:0] m;
-    m[0 +: 32] = mask ? 32'hFFFF_8000 : 32'h0000_0000;                                   // 0x0000-0x7FFF
-    if (NV != 0) m[S_VS*32 +: 32]  = mask ? 32'hFFFF_FF00 : 32'h0000_8000;               // 0x8000-0x80FF
-    if (NF != 0) m[S_FLT*32 +: 32] = mask ? 32'hFFFF_FE00 : 32'h0000_8200;               // 0x8200-0x83FF
-    m[S_FC*32 +: 32] = mask ? 32'hFFFF_FF00 : 32'h0000_8400;                              // 0x8400-0x84FF
+    m[0 +: 32] = mask ? video_processor_map_pkg::VP_MASK : video_processor_map_pkg::VP_OFFSET;
+    if (NV != 0) m[S_VS*32 +: 32]  = mask ? video_processor_map_pkg::VS_MASK : video_processor_map_pkg::VS_OFFSET;
+    if (NF != 0) m[S_FLT*32 +: 32] = mask ? video_processor_map_pkg::FLT_MASK : video_processor_map_pkg::FLT_OFFSET;
+    m[S_FC*32 +: 32] = mask ? video_processor_map_pkg::FC_MASK : video_processor_map_pkg::FC_OFFSET;
+    if (NT != 0) begin
+      m[S_TRK*32 +: 32] = mask ? video_processor_map_pkg::TRK_MASK : video_processor_map_pkg::TRK_OFFSET;
+      m[S_OVL*32 +: 32] = mask ? video_processor_map_pkg::OVL_MASK : video_processor_map_pkg::OVL_OFFSET;
+    end
     return m;
   endfunction
   localparam logic [NS*32-1:0] VBASE = bus_map(1'b0);
@@ -609,12 +640,29 @@ module video_processor #(
     .stats_done_o);
 
   // ================================================================ frame counters
-  // Interrupt levels (pix_clk) synchronised to cpu_clk; the CPU clears them through STATUS.
-  logic [1:0] irq_frame_pix;
-  frame_counter #(.NCH(2)) u_frame_cnt (
+  // Interrupt levels (pix_clk) synchronised to cpu_clk; the CPU clears them through STATUS. Channels,
+  // in pipeline order: 0 end of frame out of csi2_raw_unpack (interrupt 13), 2 frame admitted into
+  // vision_system (start of frame), 3 corrected frame out of vision_system (start of frame), 4
+  // object_tracker measured a frame (end of frame after blur_sharpen), 1 end of frame into
+  // axis_to_video (interrupt 14). Every channel's markers can go to the event log (EV_EN), time
+  // stamped in microseconds, so the CPU reports the events in the order they happened.
+  localparam longint PIX_HZ = longint'(CPU_HZ) * VID_M / (VID_D * PIX_O);
+  localparam int TS_DIV = (PIX_HZ + 500_000) / 1_000_000;                   // pix_clk ticks per microsecond
+  logic [4:0] irq_frame_pix;
+  logic ev_vs_in, ev_vs_out, ev_trk;                 // driven below (0 when the block is not built)
+`ifndef VP_INSERT
+  assign ev_vs_in = 1'b0;
+  assign ev_vs_out = 1'b0;
+  assign ev_trk = 1'b0;
+`endif
+  frame_counter_top #(
+    .NCH(5),
+    .EVQ(128),
+    .TS_DIV(TS_DIV < 1 ? 1 : TS_DIV)
+  ) u_frame_cnt (
     .clk(pix_clk),
     .rst_n(pix_rst_n),
-    .eof_i({eof_last, eof_first}),
+    .eof_i({ev_trk, ev_vs_out, ev_vs_in, eof_last, eof_first}),
     .irq_o(irq_frame_pix),
     .s_axil_awaddr(b_awaddr[7:0]),
     .s_axil_awvalid(b_awvalid[S_FC]),
@@ -655,7 +703,10 @@ module video_processor #(
 `ifdef VP_VISION
   logic [23:0] va_d, vr_d;
   logic va_l, va_u, va_v, va_r, vr_l, vr_u, vr_v, vr_r;
-  vs_stream_adapter #(.RET_FIFO(VS_RET_FIFO)) u_vs_adapt (
+  vs_stream_adapter #(
+    .GAP(barrel_pkg::LINE_GAP_CYCLES + 3),
+    .RET_FIFO(VS_RET_FIFO)
+  ) u_vs_adapt (
     .clk(pix_clk),
     .rst_n(pix_rst_n),
     .s_axis_tdata(im_d),
@@ -682,6 +733,8 @@ module video_processor #(
     .drops_o(),
     .ret_drops_o()
   );
+  assign ev_vs_in = va_v && va_r && va_u;           // frame admitted into vision_system
+  assign ev_vs_out = vr_v && vr_r && vr_u;          // corrected frame starts coming out
   vision_system #(
     .ADDR_W(VS_ADDR_W),
     .USE_EXT_FB(VS_USE_EXT_FB)
@@ -727,6 +780,8 @@ module video_processor #(
     .sdram_dq
   );
 `elsif VP_INSERT
+  assign ev_vs_in = 1'b0;
+  assign ev_vs_out = 1'b0;
   assign vo_d = im_d;
   assign vo_l = im_l;
   assign vo_u = im_u;
@@ -735,8 +790,12 @@ module video_processor #(
 `endif
 
   // ================================================================ blur_sharpen after vision_system
+`ifdef VP_INSERT
+  logic [23:0] fo_d; // after blur_sharpen (or straight from vision_system)
+  logic fo_l, fo_u, fo_v, fo_r;
+`endif
 `ifdef VP_FILTER
-  blur_sharpen #(.N(FILT_N), .C(3), .CW(8), .MAX_W(MAX_W)) u_filter (.clk(pix_clk), .rst_n(pix_rst_n),
+  blur_sharpen_top #(.N(FILT_N), .C(3), .CW(8), .MAX_W(MAX_W)) u_filter (.clk(pix_clk), .rst_n(pix_rst_n),
     .s_axil_awaddr(b_awaddr[8:0]), .s_axil_awvalid(b_awvalid[S_FLT]), .s_axil_awready(b_awready[S_FLT]),
     .s_axil_wdata(b_wdata), .s_axil_wstrb(b_wstrb), .s_axil_wvalid(b_wvalid[S_FLT]), .s_axil_wready(b_wready[S_FLT]),
     .s_axil_bresp(b_bresp[S_FLT*2 +: 2]), .s_axil_bvalid(b_bvalid[S_FLT]), .s_axil_bready(b_bready[S_FLT]),
@@ -744,13 +803,87 @@ module video_processor #(
     .s_axil_rdata(b_rdata[S_FLT*32 +: 32]), .s_axil_rresp(b_rresp[S_FLT*2 +: 2]), .s_axil_rvalid(b_rvalid[S_FLT]),
     .s_axil_rready(b_rready[S_FLT]),
     .s_axis_tdata(vo_d), .s_axis_tlast(vo_l), .s_axis_tuser(vo_u), .s_axis_tvalid(vo_v), .s_axis_tready(vo_r),
-    .m_axis_tdata(ir_d), .m_axis_tlast(ir_l), .m_axis_tuser(ir_u), .m_axis_tvalid(ir_v), .m_axis_tready(ir_r));
+    .m_axis_tdata(fo_d), .m_axis_tlast(fo_l), .m_axis_tuser(fo_u), .m_axis_tvalid(fo_v), .m_axis_tready(fo_r));
 `elsif VP_INSERT
-  assign ir_d = vo_d;
-  assign ir_l = vo_l;
-  assign ir_u = vo_u;
-  assign ir_v = vo_v;
-  assign vo_r = ir_r;
+  assign fo_d = vo_d;
+  assign fo_l = vo_l;
+  assign fo_u = vo_u;
+  assign fo_v = vo_v;
+  assign vo_r = fo_r;
+`endif
+
+  // ================================================================ target tracking and symbol overlay
+  // object_tracker watches the filtered video (before any symbol is drawn); symbol_overlay draws the
+  // CPU's symbols over it, last in the insert loop.
+`ifdef VP_TRACK
+  object_tracker_top u_track (
+    .clk(pix_clk),
+    .rst_n(pix_rst_n),
+    .s_axis_tdata(fo_d),
+    .s_axis_tlast(fo_l),
+    .s_axis_tuser(fo_u),
+    .s_axis_tvalid(fo_v),
+    .s_axis_tready(fo_r),
+    .done_o(ev_trk),
+    .s_axil_awaddr(b_awaddr[7:0]),
+    .s_axil_awvalid(b_awvalid[S_TRK]),
+    .s_axil_awready(b_awready[S_TRK]),
+    .s_axil_wdata(b_wdata),
+    .s_axil_wstrb(b_wstrb),
+    .s_axil_wvalid(b_wvalid[S_TRK]),
+    .s_axil_wready(b_wready[S_TRK]),
+    .s_axil_bresp(b_bresp[S_TRK*2 +: 2]),
+    .s_axil_bvalid(b_bvalid[S_TRK]),
+    .s_axil_bready(b_bready[S_TRK]),
+    .s_axil_araddr(b_araddr[7:0]),
+    .s_axil_arvalid(b_arvalid[S_TRK]),
+    .s_axil_arready(b_arready[S_TRK]),
+    .s_axil_rdata(b_rdata[S_TRK*32 +: 32]),
+    .s_axil_rresp(b_rresp[S_TRK*2 +: 2]),
+    .s_axil_rvalid(b_rvalid[S_TRK]),
+    .s_axil_rready(b_rready[S_TRK])
+  );
+  symbol_overlay_top #(
+    .NOBJ(4),
+    .NTXT(4)
+  ) u_overlay (
+    .clk(pix_clk),
+    .rst_n(pix_rst_n),
+    .s_axis_tdata(fo_d),
+    .s_axis_tlast(fo_l),
+    .s_axis_tuser(fo_u),
+    .s_axis_tvalid(fo_v),
+    .s_axis_tready(fo_r),
+    .m_axis_tdata(ir_d),
+    .m_axis_tlast(ir_l),
+    .m_axis_tuser(ir_u),
+    .m_axis_tvalid(ir_v),
+    .m_axis_tready(ir_r),
+    .s_axil_awaddr(b_awaddr[9:0]),
+    .s_axil_awvalid(b_awvalid[S_OVL]),
+    .s_axil_awready(b_awready[S_OVL]),
+    .s_axil_wdata(b_wdata),
+    .s_axil_wstrb(b_wstrb),
+    .s_axil_wvalid(b_wvalid[S_OVL]),
+    .s_axil_wready(b_wready[S_OVL]),
+    .s_axil_bresp(b_bresp[S_OVL*2 +: 2]),
+    .s_axil_bvalid(b_bvalid[S_OVL]),
+    .s_axil_bready(b_bready[S_OVL]),
+    .s_axil_araddr(b_araddr[9:0]),
+    .s_axil_arvalid(b_arvalid[S_OVL]),
+    .s_axil_arready(b_arready[S_OVL]),
+    .s_axil_rdata(b_rdata[S_OVL*32 +: 32]),
+    .s_axil_rresp(b_rresp[S_OVL*2 +: 2]),
+    .s_axil_rvalid(b_rvalid[S_OVL]),
+    .s_axil_rready(b_rready[S_OVL])
+  );
+`elsif VP_INSERT
+  assign ev_trk = 1'b0;
+  assign ir_d = fo_d;
+  assign ir_l = fo_l;
+  assign ir_u = fo_u;
+  assign ir_v = fo_v;
+  assign fo_r = ir_r;
 `endif
 
   // ================================================================ serializers

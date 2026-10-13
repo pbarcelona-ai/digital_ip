@@ -10,7 +10,10 @@
 #   the module's parameter and port declarations, scripts/build.f (reused IP),
 #   the file lists of every other block (where it is used), the testbench
 #   header (verification), configuration.sv, firmware and synthesis reports.
-# Date: 2026-10-08
+#   --guidelines-csv FILE adds a project guidelines table to every prompt
+#   (CSV: guideline, mandatory, optional, notes; default
+#   ip/docs/DESIGN_GUIDELINES.csv when it exists, see prompt_common.py).
+# Date: 2026-10-11
 # ***************
 """Usage: python3 ip/scripts/make_ip_prompts.py [--only NAME ...] [--dry-run]"""
 from __future__ import annotations
@@ -26,6 +29,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from make_system_prompt import IP_ROOT, REPO, SYSTEMS_ROOT, discover  # noqa: E402
+import prompt_common as pc  # noqa: E402
 
 TODAY = date.today().isoformat()
 GEN = "ip/scripts/make_ip_prompts.py"
@@ -288,6 +292,23 @@ def used_by(name: str, users: dict[str, set[str]]) -> str:
 def module_prompt(name: str, category: str, ipdir: Path, top: str, src: Path, users: dict[str, set[str]],
                   descs: dict[str, str], extra_sections: str = "", title_note: str = "", library: bool = True) -> str:
     desc, whole = header_block(src)
+    if "regmap_gen.py" in whole:                       # generated <ip>_top: the behaviour is its core's
+        mc = None                                       # the core: the module instantiated as u_core
+        for line in src.read_text(encoding="utf-8").splitlines():
+            m = re.match(r"\s{2}(\w+)\s+(#\s*\(|u_core\b)", line)
+            if m:
+                mc = m
+            if "u_core" in line and not line.lstrip().startswith("//"):
+                break
+        core = next((f for f in [ipdir / "src" / f"{mc.group(1)}.sv"] + sorted(ipdir.glob(f"../*/src/{mc.group(1)}.sv"))
+                     if f.is_file()), None) if mc else None
+        if core is not None:
+            cdesc, cwhole = header_block(core)
+            desc = cdesc or desc
+            whole = (cwhole + "\n\n" + whole) if cwhole else whole
+        maps = sorted((ipdir / "src" / "include").glob("*_regs.json")) if (ipdir / "src" / "include").is_dir() else []
+        if maps:
+            extra_sections = regmap_section(maps[0]) + extra_sections
     decl = parse_module(src, top)
     bundles, others = interfaces(decl)
     clocks = [p.name for p in decl.ports if p.direction == "input" and re.search(r"clk|clock", p.name)]
@@ -344,10 +365,11 @@ def module_prompt(name: str, category: str, ipdir: Path, top: str, src: Path, us
     if derived:
         lines += ["Derived (localparam): " + ", ".join(f"`{p.name} = {p.default}`" for p in derived) + ".", ""]
     lines += ["Reject illegal values at elaboration with `$error` inside a generate block.", "",
-              "## 4. Clocks and resets", "",
+              "## 4. Clocks, resets and clock-domain crossings", "",
               f"- Clocks: {', '.join(f'`{c}`' for c in clocks) or 'none (combinational)'}.",
               f"- Resets: {', '.join(f'`{r}`' for r in resets) or 'none'}.",
               "- Clock and reset behaviour, and any clock-domain crossing, as described in section 6.",
+              *pc.cdc_section(),
               "",
               "## 5. Interfaces", ""]
     if bundles:
@@ -373,14 +395,19 @@ def module_prompt(name: str, category: str, ipdir: Path, top: str, src: Path, us
               "queues; no `wait` on function calls; no declarations inside nested loop bodies of static initial blocks.",
               "- No combinational path from a ready input back to a ready output; hoist scratch variables "
               "(no latches); split control and data `always_ff` blocks.",
+              *pc.formatting_constraints(),
               f"- Resources: {util or 'report the Yosys utilisation; keep it in line with similar library blocks.'}",
               "",
-              "## 8. Deliverables", "",
+              "## 8. File header", "", *pc.header_section(), "",
+              "## 9. Guidelines", "", *pc.guidelines_section(), "",
+              "## 10. Tools", "", *pc.tools_section(), "",
+              "## 11. Deliverables", "",
               "```text",
               f"{ipdir.relative_to(REPO)}/",
               f"  src/{top}.sv" + "".join(f"\n  src/{f.name}" for f in files if owner(f) == name and f.stem != top),
               (f"  tb/{name}_tb.sv          self-checking, prints TEST PASSED / TEST FAILED (n errors)" if library
                else f"  tb/{tb_files[0].name if tb_files else 'tb_' + name + '.sv'}    self-checking testbench"),
+              f"  tb/tests/{name}_tests.sv  one task per test, named test_<what>, listed in its header",
               "  scripts/build.f           RTL file list, dependency order (packages first)",
               "  tb/scripts/build.f        testbench file list",
               (f"  Makefile                  IP := {name} / include ../../scripts/ip.mk\n  docs/                     block diagram (make diagrams)"
@@ -390,7 +417,7 @@ def module_prompt(name: str, category: str, ipdir: Path, top: str, src: Path, us
               (f"Add `{name},{category},{top}` to `ip/scripts/ips.csv` and a line to the category README." if library
                else "Design-local block: keep it in the design's `ip/` directory and add it to the design's file lists."),
               "",
-              "## 9. Verification requirements", "",
+              "## 12. Verification requirements", "",
               "The reference testbench checks the following; the new testbench must cover at least the same:", "",
               fence(tb_desc) if tb_desc else
               (f"- The reference testbench `{tb_files[0].relative_to(ipdir)}` has no description header: read it and "
@@ -403,12 +430,16 @@ def module_prompt(name: str, category: str, ipdir: Path, top: str, src: Path, us
     lines += ["Also: an independent reference model (not a copy of the RTL); random input gaps and output "
               "back-pressure on every stream; register readback; edge cases; a mutation check (break one rule, "
               "show the testbench fails).", "",
-              (f"Pass criteria: `make -C {ipdir.relative_to(IP_ROOT)} test` passes, Verilator lint clean, `make synth` passes."
-               if library else "Pass criteria: the block's `scripts/run.sh` passes, Verilator lint clean, synthesis passes."),
+              *pc.tests_section(ipdir, f"ip/scripts/run_sim.sh {name}" if library else "the simulation script"), "",
+              *pc.coverage_section(), "",
+              (f"Pass criteria: `make -C {ipdir.relative_to(IP_ROOT)} test` passes, every coverage target met, "
+               "Verilator lint clean, `sv_format.py --check` clean, `make synth` passes."
+               if library else "Pass criteria: the block's `scripts/run.sh` passes, every coverage target met, "
+               "Verilator lint clean, `sv_format.py --check` clean, synthesis passes."),
               "",
-              "## 10. Report back", "",
-              "Files created, register map, test results (with the mutation check), synthesis resources, any "
-              "change to existing IP and why, known limits.", ""]
+              "## 13. Report back", "",
+              "Files created, register map, the test list with results (with the mutation check), coverage per "
+              "metric (and every waiver), synthesis resources, any change to existing IP and why, known limits.", ""]
     return "\n".join(l for l in lines if l is not None)
 
 
@@ -489,11 +520,11 @@ def system_prompt(name: str, d: Path, users: dict[str, set[str]], descs: dict[st
           "## 6. Architecture and behaviour", "",
           "Implement this behaviour (from the reference design's specification):", "",
           fence(whole or desc), "",
-          "## 7. Clocks, resets and performance", "",
+          "## 7. Clocks, resets, clock-domain crossings and performance", "",
           f"- Clocks: {', '.join(f'`{p.name}`' for p in decl.ports if p.direction == 'input' and re.search(r'clk', p.name)) or 'see section 6'}.",
           f"- Resets: {', '.join(f'`{p.name}`' for p in decl.ports if p.direction == 'input' and re.search(r'rst|reset', p.name)) or 'see section 6'}; one `reset_sync` per domain.",
-          "- Crossings only through library synchronisers.",
-          f"- Resources: {util or 'report the Yosys utilisation.'}", "",
+          f"- Resources: {util or 'report the Yosys utilisation.'}",
+          *pc.cdc_section(), "",
           "## 8. Control processor and firmware", ""]
     if sw:
         for f in sw:
@@ -502,18 +533,25 @@ def system_prompt(name: str, d: Path, users: dict[str, set[str]], descs: dict[st
     else:
         L += ["No on-chip processor in the reference design: an external host programs the registers (section 6).", ""]
     L += ["## 9. Implementation constraints", "",
-          "Synthesizable, technology-independent SystemVerilog-2012; iverilog 12+, Verilator lint clean, Yosys "
-          "(sv2v where needed); AXI4-Stream for data, AXI4-Lite for control; honour back-pressure; library file headers.", "",
-          "## 10. Deliverables", "", "```text", f"digital_ip/{d.relative_to(REPO)}/"] + [f"  {t}" for t in tree] + \
-         ["  Makefile, README.md, .gitignore", "```", "",
-          "## 11. Verification", "",
+          "- Synthesizable, technology-independent SystemVerilog-2012; iverilog 12+, Verilator lint clean, Yosys "
+          "(sv2v where needed); AXI4-Stream for data, AXI4-Lite for control; honour back-pressure.",
+          *pc.formatting_constraints(), "",
+          "## 10. File header", "", *pc.header_section(), "",
+          "## 11. Guidelines", "", *pc.guidelines_section(), "",
+          "## 12. Tools", "", *pc.tools_section(), "",
+          "## 13. Deliverables", "", "```text", f"digital_ip/{d.relative_to(REPO)}/"] + [f"  {t}" for t in tree] + \
+         ["  Makefile (sim, list-tests, lint, cov, synth, diagram), README.md, .gitignore",
+          "  scripts/run_sim.sh --list-tests prints the test names", "```", "",
+          "## 14. Verification", "",
           "The reference design is verified as follows; cover at least the same:", "",
           fence(tb_text) if tb_text else "- (no testbench header found)", ""]
     if py_tests:
         L += ["Python (cocotb) tests: " + ", ".join(f"`{p.name}`" for p in py_tests) + ".", ""]
-    L += ["## 12. Report back", "",
-          "Files created, block diagram, address map, every change to existing IP and why, decisions for missing "
-          "functions, test results (with a mutation check), synthesis utilisation, known limits.", ""]
+    L += [*pc.tests_section(d, "scripts/run_sim.sh"), "", *pc.coverage_section(), "",
+          "## 15. Report back", "",
+          "Files created, block, clock and reset diagrams, address map, every change to existing IP and why, "
+          "decisions for missing functions, the test list with results (with a mutation check), coverage per "
+          "metric (and every waiver), synthesis utilisation, known limits.", ""]
     return "\n".join(L)
 
 
@@ -522,9 +560,16 @@ def system_prompt(name: str, d: Path, users: dict[str, set[str]], descs: dict[st
 def regmap_section(json_path: Path) -> str:
     spec = json.loads(json_path.read_text())
     rows = []
+    if "id" in spec:                                   # regmap_gen 2.0: the ID block comes first
+        rows += [["0x00", "ID", "RO", f'"{spec["id"]}"', "IP identifier, 4 ASCII characters (first in [31:24])", ""],
+                 ["0x04", "VERSION", "RO", "", 'version, ASCII "d.dd" (+0.01 at every source update)', ""],
+                 ["0x08", "DATE", "RO", "", "date of the last source update, BCD mm/dd/yyyy", ""]]
     for i, r in enumerate(spec.get("registers", [])):
         fields = "; ".join(f"{f['name']}[{f['bit']}] {f.get('desc', '')}".strip() for f in r.get("fields", []))
-        rows.append([f"0x{i * 4:02X}", r["name"], r.get("access", "RW"), r.get("reset", "0"), r.get("desc", ""), fields])
+        off = r.get("offset", f"0x{i * 4:02X}")
+        if r.get("count", 1) != 1:
+            off += f" + {r.get('stride', 4)} i (i < {r['count']})"
+        rows.append([off, r["name"], r.get("access", "RW"), str(r.get("reset", "0")), r.get("desc", ""), fields])
     return ("### Register map (from `" + json_path.name + "`)\n\n" +
             table(["Offset", "Name", "Access", "Reset", "Description", "Fields"], rows) +
             "\n\nThe block is generated, not hand-written: write the JSON above and run "
@@ -538,7 +583,13 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="Write <name>_prompt.md for every IP, system and example.")
     ap.add_argument("--only", nargs="*", help="limit to these names")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--guidelines-csv", metavar="FILE",
+                    help="guidelines CSV (column 1 guideline, 2 mandatory, 3 optional, 4 notes) added to every "
+                         f"prompt; default {pc.GUIDELINES_CSV} when it exists")
     args = ap.parse_args()
+    pc.guidelines_csv = pc.default_guidelines_csv(args.guidelines_csv)
+    if pc.guidelines_csv:
+        print(f"guidelines CSV: {pc.guidelines_csv}")
 
     mods = discover()
     descs = {m.name: m.description for m in mods.values()}

@@ -5,8 +5,12 @@
 //   Port names match the s_axil_* ports of every IP so it connects with a
 //   .* port list. Provides blocking write() and read() tasks that are
 //   called hierarchically, plus an error counter for non-OKAY responses.
-//   Address width is a parameter.
-// Date: 2026-09-29
+//   Address width is a parameter. base (default 0) is added to every
+//   address of write / write_strb / write_skew / read, so a testbench can
+//   keep its register offsets when the IP's map moves (the library's maps
+//   start at 0x10, after the ID / VERSION / DATE block at 0x00-0x0C);
+//   read_abs / write_abs use the address as given.
+// Date: 2026-10-11
 `timescale 1ns/1ps
 module axil_bfm #(
   parameter int ADDR_W = 8
@@ -34,6 +38,7 @@ module axil_bfm #(
   logic [1:0] last_resp;         // response of the last transaction
   int  bready_delay = 0;         // clocks BREADY stays low after BVALID (backpressure tests; 0 = ready at once)
   int  rready_delay = 0;         // clocks RREADY stays low after RVALID
+  int unsigned base = 0;         // added to every address of write / write_strb / write_skew / read
 
   initial begin
     s_axil_awaddr = '0;
@@ -49,6 +54,12 @@ module axil_bfm #(
 
   // Blocking register write with byte strobes
   task automatic write_strb(input [ADDR_W-1:0] a, input [31:0] d, input [3:0] s);
+    write_abs_strb(ADDR_W'(a + base), d, s);
+  endtask
+  task automatic write_abs(input [ADDR_W-1:0] a, input [31:0] d);
+    write_abs_strb(a, d, 4'hF);
+  endtask
+  task automatic write_abs_strb(input [ADDR_W-1:0] a, input [31:0] d, input [3:0] s);
     @(posedge aclk);
     #1;
     s_axil_awaddr = a;
@@ -92,7 +103,7 @@ module axil_bfm #(
     fork
       begin
         repeat (aw_delay) @(posedge aclk);
-        #1 s_axil_awaddr = a;
+        #1 s_axil_awaddr = ADDR_W'(a + base);
         s_axil_awvalid = 1;
         wait (s_axil_awready);
         @(posedge aclk);
@@ -120,6 +131,9 @@ module axil_bfm #(
 
   // Blocking register read
   task automatic read(input [ADDR_W-1:0] a, output [31:0] d);
+    read_abs(ADDR_W'(a + base), d);
+  endtask
+  task automatic read_abs(input [ADDR_W-1:0] a, output [31:0] d);
     @(posedge aclk);
     #1;
     s_axil_araddr = a;

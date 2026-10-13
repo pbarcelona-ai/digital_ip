@@ -2,19 +2,21 @@
 // Filename: sdio_host.sv
 // Author: FPGA Cores 4 U
 // Description: SD / SDIO host controller (single-block transfers, 1-bit or
-//   4-bit data bus, SD mode). Version 1.0.0. AXI4-Lite registers issue one
-//   command at a time - 0x00 CMD (write starts it): index[5:0],
+//   4-bit data bus, SD mode). The registers (cfg_* / sts_*
+//   ports; sdio_host_top.sv is the block with its AXI4-Lite register map,
+//   src/include/sdio_host_regs.sv, ID "SDIO" / VERSION / DATE at 0x00-0x08)
+//   issue one command at a time - 0x10 CMD (write starts it): index[5:0],
 //   response[7:6] (0 none, 1 short 48 bit, 2 long 136 bit), data
 //   direction[9:8] (0 none, 1 read block, 2 write block), no_crc_check[10]
-//   (for R3/R7-style responses without valid CRC7); 0x04 ARG; 0x08..0x14
+//   (for R3/R7-style responses without valid CRC7); 0x14 ARG; 0x18..0x24
 //   RESP0..RESP3 (short response argument in RESP0, long response 127..0
-//   in RESP3..RESP0); 0x18 STATUS (bit0 busy, bit1 cmd_done, bit2
+//   in RESP3..RESP0); 0x28 STATUS (bit0 busy, bit1 cmd_done, bit2
 //   dat_done, bit3 cmd_timeout, bit4 cmd_crc_err, bit5 dat_crc_err, bit6
-//   dat_timeout, bit7 buf_err; write 1 to clear bits 1-7); 0x1C CTRL
+//   dat_timeout, bit7 buf_err; write 1 to clear bits 1-7); 0x2C CTRL
 //   (half_period[15:0] in system clocks, minimum 1, bus4[16], clk_en[17]);
-//   0x20 BLKSIZE (bytes, 1..BUF_BYTES); 0x24 TIMEOUT (SD clocks for
-//   data/busy timeout); 0x28 IRQ_EN (bit n enables STATUS bit n+1 for
-//   irq_o); 0x2C IP_VERSION. Data - a block buffer of BUF_BYTES bytes
+//   0x30 BLKSIZE (bytes, 1..BUF_BYTES); 0x34 TIMEOUT (SD clocks for
+//   data/busy timeout); 0x38 IRQ_EN (bit n enables STATUS bit n+1 for
+//   irq_o). Data - a block buffer of BUF_BYTES bytes
 //   decouples the free-running SD clock from AXI-Stream: for a write, fill
 //   the buffer through s_axis (BLKSIZE bytes, only accepted while idle)
 //   and then issue the write command; a read block is verified (CRC16 per
@@ -37,30 +39,13 @@
 //   dat_crc_err (also for a bad end bit or write CRC status), dat_timeout,
 //   buf_err (bad BLKSIZE, write without a full buffer, or a command while
 //   busy).
-// Date: 2026-09-29
+// Date: 2026-10-12
 module sdio_host #(
   parameter int BUF_BYTES = 512
 ) (
+
   input  logic        aclk,
   input  logic        aresetn,
-  // AXI4-Lite slave
-  input  logic [7:0]  s_axil_awaddr,
-  input  logic        s_axil_awvalid,
-  output logic        s_axil_awready,
-  input  logic [31:0] s_axil_wdata,
-  input  logic [3:0]  s_axil_wstrb,
-  input  logic        s_axil_wvalid,
-  output logic        s_axil_wready,
-  output logic [1:0]  s_axil_bresp,
-  output logic        s_axil_bvalid,
-  input  logic        s_axil_bready,
-  input  logic [7:0]  s_axil_araddr,
-  input  logic        s_axil_arvalid,
-  output logic        s_axil_arready,
-  output logic [31:0] s_axil_rdata,
-  output logic [1:0]  s_axil_rresp,
-  output logic        s_axil_rvalid,
-  input  logic        s_axil_rready,
   // AXI-Stream block data
   input  logic [7:0]  s_axis_tdata,
   input  logic        s_axis_tvalid,
@@ -77,44 +62,23 @@ module sdio_host #(
   output logic [3:0]  dat_o,
   output logic [3:0]  dat_oe_o,
   input  logic [3:0]  dat_i,
-  output logic        irq_o
+  output logic        irq_o,
+  // register ports
+  input  logic [10:0]  cfg_cmd,          // CMD
+  input  logic         cfg_cmd_wr,       // CMD write pulse: start
+  input  logic [31:0]  cfg_arg,          // ARG
+  output logic [127:0] sts_resp,         // RESP[0..3]
+  input  logic [7:0]   cfg_status,       // STATUS: data written ...
+  input  logic         cfg_status_wr,    // ... and its write pulse
+  output logic [7:0]   sts_status,       // STATUS: value read
+  input  logic [17:0]  cfg_ctrl,         // CTRL
+  input  logic [10:0]  cfg_blksize,      // BLKSIZE
+  input  logic [31:0]  cfg_timeout,      // TIMEOUT
+  input  logic [6:0]   cfg_irq_en        // IRQ_EN
 );
-  localparam logic [31:0] IP_VERSION = 32'h0001_0000;
   if (BUF_BYTES < 16 || BUF_BYTES > 1024) begin : g_bad $error("sdio_host: BUF_BYTES must be 16..1024"); end
   localparam int BW = $clog2(BUF_BYTES + 1);
-  logic [12*32-1:0] regs, rd;
-  logic [11:0] wr_pulse;
-  logic [31:0] wr_data;
-  ip_axil_regs #(
-    .ADDR_W(8),
-    .NREG(12),
-    .RESET_VALS({32'h0, 32'h0, 32'd100000, 32'd512, 32'd2, 32'h0, 32'h0, 32'h0, 32'h0, 32'h0, 32'h0, 32'h0})
-  ) u_regs (
-    .aclk,
-    .aresetn,
-    .s_axil_awaddr,
-    .s_axil_awvalid,
-    .s_axil_awready,
-    .s_axil_wdata,
-    .s_axil_wstrb,
-    .s_axil_wvalid,
-    .s_axil_wready,
-    .s_axil_bresp,
-    .s_axil_bvalid,
-    .s_axil_bready,
-    .s_axil_araddr,
-    .s_axil_arvalid,
-    .s_axil_arready,
-    .s_axil_rdata,
-    .s_axil_rresp,
-    .s_axil_rvalid,
-    .s_axil_rready,
-    .reg_o(regs),
-    .wr_pulse_o(wr_pulse),
-    .wr_data_o(wr_data),
-    .rd_i(rd)
-  );
-  wire [31:0] r_arg = regs[1*32 +: 32], r_ctrl = regs[7*32 +: 32], r_blk = regs[8*32 +: 32], r_to = regs[9*32 +: 32], r_irqen = regs[10*32 +: 32];
+  wire [31:0] r_arg = cfg_arg, r_ctrl = 32'(cfg_ctrl), r_blk = 32'(cfg_blksize), r_to = cfg_timeout, r_irqen = 32'(cfg_irq_en);
   wire bus4 = r_ctrl[16], clk_en = r_ctrl[17];
   wire [15:0] half = (r_ctrl[15:0] == 16'd0) ? 16'd1 : r_ctrl[15:0];
 
@@ -189,7 +153,7 @@ module sdio_host #(
     if (bus4) wr_bits = (bpos == 3'd0) ? cur_byte[7:4] : cur_byte[3:0];
     else      wr_bits = {3'b111, cur_byte[7 - bpos]};
   end
-  wire start_cmd = wr_pulse[0];
+  wire start_cmd = cfg_cmd_wr;
   always_ff @(posedge aclk) begin
     if (!aresetn) begin
       sdclk <= 1'b0;
@@ -241,14 +205,14 @@ module sdio_host #(
       end
       else hc <= hc + 1'b1;
       // ---- status W1C ----
-      if (wr_pulse[6]) begin
-        if (wr_data[1]) f_cmd_done <= 0;
-        if (wr_data[2]) f_dat_done <= 0;
-        if (wr_data[3]) f_cto <= 0;
-        if (wr_data[4]) f_ccrc <= 0;
-        if (wr_data[5]) f_dcrc <= 0;
-        if (wr_data[6]) f_dto <= 0;
-        if (wr_data[7]) f_buf <= 0;
+      if (cfg_status_wr) begin
+        if (cfg_status[1]) f_cmd_done <= 0;
+        if (cfg_status[2]) f_dat_done <= 0;
+        if (cfg_status[3]) f_cto <= 0;
+        if (cfg_status[4]) f_ccrc <= 0;
+        if (cfg_status[5]) f_dcrc <= 0;
+        if (cfg_status[6]) f_dto <= 0;
+        if (cfg_status[7]) f_buf <= 0;
       end
       // ---- buffer fill (idle) and drain ----
       if (s_axis_tvalid && s_axis_tready) begin
@@ -262,14 +226,14 @@ module sdio_host #(
       if (start_cmd && (st != S_IDLE || out_cnt != 0)) f_buf <= 1'b1;
       case (st)
         S_IDLE: if (start_cmd && out_cnt == 0) begin
-          if ((wr_data[9:8] != 2'd0 && !blk_ok) || (wr_data[9:8] == 2'd2 && fill_cnt < blk_w)) f_buf <= 1'b1;
+          if ((cfg_cmd[9:8] != 2'd0 && !blk_ok) || (cfg_cmd[9:8] == 2'd2 && fill_cnt < blk_w)) f_buf <= 1'b1;
           else begin
-            c_idx <= wr_data[5:0];
-            c_resp <= wr_data[7:6];
-            c_dir <= wr_data[9:8];
-            c_nocrc <= wr_data[10];
+            c_idx <= cfg_cmd[5:0];
+            c_resp <= cfg_cmd[7:6];
+            c_dir <= cfg_cmd[9:8];
+            c_nocrc <= cfg_cmd[10];
             blk <= blk_w;
-            csr <= {2'b01, wr_data[5:0], r_arg, crc7_40({2'b01, wr_data[5:0], r_arg}), 1'b1};
+            csr <= {2'b01, cfg_cmd[5:0], r_arg, crc7_40({2'b01, cfg_cmd[5:0], r_arg}), 1'b1};
             nb <= '0;
             cnt <= '0;
             st <= S_CMD_TX;
@@ -279,7 +243,7 @@ module sdio_host #(
             f_ccrc <= 0;
             f_dcrc <= 0;
             f_dto <= 0;
-            if (wr_data[9:8] != 2'd2) fill_cnt <= '0;                 // a read discards any staged bytes
+            if (cfg_cmd[9:8] != 2'd2) fill_cnt <= '0;                 // a read discards any staged bytes
           end
         end
         S_CMD_TX: if (ft) begin
@@ -518,13 +482,6 @@ module sdio_host #(
       endcase
     end
   end
-  always_comb begin
-    rd = regs;
-    rd[2*32 +: 32] = resp[0];
-    rd[3*32 +: 32] = resp[1];
-    rd[4*32 +: 32] = resp[2];
-    rd[5*32 +: 32] = resp[3];
-    rd[6*32 +: 32] = {24'd0, f_buf, f_dto, f_dcrc, f_ccrc, f_cto, f_dat_done, f_cmd_done, (st != S_IDLE) | (out_cnt != 0)};
-    rd[11*32 +: 32] = IP_VERSION;
-  end
+  assign sts_resp = {resp[3], resp[2], resp[1], resp[0]};
+  assign sts_status = {f_buf, f_dto, f_dcrc, f_ccrc, f_cto, f_dat_done, f_cmd_done, (st != S_IDLE) | (out_cnt != 0)};
 endmodule

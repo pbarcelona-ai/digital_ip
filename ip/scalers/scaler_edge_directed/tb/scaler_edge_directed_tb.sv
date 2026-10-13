@@ -142,6 +142,7 @@ module tb_scaler_edge_directed;
     tb_init("scaler_edge_directed");      // parse plusargs, load +IMG
     reset_dut();
     axil_check(12'h024, 32'h4544_4745);     // IP_ID "EDGE"
+    check_id_block('h0, 32'h4544_4745);      // ID block: ID, VERSION, DATE
     if (use_file) begin
       run_file_suite();              // +IMG=<file.ppm>
     end else if (quick) begin

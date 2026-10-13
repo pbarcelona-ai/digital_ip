@@ -34,7 +34,7 @@ module axis_dma_tb;
   logic m_tvalid, m_tready, m_tlast, s_tvalid, s_tready, s_tlast;
   logic tb_tvalid, tb_tlast;
   logic loop = 0;
-  axis_dma #(
+  axis_dma_top #(
     .MAX_BURST(16),
     .FIFO_DEPTH(32)
   ) dut (
@@ -154,58 +154,12 @@ module axis_dma_tb;
     aresetn = 1;
     repeat (2) @(posedge aclk);
     for (int i = 0; i < 4096; i++) mem.mem[i] = (i < 1024) ? $urandom : 32'hFFFF_FFFF;
-    // ---- Test 1: MM2S 200 words starting 0xF80 (crosses 4 KB) ----
-    bfm.write(8'h04, 32'h0F80);
-    bfm.write(8'h08, 32'd800);
-    bfm.write(8'h00, 32'h1);
-    wait_done(8);
-    check(cap.size() == 200, $sformatf("mm2s words %0d", cap.size()));
-    for (int i = 0; i < cap.size(); i++) begin
-      check(cap[i] === mem.mem[32'h0F80/4 + i], $sformatf("mm2s word %0d", i));
-      check(caplast[i] == (i == 199), $sformatf("mm2s tlast at %0d", i));
-    end
-    // ---- Test 2: S2MM 150 words to 0x2FC0 (crosses 4 KB) ----
-    begin
-      logic [31:0] exp_q[$];
-      exp_q.delete();
-      bfm.write(8'h0C, 32'h2FC0);
-      bfm.write(8'h10, 32'd600);
-      bfm.write(8'h00, 32'h2);
-      for (int i = 0; i < 150; i++) begin
-        @(posedge aclk);
-        #1;
-        tb_tdata = $urandom;
-        tb_tvalid = 1;
-        tb_tlast = (i == 149);
-        exp_q.push_back(tb_tdata);
-        while (!tb_ready) begin
-          @(posedge aclk);
-          #1;
-        end
-        if ($urandom_range(0, 3) == 0) begin
-          @(posedge aclk);
-          #1 tb_tvalid = 0;
-          repeat ($urandom_range(1, 4)) @(posedge aclk);
-        end
-      end
-      @(posedge aclk);
-      #1 tb_tvalid = 0;
-      wait_done(9);
-      for (int i = 0; i < 150; i++) check(mem.mem[32'h2FC0/4 + i] === exp_q[i], $sformatf("s2mm word %0d", i));
-      check(mem.mem[32'h2FC0/4 - 1] === 32'hFFFF_FFFF && mem.mem[32'h2FC0/4 + 150] === 32'hFFFF_FFFF, "s2mm outside region");
-    end
-    // ---- Test 3: loopback MM2S -> S2MM (memory to memory through the streams) ----
-    loop = 1;
-    bfm.write(8'h04, 32'h0100);
-    bfm.write(8'h08, 32'd256);
-    bfm.write(8'h0C, 32'h2400);
-    bfm.write(8'h10, 32'd256);
-    bfm.write(8'h00, 32'h3);
-    do bfm.read(8'h14, rd);
-    while (rd[9] == 0);
-    for (int i = 0; i < 64; i++) check(mem.mem[32'h2400/4 + i] === mem.mem[32'h0100/4 + i], $sformatf("loop word %0d", i));
-    check(mem.mem[32'h2400/4 + 64] === 32'hFFFF_FFFF, "loop overrun");
-    check(rd[11:10] == 0, "error flags set");
+    bfm.base = 'h10;                                 // the map after the ID block
+    test_id_block();
+    test_mm2s();
+    test_s2mm();
+    test_loopback();
+
     check(bfm.resp_errors == 0, "axi errors");
     if (errors == 0) $display("TEST PASSED");
     else $display("TEST FAILED (%0d errors)", errors);

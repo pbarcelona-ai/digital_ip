@@ -59,6 +59,8 @@ module scaler_lanczos #(
   output logic              m_axis_tuser,   // start of frame
   output logic              m_axis_tlast    // end of line
 );
+  localparam logic [31:0] IP_VERSION = "1.10";        // VERSION register (stamp_version.py)
+  localparam logic [31:0] IP_DATE    = 32'h10122026;  // DATE register, BCD mm/dd/yyyy
 
   // All logic is in scaler_polyphase; this wrapper fixes TAPS = 6 and
   // the IP_ID. Every port is connected by name (.*).
@@ -74,7 +76,9 @@ module scaler_lanczos #(
     .PHASE_BITS(PHASE_BITS),
     .COEF_W(COEF_W),
     .COEF_FRAC(COEF_FRAC),
-    .IP_ID(32'h4C41_4E43) // "LANC"
+    .IP_ID(32'h4C41_4E43), // "LANC"
+    .VERSION_OVR(IP_VERSION),
+    .DATE_OVR(IP_DATE)
   ) u_core (.*);
 
 endmodule

@@ -130,6 +130,7 @@ module tb_scaler_mip;
     tb_init("scaler_mip");      // parse plusargs, load +IMG
     reset_dut();
     axil_check(12'h024, 32'h4D49_504D);      // IP_ID "MIPM"
+    check_id_block('h0, 32'h4D49_504D);      // ID block: ID, VERSION, DATE
     axil_check(12'h058, {8'd0, 8'(PHASE_BITS), 8'(ANISO_MAX), 8'(LEVELS)});
     if (use_file) begin
       run_file_suite();              // +IMG=<file.ppm>

@@ -13,7 +13,8 @@
 //       vision_system always starts writing at a frame start.
 //     - Line gaps: vision_system needs >= barrel_pkg::LINE_GAP_CYCLES idle
 //       clocks between lines; GAP clocks are inserted after every forwarded
-//       tlast.
+//       tlast (default 8 = LINE_GAP_CYCLES 5 + 3; a design using
+//       vision_system passes barrel_pkg::LINE_GAP_CYCLES + 3).
 //     - Return path: vision_system's output does not support back-pressure
 //       (its bilinear datapath never stalls and it counts only accepted
 //       beats, so one refused beat would hang it in T_OUTPUT). Its
@@ -26,10 +27,10 @@
 //       here instead of on-chip RAM.
 //   frames_o / drops_o count forwarded and dropped frames. Clock - clk.
 //   Reset - synchronous rst_n (active low).
-// Date: 2026-10-02
+// Date: 2026-10-11
 module vs_stream_adapter #(
   parameter int PIX_W = 24,
-  parameter int GAP   = barrel_pkg::LINE_GAP_CYCLES + 3,
+  parameter int GAP   = 8,                      // idle clocks after every forwarded line (>= 1)
   parameter int RET_FIFO = 1024                  // return FIFO words (power of two)
 ) (
   input  logic             clk,

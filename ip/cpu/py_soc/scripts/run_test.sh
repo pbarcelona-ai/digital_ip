@@ -16,7 +16,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT="${BUILD_ROOT:-$HERE/../../build}/sim/py_soc"; mkdir -p "$OUT"
 cd "$HERE"
-python3 ../py_core/tools/pyc.py tb/programs/selftest.py -o "$OUT/selftest"
+python3 ../py_core/tools/pyc.py -I src tb/programs/selftest.py -o "$OUT/selftest"
 iverilog -g2012 -Wno-timescale -s py_soc_tb -o "$OUT/py_soc_tb.vvp" -I "$OUT" -I tb/tests \
   -DPY_FLASH_HEX="\"$OUT/selftest.flash.hex\"" \
   -c scripts/build.f -c tb/scripts/build.f

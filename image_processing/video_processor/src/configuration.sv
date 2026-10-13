@@ -19,8 +19,11 @@
 //                 video_pipeline insert point (implies VP_INSERT)
 //     VP_FILTER   blur_sharpen (blur / sharpen, 4 modes) in the insert loop,
 //                 after vision_system (implies VP_INSERT)
+//     VP_TRACK    object_tracker (target search / measurement) and
+//                 symbol_overlay (boxes, crosshairs) at the end of the
+//                 insert loop, after blur_sharpen (implies VP_INSERT)
 //     VP_INSERT   video_pipeline insert point only (looped back here)
-// Date: 2026-10-02
+// Date: 2026-10-11
 `ifndef VP_CONFIGURATION_SV
 `define VP_CONFIGURATION_SV
 
@@ -31,6 +34,7 @@
 `define VP_CSI2_TX
 `define VP_VISION
 `define VP_FILTER
+`define VP_TRACK
 
 // ---------------- derived (do not edit) ----------------
 `ifdef VP_VISION
@@ -39,6 +43,11 @@
   `endif
 `endif
 `ifdef VP_FILTER
+  `ifndef VP_INSERT
+    `define VP_INSERT
+  `endif
+`endif
+`ifdef VP_TRACK
   `ifndef VP_INSERT
     `define VP_INSERT
   `endif

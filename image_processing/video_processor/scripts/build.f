@@ -8,6 +8,9 @@
 #   default ip/video/video_pipeline/src/configuration.sv, which is NOT listed).
 # Date: 2026-10-02
 # ***************
+../../ip/cpu/py_soc/src/py_soc_map_pkg.sv
+../../ip/video/video_pipeline/src/video_pipeline_map_pkg.sv
+src/video_processor_map_pkg.sv
 src/configuration.sv
 # ---- shared / CDC
 ../../ip/cdc/reset_sync/src/reset_sync.sv
@@ -21,24 +24,42 @@ src/configuration.sv
 ../../ip/peripherals/uart/src/uart_baud.sv
 ../../ip/peripherals/uart/src/uart_tx.sv
 ../../ip/peripherals/uart/src/uart_rx.sv
+../../ip/peripherals/uart/src/include/uart_regs.sv
+../../ip/peripherals/uart/src/uart.sv
 ../../ip/peripherals/uart/src/uart_top.sv
 ../../ip/peripherals/i2c_master/src/i2c_bit_ctrl.sv
 ../../ip/peripherals/i2c_master/src/i2c_master_fsm.sv
+../../ip/peripherals/i2c_master/src/include/i2c_master_regs.sv
+../../ip/peripherals/i2c_master/src/i2c_master.sv
 ../../ip/peripherals/i2c_master/src/i2c_top.sv
 ../../ip/peripherals/spi_master/src/spi_engine.sv
+../../ip/peripherals/spi_master/src/include/spi_master_regs.sv
+../../ip/peripherals/spi_master/src/spi_master.sv
 ../../ip/peripherals/spi_master/src/spi_top.sv
+../../ip/peripherals/gpio/src/include/gpio_regs.sv
+../../ip/peripherals/gpio/src/gpio.sv
 ../../ip/peripherals/gpio/src/gpio_top.sv
+../../ip/peripherals/intc/src/include/intc_regs.sv
+../../ip/peripherals/intc/src/intc.sv
 ../../ip/peripherals/intc/src/intc_top.sv
+../../ip/timing/watchdog/src/include/watchdog_regs.sv
+../../ip/timing/watchdog/src/watchdog.sv
 ../../ip/timing/watchdog/src/watchdog_top.sv
+../../ip/cpu/py_soc/src/include/py_stream_port_regs.sv
 ../../ip/cpu/py_soc/src/py_stream_port.sv
+../../ip/cpu/py_soc/src/py_stream_port_top.sv
 ../../ip/cpu/py_soc/src/py_axil_xbar.sv
+../../ip/peripherals/spi_flash_ctrl/src/include/spi_flash_ctrl_regs.sv
 ../../ip/peripherals/spi_flash_ctrl/src/spi_flash_ctrl.sv
+../../ip/peripherals/spi_flash_ctrl/src/spi_flash_ctrl_top.sv
 ../../ip/cpu/py_soc/src/py_boot.sv
 ../../ip/clock/dpll/src/dpll_ctrl.sv
 ../../ip/clock/dpll/src/dpll_dco.sv
 ../../ip/clock/dpll/src/dpll.sv
 ../../ip/clock/clk_gen/src/clk_gen.sv
+../../ip/cpu/py_soc/src/include/py_sysctl_regs.sv
 ../../ip/cpu/py_soc/src/py_sysctl.sv
+../../ip/cpu/py_soc/src/py_sysctl_top.sv
 ../../ip/cpu/py_soc/src/py_soc.sv
 # ---- video_pipeline
 ../../ip/shared/src/common/ip_axil_regs.sv
@@ -72,6 +93,7 @@ src/configuration.sv
 ../../ip/video/csi2_tx/src/csi2_tx.sv
 ../../ip/video/dsi_tx/src/dsi_tx.sv
 ../../ip/video/lvds_tx/src/lvds_tx.sv
+../../ip/video/video_pipeline/src/include/video_pipeline_regs.sv
 ../../ip/video/video_pipeline/src/video_pipeline.sv
 ../../ip/video/tmds_serializer/src/tmds_serializer.sv
 ../../ip/video/lvds_serializer/src/lvds_serializer.sv
@@ -87,13 +109,25 @@ src/configuration.sv
 ../vision_system/ip/ext_frame_buffer/src/ext_frame_buffer.sv
 ../vision_system/src/axis_in_ctrl.sv
 ../vision_system/src/axis_out_ctrl.sv
+../vision_system/src/include/vision_system_regs.sv
 ../vision_system/src/axi_lite_regs.sv
 ../vision_system/src/vision_system.sv
 # ---- blur_sharpen
 ../../ip/video/conv2d_core/src/conv2d_pkg.sv
 ../../ip/video/conv2d_core/src/conv2d_core.sv
+../../ip/video/blur_sharpen/src/include/blur_sharpen_regs.sv
 ../../ip/video/blur_sharpen/src/blur_sharpen.sv
+../../ip/video/blur_sharpen/src/blur_sharpen_top.sv
 # ---- video_processor
-src/vs_stream_adapter.sv
-src/frame_counter.sv
+../../ip/video/vs_stream_adapter/src/vs_stream_adapter.sv
+../../ip/video/frame_counter/src/include/frame_counter_regs.sv
+../../ip/video/frame_counter/src/frame_counter.sv
+../../ip/video/frame_counter/src/frame_counter_top.sv
+../../ip/video/object_tracker/src/include/object_tracker_regs.sv
+../../ip/video/object_tracker/src/object_tracker.sv
+../../ip/video/object_tracker/src/object_tracker_top.sv
+../../ip/video/symbol_overlay/src/overlay_font_pkg.sv
+../../ip/video/symbol_overlay/src/include/symbol_overlay_regs.sv
+../../ip/video/symbol_overlay/src/symbol_overlay.sv
+../../ip/video/symbol_overlay/src/symbol_overlay_top.sv
 src/video_processor.sv

@@ -166,6 +166,7 @@ module tb_scaler_ctrl;
     axil_check(12'h008, 32'h0001_0001);
     axil_check(12'h010, 32'h0001_0000);
     axil_check(12'h024, 32'hCAFE_0001);
+    check_id_block('h0, 32'hCAFE_0001);      // ID block: ID, VERSION, DATE
     axil_check(12'h028, 32'h1234_5678);
     axil_check(12'h02C, {16'(MAX_H), 16'(MAX_W)});
     // read/write

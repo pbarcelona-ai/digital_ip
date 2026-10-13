@@ -156,7 +156,8 @@ class ModInfo:
 
 def index_modules() -> dict[str, ModInfo]:
     idx: dict[str, ModInfo] = {}
-    files = list(IP_ROOT.glob("*/*/src/*.sv")) + list(IP_ROOT.glob("examples/*/*.sv")) + \
+    files = list(IP_ROOT.glob("*/*/src/*.sv")) + list(IP_ROOT.glob("*/*/src/include/*.sv")) + \
+        list(IP_ROOT.glob("examples/*/*.sv")) + \
         list(IP_ROOT.glob("shared/src/**/*.sv")) + list(SYSTEMS_ROOT.glob("*/src/*.sv")) + \
         list(SYSTEMS_ROOT.glob("*/ip/*/src/*.sv"))
     for f in files:

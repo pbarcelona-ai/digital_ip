@@ -10,7 +10,7 @@ import re
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
-ACCEPTED = {".sv", ".v", ".svh", ".vh", ".f", ".sh"}
+ACCEPTED = {".sv", ".v", ".svh", ".vh", ".f", ".sh", ".h", ".json", ".xml"}
 
 
 def catalog() -> list[tuple[str, str, str]]:
@@ -116,6 +116,11 @@ def module_info(name: str, category: str, top: str) -> tuple[str, str, list[Path
                 details.append(line.lstrip()[2:].strip())
             if details:
                 description = " ".join(details)
+    # the register map files (src/include: <ip>_regs .json / .xml / .h next to the .sv in build.f)
+    inc = module / "src" / "include"
+    if inc.is_dir():
+        sources = sources + [p for p in sorted(inc.iterdir()) if p.is_file() and p.suffix in (".json", ".xml", ".h")
+                             and p not in sources]
     return title, description, sources
 
 

@@ -10,7 +10,7 @@
 #   need, and for every function that no existing module provides asks how
 #   to get it (new library module, vendor IP, third-party core, simulation
 #   stub, or drop it). It writes a complete Markdown prompt.
-# Date: 2026-10-08
+# Date: 2026-10-11
 # ***************
 """Build a system-generation prompt from the library catalog and your answers.
 
@@ -23,12 +23,15 @@ Usage:
   python3 ip/scripts/make_system_prompt.py --features          print the feature list and exit
   -o FILE      output (default: system_prompt_<name>.md in the current directory)
   --save-answers FILE   write every answer given, for a repeatable rerun with --answers
+  --guidelines-csv FILE add a project guidelines table (CSV: guideline, mandatory, optional, notes)
 
 Answer keys (JSON): name, purpose, target, location, features (list of feature keys),
 custom_functions (list of strings), reuse_add / reuse_remove (lists of module names),
 decision.<function> ("new" | "vendor" | "thirdparty" | "stub" | "drop" | "existing:<module>"),
 detail.<function>, interfaces_extra, resolution, throughput, clocks, cpu, firmware,
-budget, speed, verification, notes.
+budget, speed, verification, header_template (file path), guidelines (file path),
+guidelines_csv (CSV file path: guideline, mandatory, optional, notes; "" = none),
+coverage ("" = 100 % on every metric, or "<metric>=<percent> <reason>; ..."), notes.
 """
 from __future__ import annotations
 
@@ -41,6 +44,9 @@ import textwrap
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import prompt_common as pc  # noqa: E402
 
 IP_ROOT = Path(__file__).resolve().parents[1]           # digital_ip/ip
 REPO = IP_ROOT.parent                                    # digital_ip
@@ -452,6 +458,22 @@ def build(ask: Asker, mods: dict[str, Module]) -> str:
                               [("full", "system testbench with firmware, board models and end-to-end image checks"),
                                ("smoke", "smoke test of the top-level wiring only"),
                                ("none", "RTL only")], "full")
+    header_file = ask.text("header_template", "File header template file:", pc.HEADER_FILE)
+    guidelines_file = ask.text("guidelines", "Design guidelines file:", pc.GUIDELINES_FILE)
+    csv_default = pc.guidelines_csv or ""
+    guidelines_csv = ask.text("guidelines_csv", "Guidelines CSV (guideline, mandatory, optional, notes; Enter: "
+                              + (csv_default or "none") + "):", csv_default)
+    pc.guidelines_csv = pc.default_guidelines_csv(guidelines_csv) if guidelines_csv else None
+    cov_raw = ask.text("coverage", "Code coverage targets: Enter keeps 100 % for every metric, or lower one with "
+                       "'<metric start>=<percent> <reason>', separated by ';' (e.g. 'Toggle=95 tied-off bits'):", "")
+    cov_targets, cov_reasons = {}, []
+    for item in [c for c in str(cov_raw).split(";") if c.strip()]:
+        m = re.match(r"\s*([^=]+?)\s*=\s*(\d+)\s*(.*)$", item)
+        if m:
+            for metric, _ in pc.COVERAGE:
+                if metric.lower().startswith(m.group(1).lower()):
+                    cov_targets[metric] = int(m.group(2))
+                    cov_reasons.append(f"- {metric}: {m.group(2)} %" + (f" ({m.group(3).strip()})" if m.group(3).strip() else ""))
     notes = ask.text("notes", "Anything else the generator must know (empty for none):", "")
 
     # ---- prompt
@@ -540,12 +562,11 @@ before continuing.
 - State explicitly where data can be dropped (rate mismatch, overflow), how it is counted, and how
   the system recovers without a reset.
 
-## 7. Clocks, resets and performance
+## 7. Clocks, resets, clock-domain crossings and performance
 
 - Clock domains: {clocks}. List every domain, its frequency and source.
-- Resets: one `reset_sync` per domain from a single asynchronous reset input.
-- Crossings only through library synchronisers (`async_fifo`, `axis_async_bridge`, `axi4_lite_cdc`,
-  `pulse_sync`, `bit_sync`, `toggle_sync`).
+- Resets: one `reset_sync` per domain; reset sequencing between domains has a single, documented source.
+{chr(10).join(pc.cdc_section())}
 - Video format: {resolution}
 - Throughput / latency: {throughput}
 - Timing target: {speed}
@@ -568,9 +589,21 @@ before continuing.
   nested loops of static initial blocks.
 - AXI4-Stream everywhere for data, AXI4-Lite for control; honour back-pressure, valid never depends
   on ready; a block that cannot be stalled must be documented and protected (FIFO, admission control).
-- Library file headers (Filename / Author: FPGA Cores 4 U / Description / Date) on every file.
+{chr(10).join(pc.formatting_constraints())}
 
-## 10. Deliverables
+## 10. File header
+
+{chr(10).join(pc.header_section(header_file))}
+
+## 11. Guidelines
+
+{chr(10).join(pc.guidelines_section(guidelines_file))}
+
+## 12. Tools
+
+{chr(10).join(pc.tools_section())}
+
+## 13. Deliverables
 
 ```text
 digital_ip/{location}/
@@ -578,24 +611,33 @@ digital_ip/{location}/
   src/{name}.sv           top level (+ any glue modules)
   sw/                     firmware (if there is a CPU)
   scripts/build.f         RTL file list, configuration.sv first
-  scripts/run_sim.sh      builds the firmware, runs the system test
-  tb/                     system testbench + tb/scripts/build.f
+  scripts/run_sim.sh      builds the firmware, runs the system test; --list-tests names every test
+  tb/                     system testbench, tb/tests/{name}_tests.sv (test_<what> tasks), tb/scripts/build.f
   synth/run_yosys.sh      synthesis, reports utilisation
   constraints/            board constraints (placeholder until a board is chosen)
   docs/                   block diagram(s), every block labelled with its library module and instance name
-  ci/run_checked.sh, Makefile (sim, lint, synth, diagram, ci), README.md, .gitignore
+  ci/run_checked.sh, Makefile (sim, list-tests, lint, cov, synth, diagram, ci), README.md, .gitignore
 ```
 
-## 11. Verification
+## 14. Verification
 
 {verif}
 
-## 12. Report back
+{chr(10).join(pc.tests_section(None, "scripts/run_sim.sh"))}
 
-Summarise: the files created, the block diagram, the address map, every change to existing IP
-and why, the decisions taken for missing functions, test results (with the mutation check),
-synthesis utilisation, and the known limits and open work.
-{(chr(10) + "## 13. Notes" + chr(10) + chr(10) + notes + chr(10)) if notes else ""}"""
+| Test | Checks |
+|------|--------|
+| `test_<what>` | <one per requirement: boot, configuration, each interface, end-to-end data, error recovery, ...> |
+
+{chr(10).join(pc.coverage_section(cov_targets))}
+{(chr(10) + "Lowered targets:" + chr(10) + chr(10).join(cov_reasons) + chr(10)) if cov_reasons else ""}
+## 15. Report back
+
+Summarise: the files created, the block, clock and reset diagrams, the address map, every change
+to existing IP and why, the decisions taken for missing functions, the test list with results
+(with the mutation check), coverage per metric (and every waiver), synthesis utilisation, and
+the known limits and open work.
+{(chr(10) + "## 16. Notes" + chr(10) + chr(10) + notes + chr(10)) if notes else ""}"""
 
 
 # ======================================================================= main
@@ -609,7 +651,11 @@ def main() -> None:
     ap.add_argument("--features", action="store_true", help="list the features and exit")
     ap.add_argument("-o", "--output", type=Path)
     ap.add_argument("--save-answers", type=Path)
+    ap.add_argument("--guidelines-csv", metavar="FILE",
+                    help="guidelines CSV (column 1 guideline, 2 mandatory, 3 optional, 4 notes); default "
+                         f"{pc.GUIDELINES_CSV} when it exists; the 'guidelines_csv' answer overrides it")
     args = ap.parse_args()
+    pc.guidelines_csv = pc.default_guidelines_csv(args.guidelines_csv)
 
     mods = discover()
     if args.list:

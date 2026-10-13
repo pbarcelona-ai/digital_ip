@@ -4,9 +4,11 @@
 // Description: Self-checking testbench for the GPIO IP. Tests direction
 //   and output registers, atomic set/clear/toggle, input synchronization,
 //   rising and falling edge interrupts with masks, write-1-to-clear and
-//   the irq output. Prints TEST PASSED on success.
+//   the irq output, and the ID block (ID "GPIO", VERSION, DATE at 0x00-0x08;
+//   the register map from 0x10: bfm.base). Prints TEST PASSED on success.
+//   The DUT is gpio_top (register map gpio_regs + logic gpio).
 //   The test tasks are in tests/gpio_tests.sv (`included).
-// Date: 2026-09-29
+// Date: 2026-10-12
 `timescale 1ns/1ps
 module gpio_tb;
   localparam int W = 8;
@@ -60,45 +62,13 @@ module gpio_tb;
     repeat (4) @(posedge aclk);
     aresetn = 1;
     repeat (2) @(posedge aclk);
-    check(gpio_t == '1, "pins should reset to inputs");
-    bfm.write(8'h04, 32'h0F);                       // low nibble outputs
-    bfm.write(8'h00, 32'hA5);
-    check(gpio_t == 8'hF0 && gpio_o == 8'hA5, "direction/out");
-    bfm.write(8'h0C, 32'h0A);
-    check(gpio_o == 8'hAF, "set");
-    bfm.write(8'h10, 32'h05);
-    check(gpio_o == 8'hAA, "clear");
-    bfm.write(8'h14, 32'hFF);
-    check(gpio_o == 8'h55, "toggle");
-    // inputs are synchronized
-    gpio_i = 8'h3C;
-    repeat (4) @(posedge aclk);
-    bfm.read(8'h08, rd);
-    check(rd == 32'h3C, "input read");
-    // edge interrupts: rise on bit 0 and 6, fall on bit 2
-    bfm.write(8'h1C, 32'h41);
-    bfm.write(8'h20, 32'h04);
-    bfm.write(8'h18, 32'h45);
-    gpio_i = 8'h3D; // bit0 rises
-    repeat (5) @(posedge aclk);
-    check(irq == 1, "irq after rising edge");
-    bfm.read(8'h24, rd);
-    check(rd == 32'h01, $sformatf("status %h", rd));
-    bfm.write(8'h24, 32'h01);
-    repeat (3) @(posedge aclk);
-    check(irq == 0, "irq not cleared by W1C");
-    gpio_i = 8'h39; // bit2 falls
-    repeat (5) @(posedge aclk);
-    bfm.read(8'h24, rd);
-    check(rd == 32'h04, "falling edge status");
-    bfm.write(8'h24, 32'h04);
-    gpio_i = 8'h79; // bit6 rises but masked out of INT_EN
-    repeat (5) @(posedge aclk);
-    check(irq == 1, "bit 6 (rise enabled) should interrupt");
-    bfm.write(8'h18, 32'h00);
-    bfm.write(8'h24, 32'hFF);
-    repeat (3) @(posedge aclk);
-    check(irq == 0, "irq with INT_EN=0");
+    bfm.base = 'h10;                                 // the map after the ID block
+    test_id_block();
+    test_reset();
+    test_output();
+    test_input();
+    test_edge_irq();
+    test_ro_write();
     check(bfm.resp_errors == 0, "axi errors");
     if (errors == 0) $display("TEST PASSED");
     else $display("TEST FAILED (%0d errors)", errors);

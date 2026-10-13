@@ -57,63 +57,15 @@ module intc_tb;
     repeat (4) @(posedge aclk);
     aresetn = 1;
     repeat (2) @(posedge aclk);
-    // level source 5, enabled
-    bfm.write(8'h00, 32'h0FFF);
-    irq_i[5] = 1;
-    settle();
-    check(irq == 1, "level irq");
-    bfm.read(8'h14, rd);
-    check(rd[31] && rd[4:0] == 5, $sformatf("vector %h", rd));
-    irq_i[5] = 0;
-    settle();
-    check(irq == 0, "level irq should drop with source");
-    // priority: sources 9 and 3 -> 3 wins
-    irq_i[9] = 1;
-    irq_i[3] = 1;
-    settle();
-    bfm.read(8'h14, rd);
-    check(rd[4:0] == 3, "priority lowest index");
-    irq_i = 0;
-    settle();
-    // edge source 7: pulse latches until cleared
-    bfm.write(8'h04, 32'h0080);
-    irq_i[7] = 1;
-    settle();
-    irq_i[7] = 0;
-    settle();
-    check(irq == 1, "edge latch should hold");
-    bfm.read(8'h0C, rd);
-    check(rd[7] == 1, "pending bit 7");
-    bfm.write(8'h0C, 32'h0080);
-    settle();
-    check(irq == 0, "W1C edge clear");
-    // active-low source 2 (level)
-    bfm.write(8'h08, 32'h0004);
-    settle();
-    check(irq == 1, "active-low: input low is asserted");
-    irq_i[2] = 1;
-    settle();
-    check(irq == 0, "active-low deasserted when input high");
-    irq_i[2] = 0;
-    bfm.write(8'h08, 32'h0000);
-    settle();
-    // masking
-    irq_i[14] = 1;
-    settle();
-    check(irq == 0, "source 14 not enabled");
-    bfm.write(8'h00, 32'h4000);
-    settle();
-    check(irq == 1, "enable 14");
-    irq_i[14] = 0;
-    bfm.write(8'h00, 32'h0FFF);
-    // software interrupt on edge source 7
-    settle();
-    bfm.write(8'h10, 32'h0080);
-    settle();
-    check(irq == 1, "software set");
-    bfm.write(8'h0C, 32'h0080);
-    settle();
-    check(irq == 0, "software clear");
+    bfm.base = 'h10;                                 // the map after the ID block
+    test_id_block();
+    test_level();
+    test_priority();
+    test_edge();
+    test_active_low();
+    test_mask();
+    test_soft_set();
+
     check(bfm.resp_errors == 0, "axi errors");
     if (errors == 0) $display("TEST PASSED");
     else $display("TEST FAILED (%0d errors)", errors);

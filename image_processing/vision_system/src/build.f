@@ -17,5 +17,7 @@
 ../ip/ext_frame_buffer/src/ext_frame_buffer.sv
 axis_in_ctrl.sv
 axis_out_ctrl.sv
+../../../ip/bus/axi4_lite_slave/src/axi4_lite_slave.sv
+include/vision_system_regs.sv
 axi_lite_regs.sv
 vision_system.sv

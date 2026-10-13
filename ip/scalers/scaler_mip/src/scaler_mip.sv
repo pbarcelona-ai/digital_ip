@@ -39,6 +39,8 @@ module scaler_mip #(
   parameter int ANISO_MAX_LOG2 = 0,    // log2 of max probes (0..4)
   parameter int PHASE_BITS    = 8,     // bilinear phase resolution
   parameter logic [31:0] IP_ID = 32'h4D49_504D,               // "MIPM"
+  parameter logic [31:0] VERSION_OVR = '0,           // VERSION / DATE of a wrapping scaler (0: this one's)
+  parameter logic [31:0] DATE_OVR = '0,
   parameter int PINGPONG      = 0,     // 1: double buffer (capture while generating)
   localparam int PIX_W   = CHANNELS * COMP_W   // bits per pixel
 )(
@@ -75,6 +77,8 @@ module scaler_mip #(
   output logic              m_axis_tuser,   // start of frame
   output logic              m_axis_tlast    // end of line
 );
+  localparam logic [31:0] IP_VERSION = "1.10";        // VERSION register (stamp_version.py)
+  localparam logic [31:0] IP_DATE    = 32'h10122026;  // DATE register, BCD mm/dd/yyyy
 
   // CAPS = {PHASE_BITS, COMP_W, CHANNELS, LEVELS}
   localparam logic [31:0] CAPS = {8'(PHASE_BITS), 8'(COMP_W), 8'(CHANNELS), 8'(LEVELS)};
@@ -113,6 +117,8 @@ module scaler_mip #(
     .MAX_W(MAX_W),
     .MAX_H(MAX_H),
     .IP_ID(IP_ID),
+    .IP_VERSION(VERSION_OVR != 0 ? VERSION_OVR : IP_VERSION),
+    .IP_DATE(DATE_OVR != 0 ? DATE_OVR : IP_DATE),
     .CAPS(CAPS),
     .NBUF(PINGPONG ? 2 : 1)
   ) u_ctrl (

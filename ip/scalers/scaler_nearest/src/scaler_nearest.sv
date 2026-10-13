@@ -60,6 +60,8 @@ module scaler_nearest #(
   // Identification registers (IP_ID = ASCII "NEAR";
   // CAPS = {phase bits, COMP_W, CHANNELS, taps})
   localparam logic [31:0] IP_ID = 32'h4E45_4152;             // "NEAR"
+  localparam logic [31:0] IP_VERSION = "1.10";        // VERSION register (stamp_version.py)
+  localparam logic [31:0] IP_DATE    = 32'h10122026;  // DATE register, BCD mm/dd/yyyy
   localparam logic [31:0] CAPS  = {8'd1, 8'(COMP_W), 8'(CHANNELS), 8'd1};
 
   // ---------------------------------------------------------------- buffering
@@ -202,6 +204,8 @@ module scaler_nearest #(
     .MAX_W(MAX_W),
     .MAX_H(MAX_H),
     .IP_ID(IP_ID),
+    .IP_VERSION(IP_VERSION),
+    .IP_DATE(IP_DATE),
     .CAPS(CAPS),
     .NBUF(NBUF),
     .LB_ROWS(LB_ROWS),

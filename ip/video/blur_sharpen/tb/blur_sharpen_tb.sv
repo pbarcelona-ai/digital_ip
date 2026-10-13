@@ -33,7 +33,7 @@ module blur_sharpen_tb;
   logic [C*CW-1:0] sd, md;
   logic sl, su, sv, sr, ml, mu, mv, mr;
 
-  blur_sharpen #(
+  blur_sharpen_top #(
     .N(N),
     .C(C),
     .CW(CW),
@@ -115,12 +115,13 @@ module blur_sharpen_tb;
     int kbad;
     realtime lat [5];
     repeat (5) @(posedge clk);
+    bfm.base = 'h10;                           // the map after the ID block
     rst_n = 1;
     repeat (5) @(posedge clk);
 
+    test_id_block();
+
     // 1. registers
-    rd(16'h000, v);
-    check(v == 32'h424C_5348, $sformatf("ID %h", v));
     rd(16'h018, v);
     check(v == {8'd8, 8'd3, 4'd0, 4'd12, 4'd0, 4'd5}, $sformatf("INFO %h", v));
     rd(16'h004, v);

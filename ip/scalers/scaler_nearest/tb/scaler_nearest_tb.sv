@@ -78,6 +78,7 @@ module tb_scaler_nearest;
     tb_init("scaler_nearest");      // parse plusargs, load +IMG
     reset_dut();
     axil_check(12'h024, 32'h4E45_4152);           // IP_ID "NEAR"
+    check_id_block('h0, 32'h4E45_4152);      // ID block: ID, VERSION, DATE
     axil_check(12'h02C, {16'(MAX_H), 16'(MAX_W)}); // MAX_SIZE
     if (use_file) begin
       run_file_suite();              // +IMG=<file.ppm>

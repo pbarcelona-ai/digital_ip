@@ -31,7 +31,7 @@ module sharpen_filter_tb;
   logic [C*CW-1:0] sd, md;
   logic sl, su, sv, sr, ml, mu, mv, mr;
 
-  sharpen_filter #(
+  sharpen_filter_top #(
     .N(N),
     .C(C),
     .CW(CW),
@@ -107,10 +107,10 @@ module sharpen_filter_tb;
     logic [31:0] v;
     int kbad;
     repeat (5) @(posedge clk);
+    bfm.base = 'h10;                           // the map after the ID block
     rst_n = 1;
     repeat (5) @(posedge clk);
-    rd(16'h00, v);
-    check(v == 32'h5348_5250, $sformatf("ID %h", v));
+    test_id_block();
     rd(16'h08, v);
     check(v == conv2d_pkg::blur_shift(N), $sformatf("SHIFT %0d", v));
     rd(16'h04, v);

@@ -3,13 +3,15 @@
 // Author: FPGA Cores 4 U
 // Description: Block diagram of the video_processor top level
 //   (src/video_processor.sv): MIPI CSI-2 camera input, ISP (video_pipeline),
-//   lens-distortion correction (vision_system) at the pipeline insert point,
+//   lens-distortion correction (vision_system), blur / sharpen and target
+//   tracking with a symbol overlay (object_tracker, symbol_overlay) at the
+//   pipeline insert point,
 //   scaler, HDMI / DVI and LVDS outputs (MIPI DSI / CSI-2 optional), and the
 //   py_soc control CPU with its external interfaces. No target device or
 //   board is selected; vendor parts are shown generically. Blocks carry
 //   the library module name (bold) and instance name (grey).
 //   Render: make diagram
-// Date: 2026-10-02
+// Date: 2026-10-11
 // ***************
 digraph video_system {
   graph [rankdir=LR, newrank=true, compound=true, bgcolor="white", pad=0.35, nodesep=0.25, ranksep=0.45,
@@ -131,6 +133,11 @@ digraph video_system {
           <TD BGCOLOR="#d9f99d"><B>conv2d_core</B> <FONT COLOR="#4b5563">u_stage2</FONT><BR/><B>isp_window</B> + 5×5 MAC</TD></TR>
       <TR><TD COLSPAN="2"><B>ip_axil_regs</B> <FONT COLOR="#4b5563">u_regs</FONT>: blur / sharpen kernel banks (conv2d_pkg)</TD></TR></TABLE>>];
 
+    // ---------------- target tracking and symbol overlay ----------------
+    trk [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#e0f2fe" COLOR="#0369a1">
+      <TR><TD><B>object_tracker</B> <FONT COLOR="#4b5563">u_track</FONT>  `VP_TRACK<BR/>tap: object box in a search window</TD></TR>
+      <TR><TD><B>symbol_overlay</B> <FONT COLOR="#4b5563">u_overlay</FONT><BR/>dashed box, crosshair, fill (4 objects)</TD></TR></TABLE>>];
+
     // ---------------- vision_system ----------------
     subgraph cluster_vs {
       label=<<FONT POINT-SIZE="13"><B>vision_system</B></FONT>  <FONT COLOR="#6b7280">u_vision · lens / barrel distortion correction (pix_clk)</FONT>>;
@@ -176,6 +183,7 @@ digraph video_system {
     <TR><TD BGCOLOR="#fff7ed"> </TD><TD ALIGN="LEFT">vision_system (pix_clk)</TD></TR>
     <TR><TD BGCOLOR="#cffafe"> </TD><TD ALIGN="LEFT">scaler</TD></TR>
     <TR><TD BGCOLOR="#ecfccb"> </TD><TD ALIGN="LEFT">blur / sharpen filter (pix_clk)</TD></TR>
+    <TR><TD BGCOLOR="#e0f2fe"> </TD><TD ALIGN="LEFT">tracking, symbol overlay (pix_clk)</TD></TR>
     <TR><TD BGCOLOR="#ede9fe"> </TD><TD ALIGN="LEFT">CPU, registers, control</TD></TR>
     <TR><TD BGCOLOR="#fde68a"> </TD><TD ALIGN="LEFT">clock-domain crossing</TD></TR>
     <TR><TD BGCOLOR="#dbeafe"> </TD><TD ALIGN="LEFT">serial clock domain</TD></TR>
@@ -190,7 +198,8 @@ digraph video_system {
   adapt -> vs_in [penwidth=2.6, color="#c2410c", label="≤ 720 × 720"];
   vs_out -> adapt [penwidth=2.6, color="#c2410c", label="corrected"];
   adapt -> filt [penwidth=2.6, color="#4d7c0f", label="corrected"];
-  filt -> ins [penwidth=2.6, color="#4d7c0f", label="filtered"];
+  filt -> trk [penwidth=2.6, color="#4d7c0f", label="filtered"];
+  trk -> ins [penwidth=2.6, color="#0369a1", label="with symbols"];
   vs_fb -> sdram [label="sdram_clk, cke, cs_n, ras_n, cas_n,\nwe_n, a, ba, dqm, dq (write)"];
   sdram -> vs_fb [label="dq (read)", constraint=false];
   hdmi -> tser [penwidth=2.6, label="10b ×4"];
@@ -221,6 +230,7 @@ digraph video_system {
   adec -> vs_regs [color="#7c3aed", penwidth=1.6, label="0x1_8000"];
   adec -> filt [color="#7c3aed", penwidth=1.6, label="0x1_8200", constraint=false];
   adec -> fcnt [color="#7c3aed", penwidth=1.6, label="0x1_8400"];
+  adec -> trk [color="#7c3aed", penwidth=1.6, label="0x1_8500 / 0x1_8800", constraint=false];
   vregs -> isp [style=dotted, color="#7c3aed", arrowhead=none, constraint=false];
   vs_regs -> vs_out [style=dotted, color="#7c3aed", arrowhead=none, constraint=false];
 

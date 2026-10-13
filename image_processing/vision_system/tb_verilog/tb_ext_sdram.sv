@@ -136,8 +136,8 @@ module tb_ext_sdram;
     rst_n = 1'b1;
 
     wait (dut.g_ext_frame_buffer.u_fb.initialized);
-    write_reg(8'h08, WIDTH);
-    write_reg(8'h0c, HEIGHT);
+    write_reg(8'h18, WIDTH);
+    write_reg(8'h1C, HEIGHT);
     repeat (100) @(negedge clk);
 
     fork

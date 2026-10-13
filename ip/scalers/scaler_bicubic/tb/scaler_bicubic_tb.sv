@@ -113,6 +113,7 @@ module tb_scaler_bicubic;
     tb_init("scaler_bicubic");      // parse plusargs, load +IMG
     reset_dut();
     axil_check(12'h024, 32'h4243_5542);     // IP_ID "BCUB"
+    check_id_block('h0, 32'h4243_5542);      // ID block: ID, VERSION, DATE
     axil_check(12'h040, {8'(COEF_FRAC), 8'(COEF_W), 8'(PHASE_BITS), 8'(TAPS)});
     check_default_tables();
     kind = KERNEL_CUBIC; // Catmull-Rom

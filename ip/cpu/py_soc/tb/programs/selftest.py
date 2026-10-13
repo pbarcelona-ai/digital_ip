@@ -15,33 +15,34 @@ The testbench watches the `stage` and result globals.
 """
 from machine import mem32          # ignored by pyc: mem32 is native
 
-# ---------------- address map ----------------
-SYSCTL = 0x0100
-INTC = 0x1000
-WDT = 0x2000
-GPIO0 = 0x3000
-GPIO1 = 0x4000
-GPIO2 = 0x5000
-UART0 = 0x6000
-UART1 = 0x7000
-I2C0 = 0x8000
-I2C1 = 0x9000
-SPI0 = 0xA000
-SPI1 = 0xB000
-FLASH = 0xC000
-UART0_D = UART0 + 0x100            # py_stream_port data ports
-UART1_D = UART1 + 0x100
-I2C0_D = I2C0 + 0x100
-I2C1_D = I2C1 + 0x100
-SPI0_D = SPI0 + 0x100
-SPI1_D = SPI1 + 0x100
-FLASH_D = FLASH + 0x100
+# ---------------- address map (src/py_soc_map_pkg.sv, the decoder's own file) ----------------
+from py_soc_map_pkg import *       # SYSCTL_BASE, INTC_BASE, ... (pyc.py -I src)
+SYSCTL = SYSCTL_BASE
+INTC = INTC_BASE
+WDT = WDT_BASE
+GPIO0 = GPIO0_BASE
+GPIO1 = GPIO1_BASE
+GPIO2 = GPIO2_BASE
+UART0 = UART0_BASE
+UART1 = UART1_BASE
+I2C0 = I2C0_BASE
+I2C1 = I2C1_BASE
+SPI0 = SPI0_BASE
+SPI1 = SPI1_BASE
+FLASH = FLASH_BASE
+UART0_D = UART0 + DPORT            # py_stream_port data ports
+UART1_D = UART1 + DPORT
+I2C0_D = I2C0 + DPORT
+I2C1_D = I2C1 + DPORT
+SPI0_D = SPI0 + DPORT
+SPI1_D = SPI1 + DPORT
+FLASH_D = FLASH + DPORT
 
-# data port
-TXDATA = 0x00
-RXDATA = 0x04
-PSTATUS = 0x08
-IRQ_EN = 0x0C
+# data port (py_stream_port: ID block 0x00-0x0F, registers from 0x10)
+TXDATA = 0x10
+RXDATA = 0x14
+PSTATUS = 0x18
+IRQ_EN = 0x1C
 RX_VALID = 1 << 31
 LAST = 1 << 24
 TX_READY = 2
@@ -49,14 +50,15 @@ TX_OVF = 4
 TX_LEVEL_SHIFT = 20
 
 # system control
-RESET_CAUSE = 0x00
-CYCLES = 0x08
+RESET_CAUSE = 0x10
+CYCLES = 0x18
+CORE_RESET = 0x20                  # [0] 1 = release the core logic reset
 CAUSE_EXT = 1
 CAUSE_WDT = 2
 
 # interrupt controller
-INTC_ENABLE = 0x00
-INTC_MASKED = 0x18
+INTC_ENABLE = 0x10
+INTC_MASKED = 0x28
 IRQ_UART0 = 1 << 0
 IRQ_UART1 = 1 << 1
 IRQ_I2C0 = 1 << 2
@@ -67,27 +69,27 @@ IRQ_GPIO2 = 1 << 8
 IRQ_WDT = 1 << 9
 IRQ_FLASH_D = 1 << 11
 
-# GPIO
-G_OUT = 0x00
-G_DIR = 0x04
-G_IN = 0x08
-G_SET = 0x0C
-G_CLEAR = 0x10
-G_TOGGLE = 0x14
-G_INT_EN = 0x18
-G_RISE_EN = 0x1C
-G_INT_STATUS = 0x24
+# GPIO (map: ID block 0x00-0x0F, registers from 0x10)
+G_OUT = 0x10
+G_DIR = 0x14
+G_IN = 0x18
+G_SET = 0x1C
+G_CLEAR = 0x20
+G_TOGGLE = 0x24
+G_INT_EN = 0x28
+G_RISE_EN = 0x2C
+G_INT_STATUS = 0x34
 
 # SPI
-S_CTRL = 0x00
-S_DIV = 0x04
-S_WORD_LEN = 0x08
+S_CTRL = 0x10
+S_DIV = 0x14
+S_WORD_LEN = 0x18
 
 # I2C
-I_CTRL = 0x00
-I_ADDR = 0x04
-I_LEN = 0x08
-I_STATUS = 0x10
+I_CTRL = 0x10
+I_ADDR = 0x14
+I_LEN = 0x18
+I_STATUS = 0x20
 I_EN = 1
 I_START = 2
 I_READ = 4
@@ -96,20 +98,20 @@ I_NACK = 4
 I_CLEAR = 0xE
 
 # SPI flash controller
-F_CMD = 0x00
-F_ADDR = 0x04
-F_LEN = 0x08
-F_STATUS = 0x10
+F_CMD = 0x10
+F_ADDR = 0x14
+F_LEN = 0x18
+F_STATUS = 0x20
 F_READ_DATA = 1 << 16
 F_ADDR_EN = 1 << 8
 F_DONE = 2
 
 # watchdog
-W_CTRL = 0x00
-W_TIMEOUT = 0x04
-W_PRESCALE = 0x08
-W_PRETIMEOUT = 0x0C
-W_KICK = 0x14
+W_CTRL = 0x10
+W_TIMEOUT = 0x14
+W_PRESCALE = 0x18
+W_PRETIMEOUT = 0x1C
+W_KICK = 0x24
 WDT_KEY = 0x5AFEC0DE
 
 TMO = 20000
@@ -381,10 +383,10 @@ if flash_word != 0x31435950:                   # "PYC1"
     errors += 1
 
 # 10b. Core logic reset (SYSCTL CORE_RESET): held after reset, released by writing 1
-if mem32[SYSCTL + 0x10] != 0:
+if mem32[SYSCTL + CORE_RESET] != 0:
     errors += 1
-mem32[SYSCTL + 0x10] = 1
-if mem32[SYSCTL + 0x10] != 1:
+mem32[SYSCTL + CORE_RESET] = 1
+if mem32[SYSCTL + CORE_RESET] != 1:
     errors += 1
 
 # 11. Watchdog: kicked from the pre-timeout interrupt three times, then left to expire

@@ -30,86 +30,87 @@ self-test waits for interrupts.
 from machine import mem32          # ignored by pyc: mem32 is native
 
 # ---------------- py_soc address map ----------------
-SYSCTL = 0x0100
-INTC = 0x1000
-WDT = 0x2000
-GPIO0 = 0x3000
-GPIO1 = 0x4000
-GPIO2 = 0x5000
-UART0 = 0x6000
-UART1 = 0x7000
-I2C0 = 0x8000
-I2C1 = 0x9000
-SPI0 = 0xA000
-SPI1 = 0xB000
-FLASH = 0xC000
-DPORT = 0x100                      # py_stream_port data port of each peripheral
+from py_soc_map_pkg import *       # py_soc register windows (src/py_soc_map_pkg.sv, pyc.py -I)
+SYSCTL = SYSCTL_BASE
+INTC = INTC_BASE
+WDT = WDT_BASE
+GPIO0 = GPIO0_BASE
+GPIO1 = GPIO1_BASE
+GPIO2 = GPIO2_BASE
+UART0 = UART0_BASE
+UART1 = UART1_BASE
+I2C0 = I2C0_BASE
+I2C1 = I2C1_BASE
+SPI0 = SPI0_BASE
+SPI1 = SPI1_BASE
+FLASH = FLASH_BASE
+# DPORT (py_soc_map_pkg): the py_stream_port data port of each peripheral
 STR_BASE = 0x8000                  # pyc string table in flash
 
-# data port registers (py_stream_port)
-TXDATA = 0x00
-RXDATA = 0x04
-PSTATUS = 0x08
+# data port registers (py_stream_port: ID block 0x00-0x0F, registers from 0x10)
+TXDATA = 0x10
+RXDATA = 0x14
+PSTATUS = 0x18
 RX_VALID = 1 << 31
 LAST = 1 << 24
 TX_READY = 2
 TX_EMPTY = 8
 
 # system control, interrupt controller, watchdog
-RESET_CAUSE = 0x00
-BOOT_STATUS = 0x04
-CYCLES = 0x08
-SOC_ID = 0x0C
-CORE_RESET = 0x10                  # [0] 1 = release the core logic (video) reset
-CLK_EN = 0x14                      # clock generator output enables
-CLK_STATUS = 0x18                  # [0] clock generator outputs locked [1] clock generator present
-INTC_ENABLE = 0x00
-INTC_EDGE = 0x04
-INTC_PENDING = 0x0C
-INTC_SOFT = 0x10
-INTC_MASKED = 0x18
+RESET_CAUSE = 0x10
+BOOT_STATUS = 0x14
+CYCLES = 0x18
+SOC_ID = 0x1C
+CORE_RESET = 0x20                  # [0] 1 = release the core logic (video) reset
+CLK_EN = 0x24                      # clock generator output enables
+CLK_STATUS = 0x28                  # [0] clock generator outputs locked [1] clock generator present
+INTC_ENABLE = 0x10
+INTC_EDGE = 0x14
+INTC_PENDING = 0x1C
+INTC_SOFT = 0x20
+INTC_MASKED = 0x28
 IRQ_GPIO2 = 1 << 8
 IRQ_WDT = 1 << 9
 IRQ_SOFT = 1 << 15                 # software-set self-test source (13 / 14: frame counter)
-W_CTRL = 0x00
-W_TIMEOUT = 0x04
-W_PRESCALE = 0x08
-W_PRETIMEOUT = 0x0C
-W_KICK = 0x14
-W_STATUS = 0x18
+W_CTRL = 0x10
+W_TIMEOUT = 0x14
+W_PRESCALE = 0x18
+W_PRETIMEOUT = 0x1C
+W_KICK = 0x24
+W_STATUS = 0x28
 WDT_KEY = 0x5AFEC0DE
 
-# GPIO, UART, SPI, I2C, flash
-G_OUT = 0x00
-G_DIR = 0x04
-G_IN = 0x08
-G_SET = 0x0C
-G_CLEAR = 0x10
-G_INT_EN = 0x18
-G_RISE_EN = 0x1C
-G_FALL_EN = 0x20
-G_INT_STATUS = 0x24
+# GPIO, UART, SPI, I2C, flash (gpio map: ID block 0x00-0x0F, registers from 0x10)
+G_OUT = 0x10
+G_DIR = 0x14
+G_IN = 0x18
+G_SET = 0x1C
+G_CLEAR = 0x20
+G_INT_EN = 0x28
+G_RISE_EN = 0x2C
+G_FALL_EN = 0x30
+G_INT_STATUS = 0x34
 LED_RUN = 1 << 1                   # GPIO0[1]: "running" LED
-QUICK_STRAP = 1 << 31              # GPIO0[31] input: quick simulation (register dumps skipped)
-U_STATUS = 0x08
-S_CTRL = 0x00
-S_DIV = 0x04
-S_WORD_LEN = 0x08
-I_CTRL = 0x00
-I_ADDR = 0x04
-I_LEN = 0x08
-I_STATUS = 0x10
+QUICK_STRAP = 1 << 31              # GPIO0[31] input: quick simulation (register dumps of sections 3 and 5 skipped)
+U_STATUS = 0x18                    # uart map: ID block 0x00-0x0F, CTRL 0x10, FCW 0x14, STATUS 0x18
+S_CTRL = 0x10
+S_DIV = 0x14
+S_WORD_LEN = 0x18
+I_CTRL = 0x10
+I_ADDR = 0x14
+I_LEN = 0x18
+I_STATUS = 0x20
 I_EN = 1
 I_START = 2
 I_READ = 4
 I_DONE = 2
 I_NACK = 4
 I_CLEAR = 0xE
-F_CMD = 0x00
-F_ADDR = 0x04
-F_LEN = 0x08
-F_CLKDIV = 0x0C
-F_STATUS = 0x10
+F_CMD = 0x10
+F_ADDR = 0x14
+F_LEN = 0x18
+F_CLKDIV = 0x1C
+F_STATUS = 0x20
 F_BUSY = 1
 F_DONE = 2
 F_READ_DATA = 1 << 16
@@ -126,6 +127,7 @@ lead = 0
 gpio_cnt = 0
 wdt_cnt = 0
 soft_cnt = 0
+log_wr = 0                         # 1: wreg() reports every register write on UART 0 (set-up phases)
 
 
 # ======================================================================= text output on UART 0
@@ -158,12 +160,23 @@ def flash_byte():
     return d & 0xFF
 
 
-def puts(h):
-    """Print string handle h (pyc string table: 64-byte slots, length, continue flag, text)."""
+def str_addr(h):
+    """Flash address of string handle h's first slot (pyc string table: 64-byte slots, length,
+    continue flag, text)."""
     if h >= 256:                                      # handle decoding (pyc.py string table)
-        slot = h
-    else:
-        slot = h & 255
+        return STR_BASE + (h << 6)
+    return STR_BASE + ((h & 255) << 6)
+
+
+def str_len(h):
+    """Length of string handle h's first slot (0: empty string)."""
+    flash_read(str_addr(h), 1)
+    return flash_byte()
+
+
+def puts(h):
+    """Print string handle h."""
+    slot = (str_addr(h) - STR_BASE) >> 6
     more = 1
     while more:
         a = STR_BASE + (slot << 6)
@@ -281,9 +294,9 @@ def rx_word(port):
 
 # ======================================================================= register dump
 
-def reg_line(off, h, v):
-    puts("  +0x")
-    hexs(off, 8)
+def reg_line(addr, h, v):
+    puts("  0x")
+    hexs(addr, 16)
     puts("  ")
     puts(h)
     puts(" ")
@@ -291,11 +304,39 @@ def reg_line(off, h, v):
     nl()
 
 
+def wreg(addr, v, h):
+    """Write v to the register at addr. While log_wr is set (set-up phases) the write is reported on
+    UART 0: h is a strings() block of three entries, "<module> <register>" and two lines saying what
+    the change does (the second may be ""), printed as
+        <module> <register>
+          old value 0x........
+          new value 0x........   (read back after the write)
+          <what the change does>"""
+    if not log_wr:
+        mem32[addr] = v
+        return
+    old = mem32[addr]
+    mem32[addr] = v
+    new = mem32[addr]
+    say(h)
+    puts("  old value ")
+    hex32(old)
+    nl()
+    puts("  new value ")
+    hex32(new)
+    nl()
+    puts("  ")
+    say(h + 1)
+    if str_len(h + 2):
+        puts("  ")
+        say(h + 2)
+
+
 def dump(base, names, n):
     """n registers from base; names is a strings() block, one padded name + description each."""
     i = 0
     while i < n:
-        reg_line(i << 2, names + i, mem32[base + (i << 2)])
+        reg_line(base + (i << 2), names + i, mem32[base + (i << 2)])
         i += 1
 
 
@@ -553,7 +594,7 @@ def cpu_init(start):
     test_flash()
     test_wdt()
     stage = 3
-    heading("3. CPU register dump (offset  name  description  value)")
+    heading("3. CPU register dump (address  name  description  value)")
     if mem32[GPIO0 + G_IN] & QUICK_STRAP:
         say(" (skipped: GPIO0[31] quick-simulation strap)")
     else:
@@ -574,15 +615,23 @@ def cpu_init(start):
 def dump_cpu():
     say(" SYSCTL @ 0x0100")
     dump(SYSCTL, strings(
+        "ID           \"SCTL\" (ASCII)                          ",
+        "VERSION      ASCII \"d.dd\", +0.01 per source change    ",
+        "DATE         BCD mm/dd/yyyy of that change            "), 3)
+    dump(SYSCTL + 0x10, strings(
         "RESET_CAUSE  [0] external [1] watchdog (sticky)       ",
         "BOOT_STATUS  [0] done [1] error [6:4] error code      ",
         "CYCLES       free-running clock cycle counter         ",
-        "ID           SoC ID: \"PY\" version 1.0               ",
+        "SOC_ID       SoC ID: \"PY\" version 1.0                 ",
         "CORE_RESET   [0] 1 = core logic out of reset          ",
         "CLK_EN       clock output enables                     ",
         "CLK_STATUS   [0] clocks locked [1] generator present  "), 7)
     say(" INTC @ 0x1000")
     dump(INTC, strings(
+        "ID           \"INTC\" (ASCII)                          ",
+        "VERSION      ASCII \"d.dd\", +0.01 per source change    ",
+        "DATE         BCD mm/dd/yyyy of that change            "), 3)
+    dump(INTC + 0x10, strings(
         "ENABLE       interrupt enable mask                    ",
         "EDGE_TYPE    1 = edge, 0 = level, per source          ",
         "ACTIVE_LOW   1 = active-low source                    ",
@@ -592,6 +641,10 @@ def dump_cpu():
         "MASKED       pending AND enabled                      "), 7)
     say(" WDT @ 0x2000")
     dump(WDT, strings(
+        "ID           \"WDOG\" (ASCII)                          ",
+        "VERSION      ASCII \"d.dd\", +0.01 per source change    ",
+        "DATE         BCD mm/dd/yyyy of that change            "), 3)
+    dump(WDT + 0x10, strings(
         "CTRL         [0] enable [1] window [2] lock           ",
         "TIMEOUT      reset after this many ticks              ",
         "PRESCALE     clock cycles per tick - 1                ",
@@ -608,6 +661,10 @@ def dump_cpu():
         hex32(GPIO0 + (b << 12))
         nl()
         dump(GPIO0 + (b << 12), strings(
+            "ID           \"GPIO\" (ASCII)                           ",
+            "VERSION      ASCII \"d.dd\", +0.01 per source change    ",
+            "DATE         BCD mm/dd/yyyy of that change            "), 3)
+        dump(GPIO0 + (b << 12) + 0x10, strings(
             "OUT          output register                          ",
             "DIR          1 = output                               ",
             "IN           pin levels (synchronised)                ",
@@ -627,6 +684,10 @@ def dump_cpu():
         hex32(UART0 + (b << 12))
         nl()
         dump(UART0 + (b << 12), strings(
+            "ID           \"UART\" (ASCII)                           ",
+            "VERSION      ASCII \"d.dd\", +0.01 per source change    ",
+            "DATE         BCD mm/dd/yyyy of that change            "), 3)
+        dump(UART0 + (b << 12) + 0x10, strings(
             "CTRL         [0] tx [1] rx [2] parity [4] 2 stop      ",
             "FCW          baud word = baud * 16 * 2^32 / f_clk     ",
             "STATUS       [0] tx busy [1] rx busy [10] overrun     ",
@@ -641,6 +702,10 @@ def dump_cpu():
         hex32(I2C0 + (b << 12))
         nl()
         dump(I2C0 + (b << 12), strings(
+            "ID           \"I2CM\" (ASCII)                          ",
+            "VERSION      ASCII \"d.dd\", +0.01 per source change    ",
+            "DATE         BCD mm/dd/yyyy of that change            "), 3)
+        dump(I2C0 + (b << 12) + 0x10, strings(
             "CTRL         [0] en [1] start [2] read [3] no stop    ",
             "ADDR         7-bit target address                     ",
             "LEN          bytes to transfer                        ",
@@ -656,6 +721,10 @@ def dump_cpu():
         hex32(SPI0 + (b << 12))
         nl()
         dump(SPI0 + (b << 12), strings(
+            "ID           \"SPIM\" (ASCII)                          ",
+            "VERSION      ASCII \"d.dd\", +0.01 per source change    ",
+            "DATE         BCD mm/dd/yyyy of that change            "), 3)
+        dump(SPI0 + (b << 12) + 0x10, strings(
             "CTRL         [0] en [1] cpol [2] cpha [15:8] cs       ",
             "DIV          SCLK half period = DIV + 1 clocks        ",
             "WORD_LEN     bits per word                            ",
@@ -664,11 +733,14 @@ def dump_cpu():
         b += 1
     say(" FLASH @ 0xC000")
     dump(FLASH, strings(
+        "ID           \"SPFL\" (ASCII)                          ",
+        "VERSION      ASCII \"d.dd\", +0.01 per source change    ",
+        "DATE         BCD mm/dd/yyyy of that change            "), 3)
+    dump(FLASH + 0x10, strings(
         "CMD          last command: opcode, addr, dummy, dir   ",
         "ADDR         24-bit flash address                     ",
         "LEN          data bytes                               ",
         "CLKDIV       SCLK half period in clocks               ",
         "STATUS       [0] busy [1] done [2] command error      ",
-        "IRQ_EN       [0] done interrupt                       ",
-        "VERSION      controller version                       "), 7)
+        "IRQ_EN       [0] done interrupt                       "), 6)
     dump_port(FLASH)

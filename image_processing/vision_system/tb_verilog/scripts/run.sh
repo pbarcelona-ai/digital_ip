@@ -31,7 +31,7 @@ iverilog -g2012 -I tests $DEFS -o sim.vvp \
   ../ip/fixed_recip/src/fixed_recip.sv ../ip/mulq/src/mulq_s.sv ../ip/coord_gen/src/coord_gen.sv \
   ../ip/bilinear/src/bilinear.sv ../ip/bicubic/src/bicubic.sv ../ip/frame_buffer/src/frame_buffer.sv \
   ../ip/ext_frame_buffer/src/ext_frame_buffer.sv \
-  ../src/axis_in_ctrl.sv ../src/axis_out_ctrl.sv ../src/axi_lite_regs.sv \
+  ../src/axis_in_ctrl.sv ../src/axis_out_ctrl.sv ../../../ip/bus/axi4_lite_slave/src/axi4_lite_slave.sv ../src/include/vision_system_regs.sv ../src/axi_lite_regs.sv \
   ../src/vision_system.sv \
   tb_vision_system.sv
 

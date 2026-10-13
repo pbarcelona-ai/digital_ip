@@ -1,0 +1,186 @@
+{
+ "name": "vision_system_regs",
+ "ip": "vision_system",
+ "id": "VSYS",
+ "version": "1.10",
+ "desc": "Lens distortion correction: control, status, image size, distortion coefficients, calibration, model select, homography.",
+ "addr_width": 8,
+ "clk": "clk",
+ "rst_n": "rst_n",
+ "top": false,
+ "registers": [
+  {
+   "name": "CTRL",
+   "offset": "0x10",
+   "access": "WO",
+   "desc": "[0] soft reset request (self clearing, not stored)",
+   "width": 1
+  },
+  {
+   "name": "STATUS",
+   "offset": "0x14",
+   "access": "CMD",
+   "desc": "[0] busy [1] frame done (W1C) [2] reciprocal busy",
+   "width": 3
+  },
+  {
+   "name": "IMG_WIDTH",
+   "offset": "0x18",
+   "access": "RW",
+   "desc": "active frame width, 1..MAX_W",
+   "reset": "64"
+  },
+  {
+   "name": "IMG_HEIGHT",
+   "offset": "0x1C",
+   "access": "RW",
+   "desc": "active frame height, 1..MAX_H",
+   "reset": "64"
+  },
+  {
+   "name": "K1",
+   "offset": "0x20",
+   "access": "RW",
+   "desc": "signed Q16.16 radial coefficient (r^2 term)"
+  },
+  {
+   "name": "K2",
+   "offset": "0x24",
+   "access": "RW",
+   "desc": "signed Q16.16 radial coefficient (r^4 term)"
+  },
+  {
+   "name": "K3",
+   "offset": "0x28",
+   "access": "RW",
+   "desc": "signed Q16.16 radial coefficient (r^6 term)"
+  },
+  {
+   "name": "CENTER_X",
+   "offset": "0x2C",
+   "access": "RW",
+   "desc": "unsigned Q16.16, fraction of the width (0.5 = 0x8000)",
+   "reset": "0x8000"
+  },
+  {
+   "name": "CENTER_Y",
+   "offset": "0x30",
+   "access": "RW",
+   "desc": "unsigned Q16.16, fraction of the height",
+   "reset": "0x8000"
+  },
+  {
+   "name": "SCALE",
+   "offset": "0x34",
+   "access": "RW",
+   "desc": "unsigned Q16.16 edge-crop zoom (1.0 = 0x10000)",
+   "reset": "0x10000"
+  },
+  {
+   "name": "INTERP_MODE",
+   "offset": "0x3C",
+   "access": "RW",
+   "desc": "[0] 0 bilinear, 1 bicubic (change only while idle)"
+  },
+  {
+   "name": "CALIB_MODE",
+   "offset": "0x40",
+   "access": "RW",
+   "desc": "[0] 1 = direct camera calibration (FX / FY / CX / CY)"
+  },
+  {
+   "name": "FX",
+   "offset": "0x44",
+   "access": "RW",
+   "desc": "signed Q16.16 pixels, focal length x (CALIB_MODE 1)",
+   "reset": "0x10000"
+  },
+  {
+   "name": "FY",
+   "offset": "0x48",
+   "access": "RW",
+   "desc": "signed Q16.16 pixels, focal length y (CALIB_MODE 1)",
+   "reset": "0x10000"
+  },
+  {
+   "name": "CX",
+   "offset": "0x4C",
+   "access": "RW",
+   "desc": "signed Q16.16 pixels, principal point x (CALIB_MODE 1)"
+  },
+  {
+   "name": "CY",
+   "offset": "0x50",
+   "access": "RW",
+   "desc": "signed Q16.16 pixels, principal point y (CALIB_MODE 1)"
+  },
+  {
+   "name": "P1",
+   "offset": "0x54",
+   "access": "RW",
+   "desc": "signed Q16.16 tangential coefficient 1 (RADIAL)"
+  },
+  {
+   "name": "P2",
+   "offset": "0x58",
+   "access": "RW",
+   "desc": "signed Q16.16 tangential coefficient 2 (RADIAL)"
+  },
+  {
+   "name": "MODEL_SEL",
+   "offset": "0x5C",
+   "access": "RW",
+   "desc": "[2:0] 0 radial, 1 fisheye, 2 affine (reserved), 3 perspective, 4 scaling (reserved), 5 panoramic"
+  },
+  {
+   "name": "H11",
+   "offset": "0x60",
+   "access": "RW",
+   "desc": "homography, Q16.16",
+   "reset": "0x10000"
+  },
+  {
+   "name": "H12",
+   "offset": "0x64",
+   "access": "RW",
+   "desc": "homography, Q16.16"
+  },
+  {
+   "name": "H13",
+   "offset": "0x68",
+   "access": "RW",
+   "desc": "homography translation, pixels"
+  },
+  {
+   "name": "H21",
+   "offset": "0x6C",
+   "access": "RW",
+   "desc": "homography, Q16.16"
+  },
+  {
+   "name": "H22",
+   "offset": "0x70",
+   "access": "RW",
+   "desc": "homography, Q16.16",
+   "reset": "0x10000"
+  },
+  {
+   "name": "H23",
+   "offset": "0x74",
+   "access": "RW",
+   "desc": "homography translation, pixels"
+  },
+  {
+   "name": "H31",
+   "offset": "0x78",
+   "access": "RW",
+   "desc": "homography, Q16.16"
+  },
+  {
+   "name": "H32",
+   "offset": "0x7C",
+   "access": "RW",
+   "desc": "homography, Q16.16"
+  }
+ ]
+}

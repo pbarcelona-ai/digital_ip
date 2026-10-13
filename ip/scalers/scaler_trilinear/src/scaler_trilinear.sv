@@ -57,6 +57,8 @@ module scaler_trilinear #(
   output logic              m_axis_tuser,   // start of frame
   output logic              m_axis_tlast    // end of line
 );
+  localparam logic [31:0] IP_VERSION = "1.10";        // VERSION register (stamp_version.py)
+  localparam logic [31:0] IP_DATE    = 32'h10122026;  // DATE register, BCD mm/dd/yyyy
 
   // All logic is in scaler_mip; this wrapper disables anisotropic
   // probing (ANISO_MAX_LOG2 = 0) and sets the IP_ID. Ports connect by
@@ -71,7 +73,9 @@ module scaler_trilinear #(
     .LEVELS(LEVELS),
     .ANISO_MAX_LOG2(0),
     .PHASE_BITS(PHASE_BITS),
-    .IP_ID(32'h5452_494C) // "TRIL"
+    .IP_ID(32'h5452_494C), // "TRIL"
+    .VERSION_OVR(IP_VERSION),
+    .DATE_OVR(IP_DATE)
   ) u_core (.*);
 
 endmodule

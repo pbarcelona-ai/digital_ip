@@ -61,9 +61,10 @@ module py_boot #(
   localparam logic [31:0] MAGIC    = 32'h3143_5950;               // "PYC1"
   localparam logic [31:0] CMD_READ = 32'h0001_0103;               // 03h, address, read data
   localparam int HDR_BYTES = 12;
-  localparam logic [31:0] F_CMD = FLASH_REGS + 32'h00, F_ADDR = FLASH_REGS + 32'h04,
-                          F_LEN = FLASH_REGS + 32'h08, F_DIV  = FLASH_REGS + 32'h0C,
-                          P_RX  = FLASH_PORT + 32'h04;
+  // spi_flash_ctrl map: ID block 0x00-0x0F, CMD 0x10, ADDR 0x14, LEN 0x18, CLKDIV 0x1C
+  localparam logic [31:0] F_CMD = FLASH_REGS + 32'h10, F_ADDR = FLASH_REGS + 32'h14,
+                          F_LEN = FLASH_REGS + 32'h18, F_DIV  = FLASH_REGS + 32'h1C,
+                          P_RX  = FLASH_PORT + 32'h14;   // py_stream_port RXDATA (after the ID block)
 
   typedef enum logic [3:0] {S_DIV, S_ADDR, S_LEN, S_CMD, S_HDR, S_CHECK, S_ADDR2, S_LEN2, S_CMD2, S_DATA,
                             S_SUM, S_DONE, S_ERR} state_e;

@@ -6,14 +6,21 @@
 #   selected simulator. Optional VCD dump and Surfer waveform viewer.
 # Date: 2026-09-29
 #
-# Usage: scripts/run_sim.sh <ip> [--vcd] [--wave] [--lint]
-#   --vcd   write build/sim/<ip>/<tb>.vcd
-#   --wave  implies --vcd, then opens the VCD in Surfer if installed
-#   --lint  run verilator --lint-only on the RTL first
+# Usage: scripts/run_sim.sh <ip> [--vcd] [--wave] [--lint] [--list-tests]
+#   --vcd         write build/sim/<ip>/<tb>.vcd
+#   --wave        implies --vcd, then opens the VCD in Surfer if installed
+#   --lint        run verilator --lint-only on the RTL first
+#   --list-tests  print the name (and description) of each test available
+#                 to run in this IP (scripts/list_tests.py), then exit; every
+#                 run also prints the test names at its start
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 [ $# -ge 1 ] || { echo "usage: $0 <ip> [--vcd] [--wave] [--lint]"; exit 2; }
 IP="$1"; shift; lookup "$IP"
+for a in "$@"; do
+  if [ "$a" = --list-tests ]; then python3 "$SCRIPT_DIR/list_tests.py" "$IPDIR"; exit 0; fi
+done
+echo "[$IP] tests: $(python3 "$SCRIPT_DIR/list_tests.py" "$IPDIR" --names | tr '\n' ' ')"
 SIM="${SIM:-iverilog}"
 if [[ "$SIM" == vcs || "$SIM" == modelsim || "$SIM" == questa || "$SIM" == questasim ]]; then
   exec "$SCRIPT_DIR/run_vendor_sim.sh" "$IP" "$@"

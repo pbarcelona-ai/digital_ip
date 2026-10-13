@@ -77,11 +77,14 @@ module i2c_master_tb;
   // used by task i2c_xfer (tests/i2c_master_tests.sv)
   logic [31:0] rd;
   // test tasks: tests/i2c_master_tests.sv
-  `include "i2c_master_tests.sv"
-
   // Received byte capture
   byte rx_q[$];
   bit last_q[$];
+  logic [7:0] reg_base = 8'h10;                    // the register map after the ID block
+  logic [1:0] last_bresp;
+  `include "i2c_master_tests.sv"
+
+  // Received byte capture
   always @(posedge aclk) if (m_tvalid && m_tready) begin
     rx_q.push_back(m_tdata);
     last_q.push_back(m_tlast);
@@ -109,55 +112,13 @@ module i2c_master_tb;
     aresetn = 1;
     repeat (2) @(posedge aclk);
 
-    axil_read(8'h0C, rd);
-    check(rd == 32'd249, $sformatf("default DIV %0d (100 kHz at 100 MHz)", rd));
-    axil_write(8'h0C, 32'd12);                          // fast bus for sim
-
-    // ---- Test 1: write pointer 0x10 then two data bytes ----
-    stream_send(8'h10);
-    stream_send(8'hAA);
-    stream_send(8'h55);
-    i2c_xfer(7'h50, 0, 3, 0);
-    check(rd[2] == 0, "unexpected NACK on write");
-    check(slave.mem[16] == 8'hAA && slave.mem[17] == 8'h55,
-          $sformatf("slave memory %02h %02h", slave.mem[16], slave.mem[17]));
-    check(scl === 1'b1 && sda === 1'b1, "bus not idle after STOP");
-
-    // ---- Test 2: pointer write without STOP, repeated START read ----
-    stream_send(8'h10);
-    i2c_xfer(7'h50, 0, 1, 1);
-    check(scl === 1'b0, "SCL should stay low after no-stop transaction");
-    i2c_xfer(7'h50, 1, 2, 0);
-    repeat (20) @(posedge aclk);
-    check(rx_q.size() == 2, $sformatf("read %0d bytes", rx_q.size()));
-    if (rx_q.size() == 2) begin
-      check(rx_q[0] == 8'hAA && rx_q[1] == 8'h55, "read data mismatch");
-      check(last_q[0] == 0 && last_q[1] == 1, "tlast on final read byte only");
-    end
-    check(scl === 1'b1 && sda === 1'b1, "bus not idle after read STOP");
-    rx_q.delete();
-    last_q.delete();
-
-    // ---- Test 3: absent slave NACKs the address ----
-    i2c_xfer(7'h51, 0, 1, 0);
-    check(rd[2] == 1, "NACK flag not set");
-    stream_send(8'h00);                       // consume unused byte later
-    axil_write(8'h10, 32'hE);
-    axil_read(8'h10, rd);
-    check(rd[3:1] == 0, "W1C did not clear flags");
-    check(scl === 1'b1 && sda === 1'b1, "bus not idle after NACK");
-
-    // ---- Test 4: address-only probe (len = 0) ----
-    i2c_xfer(7'h50, 0, 0, 0);
-    check(rd[2] == 0, "probe of present slave NACKed");
-
-    // ---- Test 5: read with clock stretching ----
-    slave.stretch_en = 1;
-    i2c_xfer(7'h50, 1, 1, 0);
-    repeat (20) @(posedge aclk);
-    check(rx_q.size() == 1, "stretched read lost data");
-    check(rd[2] == 0, "NACK during stretched transfer");
-    slave.stretch_en = 0;
+    test_id_block();
+    test_default_div();
+    test_write();
+    test_repeated_start_read();
+    test_nack();
+    test_probe();
+    test_stretch();
 
     if (errors == 0) $display("TEST PASSED");
     else             $display("TEST FAILED (%0d errors)", errors);

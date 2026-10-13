@@ -13,6 +13,7 @@
 #   make test-ext-sdram top-level SDRAM frame-buffer smoke test
 #   make test-cocotb    top-level cocotb regression, SMALL frames
 #   make sim            all of the above
+#   make list-tests     name and description of each test available to run
 #   make synth          Yosys synthesis + timing estimate, every module
 #   make html           build the local HTML documentation site
 #   make ci             sim + synth
@@ -38,10 +39,13 @@ SV_ENV := SMALL=1
 CT_ENV := SMALL_FRAMES=1
 endif
 
-.PHONY: all sim wave ci cov test-ip test-smoke test-sv test-ext-sdram test-cocotb synth html diagram clean help
+.PHONY: all sim wave ci cov test-ip test-smoke test-sv test-ext-sdram test-cocotb synth html diagram clean help list-tests
 all: help
 help:
 	@sed -n "9,25p" Makefile
+
+list-tests:
+	@python3 ../../ip/scripts/list_tests.py .
 
 test-ip:
 	@for d in $(IPS); do \

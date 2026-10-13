@@ -33,6 +33,8 @@ SOURCES = [
     os.path.join(IP_DIR, "ext_frame_buffer", "ext_frame_buffer.sv"),
     os.path.join(RTL_DIR, "axis_in_ctrl.sv"),
     os.path.join(RTL_DIR, "axis_out_ctrl.sv"),
+    os.path.join(RTL_DIR, "..", "..", "..", "ip", "bus", "axi4_lite_slave", "src", "axi4_lite_slave.sv"),
+    os.path.join(RTL_DIR, "include", "vision_system_regs.sv"),
     os.path.join(RTL_DIR, "axi_lite_regs.sv"),
     os.path.join(RTL_DIR, "vision_system.sv"),
 ]

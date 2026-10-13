@@ -35,6 +35,8 @@ module scaler_polyphase #(
   parameter int COEF_W     = 16,       // coefficient width (signed)
   parameter int COEF_FRAC  = 14,       // coefficient fraction bits
   parameter logic [31:0] IP_ID = 32'h504F_4C59,              // "POLY"
+  parameter logic [31:0] VERSION_OVR = '0,           // VERSION / DATE of a wrapping scaler (0: this one's)
+  parameter logic [31:0] DATE_OVR = '0,
   parameter int PINGPONG = 0,          // 1: double frame buffer (capture while generating)
   parameter int LINE_BUF = 0,          // 1: line-buffer mode (latency of a few lines;
                                        //    MAX_H is then not a limit, STEP_Y >= 0)
@@ -73,6 +75,8 @@ module scaler_polyphase #(
   output logic              m_axis_tuser,   // start of frame
   output logic              m_axis_tlast    // end of line
 );
+  localparam logic [31:0] IP_VERSION = "1.10";        // VERSION register (stamp_version.py)
+  localparam logic [31:0] IP_DATE    = 32'h10122026;  // DATE register, BCD mm/dd/yyyy
 
   localparam int          PHASES = 1 << PHASE_BITS;           // filter phases
   localparam int          CTR    = (TAPS - 1) / 2;          // tap at integer position
@@ -401,6 +405,8 @@ module scaler_polyphase #(
     .MAX_W(MAX_W),
     .MAX_H(MAX_H),
     .IP_ID(IP_ID),
+    .IP_VERSION(VERSION_OVR != 0 ? VERSION_OVR : IP_VERSION),
+    .IP_DATE(DATE_OVR != 0 ? DATE_OVR : IP_DATE),
     .CAPS(CAPS),
     .NBUF(NBUF),
     .LB_ROWS(LB_ROWS),

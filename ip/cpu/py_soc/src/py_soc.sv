@@ -22,7 +22,9 @@
 //   core stopped. After boot the core owns the bus, and the flash stays
 //   available to software (e.g. data logging) at 0xC000.
 //
-//   Address map (each window 256 bytes; *_D = py_stream_port data port):
+//   Address map (src/py_soc_map_pkg.sv, read by the decoder below, the
+//   testbenches and the firmware; each window 256 bytes; *_D =
+//   py_stream_port data port):
 //     0x0100 SYSCTL (reset cause, boot status, cycle counter, ID, CORE_RESET)
 //     0x1000 INTC   0x2000 WDT    0x3000 GPIO0  0x4000 GPIO1  0x5000 GPIO2
 //     0x6000 UART0  0x6100 UART0_D  0x7000 UART1  0x7100 UART1_D
@@ -292,8 +294,8 @@ module py_soc #(
   py_boot #(
     .CODE_AW(CODE_AW),
     .CONST_AW(CONST_AW),
-    .FLASH_REGS(32'h0000_C000),
-    .FLASH_PORT(32'h0000_C100),
+    .FLASH_REGS(py_soc_map_pkg::FLASH_BASE),
+    .FLASH_PORT(py_soc_map_pkg::FLASH_BASE + py_soc_map_pkg::DPORT),
     .BOOT_ADDR(BOOT_ADDR),
     .FLASH_CLKDIV(FLASH_CLKDIV)
   ) u_boot (
@@ -415,16 +417,20 @@ module py_soc #(
                  S_FLASH = 17,                                  // 17 regs, 18 data port
                  S_SYS = 19, S_EXT = 20;
   // Slave 20 (EXT) is dropped from the decode when EXT_EN = 0 (the casts keep the low NS entries)
+  // bases and masks from the memory map package (py_soc_map_pkg.sv)
   localparam logic [NS*32-1:0] BASE = (NS*32)'({
-    32'h0001_0000,                                                // 20     EXT
-    32'h0000_0100,                                                // 19     SYSCTL
-    32'h0000_C100, 32'h0000_C000,                                 // 18..17 FLASH_D FLASH
-    32'h0000_B100, 32'h0000_B000, 32'h0000_A100, 32'h0000_A000,   // 16..13 SPI1_D SPI1 SPI0_D SPI0
-    32'h0000_9100, 32'h0000_9000, 32'h0000_8100, 32'h0000_8000,   // 12..9  I2C
-    32'h0000_7100, 32'h0000_7000, 32'h0000_6100, 32'h0000_6000,   // 8..5   UART
-    32'h0000_5000, 32'h0000_4000, 32'h0000_3000,                  // 4..2   GPIO
-    32'h0000_2000, 32'h0000_1000});                               // 1..0   WDT INTC
-  localparam logic [NS*32-1:0] MASK = (NS*32)'({32'hFFFF_0000, {20{32'hFFFF_FF00}}});
+    py_soc_map_pkg::EXT_BASE,                                                         // 20  EXT
+    py_soc_map_pkg::SYSCTL_BASE,                                                      // 19  SYSCTL
+    py_soc_map_pkg::FLASH_BASE + py_soc_map_pkg::DPORT, py_soc_map_pkg::FLASH_BASE,   // 18..17
+    py_soc_map_pkg::SPI1_BASE + py_soc_map_pkg::DPORT, py_soc_map_pkg::SPI1_BASE,     // 16..13
+    py_soc_map_pkg::SPI0_BASE + py_soc_map_pkg::DPORT, py_soc_map_pkg::SPI0_BASE,
+    py_soc_map_pkg::I2C1_BASE + py_soc_map_pkg::DPORT, py_soc_map_pkg::I2C1_BASE,     // 12..9
+    py_soc_map_pkg::I2C0_BASE + py_soc_map_pkg::DPORT, py_soc_map_pkg::I2C0_BASE,
+    py_soc_map_pkg::UART1_BASE + py_soc_map_pkg::DPORT, py_soc_map_pkg::UART1_BASE,   // 8..5
+    py_soc_map_pkg::UART0_BASE + py_soc_map_pkg::DPORT, py_soc_map_pkg::UART0_BASE,
+    py_soc_map_pkg::GPIO2_BASE, py_soc_map_pkg::GPIO1_BASE, py_soc_map_pkg::GPIO0_BASE, // 4..2
+    py_soc_map_pkg::WDT_BASE, py_soc_map_pkg::INTC_BASE});                            // 1..0
+  localparam logic [NS*32-1:0] MASK = (NS*32)'({py_soc_map_pkg::EXT_MASK, {20{py_soc_map_pkg::WIN_MASK}}});
 
   logic [31:0] b_awaddr, b_wdata, b_araddr;
   logic [3:0] b_wstrb;
@@ -518,7 +524,7 @@ module py_soc #(
   end
 
   // ---------------- system control ----------------
-  py_sysctl #(
+  py_sysctl_top #(
     .NCLK(NCLK),
     .CLK_EN_RST(CLK_EN_RST),
     .CLKGEN(CLKGEN_EN)
@@ -588,7 +594,7 @@ module py_soc #(
       .m_axis_tlast(rx_l),
       .uart_txd_o(uart_txd_o[u]),
       .uart_rxd_i(uart_rxd_i[u]));
-    py_stream_port #(
+    py_stream_port_top #(
       .DATA_W(8),
       .TX_DEPTH(TX_FIFO),
       .RX_DEPTH(RX_FIFO)
@@ -636,7 +642,7 @@ module py_soc #(
       .sda_i(i2c_sda_i[n]),
       .sda_o(i2c_sda_o[n]),
       .sda_t(i2c_sda_t[n]));
-    py_stream_port #(
+    py_stream_port_top #(
       .DATA_W(8),
       .TX_DEPTH(TX_FIFO),
       .RX_DEPTH(RX_FIFO)
@@ -685,7 +691,7 @@ module py_soc #(
       .spi_mosi_o(spi_mosi_o[s]),
       .spi_miso_i(spi_miso_i[s]),
       .spi_cs_n_o(spi_cs_n_o[s*2 +: 2]));
-    py_stream_port #(
+    py_stream_port_top #(
       .DATA_W(DW),
       .TX_DEPTH(TX_FIFO),
       .RX_DEPTH(RX_FIFO)
@@ -706,7 +712,7 @@ module py_soc #(
   // ---------------- SPI NOR flash ----------------
   logic [7:0] fl_tx_d, fl_rx_d;
   logic fl_tx_v, fl_tx_r, fl_tx_l, fl_rx_v, fl_rx_r, fl_rx_l;
-  spi_flash_ctrl u_flash (
+  spi_flash_ctrl_top u_flash (
     .aclk(sclk),
     .aresetn(sys_rst_n),
     `PY_AXIL_PORT(S_FLASH),
@@ -722,7 +728,7 @@ module py_soc #(
     .mosi_o(flash_mosi_o),
     .miso_i(flash_miso_i),
     .irq_o(irq_src[10]));
-  py_stream_port #(
+  py_stream_port_top #(
     .DATA_W(8),
     .TX_DEPTH(FLASH_TX_FIFO),
     .RX_DEPTH(FLASH_RX_FIFO)

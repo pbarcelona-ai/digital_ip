@@ -3,12 +3,15 @@
 // Author: FPGA Cores 4 U
 // Description: Testbench kit: clock, reset and AXI4-Lite BFM.
 //   Declares clk (100 MHz), rst_n, the AXI4-Lite master signals and the
-//   tasks axil_write, axil_read, axil_check and reset_dut, plus error /
+//   tasks axil_write, axil_read, axil_check (register offsets: 0x000-0x0FF
+//   of every 16 KB window move up by 0x10 past the ID block while
+//   axil_id_block = 1, the default), axil_write_abs / axil_read_abs /
+//   axil_check_abs (addresses as given), check_id_block and reset_dut, plus error /
 //   check / test counters, a watchdog (+TIMEOUT_MS=<n>) and
 //   finish_report, which prints TB_RESULT: PASS or FAIL. Include inside a
 //   testbench module after defining localparam int ADDR_W. Included by
 //   scaler_tb_lib.svh; module testbenches include it directly.
-// Date: 2026-09-26
+// Date: 2026-10-12
 
 // Default watchdog time in ns (can be overridden with a define)
 `ifndef TB_TIMEOUT_NS
@@ -80,7 +83,23 @@ end
 // the protocol checker sees every ordering and response stall.
 int axil_max_delay = 2;   // set to 0 for fastest register access
 
+// Register windows of the DUT start with the ID block (ID, VERSION, DATE, reserved at 0x00-0x0C):
+// the offsets 0x000-0x0FF of each 16 KB window (the old register maps) are 0x10 higher. Tables at
+// 0x1000 and up do not move. 0 for a DUT without ID blocks (axil_split).
+bit axil_id_block = 1;
+function automatic int axil_map(input int addr);
+  return (axil_id_block && (addr & 'h3F00) == 0) ? addr + 'h10 : addr;
+endfunction
+
 task automatic axil_write(input int addr, input logic [31:0] data);
+  axil_write_abs(axil_map(addr), data);
+endtask
+
+task automatic axil_read(input int addr, output logic [31:0] data);
+  axil_read_abs(axil_map(addr), data);
+endtask
+
+task automatic axil_write_abs(input int addr, input logic [31:0] data);
   bit aw_done, w_done;
   int order, lag;
   aw_done = 0;
@@ -119,7 +138,7 @@ task automatic axil_write(input int addr, input logic [31:0] data);
 endtask
 
 // Single AXI-Lite read: AR handshake, then wait for R and check OKAY.
-task automatic axil_read(input int addr, output logic [31:0] data);
+task automatic axil_read_abs(input int addr, output logic [31:0] data);
   @(negedge clk);
   araddr = ADDR_W'(addr);
   arvalid = 1'b1;
@@ -143,13 +162,54 @@ endtask
 // Read a register and compare the bits selected by mask
 task automatic axil_check(input int addr, input logic [31:0] exp,
                           input logic [31:0] mask = 32'hFFFF_FFFF);
+  axil_check_abs(axil_map(addr), exp, mask);
+endtask
+
+task automatic axil_check_abs(input int addr, input logic [31:0] exp,
+                              input logic [31:0] mask = 32'hFFFF_FFFF);
   logic [31:0] r;
-  axil_read(addr, r);
+  axil_read_abs(addr, r);
   checks++;
   if ((r & mask) !== (exp & mask)) begin
     errors++;
     $display("ERROR: reg 0x%03h read 0x%08h expected 0x%08h (mask 0x%08h)",
              addr, r, exp, mask);
+  end
+endtask
+
+// ID block of the register window at base: ID (exp_id), VERSION ASCII "d.dd", DATE BCD mm/dd/yyyy,
+// 0x0C reads 0; writes to the block change nothing
+task automatic check_id_block(input int base, input logic [31:0] exp_id);
+  logic [31:0] id, ver, date, rsv, v;
+  axil_read_abs(base, id);
+  axil_read_abs(base + 4, ver);
+  axil_read_abs(base + 8, date);
+  axil_read_abs(base + 'hC, rsv);
+  checks += 4;
+  if (id !== exp_id) begin
+    errors++;
+    $display("ERROR: ID 0x%08h (\"%s\"), expected \"%s\"", id, id, exp_id);
+  end
+  if (!(ver[31:24] >= "0" && ver[31:24] <= "9" && ver[23:16] == "." && ver[15:8] >= "0" && ver[15:8] <= "9" &&
+        ver[7:0] >= "0" && ver[7:0] <= "9")) begin
+    errors++;
+    $display("ERROR: VERSION 0x%08h (\"%s\"), expected ASCII \"d.dd\"", ver, ver);
+  end
+  if (!(date[31:24] >= 8'h01 && date[31:24] <= 8'h12 && date[23:16] >= 8'h01 && date[23:16] <= 8'h31 &&
+        date[15:0] >= 16'h2000)) begin
+    errors++;
+    $display("ERROR: DATE 0x%08h, expected BCD mm/dd/yyyy", date);
+  end
+  if (rsv !== 0) begin
+    errors++;
+    $display("ERROR: 0x%0h (reserved) reads 0x%08h", base + 'hC, rsv);
+  end
+  axil_write_abs(base, 32'hA5A5_5A5A);
+  axil_read_abs(base, v);
+  checks++;
+  if (v !== id) begin
+    errors++;
+    $display("ERROR: ID changed by a write (0x%08h)", v);
   end
 endtask
 

@@ -129,6 +129,7 @@ module tb_scaler_trilinear;
     tb_init("scaler_trilinear");      // parse plusargs, load +IMG
     reset_dut();
     axil_check(12'h024, 32'h5452_494C);      // IP_ID "TRIL"
+    check_id_block('h0, 32'h5452_494C);      // ID block: ID, VERSION, DATE
     axil_check(12'h058, {8'd0, 8'(PHASE_BITS), 8'(ANISO_MAX), 8'(LEVELS)});
     if (use_file) begin
       run_file_suite();              // +IMG=<file.ppm>

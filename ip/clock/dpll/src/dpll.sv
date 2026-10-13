@@ -84,13 +84,14 @@ module dpll #(
       wait (started);
       half = t_ref * D * O[16*n +: 16] / (2.0 * M);
       k = 0;
-      clk_o[n] = en_i[n];                            // rising edges on whole periods from the start:
+      clk_o[n] = en_i[n] === 1'b1;                   // rising edges on whole periods from the start:
                                                      // related outputs rise together
       // clk = #delay ~clk, the delay to the next edge of this output from the common start (no
       // rounding drift); a rising edge is skipped while en_i[n] is low (glitch-free gate)
       forever begin
         k++;
-        clk_o[n] = #(t_start + k * half - $realtime) (clk_o[n] ? 1'b0 : en_i[n]);
+        // an unknown enable (register not yet reset) counts as off: the clock never sticks at X
+        clk_o[n] = #(t_start + k * half - $realtime) (clk_o[n] ? 1'b0 : en_i[n] === 1'b1);
       end
     end
   end

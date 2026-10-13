@@ -120,49 +120,15 @@ module spi_master_tb;
     repeat (5) @(posedge aclk);
     aresetn = 1;
     repeat (2) @(posedge aclk);
-    bfm.read(8'h04, rd);
-    check(rd == 49, $sformatf("default DIV %0d", rd));
-    bfm.write(8'h04, 4);                                    // fast SCLK for sim
+    bfm.base = 'h10;                                 // the map after the ID block
+    test_id_block();
+    test_default_div();
+    test_modes();
+    test_lsb_first();
+    test_word_len();
+    test_burst();
+    test_cs_select();
 
-    // ---- Test 1: all four modes, MSB first, 8 bits ----
-    for (int m = 0; m < 4; m++)
-      xfer(m[1], m[0], 0, 8, 32'hA5 ^ (m * 32'h3C), 32'h5A + m);
-    // ---- Test 2: LSB first ----
-    xfer(0, 0, 1, 8, 32'h96, 32'h1D);
-    xfer(1, 1, 1, 16, 32'hBEEF, 32'h1234);
-    // ---- Test 3: word lengths ----
-    xfer(0, 1, 0, 16, 32'hCAFE, 32'h0F0F);
-    xfer(1, 0, 0, 32, 32'hDEADBEEF, 32'h01234567);
-    xfer(0, 0, 0, 5, 32'h15, 32'h0A);
-
-    // ---- Test 4: burst of 3 words, CS held low until tlast ----
-    cpol = 0;
-    cpha = 0;
-    lsb = 0;
-    nbits = 8;
-    slv_tx = 8'h3C;
-    bfm.write(8'h00, {16'd0, 8'd1, 4'd0, 3'b000, 1'b1});
-    bfm.write(8'h08, 8);
-    rxq.delete();
-    rxlast.delete();
-    words0 = slv_words;
-    send(8'h11, 0);
-    send(8'h22, 0);
-    send(8'h33, 1);
-    while (rxq.size() != 3) @(posedge aclk);
-    repeat (10) @(posedge aclk);
-    check(slv_words - words0 == 3, $sformatf("slave saw %0d words in burst", slv_words));
-    check(rxlast[0] == 0 && rxlast[1] == 0 && rxlast[2] == 1, "rx tlast pattern");
-    check(rxq[0] == 8'h3C && rxq[2] == 8'h3C, "burst miso data");
-    check(cs_n == '1, "CS not released after burst");
-
-    // ---- Test 5: chip select select (cs 3) ----
-    bfm.write(8'h00, {16'd0, 8'd3, 4'd0, 3'b000, 1'b1});
-    rxq.delete();
-    send(8'h55, 1);
-    wait (cs_n[3] == 0);
-    check(cs_n == 4'b0111, "CS3 select");
-    while (rxq.size() != 1) @(posedge aclk);
     check(bfm.resp_errors == 0, "AXI-Lite error responses");
 
     if (errors == 0) $display("TEST PASSED");

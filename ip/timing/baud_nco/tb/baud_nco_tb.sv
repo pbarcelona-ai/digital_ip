@@ -58,7 +58,8 @@ module baud_nco_tb;
   int errors = 0;
 
   // test tasks: tests/baud_nco_tests.sv
-  `include "baud_nco_tests.sv"
+  logic [7:0] reg_base = 8'h10;                   // the register map after the ID block
+  logic [1:0] last_bresp;
 
   // Count baud ticks
   int tick_count;
@@ -105,6 +106,7 @@ module baud_nco_tb;
 
   logic [31:0] rd;
   int hi;
+  `include "baud_nco_tests.sv"
   initial begin
     if ($test$plusargs("vcd")) begin
       $dumpfile("baud_nco_tb.vcd");
@@ -124,68 +126,12 @@ module baud_nco_tb;
     aresetn = 1;
     repeat (2) @(posedge aclk);
 
-    // ---- Test 1: default FCW = 115200 * 16 at 100 MHz ----
-    axil_read(8'h04, rd);
-    check(rd == 32'd79164837, $sformatf("default FCW %0d", rd));
-    axil_read(8'h00, rd);
-    check(rd[0] == 1, "enabled after reset");
-
-    // ---- Test 2: baud tick frequency, 16 MHz tick (1 Mbaud x16) ----
-    axil_write(8'h14, 0);                    // clear tick counter
-    axil_write(8'h04, 32'd687194767);
-    repeat (5) @(posedge aclk);
-    tick_count = 0;
-    repeat (10000) @(posedge aclk);
-    check(tick_count >= 1599 && tick_count <= 1601,
-          $sformatf("tick count %0d, expected 1600", tick_count));
-    axil_read(8'h14, rd);
-    check(rd >= 1599, $sformatf("TICK_COUNT reg %0d", rd));
-
-    // ---- Test 3: sine/cosine stream, quarter cycle offset, gain 0.5 ----
-    fcw_m = 32'h0400_0000 + 32'h0000_1234;
-    off_m = 16'h4000;
-    gain_m = 16384;
-    axil_write(8'h00, 32'd0);                // stop
-    axil_write(8'h04, fcw_m);
-    axil_write(8'h08, off_m);
-    axil_write(8'h0C, gain_m);
-    n_samples = 0;
-    chk_enable = 1;
-    axil_write(8'h00, 32'h7);                // en | stream_en | phase reset
-    repeat (600) @(posedge aclk);
-    check(n_samples >= 590, $sformatf("only %0d samples in 600 clocks", n_samples));
-
-    // ---- Test 4: random back pressure, full gain ----
-    axil_write(8'h00, 32'd0);
-    chk_enable = 0;
-    repeat (4) @(posedge aclk);
-    gain_m = 32767;
-    off_m = 0;
-    fcw_m = 32'h0123_4567;
-    axil_write(8'h04, fcw_m);
-    axil_write(8'h08, off_m);
-    axil_write(8'h0C, gain_m);
-    bp_enable = 1;
-    n_samples = 0;
-    chk_enable = 1;
-    axil_write(8'h00, 32'h7);
-    repeat (2000) @(posedge aclk);
-    check(n_samples > 1000 && n_samples < 1600, $sformatf("bp samples %0d", n_samples));
-
-    // ---- Test 5: square wave and register readback ----
-    chk_enable = 0;
-    bp_enable = 0;
-    axil_write(8'h00, 32'h1);
-    axil_write(8'h04, 32'h4000_0000);        // f = clk/4
-    repeat (4) @(posedge aclk);
-    hi = 0;
-    repeat (400) begin
-      @(posedge aclk);
-      hi += sq;
-    end
-    check(hi >= 195 && hi <= 205, $sformatf("square duty %0d/400", hi));
-    axil_read(8'h00, rd);
-    check(rd[2] == 0, "phase reset bit must self clear");
+    test_id_block();
+    test_default_fcw();
+    test_baud_tick();
+    test_sine_stream();
+    test_backpressure();
+    test_square();
 
     if (errors == 0) $display("TEST PASSED");
     else             $display("TEST FAILED (%0d errors)", errors);

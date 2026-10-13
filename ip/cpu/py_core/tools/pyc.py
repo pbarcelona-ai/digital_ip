@@ -25,6 +25,13 @@
 #     "from <name> import *" where <name>.py sits next to the source file
 #     inlines that file there (once), so firmware can be split into modules
 #     that share one global namespace; errors name the original file / line.
+#     Without such a file, "from <name> import *" reads the SystemVerilog
+#     package <name>.sv found next to the source or in a -I directory (the
+#     memory map packages, e.g. video_processor_map_pkg.sv): its
+#     "localparam ... NAME = expr;" lines become UPPER_CASE constants NAME
+#     (folded), "import <pkg>::*;" loads that package first, <pkg>::NAME and
+#     SV literals (32'h0001_0000, 'h40, 16'd10) are understood, so the
+#     firmware takes its addresses from the same file as the RTL decoders.
 #     UPPER_CASE module-level names bound once to a constant expression
 #     (or const(expr)) are folded at compile time.
 #     def f(a, b): ... return x   functions with positional parameters,
@@ -49,7 +56,7 @@
 #   Not in the hardware fast path (rejected): * / % ** on variables,
 #   default/keyword arguments, closures, lists, dicts, floats, classes.
 #
-# Usage: pyc.py prog.py -o build/prog
+# Usage: pyc.py prog.py -o build/prog [--code-aw N] [--str-slots N] [--split-consts]
 # Date: 2026-10-01
 import argparse
 import ast
@@ -85,6 +92,7 @@ SMALL_MIN, SMALL_MAX = -(1 << 32), (1 << 32) - 1     # 33-bit signed small int
 STR_BASE, STR_SLOTS, STR_SLOT_BYTES = 0x8000, 512, 64  # string table in flash (up to 0xFFFF)
 STR_CHUNK = STR_SLOT_BYTES - 2
 N_LOCALS, N_GLOBALS, N_CONSTS, CODE_SIZE = 16, 32, 256, 1 << 13
+SPLIT_CONSTS = False                                   # --split-consts
 
 
 class CompileError(Exception):
@@ -98,9 +106,71 @@ def handle(slot):
     return slot - 256 if 128 <= slot < 256 else slot
 
 
+SV_PATH = []                                            # -I: directories with .sv packages
+SV_VALUES = {}                                          # constants of the packages read so far
+
+
+def find_sv_package(name, near):
+    import os
+    for d in [os.path.dirname(os.path.abspath(near))] + SV_PATH:
+        f = os.path.join(d, name + ".sv")
+        if os.path.isfile(f):
+            return f
+    return None
+
+
+def sv_expr_value(expr, where):
+    """Value of a SystemVerilog constant expression of literals, known package constants and + - * /
+    << >> | & ^ ~ ( )."""
+    import re
+    e = re.sub(r"\b\w+::(\w+)", r"\1", expr)                               # pkg::NAME -> NAME
+    def lit(m):
+        base = {"h": 16, "d": 10, "b": 2, "o": 8}[m.group(1).lower()]
+        return str(int(m.group(2).replace("_", ""), base))
+    e = re.sub(r"(?:\d+)?'[sS]?([hHdDbBoO])([0-9a-fA-F_]+)", lit, e)
+    e = re.sub(r"(?:\d+)?'([01])\b", r"\1", e)                              # '0 / '1
+    e = re.sub(r"\b(\d+)'\(", "(", e)                                       # 32'(x) casts
+    e = re.sub(r"(?<=\d)_(?=\d)", "", e).replace("/", "//")
+    if not re.fullmatch(r"[\w\s+\-*/<>|&^~()]*", e):
+        sys.exit(f"{where}: cannot evaluate {expr!r}")
+    try:
+        return int(eval(e, {"__builtins__": {}}, dict(SV_VALUES)))
+    except Exception as ex:                                 # noqa: BLE001
+        sys.exit(f"{where}: cannot evaluate {expr!r}: {ex}")
+
+
+def sv_package_lines(path, seen):
+    """Python lines "NAME = value" for the localparams of the SystemVerilog package at path (and of the
+    packages it imports, each once)."""
+    import os
+    import re
+    seen.add(os.path.abspath(path))
+    text = re.sub(r"//[^\n]*", "", open(path).read())
+    text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
+    lines, where = [], []
+    for m in re.finditer(r"\bimport\s+(\w+)::\*\s*;|\blocalparam\b[^;=]*?\b(\w+)\s*=\s*([^;]+);", text):
+        if m.group(1):
+            sub = find_sv_package(m.group(1), path)
+            if sub is None:
+                sys.exit(f"{path}: package {m.group(1)} not found (-I)")
+            if os.path.abspath(sub) not in seen:
+                t, w = sv_package_lines(sub, seen)
+                lines += t
+                where += w
+            continue
+        name, expr = m.group(2), m.group(3)
+        val = sv_expr_value(expr, path)
+        SV_VALUES[name] = val
+        if name.isupper():
+            lines.append(f"{name} = 0x{val:X}")
+            where.append((path, text.count("\n", 0, m.start()) + 1))
+    return lines, where
+
+
 def inline_imports(path, seen=None):
-    """Source of path with every "from <name> import *" of a sibling <name>.py replaced by that file
-    (each file once), and (file, line) of every line of the result."""
+    """Source of path with every "from <name> import *" of a sibling <name>.py replaced by that file,
+    or of a SystemVerilog package <name>.sv (next to path or in -I) by its constants (each file once),
+    and (file, line) of every line of the result."""
     import os
     import re
     seen = set() if seen is None else seen
@@ -112,6 +182,13 @@ def inline_imports(path, seen=None):
         if sub and os.path.isfile(sub):
             if os.path.abspath(sub) not in seen:
                 t, w = inline_imports(sub, seen)
+                lines += t
+                where += w
+            continue
+        pkg = find_sv_package(m.group(1), path) if m else None
+        if pkg:
+            if os.path.abspath(pkg) not in seen:
+                t, w = sv_package_lines(pkg, seen)
                 lines += t
                 where += w
             continue
@@ -258,6 +335,23 @@ class Compiler:
             return self.const_value(e.args[0])
         return None
 
+    def split_const(self, e, v):
+        """--split-consts: a folded base + small offset (e.g. a register address) whose value is not yet in the
+        pool is loaded as base, offset, add, so the pool holds the base once instead of every address."""
+        if isinstance(v, bool) or -128 <= v <= 127 or (((v << 1) | 1) & ((1 << 34) - 1)) in self.consts:
+            return False
+        if not (isinstance(e, ast.BinOp) and isinstance(e.op, (ast.Add, ast.BitOr, ast.Sub))):
+            return False
+        a, b = self.const_value(e.left), self.const_value(e.right)
+        if not (isinstance(a, int) and isinstance(b, int)) or isinstance(a, bool) or isinstance(b, bool):
+            return False
+        if not -128 <= b <= 127:
+            return False
+        self.expr(e.left)                                    # the base (itself split when it is base + small)
+        self.load_int(b, e)
+        self.emit({ast.Add: 'BINARY_ADD', ast.BitOr: 'BINARY_OR', ast.Sub: 'BINARY_SUB'}[type(e.op)], node=e)
+        return True
+
     # ---------------- expressions ----------------
     def is_mem32(self, e):
         return isinstance(e, ast.Subscript) and isinstance(e.value, ast.Name) and e.value.id == 'mem32'
@@ -271,6 +365,8 @@ class Compiler:
         if v is not None or (isinstance(e, ast.Constant) and e.value is None):
             if v is None:
                 return self.emit('LOAD_NONE', node=e)
+            if SPLIT_CONSTS and self.split_const(e, v):
+                return None
             return self.load_int(v, e)
         if isinstance(e, ast.Name):
             return self.load_name(e.id, e)
@@ -575,7 +671,17 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('src')
     ap.add_argument('-o', '--out', required=True, help='output path prefix')
+    ap.add_argument('-I', dest='inc', action='append', default=[],
+                    help='directory with SystemVerilog packages for "from <pkg> import *" (repeatable)')
+    ap.add_argument('--code-aw', type=int, default=13, help='code memory 2**N bytes (py_soc CODE_AW, default 13)')
+    ap.add_argument('--str-slots', type=int, default=512,
+                    help='string table slots of 64 bytes from 0x8000 (default 512: up to 0xFFFF; the flash must hold them)')
+    ap.add_argument('--split-consts', action='store_true',
+                    help='load a base + small offset not yet in the constant pool as base, offset, add (saves constants)')
     args = ap.parse_args()
+    global CODE_SIZE, STR_SLOTS, SPLIT_CONSTS
+    CODE_SIZE, STR_SLOTS, SPLIT_CONSTS = 1 << args.code_aw, args.str_slots, args.split_consts
+    SV_PATH.extend(args.inc)
     lines, where = inline_imports(args.src)
     text = "\n".join(lines) + "\n"
     c = Compiler(text)

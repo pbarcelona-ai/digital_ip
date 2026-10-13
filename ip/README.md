@@ -143,6 +143,13 @@ Data-flow diagrams are generated from the RTL by `ip/scripts/make_dataflow_diagr
 | [`reset_sync`](cdc/reset_sync) | - | - | [data flow](cdc/reset_sync/docs/reset_sync_dataflow.svg) |
 | [`toggle_sync`](cdc/toggle_sync) | - | [hierarchy](cdc/toggle_sync/docs/block_diagram.svg) | [data flow](cdc/toggle_sync/docs/toggle_sync_dataflow.svg) |
 
+### Clock
+
+| IP | Block / state diagrams | RTL hierarchy | Data flow |
+|---|---|---|---|
+| [`clk_gen`](clock/clk_gen) | - | [hierarchy](clock/clk_gen/docs/block_diagram.svg) | [data flow](clock/clk_gen/docs/clk_gen_dataflow.svg) |
+| [`dpll`](clock/dpll) | - | [hierarchy](clock/dpll/docs/block_diagram.svg) | [data flow](clock/dpll/docs/dpll_dataflow.svg) |
+
 ### Common
 
 | IP | Block / state diagrams | RTL hierarchy | Data flow |
@@ -276,6 +283,7 @@ Data-flow diagrams are generated from the RTL by `ip/scripts/make_dataflow_diagr
 | [`csi2_rx`](video/csi2_rx) | - | - | [data flow](video/csi2_rx/docs/csi2_rx_dataflow.svg) |
 | [`csi2_tx`](video/csi2_tx) | - | - | [data flow](video/csi2_tx/docs/csi2_tx_dataflow.svg) |
 | [`dsi_tx`](video/dsi_tx) | - | - | [data flow](video/dsi_tx/docs/dsi_tx_dataflow.svg) |
+| [`frame_counter`](video/frame_counter) | - | [hierarchy](video/frame_counter/docs/block_diagram.svg) | [data flow](video/frame_counter/docs/frame_counter_dataflow.svg) |
 | [`hdmi_tx`](video/hdmi_tx) | - | - | [data flow](video/hdmi_tx/docs/hdmi_tx_dataflow.svg) |
 | [`isp_blc_wb`](video/isp_blc_wb) | - | - | [data flow](video/isp_blc_wb/docs/isp_blc_wb_dataflow.svg) |
 | [`isp_ccm`](video/isp_ccm) | - | - | [data flow](video/isp_ccm/docs/isp_ccm_dataflow.svg) |
@@ -289,9 +297,12 @@ Data-flow diagrams are generated from the RTL by `ip/scripts/make_dataflow_diagr
 | [`lvds_tx`](video/lvds_tx) | - | - | [data flow](video/lvds_tx/docs/lvds_tx_dataflow.svg) |
 | [`mipi_line_buf`](video/mipi_line_buf) | - | - | [data flow](video/mipi_line_buf/docs/mipi_line_buf_dataflow.svg) |
 | [`mipi_tx_engine`](video/mipi_tx_engine) | - | - | [data flow](video/mipi_tx_engine/docs/mipi_tx_engine_dataflow.svg) |
+| [`object_tracker`](video/object_tracker) | - | [hierarchy](video/object_tracker/docs/block_diagram.svg) | [data flow](video/object_tracker/docs/object_tracker_dataflow.svg) |
 | [`sharpen_filter`](video/sharpen_filter) | - | [hierarchy](video/sharpen_filter/docs/block_diagram.svg) | [data flow](video/sharpen_filter/docs/sharpen_filter_dataflow.svg) |
+| [`symbol_overlay`](video/symbol_overlay) | - | [hierarchy](video/symbol_overlay/docs/block_diagram.svg) | [data flow](video/symbol_overlay/docs/symbol_overlay_dataflow.svg) |
 | [`tmds_encoder`](video/tmds_encoder) | - | - | [data flow](video/tmds_encoder/docs/tmds_encoder_dataflow.svg) |
 | [`tmds_serializer`](video/tmds_serializer) | - | - | [data flow](video/tmds_serializer/docs/tmds_serializer_dataflow.svg) |
 | [`vid_timing_gen`](video/vid_timing_gen) | - | - | [data flow](video/vid_timing_gen/docs/vid_timing_gen_dataflow.svg) |
 | [`video_pipeline`](video/video_pipeline) | - | - | [data flow](video/video_pipeline/docs/video_pipeline_dataflow.svg) |
+| [`vs_stream_adapter`](video/vs_stream_adapter) | - | [hierarchy](video/vs_stream_adapter/docs/block_diagram.svg) | [data flow](video/vs_stream_adapter/docs/vs_stream_adapter_dataflow.svg) |
 <!-- diagrams:end -->

@@ -12,11 +12,6 @@
 <text text-anchor="start" x="8" y="-1173.4" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="22.00">video_processor: video datapath detail</text>
 <text text-anchor="start" x="414" y="-1173.4" font-family="Helvetica,sans-Serif" font-size="13.00"> &#160;&#160;u_pipe (video_pipeline) and the serializers; the full top level, with py_soc and vision_system, is in system_block_diagram.svg</text>
 <text text-anchor="start" x="8" y="-1160.2" font-family="Helvetica,sans-Serif" font-size="11.00" fill="#4b5563">Bold = library IP module name, grey = instance name. Every ISP stage and the scaler can be bypassed (BYPASS register, 0x008). Interfaces tagged `VP_* are included / excluded in src/configuration.sv.</text>
-<g id="clust11" class="cluster">
-<title>cluster_board_out</title>
-<path fill="white" stroke="#9ca3af" stroke-dasharray="5,2" d="M2930,-218C2930,-218 3419,-218 3419,-218 3425,-218 3431,-224 3431,-230 3431,-230 3431,-330 3431,-330 3431,-336 3425,-342 3419,-342 3419,-342 2930,-342 2930,-342 2924,-342 2918,-336 2918,-330 2918,-330 2918,-230 2918,-230 2918,-224 2924,-218 2930,-218"/>
-<text text-anchor="start" x="2926" y="-330.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#4b5563">Board / vendor (not in this design)</text>
-</g>
 <g id="clust1" class="cluster">
 <title>cluster_board_in</title>
 <path fill="white" stroke="#9ca3af" stroke-dasharray="5,2" d="M46.5,-995C46.5,-995 451,-995 451,-995 457,-995 463,-1001 463,-1007 463,-1007 463,-1133 463,-1133 463,-1139 457,-1145 451,-1145 451,-1145 46.5,-1145 46.5,-1145 40.5,-1145 34.5,-1139 34.5,-1133 34.5,-1133 34.5,-1007 34.5,-1007 34.5,-1001 40.5,-995 46.5,-995"/>
@@ -29,12 +24,6 @@
 <text text-anchor="start" x="136" y="-972" font-family="Helvetica,sans-Serif" font-size="12.00"> &#160;&#160;</text>
 <text text-anchor="start" x="146" y="-972" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#6b7280">src/video_processor.sv</text>
 </g>
-<g id="clust10" class="cluster">
-<title>cluster_ser</title>
-<path fill="white" stroke="#1d4ed8" stroke-width="2.2" stroke-dasharray="5,2" d="M2930,-823C2930,-823 3108,-823 3108,-823 3114,-823 3120,-829 3120,-835 3120,-835 3120,-942 3120,-942 3120,-948 3114,-954 3108,-954 3108,-954 2930,-954 2930,-954 2924,-954 2918,-948 2918,-942 2918,-942 2918,-835 2918,-835 2918,-829 2924,-823 2930,-823"/>
-<text text-anchor="start" x="2926" y="-943" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00" fill="#1e40af">Serializers</text>
-<text text-anchor="start" x="2976" y="-943" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#1e40af"> (generic, behavioural)</text>
-</g>
 <g id="clust3" class="cluster">
 <title>cluster_pipe</title>
 <path fill="#ffffff" stroke="#047857" stroke-width="1.8" d="M364.5,-430C364.5,-430 3053,-430 3053,-430 3059,-430 3065,-436 3065,-442 3065,-442 3065,-803 3065,-803 3065,-809 3059,-815 3053,-815 3053,-815 364.5,-815 364.5,-815 358.5,-815 352.5,-809 352.5,-803 352.5,-803 352.5,-442 352.5,-442 352.5,-436 358.5,-430 364.5,-430"/>
@@ -42,39 +31,50 @@
 <text text-anchor="start" x="454.5" y="-800.8" font-family="Helvetica,sans-Serif" font-size="12.00"> &#160;</text>
 <text text-anchor="start" x="461.5" y="-800.8" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#6b7280">u_pipe</text>
 </g>
+<g id="clust4" class="cluster">
+<title>cluster_ctl</title>
+<path fill="white" stroke="#7c3aed" stroke-width="1.8" stroke-dasharray="5,2" d="M372.5,-502C372.5,-502 724,-502 724,-502 730,-502 736,-508 736,-514 736,-514 736,-585 736,-585 736,-591 730,-597 724,-597 724,-597 372.5,-597 372.5,-597 366.5,-597 360.5,-591 360.5,-585 360.5,-585 360.5,-514 360.5,-514 360.5,-508 366.5,-502 372.5,-502"/>
+<text text-anchor="start" x="368.5" y="-586" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00" fill="#5b21b6">Control (AXI4&#45;Lite, pix_clk)</text>
+</g>
 <g id="clust5" class="cluster">
 <title>cluster_rx</title>
-<path fill="white" stroke="#b45309" stroke-width="1.8" stroke-dasharray="5,2" d="M596,-633C596,-633 1040,-633 1040,-633 1046,-633 1052,-639 1052,-645 1052,-645 1052,-772 1052,-772 1052,-778 1046,-784 1040,-784 1040,-784 596,-784 596,-784 590,-784 584,-778 584,-772 584,-772 584,-645 584,-645 584,-639 590,-633 596,-633"/>
-<text text-anchor="start" x="592" y="-773" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00" fill="#92400e">Camera input</text>
-<text text-anchor="start" x="656" y="-773" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#92400e"> &#160;`VP_CSI2_RX</text>
+<path fill="white" stroke="#b45309" stroke-width="1.8" stroke-dasharray="5,2" d="M596,-605C596,-605 1040,-605 1040,-605 1046,-605 1052,-611 1052,-617 1052,-617 1052,-744 1052,-744 1052,-750 1046,-756 1040,-756 1040,-756 596,-756 596,-756 590,-756 584,-750 584,-744 584,-744 584,-617 584,-617 584,-611 590,-605 596,-605"/>
+<text text-anchor="start" x="592" y="-745" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00" fill="#92400e">Camera input</text>
+<text text-anchor="start" x="656" y="-745" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#92400e"> &#160;`VP_CSI2_RX</text>
 </g>
 <g id="clust6" class="cluster">
 <title>cluster_isp</title>
-<path fill="white" stroke="#15803d" stroke-width="1.8" stroke-dasharray="5,2" d="M1102,-543C1102,-543 1946,-543 1946,-543 1952,-543 1958,-549 1958,-555 1958,-555 1958,-692 1958,-692 1958,-698 1952,-704 1946,-704 1946,-704 1102,-704 1102,-704 1096,-704 1090,-698 1090,-692 1090,-692 1090,-555 1090,-555 1090,-549 1096,-543 1102,-543"/>
-<text text-anchor="start" x="1098" y="-693" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00" fill="#166534">ISP</text>
-<text text-anchor="start" x="1115" y="-693" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#166534"> &#160;(each stage: bypass bit in BYPASS)</text>
+<path fill="white" stroke="#15803d" stroke-width="1.8" stroke-dasharray="5,2" d="M1102,-588C1102,-588 1946,-588 1946,-588 1952,-588 1958,-594 1958,-600 1958,-600 1958,-737 1958,-737 1958,-743 1952,-749 1946,-749 1946,-749 1102,-749 1102,-749 1096,-749 1090,-743 1090,-737 1090,-737 1090,-600 1090,-600 1090,-594 1096,-588 1102,-588"/>
+<text text-anchor="start" x="1098" y="-738" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00" fill="#166534">ISP</text>
+<text text-anchor="start" x="1115" y="-738" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#166534"> &#160;(each stage: bypass bit in BYPASS)</text>
 </g>
 <g id="clust7" class="cluster">
 <title>cluster_geo</title>
-<path fill="white" stroke="#0e7490" stroke-width="1.8" stroke-dasharray="5,2" d="M2041,-457C2041,-457 2435.5,-457 2435.5,-457 2441.5,-457 2447.5,-463 2447.5,-469 2447.5,-469 2447.5,-612 2447.5,-612 2447.5,-618 2441.5,-624 2435.5,-624 2435.5,-624 2041,-624 2041,-624 2035,-624 2029,-618 2029,-612 2029,-612 2029,-469 2029,-469 2029,-463 2035,-457 2041,-457"/>
-<text text-anchor="start" x="2037" y="-613" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00" fill="#155e75">Scaler</text>
-<text text-anchor="start" x="2067" y="-613" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#155e75"> &#160;(bypass [7], SCALER parameter)</text>
+<path fill="white" stroke="#0e7490" stroke-width="1.8" stroke-dasharray="5,2" d="M2041,-617C2041,-617 2435.5,-617 2435.5,-617 2441.5,-617 2447.5,-623 2447.5,-629 2447.5,-629 2447.5,-772 2447.5,-772 2447.5,-778 2441.5,-784 2435.5,-784 2435.5,-784 2041,-784 2041,-784 2035,-784 2029,-778 2029,-772 2029,-772 2029,-629 2029,-629 2029,-623 2035,-617 2041,-617"/>
+<text text-anchor="start" x="2037" y="-773" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00" fill="#155e75">Scaler</text>
+<text text-anchor="start" x="2067" y="-773" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#155e75"> &#160;(bypass [7], SCALER parameter)</text>
 </g>
 <g id="clust8" class="cluster">
 <title>cluster_out</title>
-<path fill="white" stroke="#15803d" stroke-width="1.8" stroke-dasharray="5,2" d="M2375,-632C2375,-632 2632,-632 2632,-632 2638,-632 2644,-638 2644,-644 2644,-644 2644,-717 2644,-717 2644,-723 2638,-729 2632,-729 2632,-729 2375,-729 2375,-729 2369,-729 2363,-723 2363,-717 2363,-717 2363,-644 2363,-644 2363,-638 2369,-632 2375,-632"/>
-<text text-anchor="start" x="2371" y="-718" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00" fill="#166534">Output timing</text>
-<text text-anchor="start" x="2436" y="-718" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#166534"> &#160;(genlock to camera, CTRL.TPG colour bars)</text>
+<path fill="white" stroke="#15803d" stroke-width="1.8" stroke-dasharray="5,2" d="M2375,-512C2375,-512 2632,-512 2632,-512 2638,-512 2644,-518 2644,-524 2644,-524 2644,-597 2644,-597 2644,-603 2638,-609 2632,-609 2632,-609 2375,-609 2375,-609 2369,-609 2363,-603 2363,-597 2363,-597 2363,-524 2363,-524 2363,-518 2369,-512 2375,-512"/>
+<text text-anchor="start" x="2371" y="-598" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00" fill="#166534">Output timing</text>
+<text text-anchor="start" x="2436" y="-598" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#166534"> &#160;(genlock to camera, CTRL.TPG colour bars)</text>
 </g>
 <g id="clust9" class="cluster">
 <title>cluster_tx</title>
 <path fill="white" stroke="#be185d" stroke-width="1.8" stroke-dasharray="5,2" d="M2673,-438C2673,-438 3045,-438 3045,-438 3051,-438 3057,-444 3057,-450 3057,-450 3057,-772 3057,-772 3057,-778 3051,-784 3045,-784 3045,-784 2673,-784 2673,-784 2667,-784 2661,-778 2661,-772 2661,-772 2661,-450 2661,-450 2661,-444 2667,-438 2673,-438"/>
 <text text-anchor="start" x="2669" y="-773" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00" fill="#9d174d">Output transmitters</text>
 </g>
-<g id="clust4" class="cluster">
-<title>cluster_ctl</title>
-<path fill="white" stroke="#7c3aed" stroke-width="1.8" stroke-dasharray="5,2" d="M372.5,-530C372.5,-530 724,-530 724,-530 730,-530 736,-536 736,-542 736,-542 736,-613 736,-613 736,-619 730,-625 724,-625 724,-625 372.5,-625 372.5,-625 366.5,-625 360.5,-619 360.5,-613 360.5,-613 360.5,-542 360.5,-542 360.5,-536 366.5,-530 372.5,-530"/>
-<text text-anchor="start" x="368.5" y="-614" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00" fill="#5b21b6">Control (AXI4&#45;Lite, pix_clk)</text>
+<g id="clust10" class="cluster">
+<title>cluster_ser</title>
+<path fill="white" stroke="#1d4ed8" stroke-width="2.2" stroke-dasharray="5,2" d="M2930,-823C2930,-823 3108,-823 3108,-823 3114,-823 3120,-829 3120,-835 3120,-835 3120,-942 3120,-942 3120,-948 3114,-954 3108,-954 3108,-954 2930,-954 2930,-954 2924,-954 2918,-948 2918,-942 2918,-942 2918,-835 2918,-835 2918,-829 2924,-823 2930,-823"/>
+<text text-anchor="start" x="2926" y="-943" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00" fill="#1e40af">Serializers</text>
+<text text-anchor="start" x="2976" y="-943" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#1e40af"> (generic, behavioural)</text>
+</g>
+<g id="clust11" class="cluster">
+<title>cluster_board_out</title>
+<path fill="white" stroke="#9ca3af" stroke-dasharray="5,2" d="M2930,-218C2930,-218 3419,-218 3419,-218 3425,-218 3431,-224 3431,-230 3431,-230 3431,-330 3431,-330 3431,-336 3425,-342 3419,-342 3419,-342 2930,-342 2930,-342 2924,-342 2918,-336 2918,-330 2918,-330 2918,-230 2918,-230 2918,-224 2924,-218 2930,-218"/>
+<text text-anchor="start" x="2926" y="-330.2" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="11.00" fill="#4b5563">Board / vendor (not in this design)</text>
 </g>
 <!-- sensor -->
 <g id="node1" class="node">
@@ -105,20 +105,20 @@
 <!-- csi -->
 <g id="node8" class="node">
 <title>csi</title>
-<polygon fill="#ffedd5" stroke="transparent" points="592,-707 592,-757 714,-757 714,-707 592,-707"/>
-<polygon fill="none" stroke="#c2410c" points="592,-707 592,-757 714,-757 714,-707 592,-707"/>
-<text text-anchor="start" x="636" y="-745" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">csi2_rx</text>
-<text text-anchor="start" x="641" y="-735" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_csi</text>
-<text text-anchor="start" x="597" y="-725" font-family="Helvetica,sans-Serif" font-size="10.00">lane merge, header ECC,</text>
-<text text-anchor="start" x="602.5" y="-715" font-family="Helvetica,sans-Serif" font-size="10.00">CRC&#45;16, VC / DT filter</text>
+<polygon fill="#ffedd5" stroke="transparent" points="592,-679 592,-729 714,-729 714,-679 592,-679"/>
+<polygon fill="none" stroke="#c2410c" points="592,-679 592,-729 714,-729 714,-679 592,-679"/>
+<text text-anchor="start" x="636" y="-717" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">csi2_rx</text>
+<text text-anchor="start" x="641" y="-707" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_csi</text>
+<text text-anchor="start" x="597" y="-697" font-family="Helvetica,sans-Serif" font-size="10.00">lane merge, header ECC,</text>
+<text text-anchor="start" x="602.5" y="-687" font-family="Helvetica,sans-Serif" font-size="10.00">CRC&#45;16, VC / DT filter</text>
 </g>
 <!-- dphy_rx&#45;&gt;csi -->
 <g id="edge26" class="edge">
 <title>dphy_rx&#45;&gt;csi</title>
-<path fill="none" stroke="#374151" stroke-width="1.3" d="M413.81,-1038.98C457.36,-982.85 576.59,-829.19 627.95,-763"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="630.05,-764.28 632.41,-757.25 626.18,-761.28 630.05,-764.28"/>
-<text text-anchor="middle" x="532" y="-937.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#374151">lane_data / valid</text>
-<text text-anchor="middle" x="532" y="-927.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#374151">byte_clk</text>
+<path fill="none" stroke="#374151" stroke-width="1.3" d="M412.66,-1038.8C455.75,-978.52 579.11,-805.97 629.82,-735.03"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="631.84,-736.41 633.92,-729.29 627.86,-733.56 631.84,-736.41"/>
+<text text-anchor="middle" x="532" y="-925.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#374151">lane_data / valid</text>
+<text text-anchor="middle" x="532" y="-915.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#374151">byte_clk</text>
 </g>
 <!-- host -->
 <g id="node3" class="node">
@@ -135,19 +135,19 @@
 <!-- split -->
 <g id="node6" class="node">
 <title>split</title>
-<polygon fill="#ede9fe" stroke="transparent" points="368.5,-555 368.5,-595 424.5,-595 424.5,-555 368.5,-555"/>
-<polygon fill="none" stroke="#7c3aed" points="368.5,-555 368.5,-595 424.5,-595 424.5,-555 368.5,-555"/>
-<text text-anchor="start" x="375" y="-583" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">axil_split</text>
-<text text-anchor="start" x="382" y="-573" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_split</text>
-<text text-anchor="start" x="373.5" y="-563" font-family="Helvetica,sans-Serif" font-size="10.00">addr bit 14</text>
+<polygon fill="#ede9fe" stroke="transparent" points="368.5,-527 368.5,-567 424.5,-567 424.5,-527 368.5,-527"/>
+<polygon fill="none" stroke="#7c3aed" points="368.5,-527 368.5,-567 424.5,-567 424.5,-527 368.5,-527"/>
+<text text-anchor="start" x="375" y="-555" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">axil_split</text>
+<text text-anchor="start" x="382" y="-545" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_split</text>
+<text text-anchor="start" x="373.5" y="-535" font-family="Helvetica,sans-Serif" font-size="10.00">addr bit 14</text>
 </g>
 <!-- host&#45;&gt;split -->
 <g id="edge27" class="edge">
 <title>host&#45;&gt;split</title>
-<path fill="none" stroke="#7c3aed" stroke-width="1.3" d="M218.77,-1010.17C228.42,-1004.97 237.46,-998.66 245,-991 356.51,-877.8 386.08,-675.86 393.32,-602.55"/>
-<polygon fill="#7c3aed" stroke="#7c3aed" stroke-width="1.3" points="395.77,-602.66 393.99,-595.46 390.89,-602.2 395.77,-602.66"/>
-<text text-anchor="middle" x="276" y="-985.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#5b21b6">AXI4&#45;Lite</text>
-<text text-anchor="middle" x="276" y="-975.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#5b21b6">s_axil_*</text>
+<path fill="none" stroke="#7c3aed" stroke-width="1.3" d="M218.64,-1010.47C228.37,-1005.21 237.46,-998.81 245,-991 362.77,-868.99 388.53,-651.49 394.04,-574.75"/>
+<polygon fill="#7c3aed" stroke="#7c3aed" stroke-width="1.3" points="396.51,-574.5 394.54,-567.35 391.62,-574.17 396.51,-574.5"/>
+<text text-anchor="middle" x="276" y="-984.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#5b21b6">AXI4&#45;Lite</text>
+<text text-anchor="middle" x="276" y="-974.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#5b21b6">s_axil_*</text>
 </g>
 <!-- pll -->
 <g id="node4" class="node">
@@ -182,316 +182,316 @@
 <!-- regs -->
 <g id="node7" class="node">
 <title>regs</title>
-<polygon fill="#ede9fe" stroke="transparent" points="578,-538 578,-598 728,-598 728,-538 578,-538"/>
-<polygon fill="none" stroke="#7c3aed" points="578,-538 578,-598 728,-598 728,-538 578,-538"/>
-<text text-anchor="start" x="624.5" y="-586" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">ip_axil_regs</text>
-<text text-anchor="start" x="638" y="-576" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_regs</text>
-<text text-anchor="start" x="583" y="-566" font-family="Helvetica,sans-Serif" font-size="10.00">0x000–0x0FF: CTRL, BYPASS,</text>
-<text text-anchor="start" x="585" y="-556" font-family="Helvetica,sans-Serif" font-size="10.00">ISP, VTG, OUT_CTRL, status,</text>
-<text text-anchor="start" x="624.5" y="-546" font-family="Helvetica,sans-Serif" font-size="10.00">BUILD_CFG</text>
+<polygon fill="#ede9fe" stroke="transparent" points="578,-510 578,-570 728,-570 728,-510 578,-510"/>
+<polygon fill="none" stroke="#7c3aed" points="578,-510 578,-570 728,-570 728,-510 578,-510"/>
+<text text-anchor="start" x="624.5" y="-558" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">ip_axil_regs</text>
+<text text-anchor="start" x="638" y="-548" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_regs</text>
+<text text-anchor="start" x="583" y="-538" font-family="Helvetica,sans-Serif" font-size="10.00">0x000–0x0FF: CTRL, BYPASS,</text>
+<text text-anchor="start" x="585" y="-528" font-family="Helvetica,sans-Serif" font-size="10.00">ISP, VTG, OUT_CTRL, status,</text>
+<text text-anchor="start" x="624.5" y="-518" font-family="Helvetica,sans-Serif" font-size="10.00">BUILD_CFG</text>
 </g>
 <!-- split&#45;&gt;regs -->
 <g id="edge2" class="edge">
 <title>split&#45;&gt;regs</title>
-<path fill="none" stroke="#374151" stroke-width="1.3" d="M424.74,-574.25C459.33,-573.3 520.58,-571.61 570.78,-570.23"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="570.85,-572.68 577.78,-570.04 570.72,-567.78 570.85,-572.68"/>
+<path fill="none" stroke="#374151" stroke-width="1.3" d="M424.74,-546.25C459.33,-545.3 520.58,-543.61 570.78,-542.23"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="570.85,-544.68 577.78,-542.04 570.72,-539.78 570.85,-544.68"/>
 </g>
 <!-- scaler -->
 <g id="node20" class="node">
 <title>scaler</title>
-<polygon fill="#cffafe" stroke="transparent" points="2163,-507 2163,-597 2342,-597 2342,-507 2163,-507"/>
-<polygon fill="none" stroke="#0e7490" points="2163.5,-567 2163.5,-597 2342.5,-597 2342.5,-567 2163.5,-567"/>
-<text text-anchor="start" x="2198" y="-585" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">scaler_bilinear</text>
-<text text-anchor="start" x="2267" y="-585" font-family="Helvetica,sans-Serif" font-size="10.00"> </text>
-<text text-anchor="start" x="2271" y="-585" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_scaler</text>
-<text text-anchor="start" x="2168.5" y="-575" font-family="Helvetica,sans-Serif" font-size="10.00">line&#45;buffer mode, regs 0x4000–0x7FFF</text>
-<polygon fill="#a5f3fc" stroke="transparent" points="2163.5,-537 2163.5,-567 2237.5,-567 2237.5,-537 2163.5,-537"/>
-<polygon fill="none" stroke="#0e7490" points="2163.5,-537 2163.5,-567 2237.5,-567 2237.5,-537 2163.5,-537"/>
-<text text-anchor="start" x="2176" y="-555" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">scaler_ctrl</text>
-<text text-anchor="start" x="2188" y="-545" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_ctrl</text>
-<polygon fill="#a5f3fc" stroke="transparent" points="2237.5,-537 2237.5,-567 2342.5,-567 2342.5,-537 2237.5,-537"/>
-<polygon fill="none" stroke="#0e7490" points="2237.5,-537 2237.5,-567 2342.5,-567 2342.5,-537 2237.5,-537"/>
-<text text-anchor="start" x="2262.5" y="-555" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">axil_regbus</text>
-<text text-anchor="start" x="2263.5" y="-545" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_ctrl.u_axil</text>
-<polygon fill="#a5f3fc" stroke="transparent" points="2163.5,-507 2163.5,-537 2237.5,-537 2237.5,-507 2163.5,-507"/>
-<polygon fill="none" stroke="#0e7490" points="2163.5,-507 2163.5,-537 2237.5,-537 2237.5,-507 2163.5,-507"/>
-<text text-anchor="start" x="2175" y="-525" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">scaler_dda</text>
-<text text-anchor="start" x="2187" y="-515" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_dda</text>
-<polygon fill="#a5f3fc" stroke="transparent" points="2237.5,-507 2237.5,-537 2342.5,-537 2342.5,-507 2237.5,-507"/>
-<polygon fill="none" stroke="#0e7490" points="2237.5,-507 2237.5,-537 2342.5,-537 2342.5,-507 2237.5,-507"/>
-<text text-anchor="start" x="2249.5" y="-525" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">banked_framebuf</text>
-<text text-anchor="start" x="2280.5" y="-515" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_fb</text>
+<polygon fill="#cffafe" stroke="transparent" points="2163,-667 2163,-757 2342,-757 2342,-667 2163,-667"/>
+<polygon fill="none" stroke="#0e7490" points="2163.5,-727 2163.5,-757 2342.5,-757 2342.5,-727 2163.5,-727"/>
+<text text-anchor="start" x="2198" y="-745" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">scaler_bilinear</text>
+<text text-anchor="start" x="2267" y="-745" font-family="Helvetica,sans-Serif" font-size="10.00"> </text>
+<text text-anchor="start" x="2271" y="-745" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_scaler</text>
+<text text-anchor="start" x="2168.5" y="-735" font-family="Helvetica,sans-Serif" font-size="10.00">line&#45;buffer mode, regs 0x4000–0x7FFF</text>
+<polygon fill="#a5f3fc" stroke="transparent" points="2163.5,-697 2163.5,-727 2237.5,-727 2237.5,-697 2163.5,-697"/>
+<polygon fill="none" stroke="#0e7490" points="2163.5,-697 2163.5,-727 2237.5,-727 2237.5,-697 2163.5,-697"/>
+<text text-anchor="start" x="2176" y="-715" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">scaler_ctrl</text>
+<text text-anchor="start" x="2188" y="-705" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_ctrl</text>
+<polygon fill="#a5f3fc" stroke="transparent" points="2237.5,-697 2237.5,-727 2342.5,-727 2342.5,-697 2237.5,-697"/>
+<polygon fill="none" stroke="#0e7490" points="2237.5,-697 2237.5,-727 2342.5,-727 2342.5,-697 2237.5,-697"/>
+<text text-anchor="start" x="2262.5" y="-715" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">axil_regbus</text>
+<text text-anchor="start" x="2263.5" y="-705" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_ctrl.u_axil</text>
+<polygon fill="#a5f3fc" stroke="transparent" points="2163.5,-667 2163.5,-697 2237.5,-697 2237.5,-667 2163.5,-667"/>
+<polygon fill="none" stroke="#0e7490" points="2163.5,-667 2163.5,-697 2237.5,-697 2237.5,-667 2163.5,-667"/>
+<text text-anchor="start" x="2175" y="-685" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">scaler_dda</text>
+<text text-anchor="start" x="2187" y="-675" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_dda</text>
+<polygon fill="#a5f3fc" stroke="transparent" points="2237.5,-667 2237.5,-697 2342.5,-697 2342.5,-667 2237.5,-667"/>
+<polygon fill="none" stroke="#0e7490" points="2237.5,-667 2237.5,-697 2342.5,-697 2342.5,-667 2237.5,-667"/>
+<text text-anchor="start" x="2249.5" y="-685" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">banked_framebuf</text>
+<text text-anchor="start" x="2280.5" y="-675" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_fb</text>
 </g>
 <!-- split&#45;&gt;scaler -->
 <g id="edge30" class="edge">
 <title>split&#45;&gt;scaler</title>
-<path fill="none" stroke="#7c3aed" stroke-width="1.3" stroke-dasharray="1,5" d="M424.57,-580.71C459.75,-587.88 523.16,-599.98 578,-606 787.66,-629 849.42,-570.3 1052,-629 1066.72,-633.26 1073.45,-633.28 1082,-646 1097.5,-669.06 1069.24,-689.54 1090,-708 1237.13,-838.85 1336.1,-713 1533,-713 1533,-713 1533,-713 1737,-713 1835.25,-713 1862.94,-732.84 1958,-708 2040.01,-686.57 2124.55,-638.37 2181.7,-601.18"/>
-<polygon fill="#7c3aed" stroke="#7c3aed" stroke-width="1.3" points="2183.33,-603.04 2187.84,-597.16 2180.64,-598.94 2183.33,-603.04"/>
-<text text-anchor="middle" x="1383.5" y="-742.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#5b21b6">0x4000+</text>
+<path fill="none" stroke="#7c3aed" stroke-width="1.3" stroke-dasharray="1,5" d="M407.31,-567.32C430.06,-611.84 491.19,-717.4 578,-760 735.86,-837.47 1413.95,-758 1533,-758 1533,-758 1533,-758 1737,-758 1835.25,-758 1860.07,-760.92 1958,-753 2024.27,-747.64 2098.42,-737.24 2155.61,-728.26"/>
+<polygon fill="#7c3aed" stroke="#7c3aed" stroke-width="1.3" points="2156.32,-730.63 2162.85,-727.12 2155.56,-725.79 2156.32,-730.63"/>
+<text text-anchor="middle" x="1383.5" y="-770.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#5b21b6">0x4000+</text>
 </g>
 <!-- blcwb -->
 <g id="node12" class="node">
 <title>blcwb</title>
-<polygon fill="#dcfce7" stroke="transparent" points="1098,-610 1098,-670 1221,-670 1221,-610 1098,-610"/>
-<polygon fill="none" stroke="#15803d" points="1098.5,-630 1098.5,-670 1221.5,-670 1221.5,-630 1098.5,-630"/>
-<text text-anchor="start" x="1133.5" y="-658" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">isp_blc_wb</text>
-<text text-anchor="start" x="1139" y="-648" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_blc_wb</text>
-<text text-anchor="start" x="1103.5" y="-638" font-family="Helvetica,sans-Serif" font-size="10.00">black level, white balance</text>
-<polygon fill="none" stroke="#15803d" points="1098.5,-610 1098.5,-630 1221.5,-630 1221.5,-610 1098.5,-610"/>
-<text text-anchor="start" x="1112.5" y="-617.8" font-family="Helvetica,sans-Serif" font-size="9.00">bypass [0] BLC · [1] WB</text>
+<polygon fill="#dcfce7" stroke="transparent" points="1098,-611 1098,-671 1221,-671 1221,-611 1098,-611"/>
+<polygon fill="none" stroke="#15803d" points="1098.5,-631 1098.5,-671 1221.5,-671 1221.5,-631 1098.5,-631"/>
+<text text-anchor="start" x="1133.5" y="-659" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">isp_blc_wb</text>
+<text text-anchor="start" x="1139" y="-649" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_blc_wb</text>
+<text text-anchor="start" x="1103.5" y="-639" font-family="Helvetica,sans-Serif" font-size="10.00">black level, white balance</text>
+<polygon fill="none" stroke="#15803d" points="1098.5,-611 1098.5,-631 1221.5,-631 1221.5,-611 1098.5,-611"/>
+<text text-anchor="start" x="1112.5" y="-618.8" font-family="Helvetica,sans-Serif" font-size="9.00">bypass [0] BLC · [1] WB</text>
 </g>
 <!-- regs&#45;&gt;blcwb -->
 <g id="edge29" class="edge">
 <title>regs&#45;&gt;blcwb</title>
-<path fill="none" stroke="#7c3aed" stroke-width="1.3" stroke-dasharray="1,5" d="M666.36,-537.96C680.33,-508.43 706.17,-465.1 744,-446 809.46,-412.95 839.63,-422.21 909,-446 1004.24,-478.67 1091.14,-564.18 1132.72,-609.99"/>
+<path fill="none" stroke="#7c3aed" stroke-width="1.3" stroke-dasharray="1,5" d="M707.63,-570.16C718.64,-578.74 728.99,-589.07 736,-601 754.06,-631.73 730.2,-736.51 757,-760 769.32,-770.8 1038.96,-769.93 1052,-760 1062.64,-751.9 1053.01,-742.4 1060,-731 1074.16,-707.89 1095.95,-687.11 1115.44,-671.35"/>
 </g>
 <!-- cdc -->
 <g id="node9" class="node">
 <title>cdc</title>
-<polygon fill="#fde68a" stroke="transparent" points="778,-641 778,-691 875,-691 875,-641 778,-641"/>
-<polygon fill="none" stroke="#a16207" points="778.5,-641 778.5,-691 875.5,-691 875.5,-641 778.5,-641"/>
-<text text-anchor="start" x="783.5" y="-679" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">axis_async_bridge</text>
-<text text-anchor="start" x="813.5" y="-669" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_cdc</text>
-<text text-anchor="start" x="785" y="-659" font-family="Helvetica,sans-Serif" font-size="10.00">byte_clk → pix_clk</text>
-<text text-anchor="start" x="801" y="-649" font-family="Helvetica,sans-Serif" font-size="10.00">(async_fifo)</text>
+<polygon fill="#fde68a" stroke="transparent" points="778,-613 778,-663 875,-663 875,-613 778,-613"/>
+<polygon fill="none" stroke="#a16207" points="778.5,-613 778.5,-663 875.5,-663 875.5,-613 778.5,-613"/>
+<text text-anchor="start" x="783.5" y="-651" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">axis_async_bridge</text>
+<text text-anchor="start" x="813.5" y="-641" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_cdc</text>
+<text text-anchor="start" x="785" y="-631" font-family="Helvetica,sans-Serif" font-size="10.00">byte_clk → pix_clk</text>
+<text text-anchor="start" x="801" y="-621" font-family="Helvetica,sans-Serif" font-size="10.00">(async_fifo)</text>
 </g>
 <!-- csi&#45;&gt;cdc -->
 <g id="edge3" class="edge">
 <title>csi&#45;&gt;cdc</title>
-<path fill="none" stroke="#374151" stroke-width="1.3" d="M714.46,-708.73C733.02,-701.59 753.3,-693.78 771.4,-686.82"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="772.31,-689.1 777.96,-684.29 770.55,-684.52 772.31,-689.1"/>
+<path fill="none" stroke="#374151" stroke-width="1.3" d="M714.46,-680.73C733.02,-673.59 753.3,-665.78 771.4,-658.82"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="772.31,-661.1 777.96,-656.29 770.55,-656.52 772.31,-661.1"/>
 </g>
 <!-- psync -->
 <g id="node10" class="node">
 <title>psync</title>
-<polygon fill="#fde68a" stroke="transparent" points="757,-707 757,-757 896,-757 896,-707 757,-707"/>
-<polygon fill="none" stroke="#a16207" points="757.5,-707 757.5,-757 896.5,-757 896.5,-707 757.5,-707"/>
-<text text-anchor="start" x="793" y="-745" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">pulse_sync</text>
-<text text-anchor="start" x="846" y="-745" font-family="Helvetica,sans-Serif" font-size="10.00"> ×5</text>
-<text text-anchor="start" x="762.5" y="-735" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_ps_fs, u_ps_corr, u_ps_err,</text>
-<text text-anchor="start" x="784" y="-725" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_ps_crc, u_ps_ovf</text>
-<text text-anchor="start" x="777" y="-715" font-family="Helvetica,sans-Serif" font-size="10.00">event counters → regs</text>
+<polygon fill="#fde68a" stroke="transparent" points="757,-679 757,-729 896,-729 896,-679 757,-679"/>
+<polygon fill="none" stroke="#a16207" points="757.5,-679 757.5,-729 896.5,-729 896.5,-679 757.5,-679"/>
+<text text-anchor="start" x="793" y="-717" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">pulse_sync</text>
+<text text-anchor="start" x="846" y="-717" font-family="Helvetica,sans-Serif" font-size="10.00"> ×5</text>
+<text text-anchor="start" x="762.5" y="-707" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_ps_fs, u_ps_corr, u_ps_err,</text>
+<text text-anchor="start" x="784" y="-697" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_ps_crc, u_ps_ovf</text>
+<text text-anchor="start" x="777" y="-687" font-family="Helvetica,sans-Serif" font-size="10.00">event counters → regs</text>
 </g>
 <!-- csi&#45;&gt;psync -->
 <g id="edge5" class="edge">
 <title>csi&#45;&gt;psync</title>
-<path fill="none" stroke="#374151" stroke-width="1.3" stroke-dasharray="5,2" d="M714.46,-732C726.45,-732 739.15,-732 751.52,-732"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="751.8,-733.75 756.8,-732 751.8,-730.25 751.8,-733.75"/>
+<path fill="none" stroke="#374151" stroke-width="1.3" stroke-dasharray="5,2" d="M714.46,-704C726.45,-704 739.15,-704 751.52,-704"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="751.8,-705.75 756.8,-704 751.8,-702.25 751.8,-705.75"/>
 </g>
 <!-- unpack -->
 <g id="node11" class="node">
 <title>unpack</title>
-<polygon fill="#dcfce7" stroke="transparent" points="921,-643 921,-683 1044,-683 1044,-643 921,-643"/>
-<polygon fill="none" stroke="#15803d" points="921.5,-643 921.5,-683 1044.5,-683 1044.5,-643 921.5,-643"/>
-<text text-anchor="start" x="943" y="-671" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">csi2_raw_unpack</text>
-<text text-anchor="start" x="961.5" y="-661" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_unpack</text>
-<text text-anchor="start" x="926.5" y="-651" font-family="Helvetica,sans-Serif" font-size="10.00">RAW8 / RAW10 → pixels</text>
+<polygon fill="#dcfce7" stroke="transparent" points="921,-619 921,-659 1044,-659 1044,-619 921,-619"/>
+<polygon fill="none" stroke="#15803d" points="921.5,-619 921.5,-659 1044.5,-659 1044.5,-619 921.5,-619"/>
+<text text-anchor="start" x="943" y="-647" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">csi2_raw_unpack</text>
+<text text-anchor="start" x="961.5" y="-637" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_unpack</text>
+<text text-anchor="start" x="926.5" y="-627" font-family="Helvetica,sans-Serif" font-size="10.00">RAW8 / RAW10 → pixels</text>
 </g>
 <!-- cdc&#45;&gt;unpack -->
 <g id="edge4" class="edge">
 <title>cdc&#45;&gt;unpack</title>
-<path fill="none" stroke="#374151" stroke-width="1.3" d="M875.38,-665.07C887.53,-664.83 900.8,-664.57 913.73,-664.32"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="913.91,-666.77 920.86,-664.18 913.81,-661.87 913.91,-666.77"/>
+<path fill="none" stroke="#374151" stroke-width="1.3" d="M875.38,-638.31C887.53,-638.39 900.8,-638.48 913.73,-638.56"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="913.85,-641.01 920.86,-638.61 913.88,-636.11 913.85,-641.01"/>
 </g>
 <!-- unpack&#45;&gt;blcwb -->
 <g id="edge17" class="edge">
 <title>unpack&#45;&gt;blcwb</title>
-<path fill="none" stroke="#374151" stroke-width="1.3" d="M1044.22,-655.02C1059.28,-653.04 1075.52,-650.91 1090.9,-648.89"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="1091.27,-651.31 1097.89,-647.97 1090.63,-646.45 1091.27,-651.31"/>
-<text text-anchor="middle" x="1071" y="-664.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#374151">RAW</text>
-<text text-anchor="middle" x="1071" y="-654.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#374151">10b</text>
+<path fill="none" stroke="#374151" stroke-width="1.3" d="M1044.22,-639.69C1059.15,-639.86 1075.23,-640.05 1090.48,-640.22"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="1090.86,-642.68 1097.89,-640.31 1090.92,-637.78 1090.86,-642.68"/>
+<text text-anchor="middle" x="1071" y="-652.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#374151">RAW</text>
+<text text-anchor="middle" x="1071" y="-642.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#374151">10b</text>
 </g>
 <!-- dpc -->
 <g id="node13" class="node">
 <title>dpc</title>
-<polygon fill="#dcfce7" stroke="transparent" points="1246,-587 1246,-677 1353,-677 1353,-587 1246,-587"/>
-<polygon fill="none" stroke="#15803d" points="1246.5,-637 1246.5,-677 1353.5,-677 1353.5,-637 1246.5,-637"/>
-<text text-anchor="start" x="1281.5" y="-665" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">isp_dpc</text>
-<text text-anchor="start" x="1286.5" y="-655" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_dpc</text>
-<text text-anchor="start" x="1251.5" y="-645" font-family="Helvetica,sans-Serif" font-size="10.00">defect pixel correction</text>
-<polygon fill="#bbf7d0" stroke="transparent" points="1246.5,-607 1246.5,-637 1353.5,-637 1353.5,-607 1246.5,-607"/>
-<polygon fill="none" stroke="#15803d" points="1246.5,-607 1246.5,-637 1353.5,-637 1353.5,-607 1246.5,-607"/>
-<text text-anchor="start" x="1257" y="-625" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">isp_window</text>
-<text text-anchor="start" x="1313" y="-625" font-family="Helvetica,sans-Serif" font-size="10.00"> </text>
-<text text-anchor="start" x="1317" y="-625" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_win</text>
-<text text-anchor="start" x="1261" y="-615" font-family="Helvetica,sans-Serif" font-size="10.00">5×5, mirror border</text>
-<polygon fill="none" stroke="#15803d" points="1246.5,-587 1246.5,-607 1353.5,-607 1353.5,-587 1246.5,-587"/>
-<text text-anchor="start" x="1279" y="-594.8" font-family="Helvetica,sans-Serif" font-size="9.00">bypass [2]</text>
+<polygon fill="#dcfce7" stroke="transparent" points="1246,-596 1246,-686 1353,-686 1353,-596 1246,-596"/>
+<polygon fill="none" stroke="#15803d" points="1246.5,-646 1246.5,-686 1353.5,-686 1353.5,-646 1246.5,-646"/>
+<text text-anchor="start" x="1281.5" y="-674" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">isp_dpc</text>
+<text text-anchor="start" x="1286.5" y="-664" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_dpc</text>
+<text text-anchor="start" x="1251.5" y="-654" font-family="Helvetica,sans-Serif" font-size="10.00">defect pixel correction</text>
+<polygon fill="#bbf7d0" stroke="transparent" points="1246.5,-616 1246.5,-646 1353.5,-646 1353.5,-616 1246.5,-616"/>
+<polygon fill="none" stroke="#15803d" points="1246.5,-616 1246.5,-646 1353.5,-646 1353.5,-616 1246.5,-616"/>
+<text text-anchor="start" x="1257" y="-634" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">isp_window</text>
+<text text-anchor="start" x="1313" y="-634" font-family="Helvetica,sans-Serif" font-size="10.00"> </text>
+<text text-anchor="start" x="1317" y="-634" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_win</text>
+<text text-anchor="start" x="1261" y="-624" font-family="Helvetica,sans-Serif" font-size="10.00">5×5, mirror border</text>
+<polygon fill="none" stroke="#15803d" points="1246.5,-596 1246.5,-616 1353.5,-616 1353.5,-596 1246.5,-596"/>
+<text text-anchor="start" x="1279" y="-603.8" font-family="Helvetica,sans-Serif" font-size="9.00">bypass [2]</text>
 </g>
 <!-- blcwb&#45;&gt;dpc -->
 <g id="edge6" class="edge">
 <title>blcwb&#45;&gt;dpc</title>
-<path fill="none" stroke="#374151" stroke-width="1.3" d="M1221.03,-636.49C1226.83,-636.15 1232.72,-635.81 1238.52,-635.48"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="1238.96,-637.91 1245.81,-635.05 1238.68,-633.01 1238.96,-637.91"/>
+<path fill="none" stroke="#374151" stroke-width="1.3" d="M1221.03,-641C1226.83,-641 1232.72,-641 1238.52,-641"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="1238.81,-643.45 1245.81,-641 1238.81,-638.55 1238.81,-643.45"/>
 </g>
 <!-- demosaic -->
 <g id="node14" class="node">
 <title>demosaic</title>
-<polygon fill="#dcfce7" stroke="transparent" points="1414,-587 1414,-677 1521,-677 1521,-587 1414,-587"/>
-<polygon fill="none" stroke="#15803d" points="1414.5,-637 1414.5,-677 1521.5,-677 1521.5,-637 1414.5,-637"/>
-<text text-anchor="start" x="1435.5" y="-665" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">isp_demosaic</text>
-<text text-anchor="start" x="1441.5" y="-655" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_demosaic</text>
-<text text-anchor="start" x="1419.5" y="-645" font-family="Helvetica,sans-Serif" font-size="10.00">bilinear Bayer → RGB</text>
-<polygon fill="#bbf7d0" stroke="transparent" points="1414.5,-607 1414.5,-637 1521.5,-637 1521.5,-607 1414.5,-607"/>
-<polygon fill="none" stroke="#15803d" points="1414.5,-607 1414.5,-637 1521.5,-637 1521.5,-607 1414.5,-607"/>
-<text text-anchor="start" x="1425" y="-625" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">isp_window</text>
-<text text-anchor="start" x="1481" y="-625" font-family="Helvetica,sans-Serif" font-size="10.00"> </text>
-<text text-anchor="start" x="1485" y="-625" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_win</text>
-<text text-anchor="start" x="1429" y="-615" font-family="Helvetica,sans-Serif" font-size="10.00">3×3, mirror border</text>
-<polygon fill="none" stroke="#15803d" points="1414.5,-587 1414.5,-607 1521.5,-607 1521.5,-587 1414.5,-587"/>
-<text text-anchor="start" x="1447" y="-594.8" font-family="Helvetica,sans-Serif" font-size="9.00">bypass [3]</text>
+<polygon fill="#dcfce7" stroke="transparent" points="1414,-596 1414,-686 1521,-686 1521,-596 1414,-596"/>
+<polygon fill="none" stroke="#15803d" points="1414.5,-646 1414.5,-686 1521.5,-686 1521.5,-646 1414.5,-646"/>
+<text text-anchor="start" x="1435.5" y="-674" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">isp_demosaic</text>
+<text text-anchor="start" x="1441.5" y="-664" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_demosaic</text>
+<text text-anchor="start" x="1419.5" y="-654" font-family="Helvetica,sans-Serif" font-size="10.00">bilinear Bayer → RGB</text>
+<polygon fill="#bbf7d0" stroke="transparent" points="1414.5,-616 1414.5,-646 1521.5,-646 1521.5,-616 1414.5,-616"/>
+<polygon fill="none" stroke="#15803d" points="1414.5,-616 1414.5,-646 1521.5,-646 1521.5,-616 1414.5,-616"/>
+<text text-anchor="start" x="1425" y="-634" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">isp_window</text>
+<text text-anchor="start" x="1481" y="-634" font-family="Helvetica,sans-Serif" font-size="10.00"> </text>
+<text text-anchor="start" x="1485" y="-634" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_win</text>
+<text text-anchor="start" x="1429" y="-624" font-family="Helvetica,sans-Serif" font-size="10.00">3×3, mirror border</text>
+<polygon fill="none" stroke="#15803d" points="1414.5,-596 1414.5,-616 1521.5,-616 1521.5,-596 1414.5,-596"/>
+<text text-anchor="start" x="1447" y="-603.8" font-family="Helvetica,sans-Serif" font-size="9.00">bypass [3]</text>
 </g>
 <!-- dpc&#45;&gt;demosaic -->
 <g id="edge7" class="edge">
 <title>dpc&#45;&gt;demosaic</title>
-<path fill="none" stroke="#374151" stroke-width="1.3" d="M1353.02,-632C1369.98,-632 1388.9,-632 1406.36,-632"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="1406.75,-634.45 1413.75,-632 1406.75,-629.55 1406.75,-634.45"/>
+<path fill="none" stroke="#374151" stroke-width="1.3" d="M1353.02,-641C1369.98,-641 1388.9,-641 1406.36,-641"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="1406.75,-643.45 1413.75,-641 1406.75,-638.55 1406.75,-643.45"/>
 </g>
 <!-- ccm -->
 <g id="node15" class="node">
 <title>ccm</title>
-<polygon fill="#dcfce7" stroke="transparent" points="1546,-602 1546,-662 1632,-662 1632,-602 1546,-602"/>
-<polygon fill="none" stroke="#15803d" points="1546,-622 1546,-662 1632,-662 1632,-622 1546,-622"/>
-<text text-anchor="start" x="1569" y="-650" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">isp_ccm</text>
-<text text-anchor="start" x="1574" y="-640" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_ccm</text>
-<text text-anchor="start" x="1551" y="-630" font-family="Helvetica,sans-Serif" font-size="10.00">3×3 colour matrix</text>
-<polygon fill="none" stroke="#15803d" points="1546,-602 1546,-622 1632,-622 1632,-602 1546,-602"/>
-<text text-anchor="start" x="1568" y="-609.8" font-family="Helvetica,sans-Serif" font-size="9.00">bypass [4]</text>
+<polygon fill="#dcfce7" stroke="transparent" points="1546,-611 1546,-671 1632,-671 1632,-611 1546,-611"/>
+<polygon fill="none" stroke="#15803d" points="1546,-631 1546,-671 1632,-671 1632,-631 1546,-631"/>
+<text text-anchor="start" x="1569" y="-659" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">isp_ccm</text>
+<text text-anchor="start" x="1574" y="-649" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_ccm</text>
+<text text-anchor="start" x="1551" y="-639" font-family="Helvetica,sans-Serif" font-size="10.00">3×3 colour matrix</text>
+<polygon fill="none" stroke="#15803d" points="1546,-611 1546,-631 1632,-631 1632,-611 1546,-611"/>
+<text text-anchor="start" x="1568" y="-618.8" font-family="Helvetica,sans-Serif" font-size="9.00">bypass [4]</text>
 </g>
 <!-- demosaic&#45;&gt;ccm -->
 <g id="edge8" class="edge">
 <title>demosaic&#45;&gt;ccm</title>
-<path fill="none" stroke="#374151" stroke-width="1.3" d="M1521.26,-632C1527.07,-632 1532.96,-632 1538.72,-632"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="1538.92,-634.45 1545.92,-632 1538.92,-629.55 1538.92,-634.45"/>
+<path fill="none" stroke="#374151" stroke-width="1.3" d="M1521.26,-641C1527.07,-641 1532.96,-641 1538.72,-641"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="1538.92,-643.45 1545.92,-641 1538.92,-638.55 1538.92,-643.45"/>
 </g>
 <!-- stats -->
 <g id="node16" class="node">
 <title>stats</title>
-<polygon fill="#dcfce7" stroke="transparent" points="1669,-627 1669,-677 1803,-677 1803,-627 1669,-627"/>
-<polygon fill="none" stroke="#15803d" points="1669,-627 1669,-677 1803,-677 1803,-627 1669,-627"/>
-<text text-anchor="start" x="1715" y="-665" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">isp_stats</text>
-<text text-anchor="start" x="1719.5" y="-655" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_stats</text>
-<text text-anchor="start" x="1684.5" y="-645" font-family="Helvetica,sans-Serif" font-size="10.00">R/G/B sums, clip count</text>
-<text text-anchor="start" x="1674" y="-635" font-family="Helvetica,sans-Serif" font-size="10.00">(AE / AWB) → stats_done_o</text>
+<polygon fill="#dcfce7" stroke="transparent" points="1669,-672 1669,-722 1803,-722 1803,-672 1669,-672"/>
+<polygon fill="none" stroke="#15803d" points="1669,-672 1669,-722 1803,-722 1803,-672 1669,-672"/>
+<text text-anchor="start" x="1715" y="-710" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">isp_stats</text>
+<text text-anchor="start" x="1719.5" y="-700" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_stats</text>
+<text text-anchor="start" x="1684.5" y="-690" font-family="Helvetica,sans-Serif" font-size="10.00">R/G/B sums, clip count</text>
+<text text-anchor="start" x="1674" y="-680" font-family="Helvetica,sans-Serif" font-size="10.00">(AE / AWB) → stats_done_o</text>
 </g>
 <!-- ccm&#45;&gt;stats -->
 <g id="edge11" class="edge">
 <title>ccm&#45;&gt;stats</title>
-<path fill="none" stroke="#374151" stroke-width="1.3" stroke-dasharray="5,2" d="M1632.33,-637.84C1641.63,-639.12 1651.75,-640.52 1661.87,-641.91"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="1661.61,-644.35 1668.88,-642.88 1662.28,-639.5 1661.61,-644.35"/>
-<text text-anchor="middle" x="1650.5" y="-642.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#374151">tap</text>
+<path fill="none" stroke="#374151" stroke-width="1.3" stroke-dasharray="5,2" d="M1632.33,-657.35C1642.16,-661.14 1652.89,-665.29 1663.59,-669.42"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="1662.83,-671.75 1670.24,-671.99 1664.59,-667.18 1662.83,-671.75"/>
+<text text-anchor="middle" x="1650.5" y="-667.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#374151">tap</text>
 </g>
 <!-- gamma -->
 <g id="node17" class="node">
 <title>gamma</title>
-<polygon fill="#dcfce7" stroke="transparent" points="1697.5,-551 1697.5,-611 1774.5,-611 1774.5,-551 1697.5,-551"/>
-<polygon fill="none" stroke="#15803d" points="1698,-571 1698,-611 1775,-611 1775,-571 1698,-571"/>
-<text text-anchor="start" x="1709" y="-599" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">isp_gamma</text>
-<text text-anchor="start" x="1715" y="-589" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_gamma</text>
-<text text-anchor="start" x="1703" y="-579" font-family="Helvetica,sans-Serif" font-size="10.00">LUT 10 → 8 bit</text>
-<polygon fill="none" stroke="#15803d" points="1698,-551 1698,-571 1775,-571 1775,-551 1698,-551"/>
-<text text-anchor="start" x="1715.5" y="-558.8" font-family="Helvetica,sans-Serif" font-size="9.00">bypass [5]</text>
+<polygon fill="#dcfce7" stroke="transparent" points="1697.5,-596 1697.5,-656 1774.5,-656 1774.5,-596 1697.5,-596"/>
+<polygon fill="none" stroke="#15803d" points="1698,-616 1698,-656 1775,-656 1775,-616 1698,-616"/>
+<text text-anchor="start" x="1709" y="-644" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">isp_gamma</text>
+<text text-anchor="start" x="1715" y="-634" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_gamma</text>
+<text text-anchor="start" x="1703" y="-624" font-family="Helvetica,sans-Serif" font-size="10.00">LUT 10 → 8 bit</text>
+<polygon fill="none" stroke="#15803d" points="1698,-596 1698,-616 1775,-616 1775,-596 1698,-596"/>
+<text text-anchor="start" x="1715.5" y="-603.8" font-family="Helvetica,sans-Serif" font-size="9.00">bypass [5]</text>
 </g>
 <!-- ccm&#45;&gt;gamma -->
 <g id="edge9" class="edge">
 <title>ccm&#45;&gt;gamma</title>
-<path fill="none" stroke="#374151" stroke-width="1.3" d="M1632.33,-617.11C1650.64,-610.67 1672.08,-603.13 1690.62,-596.61"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="1691.52,-598.89 1697.31,-594.26 1689.89,-594.27 1691.52,-598.89"/>
+<path fill="none" stroke="#374151" stroke-width="1.3" d="M1632.33,-636.62C1650.48,-634.74 1671.71,-632.55 1690.13,-630.64"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="1690.6,-633.06 1697.31,-629.9 1690.09,-628.18 1690.6,-633.06"/>
 </g>
 <!-- csc -->
 <g id="node18" class="node">
 <title>csc</title>
-<polygon fill="#dcfce7" stroke="transparent" points="1828,-551 1828,-611 1950,-611 1950,-551 1828,-551"/>
-<polygon fill="none" stroke="#15803d" points="1828,-571 1828,-611 1950,-611 1950,-571 1828,-571"/>
-<text text-anchor="start" x="1871" y="-599" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">isp_csc</text>
-<text text-anchor="start" x="1875.5" y="-589" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_csc</text>
-<text text-anchor="start" x="1833" y="-579" font-family="Helvetica,sans-Serif" font-size="10.00">RGB → YCbCr 601 / 709</text>
-<polygon fill="none" stroke="#15803d" points="1828,-551 1828,-571 1950,-571 1950,-551 1828,-551"/>
-<text text-anchor="start" x="1868" y="-558.8" font-family="Helvetica,sans-Serif" font-size="9.00">bypass [6]</text>
+<polygon fill="#dcfce7" stroke="transparent" points="1828,-601 1828,-661 1950,-661 1950,-601 1828,-601"/>
+<polygon fill="none" stroke="#15803d" points="1828,-621 1828,-661 1950,-661 1950,-621 1828,-621"/>
+<text text-anchor="start" x="1871" y="-649" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">isp_csc</text>
+<text text-anchor="start" x="1875.5" y="-639" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_csc</text>
+<text text-anchor="start" x="1833" y="-629" font-family="Helvetica,sans-Serif" font-size="10.00">RGB → YCbCr 601 / 709</text>
+<polygon fill="none" stroke="#15803d" points="1828,-601 1828,-621 1950,-621 1950,-601 1828,-601"/>
+<text text-anchor="start" x="1868" y="-608.8" font-family="Helvetica,sans-Serif" font-size="9.00">bypass [6]</text>
 </g>
 <!-- gamma&#45;&gt;csc -->
 <g id="edge10" class="edge">
 <title>gamma&#45;&gt;csc</title>
-<path fill="none" stroke="#374151" stroke-width="1.3" d="M1774.71,-581C1788.65,-581 1804.91,-581 1820.68,-581"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="1820.88,-583.45 1827.88,-581 1820.88,-578.55 1820.88,-583.45"/>
+<path fill="none" stroke="#374151" stroke-width="1.3" d="M1774.71,-627.25C1788.65,-627.71 1804.91,-628.25 1820.68,-628.77"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="1820.8,-631.23 1827.88,-629.01 1820.97,-626.33 1820.8,-631.23"/>
 </g>
 <!-- route -->
 <g id="node19" class="node">
 <title>route</title>
-<polygon fill="#e0f2fe" stroke="transparent" points="2037,-536 2037,-568 2138,-568 2138,-536 2037,-536"/>
-<polygon fill="none" stroke="#0369a1" points="2037.5,-536 2037.5,-568 2138.5,-568 2138.5,-536 2037.5,-536"/>
-<text text-anchor="start" x="2056.5" y="-555" font-family="Helvetica,sans-Serif" font-size="10.00">route / bypass</text>
-<text text-anchor="start" x="2042.5" y="-544" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">(video_pipeline logic)</text>
+<polygon fill="#e0f2fe" stroke="transparent" points="2037,-627 2037,-659 2138,-659 2138,-627 2037,-627"/>
+<polygon fill="none" stroke="#0369a1" points="2037.5,-627 2037.5,-659 2138.5,-659 2138.5,-627 2037.5,-627"/>
+<text text-anchor="start" x="2056.5" y="-646" font-family="Helvetica,sans-Serif" font-size="10.00">route / bypass</text>
+<text text-anchor="start" x="2042.5" y="-635" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">(video_pipeline logic)</text>
 </g>
 <!-- csc&#45;&gt;route -->
 <g id="edge18" class="edge">
 <title>csc&#45;&gt;route</title>
-<path fill="none" stroke="#374151" stroke-width="1.3" d="M1950.02,-572.14C1975.4,-568.4 2004.81,-564.06 2029.82,-560.37"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="2030.18,-562.79 2036.75,-559.34 2029.47,-557.94 2030.18,-562.79"/>
-<text text-anchor="middle" x="1993.5" y="-581.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#374151">RGB / YCbCr</text>
-<text text-anchor="middle" x="1993.5" y="-571.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#374151">24b</text>
+<path fill="none" stroke="#374151" stroke-width="1.3" d="M1950.02,-634.67C1975.29,-636.21 2004.56,-638 2029.5,-639.52"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="2029.61,-641.98 2036.75,-639.96 2029.91,-637.09 2029.61,-641.98"/>
+<text text-anchor="middle" x="1993.5" y="-650.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#374151">RGB / YCbCr</text>
+<text text-anchor="middle" x="1993.5" y="-640.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#374151">24b</text>
 </g>
 <!-- route&#45;&gt;scaler -->
 <g id="edge12" class="edge">
 <title>route&#45;&gt;scaler</title>
-<path fill="none" stroke="#374151" stroke-width="1.3" d="M2138.29,-552C2143.94,-552 2149.84,-552 2155.84,-552"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="2155.92,-554.45 2162.92,-552 2155.92,-549.55 2155.92,-554.45"/>
+<path fill="none" stroke="#374151" stroke-width="1.3" d="M2131.33,-661.13C2139.14,-664.44 2147.58,-668.01 2156.23,-671.67"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="2155.47,-674.01 2162.87,-674.48 2157.38,-669.5 2155.47,-674.01"/>
 </g>
 <!-- merge -->
 <g id="node21" class="node">
 <title>merge</title>
-<polygon fill="#e0f2fe" stroke="transparent" points="2393.5,-541.5 2393.5,-562.5 2431.5,-562.5 2431.5,-541.5 2393.5,-541.5"/>
-<polygon fill="none" stroke="#0369a1" points="2393.5,-541 2393.5,-562 2431.5,-562 2431.5,-541 2393.5,-541"/>
-<text text-anchor="start" x="2398.5" y="-549" font-family="Helvetica,sans-Serif" font-size="10.00">merge</text>
+<polygon fill="#e0f2fe" stroke="transparent" points="2393.5,-632.5 2393.5,-653.5 2431.5,-653.5 2431.5,-632.5 2393.5,-632.5"/>
+<polygon fill="none" stroke="#0369a1" points="2393.5,-632 2393.5,-653 2431.5,-653 2431.5,-632 2393.5,-632"/>
+<text text-anchor="start" x="2398.5" y="-640" font-family="Helvetica,sans-Serif" font-size="10.00">merge</text>
 </g>
 <!-- route&#45;&gt;merge -->
 <g id="edge14" class="edge">
 <title>route&#45;&gt;merge</title>
-<path fill="none" stroke="#374151" stroke-width="1.3" stroke-dasharray="5,2" d="M2103.16,-533.94C2116.81,-518.67 2138.66,-497.91 2163,-489 2237.71,-461.65 2267.78,-460.37 2342,-489 2362.52,-496.92 2380.74,-514.02 2393.36,-528.41"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="2391.69,-530.22 2398.09,-533.97 2395.42,-527.05 2391.69,-530.22"/>
-<text text-anchor="middle" x="2252.5" y="-491.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#374151">bypass</text>
+<path fill="none" stroke="#374151" stroke-width="1.3" stroke-dasharray="5,2" d="M2138.26,-643C2204.82,-643 2321.04,-643 2378.04,-643"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="2378.35,-645.45 2385.35,-643 2378.35,-640.55 2378.35,-645.45"/>
+<text text-anchor="middle" x="2252.5" y="-645.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#374151">bypass</text>
 </g>
 <!-- scaler&#45;&gt;merge -->
 <g id="edge13" class="edge">
 <title>scaler&#45;&gt;merge</title>
-<path fill="none" stroke="#374151" stroke-width="1.3" d="M2342.2,-552C2355,-552 2367.46,-552 2378.2,-552"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="2378.34,-554.45 2385.34,-552 2378.34,-549.55 2378.34,-554.45"/>
+<path fill="none" stroke="#374151" stroke-width="1.3" d="M2342.2,-673.26C2355.25,-667.57 2367.94,-662.02 2378.82,-657.27"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="2379.91,-659.47 2385.34,-654.42 2377.95,-654.98 2379.91,-659.47"/>
 </g>
 <!-- a2v -->
 <g id="node23" class="node">
 <title>a2v</title>
-<polygon fill="#dcfce7" stroke="transparent" points="2503,-640.5 2503,-701.5 2636,-701.5 2636,-640.5 2503,-640.5"/>
-<polygon fill="none" stroke="#15803d" points="2503.5,-661 2503.5,-701 2636.5,-701 2636.5,-661 2503.5,-661"/>
-<text text-anchor="start" x="2538" y="-689" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">axis_to_video</text>
-<text text-anchor="start" x="2557.5" y="-679" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_out</text>
-<text text-anchor="start" x="2508.5" y="-669" font-family="Helvetica,sans-Serif" font-size="10.00">stream → timed video, TPG</text>
-<polygon fill="#bbf7d0" stroke="transparent" points="2503.5,-640 2503.5,-661 2636.5,-661 2636.5,-640 2503.5,-640"/>
-<polygon fill="none" stroke="#15803d" points="2503.5,-640 2503.5,-661 2636.5,-661 2636.5,-640 2503.5,-640"/>
-<text text-anchor="start" x="2528.5" y="-649" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">ip_axis_fifo</text>
-<text text-anchor="start" x="2582.5" y="-649" font-family="Helvetica,sans-Serif" font-size="10.00"> </text>
-<text text-anchor="start" x="2586.5" y="-649" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_fifo</text>
+<polygon fill="#dcfce7" stroke="transparent" points="2503,-520.5 2503,-581.5 2636,-581.5 2636,-520.5 2503,-520.5"/>
+<polygon fill="none" stroke="#15803d" points="2503.5,-541 2503.5,-581 2636.5,-581 2636.5,-541 2503.5,-541"/>
+<text text-anchor="start" x="2538" y="-569" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">axis_to_video</text>
+<text text-anchor="start" x="2557.5" y="-559" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_out</text>
+<text text-anchor="start" x="2508.5" y="-549" font-family="Helvetica,sans-Serif" font-size="10.00">stream → timed video, TPG</text>
+<polygon fill="#bbf7d0" stroke="transparent" points="2503.5,-520 2503.5,-541 2636.5,-541 2636.5,-520 2503.5,-520"/>
+<polygon fill="none" stroke="#15803d" points="2503.5,-520 2503.5,-541 2636.5,-541 2636.5,-520 2503.5,-520"/>
+<text text-anchor="start" x="2528.5" y="-529" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">ip_axis_fifo</text>
+<text text-anchor="start" x="2582.5" y="-529" font-family="Helvetica,sans-Serif" font-size="10.00"> </text>
+<text text-anchor="start" x="2586.5" y="-529" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_fifo</text>
 </g>
 <!-- merge&#45;&gt;a2v -->
 <g id="edge19" class="edge">
 <title>merge&#45;&gt;a2v</title>
-<path fill="none" stroke="#374151" stroke-width="1.3" d="M2437.04,-570.07C2459.73,-587.49 2494.68,-614.32 2522.83,-635.94"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="2521.69,-638.15 2528.73,-640.47 2524.67,-634.26 2521.69,-638.15"/>
+<path fill="none" stroke="#374151" stroke-width="1.3" d="M2439.79,-627.39C2459.22,-615.86 2486.42,-599.72 2510.81,-585.24"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="2512.18,-587.28 2516.95,-581.6 2509.68,-583.06 2512.18,-587.28"/>
 </g>
 <!-- vtg -->
 <g id="node22" class="node">
 <title>vtg</title>
-<polygon fill="#dcfce7" stroke="transparent" points="2371,-651 2371,-691 2454,-691 2454,-651 2371,-651"/>
-<polygon fill="none" stroke="#15803d" points="2371.5,-651 2371.5,-691 2454.5,-691 2454.5,-651 2371.5,-651"/>
-<text text-anchor="start" x="2376.5" y="-679" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">vid_timing_gen</text>
-<text text-anchor="start" x="2400.5" y="-669" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_vtg</text>
-<text text-anchor="start" x="2388" y="-659" font-family="Helvetica,sans-Serif" font-size="10.00">hs / vs / de</text>
+<polygon fill="#dcfce7" stroke="transparent" points="2371,-531 2371,-571 2454,-571 2454,-531 2371,-531"/>
+<polygon fill="none" stroke="#15803d" points="2371.5,-531 2371.5,-571 2454.5,-571 2454.5,-531 2371.5,-531"/>
+<text text-anchor="start" x="2376.5" y="-559" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="10.00">vid_timing_gen</text>
+<text text-anchor="start" x="2400.5" y="-549" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#4b5563">u_vtg</text>
+<text text-anchor="start" x="2388" y="-539" font-family="Helvetica,sans-Serif" font-size="10.00">hs / vs / de</text>
 </g>
 <!-- vtg&#45;&gt;a2v -->
 <g id="edge15" class="edge">
 <title>vtg&#45;&gt;a2v</title>
-<path fill="none" stroke="#374151" stroke-width="1.3" d="M2454.22,-671C2467.02,-671 2481.56,-671 2495.87,-671"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="2495.87,-673.45 2502.87,-671 2495.87,-668.55 2495.87,-673.45"/>
-<text text-anchor="middle" x="2478.5" y="-673.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#374151">timing</text>
+<path fill="none" stroke="#374151" stroke-width="1.3" d="M2454.22,-551C2467.02,-551 2481.56,-551 2495.87,-551"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="2495.87,-553.45 2502.87,-551 2495.87,-548.55 2495.87,-553.45"/>
+<text text-anchor="middle" x="2478.5" y="-553.8" font-family="Helvetica,sans-Serif" font-size="9.00" fill="#374151">timing</text>
 </g>
 <!-- hdmi -->
 <g id="node24" class="node">
@@ -512,8 +512,8 @@
 <!-- a2v&#45;&gt;hdmi -->
 <g id="edge20" class="edge">
 <title>a2v&#45;&gt;hdmi</title>
-<path fill="none" stroke="#374151" stroke-width="1.3" d="M2636.23,-671C2649.8,-671 2664.21,-671 2678.11,-671"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="2678.32,-673.45 2685.32,-671 2678.32,-668.55 2678.32,-673.45"/>
+<path fill="none" stroke="#374151" stroke-width="1.3" d="M2598.92,-581.55C2615.76,-598.36 2638.22,-618.65 2661,-633 2666.53,-636.48 2672.43,-639.76 2678.47,-642.81"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="2677.72,-645.17 2685.08,-646.04 2679.87,-640.77 2677.72,-645.17"/>
 </g>
 <!-- lvds -->
 <g id="node25" class="node">
@@ -530,8 +530,8 @@
 <!-- a2v&#45;&gt;lvds -->
 <g id="edge21" class="edge">
 <title>a2v&#45;&gt;lvds</title>
-<path fill="none" stroke="#374151" stroke-width="1.3" d="M2636.42,-699.62C2644.64,-702.91 2652.98,-706.12 2661,-709 2666.42,-710.95 2672.04,-712.87 2677.73,-714.75"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="2677,-717.09 2684.42,-716.92 2678.52,-712.43 2677,-717.09"/>
+<path fill="none" stroke="#374151" stroke-width="1.3" d="M2580.15,-581.51C2592.98,-617.21 2619.05,-675.66 2661,-709 2662.85,-710.47 2664.77,-711.86 2666.76,-713.18"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="2665.64,-715.37 2672.89,-716.92 2668.19,-711.18 2665.64,-715.37"/>
 </g>
 <!-- dsi -->
 <g id="node26" class="node">
@@ -558,8 +558,8 @@
 <!-- a2v&#45;&gt;dsi -->
 <g id="edge22" class="edge">
 <title>a2v&#45;&gt;dsi</title>
-<path fill="none" stroke="#374151" stroke-width="1.3" d="M2585.27,-640.47C2600.81,-610.82 2627.65,-566 2661,-536 2662.95,-534.25 2664.97,-532.54 2667.05,-530.88"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="2668.61,-532.77 2672.68,-526.57 2665.63,-528.87 2668.61,-532.77"/>
+<path fill="none" stroke="#374151" stroke-width="1.3" d="M2636.23,-528.08C2645.84,-524.72 2655.86,-521.23 2665.83,-517.75"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="2666.91,-519.97 2672.72,-515.35 2665.3,-515.34 2666.91,-519.97"/>
 </g>
 <!-- csitx -->
 <g id="node27" class="node">
@@ -586,8 +586,8 @@
 <!-- a2v&#45;&gt;csitx -->
 <g id="edge23" class="edge">
 <title>a2v&#45;&gt;csitx</title>
-<path fill="none" stroke="#374151" stroke-width="1.3" d="M2634.94,-640.45C2645.81,-635.29 2657.25,-629.87 2668.57,-624.51"/>
-<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="2669.93,-626.57 2675.21,-621.36 2667.83,-622.14 2669.93,-626.57"/>
+<path fill="none" stroke="#374151" stroke-width="1.3" d="M2636.23,-562.82C2646.61,-564.69 2657.47,-566.64 2668.22,-568.57"/>
+<polygon fill="#374151" stroke="#374151" stroke-width="1.3" points="2667.94,-571.01 2675.26,-569.84 2668.8,-566.19 2667.94,-571.01"/>
 </g>
 <!-- tser -->
 <g id="node29" class="node">

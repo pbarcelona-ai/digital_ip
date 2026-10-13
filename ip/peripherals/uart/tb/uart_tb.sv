@@ -70,6 +70,8 @@ module uart_tb;
   int errors = 0;
 
   // test tasks: tests/uart_tests.sv
+
+  int unsigned reg_base = 'h10;                    // the register map after the ID block (0x00-0x0C)
   `include "uart_tests.sv"
 
   // ---------- Serial monitor (checks the DUT transmitter, via uart_bfm) ----------
@@ -127,6 +129,7 @@ module uart_tb;
     repeat (2) @(posedge aclk);
 
     // default FCW for 115200 baud
+    test_id_block();
     axil_read(8'h04, rd);
     check(rd == 32'd79164837, $sformatf("default FCW %0d", rd));
     axil_write(8'h04, FCW_1M);

@@ -58,6 +58,8 @@ module scaler_anisotropic #(
   output logic              m_axis_tuser,   // start of frame
   output logic              m_axis_tlast    // end of line
 );
+  localparam logic [31:0] IP_VERSION = "1.10";        // VERSION register (stamp_version.py)
+  localparam logic [31:0] IP_DATE    = 32'h10122026;  // DATE register, BCD mm/dd/yyyy
 
   // All logic is in scaler_mip; this wrapper allows up to 2^4 = 16
   // probes per pixel and sets the IP_ID. Ports connect by name (.*).
@@ -71,7 +73,9 @@ module scaler_anisotropic #(
     .LEVELS(LEVELS),
     .ANISO_MAX_LOG2(4),
     .PHASE_BITS(PHASE_BITS),
-    .IP_ID(32'h414E_4953) // "ANIS"
+    .IP_ID(32'h414E_4953), // "ANIS"
+    .VERSION_OVR(IP_VERSION),
+    .DATE_OVR(IP_DATE)
   ) u_core (.*);
 
 endmodule
