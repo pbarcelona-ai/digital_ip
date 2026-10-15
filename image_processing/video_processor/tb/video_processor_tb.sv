@@ -13,16 +13,27 @@
 //     - camera module: sensor CCI register model (i2c_bfm, address
 //       0x36 on I2C 0) and a CSI-2 RAW10 source (csi2_bfm) that
 //       streams 32x24 frames only after the firmware releases its reset
-//       (GPIO0[0]) and writes "stream on" (register 0x01 = 1);
+//       (GPIO0[0]) and writes "stream on" (register 0x01 = 1); its line
+//       blanking grows with the width (a line lasts 11.5 ns per pixel or
+//       more, so the 100 MHz core keeps up; a CSI-2 receiver overflow is
+//       reported as an error);
 //     - I2C EEPROM (i2c_bfm, 0x50 on I2C 1); UART, SPI and GPIO
 //       looped back (txd -> rxd, MOSI -> MISO, gpio_o -> gpio_i) for the
 //       firmware's peripheral self-test; GPIO0[31] = +quick strap (the
-//       firmware then skips the register dumps); GPIO0[30] = image
+//       firmware then skips the register dumps); GPIO0[28] = +direct strap
+//       (direct transcript: the firmware writes only the tracking sections,
+//       one character per GPIO1 write, [31:24] = 0xDB, [8] toggling, [7:0]
+//       the character, which the testbench writes straight to the
+//       transcript: no UART time); GPIO0[30] = image
 //       format pin (1 monochrome, 0 colour; the firmware reprograms the ISP
 //       on each change and shows the result on GPIO0[2]); GPIO0[29] = image
 //       sequence running;
-//     - UART 0 receiver: decodes the report at UART_BAUD, writes it to
-//       cpu_bootup.txt and echoes each line as "UART0| ...";
+//     - UART 0 receiver (or the GPIO1 transcript port with +direct):
+//       decodes the report at UART_BAUD, writes it line by line as it
+//       arrives to +TRANSCRIPT=<file> (default sim_transcript_<GIF
+//       name>.txt; with several GIFs also each GIF's section 8 to
+//       sim_transcript_<GIF name>.txt next to it) and echoes each line as
+//       "UART0| ...";
 //     - HDMI: tmds_serializer lanes deserialised on the TMDS clock lane and
 //       decoded by hdmi_bfm; LVDS link A deserialised on the clock
 //       lane and decoded as single-link VESA 24 bpp. Their serial clocks and
@@ -62,15 +73,37 @@
 //       as an animated GIF with the input's frame times (gif_io writer;
 //       gif-output/<input name>_tracked.gif) and read back. LVDS
 //       is checked before this and its serial clock is stopped for it.
-//       Plusargs: +GIF_IN=<file> (any animated GIF),
+//       Several GIFs (+GIF_IN=<a.gif>,<b.gif>,...) are sent one after the
+//       other in one run: the camera's register 0x56 holds their count,
+//       0x57 the number of the GIF whose size, name and options are loaded;
+//       the firmware sets every block up again for each (section 8 per
+//       GIF) and each GIF is checked and written on its own.
+//       Plusargs: +GIF_IN=<file>[,<file>...] (any animated GIFs),
 //       +GIF_BW (convert a colour GIF to black and white; otherwise it is
 //       sent in colour as an RGGB mosaic), +GIF_DIR=<dir> (GIF outputs,
 //       default gif-output), +GIF_IN_DIR=<dir> (the input sequence as sent,
 //       default gif-input), +GIF_OUT=<file>, +GIF_FRAMES=<n>
-//       (send only the first n frames, a shorter run).
+//       (send only the first n frames, a shorter run), +GIF_FIRST=<n>
+//       (start at frame n: a long GIF run in parts),
+//       +DETECT=<classes> (pedestrian, face, automobile / car, vehicle /
+//       bus, comma separated, or all; default pedestrian), +BOX=<style> or
+//       +BOX=<class>:<style>,... (dashed-box, solid-box, dashed-circle,
+//       solid-circle, dashed-oval, solid-oval, solid-centre (a solid box in
+//       the middle of the target, a quarter of its size); default dashed
+//       box for pedestrians and faces, solid-centre for automobiles and
+//       vehicles),
+//       +TARGETS=<n> (most targets tracked at a time, 1-12, camera register
+//       0x55; default 12), +TRANSCRIPT=<file>, +direct.
+//     - object detection: each selected class has its own object_tracker
+//       detector and 3 overlay objects (up to 3 targets per class, colour
+//       per class); a ground truth
+//       file <GIF name>.truth.txt next to the GIF (frame x0 y0 x1 y1, or
+//       frame class x0 y0 x1 y1), when there is one, is what the tracking
+//       of each class is judged against (one of the class's boxes must hold
+//       each true box).
 //   The test tasks are in tests/video_processor_tests.sv (`included).
 //   Prints TEST PASSED on success.
-// Date: 2026-10-11
+// Date: 2026-10-14
 `timescale 1ns/1ps
 module video_processor_tb;
   `include "video_proc_syms.svh"
@@ -118,12 +151,15 @@ module video_processor_tb;
   wire [7:0] sd_dqm;
   tri1 sda0, scl0, sda1, scl1;
   wire quick_strap = $test$plusargs("quick");
+  wire direct_strap = $test$plusargs("direct");      // direct transcript (GPIO0[28])
   bit  mono_sel = 1;                                 // image format pin (GPIO0[30]): 1 monochrome, 0 colour
   bit  seq_active = 0;                               // image sequence pending (GPIO0[29])
 
   video_processor #(
     .NLANES(2),
     .MAX_W(320),                                     // tracking test frames up to 320 x 240
+    .FEAT_MAX_H(240),
+    .FEAT_CELL_LOG2(2),                              // feature_detect: 4 x 4 background cells
     .VS_RET_FIFO(131072),                            // a whole 320 x 240 frame
     .CSI_FIFO(256),
     .OUT_FIFO(512),
@@ -154,7 +190,7 @@ module video_processor_tb;
     .spi_mosi_o(spi_mosi),
     .spi_miso_i(spi_mosi),
     .spi_cs_n_o(spi_cs_n),
-    .gpio_i({gpio_o[95:32], quick_strap, mono_sel, seq_active, gpio_o[28:0]}),
+    .gpio_i({gpio_o[95:32], quick_strap, mono_sel, seq_active, direct_strap, gpio_o[27:0]}),
     .gpio_o,
     .gpio_t,
     .ext_irq_i(1'b0),
@@ -262,13 +298,17 @@ module video_processor_tb;
   bit   img_go = 0;                                  // image sequence: start sending (pipeline empty)
   int   img_next = 0;                                // next image of the sequence
   int   vs_f0 = 0;                                   // vs_stream_adapter frames_o when the sequence starts
+  int   vs_out_frames = 0, vs_out_lines = 0;         // corrected frames fully out of vision_system; lines of the current one
+  int   vso0 = 0;                                    // vs_out_frames when the sequence starts
+  longint trk_f0 = 0;                                // firmware trk_frames when the tracking sequence starts
   string img_in_dir = "input_images", img_out_dir = "output_images";
 
   // ---------------- tracking test: GIF in, captures, GIF out ----------------
   // Frame size: the GIF's own (width rounded down to a multiple of 4 for RAW10 packing, height to
   // an even number for the Bayer pattern), scaled down keeping the aspect ratio when larger than
   // GMAXW x GMAXH (the DUT's MAX_W / VS_RET_FIFO and the HDMI sink are sized for it), at least 16 x 16.
-  localparam int GMAXW = 320, GMAXH = 240, GMAXF = 64;
+  localparam int GMAXW = 320, GMAXH = 240, GMAXF = 128;
+  localparam int NOBJ = 12, NTR = 3;                 // overlay objects: 3 targets per class (object 3c + k)
   localparam int LAB_GIF = 1000;                     // camera label of GIF frame 0
   int   gw = 128, gh = 96;                           // tracking frame size (camera registers 0x30-0x33)
   gif_io #(
@@ -299,20 +339,53 @@ module video_processor_tb;
   track_ref #(
     .MAXW(GMAXW),
     .MAXH(GMAXH),
-    .NOBJ(4)
+    .NOBJ(NOBJ)
   ) trm ();     // object_tracker / symbol_overlay models
   string gif_in = "input_images/pedestrian_walk.gif", gif_dir = "gif-output", gif_in_dir = "gif-input", gif_out = "";
   int   gif_n = 0, gif_next = 0;                     // frames to send, next one
+  int   gif_first = 0;                               // +GIF_FIRST=<n>: the first GIF frame sent
   bit   gif_go = 0, gif_on = 0;                      // sending; capturing
   bit   gif_bw = 0, gif_colour = 0;                  // +GIF_BW: convert a colour GIF to black and white
-  logic [511:0] ovl_act [GMAXF];                     // overlay objects applied to each frame
+  // detection options (+DETECT, +BOX, +TARGETS): classes 0 pedestrian, 1 face, 2 automobile, 3 vehicle,
+  // loaded into the camera's control registers 0x50 (bit c), 0x51-0x54 (style of class c: 0 dashed box,
+  // 1 solid box, 2 dashed circle, 3 solid circle, 4 dashed oval, 5 solid oval, 6 solid box in the
+  // middle of the target) and 0x55 (most targets)
+  logic [3:0] det_mask = 4'b0001;
+  int   det_style [4] = '{0, 0, 6, 6};                 // cars and vehicles: a solid box in their middle
+  int   max_targets = NOBJ;
+  string det_name [4] = '{"pedestrian", "face", "automobile", "vehicle"};
+  string style_name [7] = '{"dashed box", "solid box", "dashed circle", "solid circle", "dashed oval", "solid oval",
+                            "solid box in the middle"};
+  string gif_list [$];                               // +GIF_IN=<a>,<b>,...: the GIFs, sent one after the other
+  int   gif_idx = 0;                                 // the one being sent
+  // ground truth (<GIF name>.truth.txt next to the GIF, when there is one): box of class c in frame k
+  int   truth_box [GMAXF][4][NTR][4];                // up to NTR true boxes per class and frame
+  int   truth_n [GMAXF][4];
+  bit   truth_ok [GMAXF][4];
+  bit   truth_file = 0;
+  logic [NOBJ*128-1:0] ovl_act [GMAXF];              // overlay objects applied to each frame
   logic [383:0] ovl_txt [GMAXF];                     // and its 4 texts {COLOR, POS, CTRL}
   logic [511:0] ovl_chr [GMAXF];                     // their characters
   logic [19:0] ovl_fnum [GMAXF];                     // its frame number (BCD)
   bit   ovl_en [GMAXF];
-  int   trk_win [GMAXF][4];                          // tracker window of each frame (x0, y0, x1, y1)
-  logic [31:0] trk_ctrl [GMAXF], trk_thr [GMAXF];
-  int   trk_n [GMAXF], trk_bx [GMAXF], trk_by [GMAXF];
+  // per frame and detector (object class c: 0 pedestrian, 1 face, 2 automobile, 3 other vehicle):
+  // window (x0, y0, x1, y1) taken at the frame start, settings, results at the frame end
+  localparam int NTRK = video_processor_map_pkg::NTRK;
+  int   trk_win [GMAXF][NTRK][4];
+  logic [31:0] trk_ctrl [GMAXF][NTRK], trk_thr [GMAXF][NTRK], trk_run [GMAXF][NTRK], trk_yr [GMAXF][NTRK],
+               trk_cbr [GMAXF][NTRK], trk_crr [GMAXF][NTRK], trk_sat [GMAXF][NTRK];
+  int   trk_n [GMAXF][NTRK], trk_bx [GMAXF][NTRK], trk_by [GMAXF][NTRK];
+  logic [31:0] trk_bcfg [GMAXF][NTRK], trk_runb [GMAXF][NTRK];   // BLOB_CFG, RUN_B; the blobs at the frame end
+  logic [255:0] trk_bln [GMAXF][NTRK], trk_blx [GMAXF][NTRK], trk_bly [GMAXF][NTRK];
+  // feature_detect per frame: CTRL, EDGE, MOTION and the shift taken at its start; the counts at its end
+  logic [31:0] ft_ctrl [GMAXF], ft_edge [GMAXF], ft_motion [GMAXF];
+  int ft_sx [GMAXF], ft_sy [GMAXF], ft_ne [GMAXF], ft_nm [GMAXF];
+  feature_ref #(
+    .MAXW(GMAXW),
+    .MAXH(GMAXH),
+    .CELL_LOG2(2),
+    .SHIFT_MAX(4)
+  ) fref ();   // feature_detect model
   bit   trk_done [GMAXF], hdmi_saved [GMAXF];
   int   fo_k = -1, fo_x = 0, fo_y = 0, ir_k = -1, ir_x = 0, ir_y = 0, ir_done = -1, hdmi_frames = 0;
   int   fc_snap0 = -1, fc_snap1 = -1;                // frame counts when the tracking section starts
@@ -373,20 +446,27 @@ module video_processor_tb;
 `ifdef VP_VISION
         if (gif_next > 0) begin                        // paced like the image sequence
           wait (dut.u_vs_adapt.frames_o >= vs_f0 + gif_next);
+          wait (vs_out_frames >= vso0 + gif_next);        // and its corrected frame is all out
           wait (dut.u_vs_adapt.m_axis_tready && dut.u_vs_adapt.ret_empty);
           @(posedge byte_clk);
         end
 `endif
+        // the GIF's frame period is compressed: send the next frame once the firmware has handled the
+        // previous tracker event (box moved and committed, tracking.py trk_frames), as at the real rate
+        if (gif_next > 0) while (g(G_trk_frames) - trk_f0 < gif_next) @(posedge byte_clk);
         lab = LAB_GIF + gif_next;
         gif_next++;
       end
       else if (!img_mode) lab = -1;                    // live: the synthetic raw[][] image
       else if (img_go && img_next < NIMG) begin
 `ifdef VP_VISION
-        // pace the sequence: the next image once vision_system has taken the previous one and can
-        // take another (ready, return FIFO empty), so vs_stream_adapter drops none of them
+        // pace the sequence: the next image once vision_system has taken the previous one, returned
+        // all of its corrected frame and can take another (ready, return FIFO empty), so
+        // vs_stream_adapter drops none of them (a frame arriving while the previous corrected frame
+        // is still coming back would be dropped)
         if (img_next > 0) begin
           wait (dut.u_vs_adapt.frames_o >= vs_f0 + img_next);
+          wait (vs_out_frames >= vso0 + img_next);        // and its corrected frame is all out
           wait (dut.u_vs_adapt.m_axis_tready && dut.u_vs_adapt.ret_empty);
           @(posedge byte_clk);
         end
@@ -410,7 +490,11 @@ module video_processor_tb;
             cam.csi_px.push_back(lab >= LAB_GIF ? gif_px(lab - LAB_GIF, x, y) : lab < 0 ? 10'(raw[y][x]) : sensor_px(lab, x, y));
           cam.csi_pack_raw10();
           cam.csi_packet(2'd0, 6'h2B, 16'(cam.csi_pay.size()));
-          cam.gap = 110;
+          // line blanking: a line lasts at least 11.5 ns per pixel (byte clock 8 ns, 2 lanes), so the
+          // core (csi2_raw_unpack, 1 pixel per 10 ns clock) keeps up with wide frames and the CSI-2
+          // FIFO never overflows (a 320-pixel RAW10 line is 400 bytes: 1.6 us on the lanes, 3.2 us
+          // to unpack); 110 byte clocks at least (frames up to 128 wide: the original timing)
+          cam.gap = (fw * 23 / 16 - int'(cam.csi_pay.size()) / 2 > 110) ? fw * 23 / 16 - int'(cam.csi_pay.size()) / 2 : 110;
           cam.send_pkt();
         end
         // last line sent: the next image's format goes to the pin now, the firmware reprograms the
@@ -430,6 +514,17 @@ module video_processor_tb;
       end
     end
   end
+
+`ifdef VP_CSI2_RX
+  // CSI-2 payload lost (the receiver's FIFO to the core full): the camera sends faster than the core
+  // unpacks; lines lose their ends and the frame never completes, so say so at once
+  int csi_ovf = 0;
+  always @(posedge dut.u_pipe.u_csi.clk) if (dut.u_pipe.u_csi.overflow_o) begin
+    if (csi_ovf == 0) $display("ERROR @%0t: CSI-2 receiver overflow (camera frame %0d): payload lost, the camera's line rate is above the core's", $time, cam_frames + 1);
+    if (csi_ovf == 0) errors++;
+    csi_ovf++;
+  end
+`endif
 
   // ---------------- HDMI: TMDS lanes -> tmds_bfm (deserialise, LSB first) -> hdmi_bfm (decode) ----------------
   logic [9:0] tw0, tw1, tw2;
@@ -483,7 +578,8 @@ module video_processor_tb;
       $display("[%t] firmware stage %0d", $realtime, last_stage);
     end
     if (trap) begin
-      $display("ERROR @%0t: core trap (see build/fw/video_proc.lst)", $time);
+      $display("ERROR @%0t: core trap, cause %0d at pc 0x%0h (1 illegal, 2 type, 3 overflow, 4 stack / call depth, 5 bus, 6 index; see build/fw/video_proc.lst)",
+               $time, dut.u_cpu.u_core.trap_cause_o, dut.u_cpu.u_core.trap_pc_o);
       $display("TEST FAILED");
       $finish;
     end
@@ -538,6 +634,11 @@ module video_processor_tb;
     // that last started at the insert point (isp_csc output)
     if (dut.va_v && dut.va_r && dut.va_u) lq_push(T_VISION, tap_lab[T_CSC]);
     if (dut.vr_v && dut.vr_r) tap_pixel(T_VISION, dut.vr_d, dut.vr_l, dut.vr_u);
+    if (dut.vr_v && dut.vr_r && dut.vr_u) vs_out_lines = 0;
+    if (dut.vr_v && dut.vr_r && dut.vr_l) begin
+      vs_out_lines++;
+      if (vs_out_lines == (gif_on ? gh : H)) vs_out_frames++;
+    end
 `endif
 `ifdef VP_FILTER
     if (dut.fo_v && dut.fo_r) tap_pixel(T_FILTER, dut.fo_d, dut.fo_l, dut.fo_u);
@@ -551,6 +652,28 @@ module video_processor_tb;
   // and tracker window taken at its start, the tracker results at its end (done_o); at the overlay
   // output: the frame with the symbols.
 `ifdef VP_TRACK
+  // detector c (g_trk[c]) at the start of tracker frame fo_k: window and settings; at its end: results
+`define TRK_START(c) \
+          trk_win[fo_k][c][0] = dut.g_trk[c].u_track.u_core.cwx0; \
+          trk_win[fo_k][c][1] = dut.g_trk[c].u_track.u_core.cwy0; \
+          trk_win[fo_k][c][2] = dut.g_trk[c].u_track.u_core.cwx1; \
+          trk_win[fo_k][c][3] = dut.g_trk[c].u_track.u_core.cwy1; \
+          trk_ctrl[fo_k][c] = dut.g_trk[c].u_track.u_core.ctrl; \
+          trk_thr[fo_k][c] = 32'(dut.g_trk[c].u_track.u_core.thresh_r); \
+          trk_run[fo_k][c] = dut.g_trk[c].u_track.u_core.cfg_run; \
+          trk_yr[fo_k][c] = 32'(dut.g_trk[c].u_track.u_core.cfg_y_range); \
+          trk_cbr[fo_k][c] = 32'(dut.g_trk[c].u_track.u_core.cfg_cb_range); \
+          trk_crr[fo_k][c] = 32'(dut.g_trk[c].u_track.u_core.cfg_cr_range); \
+          trk_sat[fo_k][c] = 32'(dut.g_trk[c].u_track.u_core.cfg_sat_min); \
+          trk_bcfg[fo_k][c] = dut.g_trk[c].u_track.u_core.cfg_blob_cfg; \
+          trk_runb[fo_k][c] = dut.g_trk[c].u_track.u_core.cfg_run_b;
+`define TRK_END(c) \
+      trk_n[fo_k][c] = dut.g_trk[c].u_track.u_core.res_n; \
+      trk_bx[fo_k][c] = {16'(dut.g_trk[c].u_track.u_core.res_x1), 16'(dut.g_trk[c].u_track.u_core.res_x0)}; \
+      trk_by[fo_k][c] = {16'(dut.g_trk[c].u_track.u_core.res_y1), 16'(dut.g_trk[c].u_track.u_core.res_y0)}; \
+      trk_bln[fo_k][c] = dut.g_trk[c].u_track.u_core.sts_blob_n; \
+      trk_blx[fo_k][c] = dut.g_trk[c].u_track.u_core.sts_blob_x; \
+      trk_bly[fo_k][c] = dut.g_trk[c].u_track.u_core.sts_blob_y;
   always @(posedge pix_clk) if (gif_on) begin
     if (dut.fo_v && dut.fo_r) begin
       if (dut.fo_u) begin
@@ -563,12 +686,15 @@ module video_processor_tb;
           ovl_txt[fo_k] = dut.u_overlay.u_core.tcur;
           ovl_chr[fo_k] = dut.u_overlay.u_core.ccur;
           ovl_fnum[fo_k] = dut.u_overlay.u_core.fcur;
-          trk_win[fo_k][0] = dut.u_track.u_core.cwx0;
-          trk_win[fo_k][1] = dut.u_track.u_core.cwy0;
-          trk_win[fo_k][2] = dut.u_track.u_core.cwx1;
-          trk_win[fo_k][3] = dut.u_track.u_core.cwy1;
-          trk_ctrl[fo_k] = dut.u_track.u_core.ctrl;
-          trk_thr[fo_k] = 32'(dut.u_track.u_core.thresh_r);
+          `TRK_START(0)
+          `TRK_START(1)
+          `TRK_START(2)
+          `TRK_START(3)
+          ft_ctrl[fo_k] = dut.u_feat.u_core.cfg_ctrl;
+          ft_edge[fo_k] = dut.u_feat.u_core.cfg_edge;
+          ft_motion[fo_k] = dut.u_feat.u_core.cfg_motion;
+          ft_sx[fo_k] = int'($signed(dut.u_feat.u_core.fsx));
+          ft_sy[fo_k] = int'($signed(dut.u_feat.u_core.fsy));
         end
       end
       if (fo_k >= 0 && fo_k < GMAXF && fo_y < gh && fo_x < gw) trk_in.set_px(fo_k, fo_x, fo_y, dut.fo_d);
@@ -577,10 +703,13 @@ module video_processor_tb;
         fo_y++;
       end else fo_x++;
     end
-    if (dut.u_track.u_core.done_o && fo_k >= 0 && fo_k < GMAXF) begin
-      trk_n[fo_k] = dut.u_track.u_core.res_n;
-      trk_bx[fo_k] = {16'(dut.u_track.u_core.res_x1), 16'(dut.u_track.u_core.res_x0)};
-      trk_by[fo_k] = {16'(dut.u_track.u_core.res_y1), 16'(dut.u_track.u_core.res_y0)};
+    if (|dut.trk_done && fo_k >= 0 && fo_k < GMAXF) begin   // the enabled detectors finish together
+      `TRK_END(0)
+      `TRK_END(1)
+      `TRK_END(2)
+      `TRK_END(3)
+      ft_ne[fo_k] = dut.u_feat.u_core.sts_edge_count;
+      ft_nm[fo_k] = dut.u_feat.u_core.sts_motion_count;
       trk_done[fo_k] = 1;
     end
     if (dut.ir_v && dut.ir_r) begin
@@ -606,7 +735,7 @@ module video_processor_tb;
     hdmi_frames++;
   end
 
-  // ---------------- UART 0 receiver: the firmware report -> cpu_bootup.txt ----------------
+  // ---------------- UART 0 receiver: the firmware report -> sim_transcript_<GIF name>.txt ----------------
   localparam real UART_BIT = 1.0e9 / UART_BAUD;      // ns
   int uart_fd, uart_lines = 0, uart_pass = 0, uart_fail = 0;
   bit uart_end = 0;
@@ -639,17 +768,20 @@ module video_processor_tb;
   // channel; times never go back; a frame's events in pipeline order
   task automatic report_event(input string line);
     int p, t, c, n;
-    string rest;
+    string rest, e;                                    // e: ev_txt[k] copied (iverilog: ev_txt[k].len() is the array size)
     p = 0;
     while (p < line.len() && line[p] != "]") p++;
     rest = line.substr(3, p - 4);                      // "  [<t> us] "
     t = rest.atoi();
     rest = line.substr(p + 2, line.len() - 1);
     c = -1;
-    for (int k = 0; k < NEV; k++)
-      if (c < 0 && rest.len() > ev_txt[k].len() && rest.substr(0, ev_txt[k].len() - 1) == ev_txt[k]) c = k;
+    for (int k = 0; k < NEV; k++) begin
+      e = ev_txt[k];
+      if (c < 0 && rest.len() > e.len() && rest.substr(0, e.len() - 1) == e) c = k;
+    end
     if (c < 0) return;                                 // not an event line
-    rest = rest.substr(ev_txt[c].len(), rest.len() - 1);
+    e = ev_txt[c];
+    rest = rest.substr(e.len(), rest.len() - 1);
     n = rest.atoi();
     rep_lines++;
     if (hw_ev.size() == 0 || hw_ev[0] != ((c << 24) | n) || hw_ts[0] != t) begin
@@ -681,27 +813,53 @@ module video_processor_tb;
     .txd(),
     .rxd(uart_txd[0])
   );
+  string transcript = "";                             // UART 0 report file (+TRANSCRIPT=<file>)
+  int   gif_fd = 0;                                   // several GIFs: this GIF's own transcript (section 8)
   initial begin
+    string gi;
     uart0.rx_en = 0;
-    uart_fd = $fopen("cpu_bootup.txt", "w");
+    if (!$value$plusargs("TRANSCRIPT=%s", transcript)) begin   // default: sim_transcript_<GIF name>.txt
+      gi = "pedestrian_walk.gif";
+      void'($value$plusargs("GIF_IN=%s", gi));
+      transcript = {"sim_transcript_", base_name(gi), ".txt"};
+    end
+    uart_fd = $fopen(transcript, "w");
+    if (uart_fd == 0) $display("ERROR: cannot write the UART 0 transcript %s", transcript);
+    else $display("%s transcript (written as the simulation runs): %s", direct_strap ? "direct" : "UART 0", transcript);
     wait (boot_done);                                  // the line is idle (high) from here
-    uart0.rx_en = 1;
+    uart0.rx_en = !direct_strap;
   end
-  always @(uart0.line_done) begin
-    uart_line = uart0.last_line;
+  always @(uart0.line_done) report_line(uart0.last_line);
+  // direct transcript port (+direct): GPIO1 [31:24] = 0xDB, [8] toggles with every character, [7:0] it
+  bit tport_tog = 0;
+  string tport_line = "";
+  always @(posedge cpu_clk) if (direct_strap && gpio_o[63:56] == 8'hDB && gpio_o[40] != tport_tog) begin
+    tport_tog = gpio_o[40];
+    if (gpio_o[39:32] == 8'd10) begin
+      report_line(tport_line);
+      tport_line = "";
+    end else if (gpio_o[39:32] != 8'd13) tport_line = $sformatf("%s%c", tport_line, gpio_o[39:32]);
+  end
+  task automatic report_line(input string line);
+    uart_line = line;
     $fwrite(uart_fd, "%s\n", uart_line);
     $fflush(uart_fd);
+    if (gif_fd != 0) begin
+      $fwrite(gif_fd, "%s\n", uart_line);
+      $fflush(gif_fd);
+    end
     $display("UART0| %s", uart_line);
     uart_lines++;
     if (uart_line.len() >= 8 && uart_line.substr(0, 7) == "  [PASS]") uart_pass++;
     if (uart_line.len() >= 8 && uart_line.substr(0, 7) == "  [FAIL]") uart_fail++;
     if (uart_line == "END OF REPORT") uart_end = 1;
-    if (uart_line.len() > 2 && uart_line.substr(0, 1) == "8.") begin   // section 8: counts from 0 again
+    if (uart_line.len() > 2 && uart_line.substr(0, 1) == "8.") begin   // section 8 (per GIF): counts from 0 again
       rep_sec = 8;
       rep_t = 0;
+      for (int c = 0; c < NEV; c++) rep_n[1][c] = 0;
     end
     if (uart_line.len() > 12 && uart_line.substr(0, 2) == "  [") report_event(uart_line);
-  end
+  endtask
 
   // ---------------- tests ----------------
   logic [23:0] px, pe;
@@ -718,6 +876,11 @@ module video_processor_tb;
     void'($value$plusargs("GIF_IN_DIR=%s", gif_in_dir));
     void'($value$plusargs("GIF_OUT=%s", gif_out));
     gif_bw = $test$plusargs("GIF_BW");
+    split_list(gif_in);                                // +GIF_IN=<a.gif>,<b.gif>,...: sent one after the other
+    for (int i = 0; i < opt_items.size(); i++) gif_list.push_back(opt_items[i]);
+    if (gif_list.size() == 0) gif_list.push_back(gif_in);
+    gif_in = gif_list[0];
+    sensor_cci.mem[8'h56] = 8'(gif_list.size());       // tracking sequences the camera will send
     load_images();                                     // input_images/: read, or generate when missing
     $readmemh(`FW_HEX, flash.mem);
     repeat (5) @(posedge cpu_clk);
@@ -734,7 +897,20 @@ module video_processor_tb;
     test_lvds();
     test_adapter();
     test_images();                                     // 4 colour + 4 monochrome images, every module output saved
-    test_tracking();                                   // pedestrian GIF: search, track, dashed box; GIF out
+    for (gif_idx = 0; gif_idx < gif_list.size(); gif_idx++) begin   // every GIF: search, track, boxes; GIF out
+      if (gif_idx > 0) begin                           // the next GIF: its size, name and options loaded
+        gif_go = 0;
+        gif_in = gif_list[gif_idx];
+        gif_out = "";
+        gif_setup();
+      end
+      if (gif_list.size() > 1) begin                   // its own transcript of section 8 too
+        if (gif_fd != 0) $fclose(gif_fd);
+        gif_fd = $fopen({gif_tr_dir(), "sim_transcript_", base_name(gif_in), ".txt"}, "w");
+      end
+      test_tracking();
+    end
+    if (gif_fd != 0) $fclose(gif_fd);
     // video checked: stop the display serial clocks (SYSCTL CLK_EN forced, simulation speed only)
     // and the camera, then wait for the rest of the firmware report
     clocks(CLK_EN_IDLE);

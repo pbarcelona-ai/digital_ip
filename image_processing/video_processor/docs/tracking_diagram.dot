@@ -1,16 +1,17 @@
 // ***************
 // Filename: tracking_diagram.dot
 // Author: FPGA Cores 4 U
-// Description: Target tracking in video_processor: the end of the
-//   video_pipeline insert loop (object_tracker tap, symbol_overlay) in the
-//   pixel clock domain, and the firmware tracking loop on py_soc in the CPU
-//   clock domain, joined by the AXI4-Lite crossing. Render: make diagram
-// Date: 2026-10-11
+// Description: Object detection and tracking in video_processor: the end
+//   of the video_pipeline insert loop (four object_tracker detectors, one
+//   per class, as taps; symbol_overlay) in the pixel clock domain, and the
+//   firmware tracking loop on py_soc in the CPU clock domain, joined by the
+//   AXI4-Lite crossing. Render: make diagram
+// Date: 2026-10-15
 // ***************
 digraph tracking {
   graph [rankdir=LR, bgcolor="white", pad=0.35, nodesep=0.35, ranksep=0.6, fontname="Helvetica",
          labelloc=t, labeljust=l,
-         label=<<FONT POINT-SIZE="20"><B>video_processor: pedestrian tracking</B></FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">Thick arrows = video (AXI4-Stream, 24-bit), purple = AXI4-Lite registers. Each box is in one clock domain (labelled).</FONT><BR ALIGN="LEFT"/>>];
+         label=<<FONT POINT-SIZE="20"><B>video_processor: object detection and tracking</B></FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">Thick arrows = video (AXI4-Stream, 24-bit), purple = AXI4-Lite registers. Each box is in one clock domain (labelled).</FONT><BR ALIGN="LEFT"/>>];
   node  [shape=plaintext, fontname="Helvetica", fontsize=10, margin=0];
   edge  [color="#1f2937", arrowsize=0.7, penwidth=1.2, fontname="Helvetica", fontsize=9, fontcolor="#374151"];
 
@@ -18,32 +19,38 @@ digraph tracking {
     label=<<B>pix_clk domain</B> (100 MHz): video_pipeline insert loop>; style="rounded,filled"; fillcolor="#f7fef9";
     color="#047857"; penwidth=1.6; fontsize=11;
     filt [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#ecfccb" COLOR="#4d7c0f"><TR><TD><B>blur_sharpen</B><BR/><FONT COLOR="#4b5563">u_filter</FONT><BR/>(after vision_system)</TD></TR></TABLE>>];
+    feat [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#fef3c7" COLOR="#b45309">
+      <TR><TD><B>feature_detect</B> <FONT COLOR="#4b5563">u_feat</FONT> (passive tap)</TD></TR>
+      <TR><TD ALIGN="LEFT">edge: 3 x 3 Sobel &gt; 128, filled over 8 pixels<BR ALIGN="LEFT"/>motion: luma outside the background cell's<BR ALIGN="LEFT"/>min..max (4 x 4 cells, two banks), camera<BR ALIGN="LEFT"/>shift from luma profiles</TD></TR></TABLE>>];
     trk [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#e0f2fe" COLOR="#0369a1">
-      <TR><TD><B>object_tracker</B> <FONT COLOR="#4b5563">u_track</FONT> (passive tap)</TD></TR>
-      <TR><TD ALIGN="LEFT">luma = (R + 2G + B) / 4 &lt; THRESH<BR ALIGN="LEFT"/>inside WIN_X / WIN_Y (taken at frame start)<BR ALIGN="LEFT"/>runs of ≥ MIN_RUN pixels (noise filter)<BR ALIGN="LEFT"/>→ COUNT, BOX_X, BOX_Y, SUM_X, SUM_Y, FRAMES</TD></TR></TABLE>>];
+      <TR><TD><B>object_tracker</B> ×4 <FONT COLOR="#4b5563">g_trk[c].u_track</FONT> (passive taps)</TD></TR>
+      <TR><TD ALIGN="LEFT">c = 0 pedestrian: luma &lt; 80 or moving<BR ALIGN="LEFT"/>c = 1 face: skin tone (Y, Cb, Cr ranges)<BR ALIGN="LEFT"/>c = 2 automobile: paint or moving, car-length runs<BR ALIGN="LEFT"/>c = 3 vehicle: paint or moving, bus-length runs;<BR ALIGN="LEFT"/>        + edges (term B: planes on the sky)</TD></TR>
+      <TR><TD ALIGN="LEFT">each: inside its WIN_X / WIN_Y (taken at frame start),<BR ALIGN="LEFT"/>runs MIN_W .. MAX_W pixels (whole run length)<BR ALIGN="LEFT"/>→ COUNT, BOX_X, BOX_Y, SUM_X, SUM_Y, FRAMES<BR ALIGN="LEFT"/>→ up to 8 objects (blobs): BLOB_X / BLOB_Y / BLOB_N</TD></TR></TABLE>>];
     ovl [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#e0f2fe" COLOR="#0369a1">
       <TR><TD><B>symbol_overlay</B> <FONT COLOR="#4b5563">u_overlay</FONT> (1 clock, no frame buffer)</TD></TR>
-      <TR><TD ALIGN="LEFT">4 objects: outline / filled / crosshair,<BR ALIGN="LEFT"/>solid or dashed, colour or 50 % blend<BR ALIGN="LEFT"/>4 texts: image name, clock, frame number<BR ALIGN="LEFT"/>(3 x 5 font, own frame counter)<BR ALIGN="LEFT"/>COMMIT → applied at the next frame start</TD></TR></TABLE>>];
+      <TR><TD ALIGN="LEFT">12 objects (3 targets per class): rectangle / filled /<BR ALIGN="LEFT"/>crosshair / circle / oval, solid or dashed, colour or 50 % blend<BR ALIGN="LEFT"/>4 texts: image name, clock, frame number<BR ALIGN="LEFT"/>(3 x 5 font, own frame counter)<BR ALIGN="LEFT"/>COMMIT → applied at the next frame start</TD></TR></TABLE>>];
     ret [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#dcfce7" COLOR="#047857"><TR><TD><B>insert point return</B><BR/>→ scaler → HDMI / LVDS</TD></TR></TABLE>>];
-    filt -> trk [penwidth=2.6, label="video"];
-    trk -> ovl [penwidth=2.6, label="same video"];
-    ovl -> ret [penwidth=2.6, label="with dashed box"];
+    filt -> feat [penwidth=2.6, label="video"];
+    feat -> trk [color="#b45309", penwidth=1.8, label="edge, motion bits\n(with each pixel)"];
+    trk -> ovl [penwidth=2.6, label="same video (tap)"];
+    ovl -> ret [penwidth=2.6, label="with the boxes"];
   }
 
-  cdc [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#fde68a" COLOR="#a16207"><TR><TD><B>axi4_lite_cdc</B> + <B>py_axil_xbar</B><BR/>cpu_clk → pix_clk<BR/>0x1_8500 tracker · 0x1_8800 overlay</TD></TR></TABLE>>];
+  cdc [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#fde68a" COLOR="#a16207"><TR><TD><B>axi4_lite_cdc</B> + <B>py_axil_xbar</B><BR/>cpu_clk → pix_clk<BR/>0x1_8500 features · 0x1_9000 + 0x200 c detectors · 0x1_8C00 overlay</TD></TR></TABLE>>];
 
   subgraph cluster_cpu {
     label=<<B>cpu_clk domain</B> (200 MHz): py_soc firmware, sw/video_proc.py section 8>; style="rounded,filled";
     fillcolor="#faf5ff"; color="#7c3aed"; penwidth=1.6; fontsize=11;
     fw [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4" BGCOLOR="#ede9fe" COLOR="#7c3aed">
-      <TR><TD><B>track()</B>: poll FRAMES, one step per frame</TD></TR>
-      <TR><TD ALIGN="LEFT"><B>SEARCH</B> whole frame → found: <B>TRACK</B><BR ALIGN="LEFT"/>centre velocity (smoothed, × 2, shifts only)<BR ALIGN="LEFT"/>box size: grows at once, shrinks slowly<BR ALIGN="LEFT"/>missed: <B>COAST</B> on the velocity, 4 misses → SEARCH</TD></TR>
-      <TR><TD ALIGN="LEFT">next frame: dashed box at the predicted position,<BR ALIGN="LEFT"/>search window = box + 12 pixels</TD></TR></TABLE>>];
-    uart [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#ede9fe" COLOR="#7c3aed"><TR><TD><B>UART 0</B> report<BR/>one line per frame</TD></TR></TABLE>>];
+      <TR><TD><B>track()</B>: one step per tracker event, per selected class, up to 3 targets</TD></TR>
+      <TR><TD ALIGN="LEFT">shape check of each blob (pixels, height / width)<BR ALIGN="LEFT"/>each live target takes the nearest blob within its gate: <B>TRACK</B><BR ALIGN="LEFT"/>blobs left over: new targets (<B>SEARCH</B> → TRACK) up to TARGETS<BR ALIGN="LEFT"/>centre velocity (smoothed, × 2, shifts only)<BR ALIGN="LEFT"/>box size: grows at once, shrinks slowly<BR ALIGN="LEFT"/>missed: <B>COAST</B> on the velocity, 4 misses → free</TD></TR>
+      <TR><TD ALIGN="LEFT">next frame: each target's box (class colour, chosen<BR ALIGN="LEFT"/>dashed / solid box, circle or oval) at the predicted position;<BR ALIGN="LEFT"/>search window = whole frame; state in SCRATCH</TD></TR></TABLE>>];
+    uart [label=<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" BGCOLOR="#ede9fe" COLOR="#7c3aed"><TR><TD><B>UART 0</B> report (or the GPIO1<BR/>direct transcript port)<BR/>one line per frame</TD></TR></TABLE>>];
     fw -> uart [color="#7c3aed"];
   }
 
   fw -> cdc [color="#7c3aed", penwidth=1.6, label="read results,\nwrite window / box"];
-  cdc -> trk [color="#7c3aed", penwidth=1.6, label="WIN_X/Y, THRESH;\nCOUNT, BOX_X/Y"];
-  cdc -> ovl [color="#7c3aed", penwidth=1.6, label="OBJ0_X/Y/CTRL, TXT_*,\nFRAME_NUM, COMMIT"];
+  cdc -> trk [color="#7c3aed", penwidth=1.6, label="WIN_X/Y, ranges, RUN, BLOB_CFG;\nCOUNT, BOX_X/Y, BLOB_*, SCRATCH"];
+  cdc -> feat [color="#7c3aed", penwidth=1.6, label="CTRL, EDGE, MOTION;\nSHIFT_EST, counts"];
+  cdc -> ovl [color="#7c3aed", penwidth=1.6, label="OBJn_X/Y/CTRL/COLOR, TXT_*,\nFRAME_NUM, COMMIT"];
 }

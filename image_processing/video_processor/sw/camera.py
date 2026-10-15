@@ -1,7 +1,8 @@
 """video_processor firmware: the camera module.
 
 Camera control over I2C 0 (CCI registers of the sensor at SENSOR_ADDR): the frame gap, the frame
-size and the image name of the tracking sequence and "stream on"; the image format pin GPIO0[30] and the ISP set for it.
+size, the image name and the detection options (classes, box styles) of the tracking sequence and
+"stream on"; the image format pin GPIO0[30] and the ISP set for it.
 """
 from machine import mem32          # ignored by pyc: mem32 is native
 from video_regs import *
@@ -35,6 +36,13 @@ def camera_set_gap(ns):
     return ok and gap == ns
 
 
+def camera_size_set(w, h):
+    """Frame size the detectors are set up for (cam_w, cam_h) until the camera's is read."""
+    global cam_w, cam_h
+    cam_w = w
+    cam_h = h
+
+
 def camera_frame_size():
     """Width and height of the camera's frames (registers 0x30-0x33, high byte first) into cam_w /
     cam_h; True when the transfer succeeded."""
@@ -48,6 +56,65 @@ def camera_frame_size():
     dec(cam_h)
     nl()
     return ok
+
+
+def camera_detect():
+    """Object classes to detect (camera register 0x50, bit c; 0 = pedestrian only) into det_mask,
+    the box style of each class (registers 0x51-0x54, 0-6) into det_style and the most targets
+    tracked at any time (0x55, 1-12; 0 = 12) into max_targets; prints the selection."""
+    global det_mask, det_style, max_targets
+    ok = camera_reg(SENSOR_DETECT, 6, I_READ)
+    det_mask = rx_word(I2C0) & 15
+    if det_mask == 0:
+        det_mask = 1
+    det_style = 0
+    c = 0
+    while c < NTRK:
+        det_style = det_style | ((rx_word(I2C0) & 7) << ((c << 1) + c))
+        c += 1
+    max_targets = rx_word(I2C0) & 255
+    if max_targets == 0 or max_targets > NOBJ_MAX:
+        max_targets = NOBJ_MAX
+    puts("  Detection (camera registers 0x50-0x55): up to ")
+    dec(max_targets)
+    say(" targets at a time; class, box colour, box style")
+    c = 0
+    while c < NTRK:
+        if det_mask & (1 << c):
+            puts("    ")
+            class_name(c)
+            s = class_style(c)
+            if c == C_PED:
+                puts(": green")
+            elif c == C_FACE:
+                puts(": magenta")
+            elif c == C_CAR:
+                puts(": cyan")
+            else:
+                puts(": orange")
+            if s == 6:
+                say(" solid box in the middle of the target")
+                c += 1
+                continue
+            if s & 1:
+                puts(" solid")
+            else:
+                puts(" dashed")
+            if s < 2:
+                say(" box")
+            elif s < 4:
+                say(" circle")
+            else:
+                say(" oval")
+        c += 1
+    return ok
+
+
+def camera_byte(reg):
+    """One camera control register (0 when the transfer fails)."""
+    if camera_reg(reg, 1, I_READ):
+        return rx_word(I2C0) & 255
+    return 0
 
 
 def camera_name(j):

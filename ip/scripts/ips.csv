@@ -120,6 +120,7 @@ blur_sharpen,video,blur_sharpen_top
 frame_counter,video,frame_counter_top
 vs_stream_adapter,video,vs_stream_adapter
 object_tracker,video,object_tracker_top
+feature_detect,video,feature_detect_top
 symbol_overlay,video,symbol_overlay_top
 py_core,cpu,py_core
 py_soc,cpu,py_soc

@@ -99,6 +99,7 @@ def video_setup():
         "edge crop, output pixel (x, y) samples input pixel (x, y)"))
     result(frame_size(FRAME_W, FRAME_H), "vision_system: identity correction, 32 x 24 frame")
     result(mem32[FLT + FLT_ID] == BLSH, "blur_sharpen: ID \"BLSH\"; MODE 3 = blur, then sharpen")
+    camera_size_set(FRAME_W, FRAME_H)                  # the detectors' frame: the 32 x 24 test images
     tracker_setup()                                    # object_tracker measures every frame (transcript)
     wreg(FLT + FLT_MODE, MODE_BLUR_SHARPEN, strings(
         "blur_sharpen MODE",

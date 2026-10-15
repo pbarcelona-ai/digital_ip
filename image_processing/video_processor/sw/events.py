@@ -54,9 +54,10 @@ def event_next(track):
     ch = (e >> 24) & 7
     n = e & 0xFFFFFF
     ev_count += 1
-    puts("  [")
+    putw(0x5B2020)                                     # "  [" (no flash read: every frame)
     dec(t)
-    puts(" us] ")
+    putw(0x5D737520)                                   # " us] "
+    putc(32)
     if ch == EV_FIRST:
         puts("IRQ 13: COUNT0 = ")
         dec(n)
@@ -74,7 +75,10 @@ def event_next(track):
         dec(n)
         nl()
     else:
-        puts("tracker frame ")
+        putw(0x63617274)                               # "tracker frame "
+        putw(0x2072656B)
+        putw(0x6D617266)
+        putw(0x2065)
         dec(n)
         if track:
             track_event(n)                             # completes the line

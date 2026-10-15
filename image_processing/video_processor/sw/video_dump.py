@@ -184,25 +184,39 @@ def dump_video():
     dump(FC + FC_TIME, strings(
         "TIME         microseconds now                         ",
         "EV_EN        channels logged in the event log         "), 2)
-    say(" object_tracker @ 0x18500")
-    dump(TRK, strings(
-        "ID           \"OTRK\" (ASCII)                           ",
-        "VERSION      ASCII \"d.dd\", +0.01 per source change    ",
-        "DATE         BCD mm/dd/yyyy of that change            "), 3)
-    dump(TRK + TRK_CTRL, strings(
-        "CTRL         [0] en [1] dark object [11:8] min run    ",
-        "FRAME_SIZE   [15:0] width [31:16] height              ",
-        "THRESH       [7:0] luma threshold                     ",
-        "WIN_X        search window [15:0] x0 [31:16] x1       ",
-        "WIN_Y        search window [15:0] y0 [31:16] y1       ",
-        "FRAMES       frames measured                          ",
-        "COUNT        object pixels, last frame                ",
-        "BOX_X        object box [15:0] x min [31:16] x max    ",
-        "BOX_Y        object box [15:0] y min [31:16] y max    ",
-        "SUM_X        sum of the object pixels' x              ",
-        "SUM_Y        sum of the object pixels' y              ",
-        "STATUS       [0] in frame [1] whole-frame window      "), 12)
-    say(" symbol_overlay @ 0x18800")
+    c = 0
+    while c < NTRK:                                    # one detector per object class
+        puts(" object_tracker @ ")
+        hex32(det_base(c))
+        puts(" (")
+        class_name(c)
+        say(" detector)")
+        dump(det_base(c), strings(
+            "ID           \"OTRK\" (ASCII)                           ",
+            "VERSION      ASCII \"d.dd\", +0.01 per source change    ",
+            "DATE         BCD mm/dd/yyyy of that change            "), 3)
+        dump(det_base(c) + TRK_CTRL, strings(
+            "CTRL         [0] en [1] dark [2] colour [11:8] min run",
+            "FRAME_SIZE   [15:0] width [31:16] height              ",
+            "THRESH       [7:0] luma threshold                     ",
+            "WIN_X        search window [15:0] x0 [31:16] x1       ",
+            "WIN_Y        search window [15:0] y0 [31:16] y1       ",
+            "FRAMES       frames measured                          ",
+            "COUNT        object pixels, last frame                ",
+            "BOX_X        object box [15:0] x min [31:16] x max    ",
+            "BOX_Y        object box [15:0] y min [31:16] y max    ",
+            "SUM_X        sum of the object pixels' x              ",
+            "SUM_Y        sum of the object pixels' y              ",
+            "STATUS       [0] in frame [1] whole-frame window      ",
+            "RUN          run widths [11:0] min [27:16] max        ",
+            "Y_RANGE      colour: luma [7:0] min [15:8] max        ",
+            "CB_RANGE     colour: Cb [7:0] min [15:8] max          ",
+            "CR_RANGE     colour: Cr [7:0] min [15:8] max          ",
+            "SAT_MIN      colour: lowest |Cb-128| + |Cr-128|       "), 17)
+        c += 1
+    puts(" symbol_overlay @ ")
+    hex32(OVL)
+    nl()
     dump(OVL, strings(
         "ID           \"SOVL\" (ASCII)                           ",
         "VERSION      ASCII \"d.dd\", +0.01 per source change    ",

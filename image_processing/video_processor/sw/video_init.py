@@ -6,7 +6,11 @@ Imported by video_proc.py (the program; pyc.py inlines this file at its
   - the py_soc address map and peripheral register offsets;
   - text output on UART 0: putc, puts / say (strings from the flash string
     table, read through the flash controller), dec, hex32, result (one
-    [PASS] / [FAIL] line, counted in passes / errors), heading;
+    [PASS] / [FAIL] line, counted in passes / errors), heading; with the
+    GPIO0[28] direct-transcript strap the text goes instead to the GPIO1
+    transcript port (one write per character, no UART wait: the testbench
+    writes it straight to the transcript file) and only the tracking
+    sections are written (con: 0 muted, 1 UART 0, 2 transcript port);
   - cpu_isr(pending): the CPU's own interrupt sources (software interrupt,
     GPIO2 edge, watchdog pre-timeout), called by the program's handler;
   - cpu_init(start): report section 1 (boot-up sequence: reset cause, the
@@ -92,6 +96,8 @@ G_FALL_EN = 0x30
 G_INT_STATUS = 0x34
 LED_RUN = 1 << 1                   # GPIO0[1]: "running" LED
 QUICK_STRAP = 1 << 31              # GPIO0[31] input: quick simulation (register dumps of sections 3 and 5 skipped)
+DIRECT_STRAP = 1 << 28             # GPIO0[28] input: direct transcript (tracking text on the GPIO1 port, the rest muted)
+TPORT = 0xDB000000                 # GPIO1 transcript port word: [31:24] 0xDB marker, [8] toggles per character, [7:0] it
 U_STATUS = 0x18                    # uart map: ID block 0x00-0x0F, CTRL 0x10, FCW 0x14, STATUS 0x18
 S_CTRL = 0x10
 S_DIV = 0x14
@@ -128,11 +134,22 @@ gpio_cnt = 0
 wdt_cnt = 0
 soft_cnt = 0
 log_wr = 0                         # 1: wreg() reports every register write on UART 0 (set-up phases)
+con = 1                            # text output: 0 muted, 1 UART 0, 2 GPIO1 transcript port (direct strap)
 
 
 # ======================================================================= text output on UART 0
 
+def direct():
+    """1 with the GPIO0[28] direct-transcript strap (only the tracking is written)."""
+    return mem32[GPIO0 + G_IN] & DIRECT_STRAP
+
+
 def putc(c):
+    if con == 2:                                       # transcript port: one GPIO1 write (toggle [8]), no wait
+        mem32[GPIO1 + G_OUT] = TPORT | ((mem32[GPIO1 + G_OUT] & 0x100) ^ 0x100) | c
+        return
+    if con == 0:
+        return
     while not mem32[UART0 + DPORT + PSTATUS] & TX_READY:
         pass
     mem32[UART0 + DPORT + TXDATA] = c
@@ -141,6 +158,14 @@ def putc(c):
 def nl():
     putc(13)
     putc(10)
+
+
+def putw(w):
+    """Up to 4 characters packed in w, the first in [7:0], ended by a 0 byte: text printed without
+    reading the flash string table (the per-frame tracking lines; a flash read is several us)."""
+    while w:
+        putc(w & 255)
+        w = w >> 8
 
 
 def flash_read(addr, n):
@@ -176,6 +201,8 @@ def str_len(h):
 
 def puts(h):
     """Print string handle h."""
+    if con == 0:                                       # muted: not even read from flash
+        return
     slot = (str_addr(h) - STR_BASE) >> 6
     more = 1
     while more:
@@ -230,13 +257,24 @@ def dec(v):
     if v < 0:
         putc(45)
         v = 0 - v
+    if v < 1000:                                       # fast path (coordinates, counts): shifts only
+        h = ((v << 5) + (v << 3) + v) >> 12            # v // 100 = 41 v >> 12 for v < 1000
+        v = v - ((h << 6) + (h << 5) + (h << 2))
+        t = ((v << 7) + (v << 6) + (v << 3) + (v << 2) + v) >> 11   # v // 10 = 205 v >> 11 for v < 100
+        if h:
+            putc(48 + h)
+        if h or t:
+            putc(48 + t)
+        putc(48 + v - ((t << 3) + (t << 1)))
+        return
     lead = 0
-    v = digit(v, 1000000000)
-    v = digit(v, 100000000)
-    v = digit(v, 10000000)
-    v = digit(v, 1000000)
-    v = digit(v, 100000)
-    v = digit(v, 10000)
+    if v >= 10000:                                     # small numbers (most of the text) skip the high digits
+        v = digit(v, 1000000000)
+        v = digit(v, 100000000)
+        v = digit(v, 10000000)
+        v = digit(v, 1000000)
+        v = digit(v, 100000)
+        v = digit(v, 10000)
     v = digit(v, 1000)
     v = digit(v, 100)
     v = digit(v, 10)
@@ -312,7 +350,7 @@ def wreg(addr, v, h):
           old value 0x........
           new value 0x........   (read back after the write)
           <what the change does>"""
-    if not log_wr:
+    if not log_wr or direct():
         mem32[addr] = v
         return
     old = mem32[addr]
@@ -471,7 +509,9 @@ def test_uart0():
     wait_clear(UART0 + U_STATUS, 1)
     while mem32[UART0 + DPORT + RXDATA] & RX_VALID:   # the report itself is echoed: drop it
         pass
-    putc(0x55)
+    while not mem32[UART0 + DPORT + PSTATUS] & TX_READY:
+        pass
+    mem32[UART0 + DPORT + TXDATA] = 0x55               # on the UART itself (the text may go elsewhere)
     nl()
     result(rx_word(UART0) == 0x55, "UART0: character echoed back through the loopback")
 
@@ -573,8 +613,10 @@ def cpu_init(start):
     started. Leaves the CPU's interrupt sources enabled and interrupts on (the handler must already
     be installed). Nothing outside the CPU is touched; at the end, if every self-test passed, the
     core logic reset is released (SYSCTL CORE_RESET). Returns 1 when the core logic is running."""
-    global stage
+    global stage, con
     mem32[FLASH + F_CLKDIV] = 3                        # fastest flash clock for the text
+    if direct():                                       # direct transcript: sections 1-7 not written
+        con = 0
     stage = 1
     mem32[GPIO0 + G_OUT] = 0
     mem32[GPIO0 + G_DIR] = LED_RUN
@@ -595,7 +637,7 @@ def cpu_init(start):
     test_wdt()
     stage = 3
     heading("3. CPU register dump (address  name  description  value)")
-    if mem32[GPIO0 + G_IN] & QUICK_STRAP:
+    if mem32[GPIO0 + G_IN] & QUICK_STRAP or direct():
         say(" (skipped: GPIO0[31] quick-simulation strap)")
     else:
         dump_cpu()

@@ -5,17 +5,19 @@ inlines every module imported below, each once, into one global namespace); the 
 copies it from SPI flash at reset. Modules (sw/):
   video_init.py   CPU initialisation, peripheral self-test, text output on UART 0 (sections 1-3)
   video_regs.py   addresses, register offsets and bit values of the video blocks
-  camera.py       camera control over I2C 0 (frame gap, frame size, stream on), image format pin
+  camera.py       camera control over I2C 0 (frame gap, frame size, image name, detection options,
+                  stream on), image format pin
   video_setup.py  frame_size(), video set-up (section 4), video start (section 6)
   video_dump.py   video register dump (section 5)
   events.py       the frame event transcript from frame_counter's event log (true order, times)
   sequence.py     frame counters and image sequence (section 7)
-  search.py       object_tracker search windows
-  tracker.py      object_tracker set-up and the SEARCH / TRACK / COAST state machine
-  overlay.py      symbol_overlay: the dashed tracking box
-  tracking.py     pedestrian tracking (section 8) Every step
-is reported on UART 0 as readable text (the testbench saves it to
-cpu_bootup.txt):
+  search.py       detector search windows
+  tracker.py      the detectors (one object_tracker per class: pedestrian, face, automobile,
+                  vehicle), the shape check and the SEARCH / TRACK / COAST state machine
+  overlay.py      symbol_overlay: a box per class (colour, style) and the texts
+  tracking.py     object detection and tracking (section 8)
+Every step is reported on UART 0 as readable text (the testbench writes it, line by line, to
+sim_transcript_<GIF name>.txt):
 
   1.-3. CPU initialisation (video_init.py): boot-up sequence, CPU
      peripheral self-test, CPU register dump. The external reset holds the
@@ -62,17 +64,22 @@ cpu_bootup.txt):
      the order the events happened, with its time (frame_counter's event
      log, events.py): first stage (IRQ 13, COUNT0), into and out of
      vision_system, measured by object_tracker, last stage (IRQ 14, COUNT1).
-  8. Pedestrian tracking: the camera's frame size for the tracking
-     sequence is read from its control registers 0x30-0x33 (width, height,
-     high byte first, over I2C 0) and every block is reprogrammed for it
-     (frame_size), object_tracker searches the whole frame for a dark
-     object, and symbol_overlay draws a dashed box around it. For every
+  8. Object detection and tracking: the camera's frame size for the
+     tracking sequence is read from its control registers 0x30-0x33 (width,
+     height, high byte first, over I2C 0) and every block is reprogrammed
+     for it (frame_size); the classes to detect and their box styles come
+     from registers 0x50-0x54. Each selected class's detector searches the
+     whole frame for its class (pedestrian: dark; face: skin tone;
+     automobile / vehicle: saturated paint in car- or bus-length runs) and
+     symbol_overlay draws the class's box (its colour, the chosen dashed or
+     solid rectangle or circle) around what it finds. For every
      frame of the camera's tracking sequence (GPIO0[29] = 1 again) the
      transcript shows the first stage, the tracker and the last stage; at
-     the tracker event the firmware reads the tracker's box, predicts where
-     the pedestrian will be in the next frame (centre velocity, shifts
-     only: no multiply or divide in py_core), moves the dashed box and the
-     search window there and completes the line with the result. States: SEARCH (whole frame),
+     the tracker event the firmware reads each selected detector's box,
+     checks its shape, predicts where the target will be in the next frame
+     (centre velocity, shifts only: no multiply or divide in py_core), moves
+     the class's box and search window there and completes the line with
+     the results. States: SEARCH (whole frame),
      TRACK (window around the prediction), COAST (target missed, box
      keeps moving with the velocity), back to SEARCH after TRK_LOST misses.
   9. Summary and "END OF REPORT".
@@ -114,6 +121,8 @@ def isr():
     if pending & IRQ_FC_LAST:                           # end of frame, last stage: read its counter
         fc_last = mem32[FC + FC_COUNT1]
         mem32[FC + FC_STATUS] = 2
+    if pending & (IRQ_FC_FIRST | IRQ_FC_LAST):          # read back: the cleared level reaches the intc
+        fc_status = mem32[FC + FC_STATUS]               # ~2 cpu_clk after the write (bit_sync)
     if pending & IRQ_STATS:
         frames += 1
         mem32[INTC + INTC_PENDING] = IRQ_STATS          # edge source: write 1 to clear
@@ -131,7 +140,7 @@ def main():
         video_setup()                                  # section 4
         stage = 5
         heading("5. Video set-up complete: every video_processor register (address  name  description  value)")
-        if mem32[GPIO0 + G_IN] & QUICK_STRAP:
+        if mem32[GPIO0 + G_IN] & QUICK_STRAP or direct():
             say(" (skipped: GPIO0[31] quick-simulation strap)")
         else:
             say(" CPU domain (py_soc peripherals)")

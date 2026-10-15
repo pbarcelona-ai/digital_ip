@@ -57,7 +57,12 @@
 #   default/keyword arguments, closures, lists, dicts, floats, classes.
 #
 # Usage: pyc.py prog.py -o build/prog [--code-aw N] [--str-slots N] [--split-consts]
-# Date: 2026-10-01
+#   --split-consts  saves constant-pool entries (256 at most): a folded
+#           address base + small offset is loaded as base, offset, add, and a
+#           string handle of slot 256 or above as its 128-slot block base +
+#           offset, so the pool holds a few bases instead of one constant per
+#           address or string (a little more code)
+# Date: 2026-10-13
 import argparse
 import ast
 import struct
@@ -335,6 +340,16 @@ class Compiler:
             return self.const_value(e.args[0])
         return None
 
+    def load_handle(self, h, node):
+        """A string handle. With --split-consts a handle of slot 256 or above (a constant) not yet in the
+        pool is loaded as its 128-slot block base + offset (add), so the pool holds a few bases instead
+        of one constant per string."""
+        if SPLIT_CONSTS and h >= 256 and (((h << 1) | 1) & ((1 << 34) - 1)) not in self.consts and h & 127:
+            self.load_int(h & ~127, node)
+            self.load_int(h & 127, node)
+            return self.emit('BINARY_ADD', node=node)
+        return self.load_int(h, node)
+
     def split_const(self, e, v):
         """--split-consts: a folded base + small offset (e.g. a register address) whose value is not yet in the
         pool is loaded as base, offset, add, so the pool holds the base once instead of every address."""
@@ -358,9 +373,9 @@ class Compiler:
 
     def expr(self, e):
         if isinstance(e, ast.Constant) and isinstance(e.value, str):
-            return self.load_int(self.string_handle(e.value, e), e)
+            return self.load_handle(self.string_handle(e.value, e), e)
         if isinstance(e, ast.Call) and getattr(e.func, 'id', None) == 'strings':
-            return self.load_int(self.string_block(e.args, e), e)
+            return self.load_handle(self.string_block(e.args, e), e)
         v = self.const_value(e)
         if v is not None or (isinstance(e, ast.Constant) and e.value is None):
             if v is None:

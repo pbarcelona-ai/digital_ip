@@ -4,7 +4,7 @@
 # Description: Single entry point for simulation, synthesis and documentation
 #   of video_processor. Test targets fail on a bad result (ci/run_checked.sh),
 #   not just a bad exit code.
-# Date: 2026-10-11
+# Date: 2026-10-14
 # ***************
 # Targets:
 #   make help          this text
@@ -25,11 +25,31 @@
 #   VCD_START_US=<n>   start the VCD dump at n us of simulated time (VCD=1 or make wave)
 #   VCD_STOP_US=<n>    stop the VCD dump at n us of simulated time (VCD=1 or make wave)
 #   GIF=<file>         tracking test input: any animated GIF (default tb/images/pedestrian_walk.gif); its size sets the frame size (fitted to 320 x 240)
+#   GIF=<a>,<b>,...    several GIFs sent one after the other in one run (boot and image test once; every block set up again per GIF)
 #   GIF_BW=1           convert a colour input GIF to black and white (BT.601 luma); without it a colour GIF runs through the pipeline in colour
 #   GIF_FRAMES=<n>     send only the first n frames of the tracking GIF (shorter run; default every frame)
-# Results (build/sim/): video_processor_tb.log, cpu_bootup.txt (UART 0 report), output_images/*.ppm,
+#   GIF_FIRST=<n>      start at frame n of the GIF (0 = the first): with GIF_FRAMES, a long GIF run in parts side by side (results <name>_from<n>)
+#   GIF=<video>        a camera video (MP4, MOV, MKV, WebM) instead: tb/scripts/mp4_io.py (PyAV: python3 -m pip install av) samples it into the GIF
+#                      the testbench sends (fitted to 320 x 240); the tracked output is also build/sim/video-output/<name>_tracked.mp4
+#   VIDEO_FPS=<f>      frames per second taken from a video (default 10)
+#   VIDEO_START=<s>    start time in a video, seconds (default 0)
+#   SELECT=<what>      what to detect: 1 / pedestrians, 2 / faces, 3 / vehicles (cars, buses, trucks, planes); comma separated
+#   DETECT=<classes>   object classes to detect and track: pedestrian, face, automobile (car), vehicle (bus, truck), comma separated, or all (default pedestrian)
+#   BOX=<style>        box round every tracked object: dashed-box, solid-box, dashed-circle, solid-circle, dashed-oval, solid-oval,
+#                      solid-centre (a solid box in the middle of the target; default for automobiles and vehicles, dashed-box for
+#                      pedestrians and faces)
+#   BOX=<class>:<style>,...   a style per class, e.g. BOX=face:solid-circle,car:dashed-box (other classes keep the default)
+#   TARGETS=<n>        most targets tracked at any time, all classes together (1-12, default 12; up to 3 per class)
+#   DIRECT_LOG=1       direct transcript: only the tracking (search / track lines, overlay boxes, summary) is written, straight
+#                      to the transcript file through a GPIO port instead of UART 0 (much faster); register dumps skipped
+# Box colours: pedestrian green, face magenta, automobile cyan, vehicle orange (one detector per class, up to 3 boxes per class).
+# Detection: colour, edges and motion (feature_detect: Sobel edges, motion against a per-cell background, camera shift estimate).
+# Results (build/sim/): sim_transcript_<GIF name>.txt (the report, written line by line while the simulation runs;
+#   several GIFs: sim_transcript_<name>+<name>...txt and each GIF's tracking in sim_transcript_<GIF name>.txt),
+#   video_processor_tb.log, output_images/*.ppm,
 #   gif-input/<name>_<w>x<h>.gif (the sequence as sent, plus <name>_bw.gif when converted),
-#   gif-output/<name>_tracked.gif (HDMI output with the dashed tracking box)
+#   gif-output/<name>_tracked.gif (HDMI output with the tracking boxes)
+#   video-output/<name>_tracked.mp4 (a video input's tracked output, H.264)
 # Examples:
 #   make sim                                         full system test, default pedestrian GIF (long: every check, real PLL models)
 #   make sim QUICK=1 IDEAL_PLL=1                     fastest full run
@@ -40,15 +60,23 @@
 #   make wave QUICK=1 IDEAL_PLL=1 VCD_START_US=2000 VCD_STOP_US=2100    same, then open Surfer
 #   make cov QUICK=1                                 coverage of the quick run
 #   make sim GIF=../my_clips/street.gif GIF_FRAMES=20 QUICK=1    relative path (from this directory), first 20 frames
+#   make sim QUICK=1 IDEAL_PLL=1 GIF=tb/images/street_scene.gif DETECT=all    every class (pedestrian, face, car, bus) in the test street
+#   make sim QUICK=1 IDEAL_PLL=1 GIF=tb/images/bouncing-ricochets.gif DETECT=car,vehicle BOX=solid-circle    cars and buses, solid circles
+#   make sim QUICK=1 IDEAL_PLL=1 DETECT=pedestrian,face BOX=pedestrian:solid-box,face:dashed-circle    a style per class
+#   make sim IDEAL_PLL=1 DIRECT_LOG=1 DETECT=all TARGETS=6 GIF=tb/images/street_scene.gif,tb/images/go-fast.gif    two GIFs, 6 targets, fast transcript
+#   make sim QUICK=1 IDEAL_PLL=1 DIRECT_LOG=1 DETECT=all GIF=tb/images/clip.mp4 VIDEO_START=2 GIF_FRAMES=20    2 s of a video from 2 s, 10 fps
 # Without make: scripts/run_sim.sh [--quick] [--ideal-pll] [--vcd] [--wave] [--vcd-start=<us>] [--vcd-stop=<us>]
-#   [--gif=<file>] [--gif-bw] [--gif-frames=<n>] [--lint] [--list-tests]
+#   [--gif=<file>[,<file>...]] [--gif-bw] [--gif-frames=<n>] [--detect=<classes>] [--box=<style>|<class>:<style>,...]
+#   [--targets=<n>] [--direct-log] [--video-fps=<f>] [--video-start=<s>] [--select=<what>] [--lint] [--list-tests]
 # end of help
 
 SHELL := /bin/bash
 CHECK := ci/run_checked.sh
 WINOPT := $(if $(VCD_START_US),--vcd-start=$(VCD_START_US),) $(if $(VCD_STOP_US),--vcd-stop=$(VCD_STOP_US),)
 QOPT   := $(if $(filter 1,$(QUICK)),--quick,) $(if $(filter 1,$(IDEAL_PLL)),--ideal-pll,)
-GOPT   := $(if $(GIF_FRAMES),--gif-frames=$(GIF_FRAMES),) $(if $(GIF),--gif=$(GIF),) $(if $(filter 1,$(GIF_BW)),--gif-bw,)
+GOPT   := $(if $(GIF_FRAMES),--gif-frames=$(GIF_FRAMES),) $(if $(GIF_FIRST),--gif-first=$(GIF_FIRST),) $(if $(GIF),--gif=$(GIF),) $(if $(filter 1,$(GIF_BW)),--gif-bw,) \
+          $(if $(DETECT),--detect=$(DETECT),) $(if $(SELECT),--select=$(SELECT),) $(if $(BOX),--box=$(BOX),) $(if $(TARGETS),--targets=$(TARGETS),) \
+          $(if $(filter 1,$(DIRECT_LOG)),--direct-log,) $(if $(VIDEO_FPS),--video-fps=$(VIDEO_FPS),) $(if $(VIDEO_START),--video-start=$(VIDEO_START),)
 SIMOPT := $(if $(filter 1,$(VCD)),--vcd $(WINOPT),) $(QOPT) $(GOPT)
 
 .PHONY: all help sim wave lint ip-test synth diagram ci cov clean list-tests

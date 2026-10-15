@@ -48,49 +48,66 @@
 //                         vs_stream_adapter). frame_counter: both counts 0
 //                         before the sequence (cleared by the firmware),
 //                         then 8 at the first and 8 at the last stage.
-//     test_tracking       pedestrian tracking: the input GIF (+GIF_IN, any
-//                         animated GIF; default the pedestrian, 128 x 96,
-//                         50 frames) is read with gif_io at start-up; its
+//     test_tracking       object detection and tracking: the input GIF
+//                         (+GIF_IN, any animated GIF, or several, comma
+//                         separated, sent one after the other with every
+//                         block set up again for each; default the
+//                         pedestrian, 128 x 96, 50 frames; +GIF_FIRST /
+//                         +GIF_FRAMES a part of it) is read with gif_io; its
 //                         size (fitted to 320 x 240) is the frame size the
 //                         firmware reads from the camera (registers
-//                         0x30-0x33) and programs everywhere. A colour
-//                         GIF is sent in colour (RGGB mosaic, ISP demosaic),
-//                         or converted to black and white with +GIF_BW (also
-//                         written as gif-input/<name>_bw.gif; the sequence as
-//                         sent is written to gif-input/<name>_<w>x<h>.gif).
-//                         Once the firmware
-//                         has set every block to that size (stage 170) the
-//                         camera sends each GIF frame (paced like the image
-//                         test, GPIO0[29] high). Checks per frame: the
-//                         object_tracker results equal track_ref's model of
-//                         its input frame and window; the symbol_overlay
-//                         output equals the model's drawing of the objects
-//                         it applied; the HDMI image equals the overlay
-//                         output. Tracking: the pedestrian is found in the
-//                         first frame (whole-frame search) and from the
-//                         second frame on object 0 is an enabled dashed
-//                         rectangle containing the centre of the true
-//                         figure (track_ref find_dark on the GIF frame) and,
-//                         from the third, covering at least 75 % of it; the
-//                         firmware counted every frame as found. (Quality is
-//                         judged only on frames with a dark target, so any
-//                         GIF can be used.) The HDMI
-//                         frames are written as an animated GIF (+GIF_OUT,
-//                         input frame times) and read back within 1 grey
-//                         level. frame_counter counted every GIF frame.
-//     test_uart_report    the UART 0 report (saved to cpu_bootup.txt) reaches
+//                         0x30-0x33) and programs everywhere, and the classes
+//                         to detect (+DETECT: 1 / pedestrians, 2 / faces,
+//                         3 / vehicles (automobile and vehicle: cars, buses,
+//                         trucks, planes), or pedestrian, face, automobile,
+//                         vehicle, all; default pedestrian), their box styles
+//                         (+BOX: dashed / solid box, circle, oval, or a solid
+//                         box in the middle of the target) and the
+//                         most targets at a time (+TARGETS) go into registers
+//                         0x50-0x55. A colour GIF is sent in colour (RGGB
+//                         mosaic, ISP demosaic), or converted to black and
+//                         white with +GIF_BW (also written as
+//                         gif-input/<name>_bw.gif; the sequence as sent is
+//                         written to gif-input/<name>_<w>x<h>.gif). Once the
+//                         firmware has set every block up (stage 170 of that
+//                         sequence) the camera sends each GIF frame (paced
+//                         like the image test, and after the firmware handled
+//                         the previous tracker event; GPIO0[29] high). Checks
+//                         per frame: every selected detector's results and
+//                         blobs equal track_ref's model of its input frame,
+//                         window and settings, the other detectors stay off;
+//                         the symbol_overlay output equals the model's
+//                         drawing of the 12 objects it applied; the HDMI
+//                         image equals the overlay output; every box shown is
+//                         its class's colour and chosen style. With a ground
+//                         truth (<name>.truth.txt next to the GIF, one or
+//                         more true boxes per class) every selected class
+//                         with a true box is found in the first frame and
+//                         from the second each true box is held by one of
+//                         the class's boxes (its centre) and, from the third,
+//                         covered at least 75 % (a box in the middle: its
+//                         centre held); the firmware counted every
+//                         frame as found. Without one, quality is not judged
+//                         (any GIF can be used). The HDMI frames are written
+//                         as an animated GIF (+GIF_OUT, input frame times)
+//                         and read back exactly as written (its palette).
+//                         frame_counter counted every GIF frame.
+//     test_uart_report    the report (UART 0, or the GPIO1 direct transcript
+//                         port with +direct; written to
+//                         sim_transcript_<GIF name>.txt as it arrives) reaches
 //                         "END OF REPORT" with no [FAIL] line and at least
-//                         MIN_PASS [PASS] lines, and the firmware stage is
-//                         200. The frame event transcript ("  [<time> us]
-//                         <event>" lines) is the true sequence: every line is
-//                         the next marker frame_counter logged (channel,
-//                         count and time, in the order the testbench saw the
-//                         markers), counts run 1, 2, 3, ... per channel, times
-//                         never go back, each frame's events come before its
-//                         last-stage end; every image of the sequence is
-//                         reported at all 5 points (section 7) and every GIF
-//                         frame at the first stage, the tracker and the last
-//                         stage (section 8).
+//                         MIN_PASS [PASS] lines (direct: 2 per GIF), and the
+//                         firmware stage is 200. The frame event transcript
+//                         ("  [<time> us] <event>" lines) is the true
+//                         sequence: every line is the next marker
+//                         frame_counter logged (channel, count and time, in
+//                         the order the testbench saw the markers), counts
+//                         run 1, 2, 3, ... per channel, times never go back,
+//                         each frame's events come before its last-stage end;
+//                         every image of the sequence is reported at all 5
+//                         points (section 7) and every GIF frame at the first
+//                         stage, the tracker and the last stage (section 8;
+//                         direct: section 7 not written, the tracker only).
 //   check() records a failure; the testbench prints TEST PASSED when none.
 //   Image helpers: load_images (input_images/: read each input, generate and
 //   write it when missing), ppm_read / ppm_write (P5 monochrome and P6
@@ -100,7 +117,7 @@
 //   Bayer mosaic of a colour image), tap_pixel / frame_done / display_done
 //   (frame capture and labelling at each module output), gif_px (RAW10
 //   sample of a GIF frame).
-// Date: 2026-10-11
+// Date: 2026-10-14
 
   task automatic check(input bit c, input string m);
     if (!c) begin
@@ -138,7 +155,7 @@
 
   task automatic test_firmware();
     while (g(G_stage) < 100) @(posedge cpu_clk);
-    check(g(G_errors) == 0, $sformatf("firmware reported %0d errors (see cpu_bootup.txt)", g(G_errors)));
+    check(g(G_errors) == 0, $sformatf("firmware reported %0d errors (see %s)", g(G_errors), transcript));
     check(g(G_frames) >= 6, $sformatf("firmware counted %0d statistics interrupts", g(G_frames)));
     repeat (10) @(posedge cpu_clk);
     check(gpio_o[1] && !gpio_t[1], "running LED (GPIO0[1]) not on");
@@ -254,24 +271,27 @@
   task automatic test_uart_report();
     while (g(G_stage) != 200) @(posedge cpu_clk);
     repeat (2000) @(posedge cpu_clk);                  // last characters still on the line
-    check(uart_end, "UART 0 report: \"END OF REPORT\" not received");
-    check(uart_fail == 0, $sformatf("UART 0 report: %0d [FAIL] lines", uart_fail));
-    check(uart_pass >= MIN_PASS, $sformatf("UART 0 report: %0d [PASS] lines, at least %0d expected", uart_pass, MIN_PASS));
+    check(uart_end, "report: \"END OF REPORT\" not received");
+    check(uart_fail == 0, $sformatf("report: %0d [FAIL] lines", uart_fail));
+    // direct transcript: only the tracking sections (and the summary) are written
+    check(uart_pass >= (direct_strap ? 2 * gif_list.size() : MIN_PASS),
+          $sformatf("report: %0d [PASS] lines, at least %0d expected", uart_pass, direct_strap ? 2 * gif_list.size() : MIN_PASS));
     check(g(G_errors) == 0, $sformatf("firmware reported %0d errors", g(G_errors)));
     // the frame event transcript: every logged marker reported, in order, with its time
-    check(rep_bad == 0, $sformatf("UART 0 report: %0d event lines out of order, wrong or with a wrong time", rep_bad));
-    check(hw_ev.size() == 0, $sformatf("UART 0 report: %0d logged events never reported", hw_ev.size()));
-    // section 7: all 8 images at every channel; section 8: every GIF frame at the first stage, tracker, last stage
-    for (int c = 0; c < NEV; c++)
-      check(rep_n[0][c] == NIMG, $sformatf("UART 0 report, section 7: %0d frames reported for \"%s\", %0d expected",
+    check(rep_bad == 0, $sformatf("report: %0d event lines out of order, wrong or with a wrong time", rep_bad));
+    check(hw_ev.size() == 0, $sformatf("report: %0d logged events never reported", hw_ev.size()));
+    // section 7: all 8 images at every channel; section 8 (the last GIF): every GIF frame at the first
+    // stage, tracker, last stage (direct transcript: the tracker only)
+    if (!direct_strap) for (int c = 0; c < NEV; c++)
+      check(rep_n[0][c] == NIMG, $sformatf("report, section 7: %0d frames reported for \"%s\", %0d expected",
                                            rep_n[0][c], ev_txt[c], NIMG));
 `ifdef VP_TRACK
-    for (int c = 0; c < NEV; c++) if (c == 0 || c == 1 || c == 4)
-      check(rep_n[1][c] == gif_n, $sformatf("UART 0 report, section 8: %0d frames reported for \"%s\", %0d expected",
+    for (int c = 0; c < NEV; c++) if (c == 4 || (!direct_strap && (c == 0 || c == 1)))
+      check(rep_n[1][c] == gif_n, $sformatf("report, section 8: %0d frames reported for \"%s\", %0d expected",
                                             rep_n[1][c], ev_txt[c], gif_n));
 `endif
-    $display("[%t] UART 0 report: %0d lines, %0d [PASS], %0d [FAIL], %0d event lines in the true order, saved to cpu_bootup.txt",
-             $realtime, uart_lines, uart_pass, uart_fail, rep_lines);
+    $display("[%t] %s report: %0d lines, %0d [PASS], %0d [FAIL], %0d event lines in the true order, saved to %s",
+             $realtime, direct_strap ? "direct" : "UART 0", uart_lines, uart_pass, uart_fail, rep_lines, transcript);
   endtask
 
   // ================================================================ image test
@@ -576,6 +596,7 @@
     seq_active = 1;
 `ifdef VP_VISION
     vs_f0 = dut.u_vs_adapt.frames_o;
+    vso0 = vs_out_frames;
 `endif
     img_go = 1;
     $display("[%t] image test: %0d images, each once vision_system can take it, at least %0d ns apart (GPIO0[29] = 1)",
@@ -735,6 +756,7 @@
   task automatic gif_setup();
     bit ok;
     int sw, sh, nmax;
+    string part;
     gin.info(gif_in, sw, sh, ok);
     if (!ok) begin
       $display("ERROR: tracking: cannot read the input GIF %s", gif_in);
@@ -757,8 +779,18 @@
     if (gh < 16) gh = 16;
     gin.read(gif_in, gw, gh, ok);
     if (!ok) return;
+    if ($value$plusargs("GIF_FIRST=%d", gif_first) && gif_first > 0 && gif_first < gin.nframes) begin
+      for (int k = 0; k < gin.nframes - gif_first; k++) begin   // start at frame gif_first (0 = the first)
+        for (int i = 0; i < gw * gh; i++) gin.frame[k * gw * gh + i] = gin.frame[(k + gif_first) * gw * gh + i];
+        gin.delay_cs[k] = gin.delay_cs[k + gif_first];
+      end
+      gin.nframes -= gif_first;
+      $display("  starting at GIF frame %0d (+GIF_FIRST)", gif_first);
+    end else gif_first = 0;
     gif_n = gin.nframes;
-    if (gif_out == "") gif_out = {gif_dir, "/", base_name(gif_in), "_tracked.gif"};
+    part = "";                                         // +GIF_FIRST: names <name>_from<n>
+    if (gif_first > 0) part = $sformatf("_from%0d", gif_first);
+    if (gif_out == "") gif_out = {gif_dir, "/", base_name(gif_in), part, "_tracked.gif"};
 `ifndef __ICARUS__
     void'($system({"mkdir -p ", gif_dir, " ", gif_in_dir}));
 `endif
@@ -777,18 +809,158 @@
       nm = base_name(gif_in);
       for (int k = 0; k < 16; k++) sensor_cci.mem[8'h40 + k] = (k < nm.len()) ? nm[k] : 8'h00;
     end
-    $display("tracking GIF %s: %0d x %0d, %0d frames; tracking frame size %0d x %0d (camera registers 0x30-0x33)",
-             gif_in, sw, sh, gin.nframes, gw, gh);
+    $display("tracking GIF %0d of %0d %s: %0d x %0d, %0d frames; tracking frame size %0d x %0d (camera registers 0x30-0x33)",
+             gif_idx + 1, gif_list.size(), gif_in, sw, sh, gin.nframes, gw, gh);
+    detect_options();
+    read_truth(sw, sh);
     gif_format();
     // the input sequence as the camera sends it (frame size, black and white when converted)
     begin
       string f;
-      f = {gif_in_dir, "/", base_name(gif_in), gif_bw && gin.comment != "" ? "_bw" : "", "_", $sformatf("%0dx%0d", gw, gh), ".gif"};
+      f = {gif_in_dir, "/", base_name(gif_in), part, gif_bw && gin.comment != "" ? "_bw" : "", "_",
+           $sformatf("%0dx%0d", gw, gh), ".gif"};
       if (gin.comment == "") gin.comment = "video_processor tracking test input as sent by the camera";
       gin.write(f, gif_n, ok);
       check(ok, {"tracking: cannot write ", f});
       $display("  tracking input written: %s", f);
     end
+    sensor_cci.mem[8'h57] = 8'(gif_idx + 1);           // this GIF's settings are loaded
+  endtask
+
+  // directory of the transcript file (with its "/"), "" for the working directory
+  function automatic string gif_tr_dir();
+    for (int k = transcript.len() - 1; k >= 0; k--) if (transcript[k] == "/") return transcript.substr(0, k);
+    return "";
+  endfunction
+
+  string opt_items [$];                              // split_list result
+  // +DETECT=<classes> and +BOX=<style> / <class>:<style>,... into det_mask / det_style and the camera's
+  // control registers 0x50-0x54
+  function automatic int class_of(input string s);
+    if (s == "pedestrian" || s == "pedestrians" || s == "person" || s == "p" || s == "1") return 0;
+    if (s == "face" || s == "faces" || s == "f" || s == "2") return 1;
+    if (s == "automobile" || s == "car" || s == "a") return 2;
+    if (s == "vehicle" || s == "bus" || s == "truck" || s == "v") return 3;
+    return -1;
+  endfunction
+  function automatic int style_of(input string s);
+    if (s == "dashed-box" || s == "box-dashed" || s == "dashed") return 0;
+    if (s == "solid-box" || s == "box-solid" || s == "box" || s == "solid") return 1;
+    if (s == "dashed-circle" || s == "circle-dashed") return 2;
+    if (s == "solid-circle" || s == "circle-solid" || s == "circle") return 3;
+    if (s == "dashed-oval" || s == "oval-dashed") return 4;
+    if (s == "solid-oval" || s == "oval-solid" || s == "oval") return 5;
+    if (s == "solid-centre" || s == "solid-center" || s == "centre-box" || s == "center-box" || s == "centre") return 6;
+    return -1;
+  endfunction
+  task automatic detect_options();
+    string s, item;
+    int c, st, p;
+    if ($value$plusargs("DETECT=%s", s)) begin
+      det_mask = 0;
+      split_list(s);
+      for (int i = 0; i < opt_items.size(); i++) begin
+        item = opt_items[i];
+        if (item == "all") det_mask = 4'b1111;
+        else if (item == "vehicles" || item == "3") det_mask[3:2] = 2'b11;   // cars, buses, trucks, planes
+        else begin
+          c = class_of(item);
+          check(c >= 0, {"+DETECT: unknown class ", item, " (1 pedestrians, 2 faces, 3 vehicles; pedestrian, face, automobile, vehicle, all)"});
+          if (c >= 0) det_mask[c] = 1;
+        end
+      end
+      if (det_mask == 0) det_mask = 4'b0001;
+    end
+    if ($value$plusargs("BOX=%s", s)) begin
+      split_list(s);
+      for (int i = 0; i < opt_items.size(); i++) begin
+        item = opt_items[i];
+        p = -1;
+        for (int k = 0; k < item.len(); k++) if (item[k] == ":") p = k;
+        if (p < 0) begin                               // a style for every class
+          st = style_of(item);
+          check(st >= 0, {"+BOX: unknown style ", item, " (dashed-box, solid-box, dashed-circle, solid-circle, dashed-oval, solid-oval, solid-centre)"});
+          if (st >= 0) for (int k = 0; k < 4; k++) det_style[k] = st;
+        end else begin                                 // <class>:<style>
+          c = class_of(item.substr(0, p - 1));
+          if (item.substr(0, p - 1) == "vehicles" || item.substr(0, p - 1) == "3") c = 4;   // automobile and vehicle
+          st = style_of(item.substr(p + 1, item.len() - 1));
+          check(c >= 0 && st >= 0, {"+BOX: cannot read ", item, " (<class>:<style>)"});
+          if (c == 4 && st >= 0) begin
+            det_style[2] = st;
+            det_style[3] = st;
+          end else if (c >= 0 && st >= 0) det_style[c] = st;
+        end
+      end
+    end
+    if ($value$plusargs("TARGETS=%d", max_targets)) begin
+      check(max_targets >= 1 && max_targets <= NOBJ, $sformatf("+TARGETS=%0d: 1 to %0d targets", max_targets, NOBJ));
+      if (max_targets < 1 || max_targets > NOBJ) max_targets = NOBJ;
+    end
+    sensor_cci.mem[8'h50] = 8'(det_mask);
+    for (int k = 0; k < 4; k++) sensor_cci.mem[8'h51 + k] = 8'(det_style[k]);
+    sensor_cci.mem[8'h55] = 8'(max_targets);
+    for (int k = 0; k < 4; k++)
+      if (det_mask[k]) $display("  detect %s: %s (camera registers 0x50-0x54)", det_name[k], style_name[det_style[k]]);
+    $display("  up to %0d targets tracked at a time (camera register 0x55), up to %0d per class", max_targets, NTR);
+  endtask
+  // comma-separated list -> opt_items
+  task automatic split_list(input string s);
+    string cur;
+    opt_items.delete();
+    cur = "";
+    for (int k = 0; k <= s.len(); k++)
+      if (k == s.len() || s[k] == ",") begin
+        if (cur != "") opt_items.push_back(cur);
+        cur = "";
+      end else cur = {cur, s.substr(k, k)};
+  endtask
+
+  // <GIF name>.truth.txt next to the GIF: "frame x0 y0 x1 y1" (class 0) or "frame class x0 y0 x1 y1"
+  // lines (up to NTR per class and frame: several objects of a class), # comments; coordinates of the
+  // GIF's own size, scaled to the tracking frame size
+  task automatic read_truth(input int sw, input int sh);
+    int fd, n, v [6], lines;
+    string path, line;
+    path = gif_in;
+    for (int k = path.len() - 1; k >= 0; k--) if (path[k] == ".") begin
+      path = path.substr(0, k - 1);
+      break;
+    end
+    path = {path, ".truth.txt"};
+    for (int k = 0; k < GMAXF; k++) for (int c = 0; c < 4; c++) begin
+      truth_ok[k][c] = 0;
+      truth_n[k][c] = 0;
+    end
+    fd = $fopen(path, "r");
+    if (fd == 0) begin
+      $display("  no ground truth (%s): detection and tracking checked against the models only", path);
+      return;
+    end
+    lines = 0;
+    while ($fgets(line, fd)) begin
+      if (line.len() == 0 || line[0] == "#") continue;
+      n = $sscanf(line, "%d %d %d %d %d %d", v[0], v[1], v[2], v[3], v[4], v[5]);
+      if (n == 5) begin                                // frame x0 y0 x1 y1: the pedestrian
+        v[5] = v[4];
+        v[4] = v[3];
+        v[3] = v[2];
+        v[2] = v[1];
+        v[1] = 0;
+      end else if (n != 6) continue;
+      v[0] -= gif_first;                               // +GIF_FIRST: frames counted from the first one sent
+      if (v[0] < 0 || v[0] >= GMAXF || v[1] < 0 || v[1] > 3 || truth_n[v[0]][v[1]] >= NTR) continue;
+      truth_box[v[0]][v[1]][truth_n[v[0]][v[1]]][0] = v[2] * gw / sw;
+      truth_box[v[0]][v[1]][truth_n[v[0]][v[1]]][1] = v[3] * gh / sh;
+      truth_box[v[0]][v[1]][truth_n[v[0]][v[1]]][2] = v[4] * gw / sw;
+      truth_box[v[0]][v[1]][truth_n[v[0]][v[1]]][3] = v[5] * gh / sh;
+      truth_n[v[0]][v[1]]++;
+      truth_ok[v[0]][v[1]] = 1;
+      lines++;
+    end
+    $fclose(fd);
+    truth_file = lines > 0;
+    $display("  ground truth: %s, %0d boxes", path, lines);
   endtask
 
   function automatic int bcd_int(input logic [19:0] b);
@@ -822,17 +994,40 @@
                     bcd_int(ovl_fnum[k]), c[4], k + 1));
     text_of(k, 1, s, c);
     fmt = c[0] && s.len() == 12 && s[2] == ":" && s[5] == ":" && s[8] == ".";
-    foreach (s[i]) if (i != 2 && i != 5 && i != 8 && (s[i] < "0" || s[i] > "9")) fmt = 0;
+    for (int i = 0; i < s.len(); i++) if (i != 2 && i != 5 && i != 8 && (s[i] < "0" || s[i] > "9")) fmt = 0;
     check(fmt && s >= last_clock, $sformatf("frame %0d: clock \"%s\" (previous \"%s\")", k, s, last_clock));
     last_clock = s;
     if (k < 2 || k == gif_n - 1) $display("  frame %0d texts: \"%s\" | \"%s\" | \"frame number %0d\"", k, nm, s, k + 1);
   endtask
 
+  // OBJ_CTRL of a box style (firmware overlay.py: 1 pixel, dashes of 4) and the class colours {B, G, R}
+  function automatic logic [31:0] style_ctrl(input int s);
+    case (s)
+      1: return 32'h0101;                              // solid rectangle
+      2: return 32'h210F;                              // dashed circle
+      3: return 32'h0107;                              // solid circle
+      4: return 32'h212F;                              // dashed oval
+      5: return 32'h0127;                              // solid oval
+      6: return 32'h0101;                              // solid rectangle in the middle of the target
+      default: return 32'h2109;                        // dashed rectangle
+    endcase
+  endfunction
+  function automatic logic [23:0] class_colour(input int c);
+    case (c)
+      0: return 24'h00FF00;                            // pedestrian green
+      1: return 24'hFF00FF;                            // face magenta
+      2: return 24'hFFFF00;                            // automobile cyan
+      default: return 24'h0080FF;                      // vehicle orange
+    endcase
+  endfunction
+
   task automatic test_tracking();
 `ifdef VP_TRACK
     bit ok;
     realtime t0;
-    int bad_trk, bad_ovl, bad_hdmi, found0, boxes, centred, covered, bad_style, rt_bad, d, judged, all_truth;
+    int bad_trk, bad_ovl, bad_hdmi, bad_style, bad_feat, rt_bad, d, all_truth;
+    int boxes_c [4], centred_c [4], covered_c [4], judged_c [4];
+    bit found0_c [4];
     check(gif_n > 0, {"tracking: cannot read the input GIF ", gif_in});
     if (gif_n == 0) return;
     $display("[%t] tracking: %s, %0d x %0d -> frames of %0d x %0d, %0d frames (%0d sent), %0d ms each", $realtime,
@@ -840,8 +1035,10 @@
     // the firmware reads the frame size from the camera, reprograms every block for it and waits for
     // the sequence (stage 170)
     t0 = $realtime;
-    while (g(G_stage) < 170 && $realtime - t0 < 60ms) @(posedge cpu_clk);
-    check(g(G_stage) == 170, $sformatf("tracking: firmware stage %0d, 170 (tracking set up) expected", g(G_stage)));
+    while (!(g(G_stage) == 170 && g(G_seq_no) == gif_idx + 1) && $realtime - t0 < 60ms) @(posedge cpu_clk);
+    check(g(G_stage) == 170 && g(G_seq_no) == gif_idx + 1,
+          $sformatf("tracking: firmware stage %0d sequence %0d, 170 (tracking set up) of sequence %0d expected", g(G_stage),
+                    g(G_seq_no), gif_idx + 1));
     check(g(G_cam_w) == gw && g(G_cam_h) == gh,
           $sformatf("tracking: firmware read a %0d x %0d frame size, %0d x %0d expected", g(G_cam_w), g(G_cam_h), gw, gh));
     fc_snap0 = dut.u_frame_cnt.u_core.count[0];
@@ -856,11 +1053,19 @@
       trk_done[k] = 0;
       hdmi_saved[k] = 0;
     end
+    fo_k = -1;                                         // the pipeline is empty: the next frame is GIF frame 0
+    ir_k = -1;
+    ir_done = -1;
+    hdmi_frames = 0;
+    gif_next = 0;
+    last_clock = "";
     gif_on = 1;
     seq_active = 1;                                    // GPIO0[29]: the firmware starts tracking
 `ifdef VP_VISION
     vs_f0 = dut.u_vs_adapt.frames_o;
+    vso0 = vs_out_frames;
 `endif
+    trk_f0 = g(G_trk_frames);
     gif_go = 1;
     // wait for the whole sequence; a frame that does not come within 3 ms is a stall: report the state
     begin
@@ -894,35 +1099,73 @@
     check(!seq_active, "tracking: the camera did not send the whole sequence");
     t0 = $realtime;                                    // drain: every frame on HDMI
     while (hdmi_frames < gif_n && $realtime - t0 < 4ms) repeat (500) @(posedge pix_clk);
-    while (g(G_stage) < 180 && $realtime - t0 < 20ms) @(posedge cpu_clk);
+    while (g(G_stage) != 180 && $realtime - t0 < 20ms) @(posedge cpu_clk);
     gif_on = 0;
     check(fo_k + 1 == gif_n && ir_done + 1 == gif_n && hdmi_frames == gif_n,
           $sformatf("tracking: %0d frames sent, %0d at the tracker, %0d out of the overlay, %0d on HDMI",
                     gif_n, fo_k + 1, ir_done + 1, hdmi_frames));
-    // per frame: tracker and overlay against the models, HDMI against the overlay, tracking quality
+    // per frame: every detector and the overlay against the models, HDMI against the overlay, the box
+    // styles, and the tracking of every class with a ground truth
     bad_trk = 0;
+    bad_feat = 0;
     bad_ovl = 0;
     bad_hdmi = 0;
-    boxes = 0;
-    centred = 0;
-    covered = 0;
     bad_style = 0;
-    found0 = 0;
-    judged = 0;                                        // frames after the first with a dark target in them
-    all_truth = 1;
+    for (int c = 0; c < 4; c++) begin
+      boxes_c[c] = 0;
+      centred_c[c] = 0;
+      covered_c[c] = 0;
+      judged_c[c] = 0;
+      found0_c[c] = 0;
+    end
+    all_truth = truth_file;
+    fref.w = gw;                                       // feature_detect was restarted for the sequence
+    fref.h = gh;
+    fref.restart();
     for (int k = 0; k < gif_n && k <= fo_k && k < GMAXF; k++) begin
       int b, bx0, bx1, by0, by1, tcx, tcy, ix, iy;
+      bit any_truth;
       for (int y = 0; y < gh; y++) for (int x = 0; x < gw; x++) trm.img[y][x] = trk_in.px(k, x, y);
-      trm.measure(trk_win[k][0], trk_win[k][1], trk_win[k][2], trk_win[k][3], trk_thr[k][7:0], trk_ctrl[k][1],
-                  trk_ctrl[k][11:8]);
-      if (!trk_done[k] || trk_n[k] != trm.n || trk_bx[k] != {16'(trm.x1), 16'(trm.x0)} ||
-          trk_by[k] != {16'(trm.y1), 16'(trm.y0)}) begin
-        if (bad_trk < 4) $display("  frame %0d: tracker %0d pixels box %h %h, model %0d x %0d-%0d y %0d-%0d", k,
-                                  trk_n[k], trk_bx[k], trk_by[k], trm.n, trm.x0, trm.x1, trm.y0, trm.y1);
-        bad_trk++;
+      // the features of this frame: the model with the settings and shift feature_detect used
+      for (int y = 0; y < gh; y++) for (int x = 0; x < gw; x++) fref.img[y][x] = trk_in.px(k, x, y);
+      fref.step(ft_ctrl[k], ft_edge[k], ft_motion[k], ft_sx[k], ft_sy[k]);
+      if (ft_ne[k] != fref.n_edge || ft_nm[k] != fref.n_motion) begin
+        if (bad_feat < 4) $display("  frame %0d: feature_detect %0d edge / %0d motion pixels, model %0d / %0d (shift %0d,%0d)", k,
+                                   ft_ne[k], ft_nm[k], fref.n_edge, fref.n_motion, ft_sx[k], ft_sy[k]);
+        bad_feat++;
       end
-      if (k == 0) found0 = trk_done[0] && trk_n[0] >= 40;
-      for (int i = 0; i < 4; i++) trm.obj[i] = ovl_act[k][i*128 +: 128];
+      for (int y = 0; y < gh; y++) for (int x = 0; x < gw; x++) begin
+        trm.fe[y][x] = fref.edg[y][x];
+        trm.fm[y][x] = fref.mot[y][x];
+      end
+      for (int c = 0; c < 4; c++) begin
+        if (!det_mask[c]) begin                        // not selected: its detector stays off
+          if (trk_ctrl[k][c][0] && bad_trk < 4) $display("  frame %0d: %s detector on, not selected", k, det_name[c]);
+          if (trk_ctrl[k][c][0]) bad_trk++;
+          continue;
+        end
+        trm.blob_cfg = trk_bcfg[k][c];
+        trm.run_b = trk_runb[k][c];
+        trm.measure_cfg(trk_win[k][c][0], trk_win[k][c][1], trk_win[k][c][2], trk_win[k][c][3], trk_ctrl[k][c],
+                        trk_thr[k][c][7:0], trk_run[k][c], trk_yr[k][c], trk_cbr[k][c], trk_crr[k][c], trk_sat[k][c]);
+        if (!trk_done[k] || !trk_ctrl[k][c][0] || trk_n[k][c] != trm.n || trk_bx[k][c] != {16'(trm.x1), 16'(trm.x0)} ||
+            trk_by[k][c] != {16'(trm.y1), 16'(trm.y0)}) begin
+          if (bad_trk < 4) $display("  frame %0d: %s detector %0d pixels box %h %h, model %0d x %0d-%0d y %0d-%0d", k,
+                                    det_name[c], trk_n[k][c], trk_bx[k][c], trk_by[k][c], trm.n, trm.x0, trm.x1,
+                                    trm.y0, trm.y1);
+          bad_trk++;
+        end
+        for (int i = 0; i < 8; i++)                    // the blobs (one per object) against the model
+          if (trk_bln[k][c][i*32 +: 32] != trm.bn[i] ||
+              (trm.bn[i] != 0 && (trk_blx[k][c][i*32 +: 32] != {16'(trm.bx1[i]), 16'(trm.bx0[i])} ||
+                                  trk_bly[k][c][i*32 +: 32] != {16'(trm.by1[i]), 16'(trm.by0[i])}))) begin
+            if (bad_trk < 4) $display("  frame %0d: %s blob %0d: %0d pixels %h %h, model %0d x %0d-%0d y %0d-%0d", k,
+                                      det_name[c], i, trk_bln[k][c][i*32 +: 32], trk_blx[k][c][i*32 +: 32],
+                                      trk_bly[k][c][i*32 +: 32], trm.bn[i], trm.bx0[i], trm.bx1[i], trm.by0[i], trm.by1[i]);
+            bad_trk++;
+          end
+      end
+      for (int i = 0; i < NOBJ; i++) trm.obj[i] = ovl_act[k][i*128 +: 128];
       trm.ntxt = 4;
       for (int j = 0; j < 4; j++) begin
         trm.txt[j] = ovl_txt[k][j*96 +: 96];
@@ -940,52 +1183,98 @@
       b = 0;
       for (int y = 0; y < gh; y++) for (int x = 0; x < gw; x++) if (hdmi_saved[k] && gout.px(k, x, y) !== ovl_out.px(k, x, y)) b++;
       if (!hdmi_saved[k] || b > 0) bad_hdmi++;
-      // the box drawn on frame k (object 0) against the true figure of the GIF frame
-      for (int y = 0; y < gh; y++) for (int x = 0; x < gw; x++) trm.img[y][x] = gin.px(k, x, y);
-      trm.find_dark(80, 2);
-      if (trm.gn < 40) all_truth = 0;                  // no target in this frame (another GIF): not judged
-      if (k == 0 && trm.gn < 40) found0 = 1;
-      if (k >= 1 && trm.gn >= 40) begin
-        logic [31:0] c;
-        judged++;
-        c = ovl_act[k][31:0];
-        bx0 = ovl_act[k][47:32];
-        bx1 = ovl_act[k][63:48];
-        by0 = ovl_act[k][79:64];
-        by1 = ovl_act[k][95:80];
-        if (!(ovl_en[k] && c[0] && c[2:1] == 0 && c[3])) bad_style++;   // enabled dashed rectangle
-        else boxes++;
-        tcx = (trm.gx0 + trm.gx1) / 2;
-        tcy = (trm.gy0 + trm.gy1) / 2;
-        if (tcx >= bx0 && tcx <= bx1 && tcy >= by0 && tcy <= by1) centred++;
-        ix = ((bx1 < trm.gx1) ? bx1 : trm.gx1) - ((bx0 > trm.gx0) ? bx0 : trm.gx0) + 1;
-        iy = ((by1 < trm.gy1) ? by1 : trm.gy1) - ((by0 > trm.gy0) ? by0 : trm.gy0) + 1;
-        if (ix < 0) ix = 0;
-        if (iy < 0) iy = 0;
-        if (k < 2 || 4 * ix * iy >= 3 * (trm.gx1 - trm.gx0 + 1) * (trm.gy1 - trm.gy0 + 1)) covered++;
-        if (k < 3 || k == gif_n - 1)
-          $display("  frame %0d: pedestrian x %0d-%0d y %0d-%0d, dashed box x %0d-%0d y %0d-%0d", k, trm.gx0,
-                   trm.gx1, trm.gy0, trm.gy1, bx0, bx1, by0, by1);
+      // objects 3c .. 3c + 2 are class c's target boxes: shown only for a selected class, in its style
+      // and colour; every true box of the class must be held by one of them (the one overlapping it most)
+      any_truth = 0;
+      for (int c = 0; c < 4; c++) begin
+        for (int j = 0; j < NTR; j++) begin
+          logic [31:0] oc;
+          int o;
+          o = NTR * c + j;
+          oc = ovl_act[k][o*128 +: 32];
+          if (oc[0] && !(ovl_en[k] && det_mask[c] && oc == style_ctrl(det_style[c]) &&
+                         ovl_act[k][o*128 + 96 +: 24] == class_colour(c))) begin
+            if (bad_style < 4) $display("  frame %0d: %s box %0d OBJ_CTRL %h colour %h, expected %h %h (%s)", k, det_name[c],
+                                        j + 1, oc, ovl_act[k][o*128 + 96 +: 24], style_ctrl(det_style[c]), class_colour(c),
+                                        style_name[det_style[c]]);
+            bad_style++;
+          end
+        end
+        if (!det_mask[c] || !truth_ok[k][c]) continue;
+        any_truth = 1;
+        if (k == 0) found0_c[c] = trk_done[0] && trk_n[0][c] > 0;
+        if (k >= 1) for (int q = 0; q < truth_n[k][c]; q++) begin   // from the second frame: a box holds each target
+          int best, bcov, bcen, bi, tx0, ty0, tx1, ty1;
+          tx0 = truth_box[k][c][q][0];
+          ty0 = truth_box[k][c][q][1];
+          tx1 = truth_box[k][c][q][2];
+          ty1 = truth_box[k][c][q][3];
+          tcx = (tx0 + tx1) / 2;
+          tcy = (ty0 + ty1) / 2;
+          best = -1;
+          bcov = 0;
+          bcen = 0;
+          for (int j = 0; j < NTR; j++) begin
+            int o;
+            o = NTR * c + j;
+            if (!ovl_en[k] || !ovl_act[k][o*128]) continue;
+            bx0 = ovl_act[k][o*128 + 32 +: 16];
+            bx1 = ovl_act[k][o*128 + 48 +: 16];
+            by0 = ovl_act[k][o*128 + 64 +: 16];
+            by1 = ovl_act[k][o*128 + 80 +: 16];
+            ix = ((bx1 < tx1) ? bx1 : tx1) - ((bx0 > tx0) ? bx0 : tx0) + 1;
+            iy = ((by1 < ty1) ? by1 : ty1) - ((by0 > ty0) ? by0 : ty0) + 1;
+            if (ix < 0) ix = 0;
+            if (iy < 0) iy = 0;
+            bi = ix * iy;
+            if (best < 0 || bi > bcov) begin
+              best = j;
+              bcov = bi;
+              bcen = tcx >= bx0 && tcx <= bx1 && tcy >= by0 && tcy <= by1;
+            end
+          end
+          judged_c[c]++;
+          if (best >= 0) boxes_c[c]++;
+          if (best >= 0 && bcen) centred_c[c]++;
+          // a box in the middle of the target (style 6) marks it: holding its centre is enough
+          if (best >= 0 && (k < 2 || (det_style[c] == 6 && bcen) || 4 * bcov >= 3 * (tx1 - tx0 + 1) * (ty1 - ty0 + 1)))
+            covered_c[c]++;
+          if (k < 3 || k == gif_n - 1) begin
+            int o;
+            o = NTR * c + (best < 0 ? 0 : best);
+            $display("  frame %0d: %s %0d x %0d-%0d y %0d-%0d, %s %0d x %0d-%0d y %0d-%0d", k, det_name[c], q + 1, tx0, tx1,
+                     ty0, ty1, style_name[det_style[c]], best + 1, ovl_act[k][o*128 + 32 +: 16],
+                     ovl_act[k][o*128 + 48 +: 16], ovl_act[k][o*128 + 64 +: 16], ovl_act[k][o*128 + 80 +: 16]);
+          end
+        end
       end
+      if (!any_truth) all_truth = 0;
     end
-    check(bad_trk == 0, $sformatf("object_tracker: %0d frames differ from the model", bad_trk));
+    check(bad_feat == 0, $sformatf("feature_detect: %0d frames' edge / motion counts differ from the model", bad_feat));
+    check(bad_trk == 0, $sformatf("object_tracker: %0d detector frames differ from the model", bad_trk));
     check(bad_ovl == 0, $sformatf("symbol_overlay: %0d frames differ from the model", bad_ovl));
     check(bad_hdmi == 0, $sformatf("HDMI: %0d frames missing or different from the overlay output", bad_hdmi));
-    check(found0, "tracking: pedestrian not found in the first frame (whole-frame search)");
-    check(bad_style == 0, $sformatf("tracking: %0d frames without the dashed box (object 0)", bad_style));
-    check(centred == judged, $sformatf("tracking: the box holds the target's centre in %0d of %0d frames",
-                                       centred, judged));
-    check(covered == judged, $sformatf("tracking: the box covers 75 %% of the target in %0d of %0d frames",
-                                       covered, judged));
+    check(bad_style == 0, $sformatf("tracking: %0d boxes of the wrong style, colour or class", bad_style));
+    for (int c = 0; c < 4; c++) if (det_mask[c] && judged_c[c] > 0) begin
+      check(found0_c[c], $sformatf("tracking: %s not found in the first frame (whole-frame search)", det_name[c]));
+      check(boxes_c[c] == judged_c[c], $sformatf("tracking: a %s box shown for %0d of %0d true boxes", det_name[c],
+                                                 boxes_c[c], judged_c[c]));
+      check(centred_c[c] == judged_c[c], $sformatf("tracking: a %s box holds the target's centre for %0d of %0d true boxes",
+                                                   det_name[c], centred_c[c], judged_c[c]));
+      check(covered_c[c] == judged_c[c], $sformatf("tracking: a %s box covers 75 %% of the target for %0d of %0d true boxes",
+                                                   det_name[c], covered_c[c], judged_c[c]));
+      $display("  %s: found in the first frame, %s for %0d of %0d true boxes, holds the centre of %0d", det_name[c],
+               style_name[det_style[c]], boxes_c[c], judged_c[c], centred_c[c]);
+    end
+    if (!truth_file) $display("  no ground truth for this GIF: tracking quality not judged (the detectors, overlay and HDMI are)");
     check(g(G_trk_frames) == gif_n && (!all_truth || g(G_trk_found) == gif_n),
-          $sformatf("firmware: %0d tracker frames, target found in %0d (%0d frames sent)", g(G_trk_frames),
+          $sformatf("firmware: %0d tracker frames, a target found in %0d (%0d frames sent)", g(G_trk_frames),
                     g(G_trk_found), gif_n));
-    if (!all_truth) $display("  %0d frames have no dark target (luma < 80): tracking quality judged on %0d", gif_n - 1 - judged, judged);
     check(dut.u_frame_cnt.u_core.count[0] - fc_snap0 == gif_n && dut.u_frame_cnt.u_core.count[1] - fc_snap1 == gif_n,
           $sformatf("frame_counter: %0d / %0d frames counted in the tracking sequence, %0d expected",
                     dut.u_frame_cnt.u_core.count[0] - fc_snap0, dut.u_frame_cnt.u_core.count[1] - fc_snap1, gif_n));
     // the HDMI output as an animated GIF, read back
-    gout.comment = "video_processor HDMI output: pedestrian tracking, dashed box";
+    gout.comment = "video_processor HDMI output: object detection and tracking boxes";
     gout.write(gif_out, gif_n, ok);
     check(ok, {"tracking: cannot write ", gif_out});
     gchk.read(gif_out, 0, 0, ok);
@@ -994,13 +1283,13 @@
       for (int c = 0; c < 3; c++) begin
         bit [23:0] pa, pb;
         pa = gchk.px(k, x, y);
-        pb = gout.px(k, x, y);
+        pb = gout.coded(gout.px(k, x, y));             // as written: the palette colour of the pixel
         d = int'(pa[8*c +: 8]) - int'(pb[8*c +: 8]);
         if (d > 1 || d < -1) rt_bad++;
       end
     check(ok && gchk.nframes == gif_n && gchk.delay_cs[0] == gin.delay_cs[0] && rt_bad == 0,
           $sformatf("output GIF read back: %0d frames, %0d samples off by more than 1", gchk.nframes, rt_bad));
-    $display("[%t] tracking: %0d frames, found in the first, dashed box on %0d, holds the centre in %0d; %s written",
-             $realtime, gif_n, boxes, centred, gif_out);
+    $display("[%t] tracking: %0d frames, classes %b (vehicle, automobile, face, pedestrian), up to %0d targets; %s written",
+             $realtime, gif_n, det_mask, max_targets, gif_out);
 `endif
   endtask

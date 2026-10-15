@@ -123,6 +123,9 @@ src/configuration.sv
 ../../ip/video/frame_counter/src/include/frame_counter_regs.sv
 ../../ip/video/frame_counter/src/frame_counter.sv
 ../../ip/video/frame_counter/src/frame_counter_top.sv
+../../ip/video/feature_detect/src/include/feature_detect_regs.sv
+../../ip/video/feature_detect/src/feature_detect.sv
+../../ip/video/feature_detect/src/feature_detect_top.sv
 ../../ip/video/object_tracker/src/include/object_tracker_regs.sv
 ../../ip/video/object_tracker/src/object_tracker.sv
 ../../ip/video/object_tracker/src/object_tracker_top.sv

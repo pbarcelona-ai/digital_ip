@@ -109,6 +109,8 @@ module py_soc #(
   parameter int          SPI1_RX_FIFO  = SPI_RX_FIFO,
   parameter int          CODE_AW      = 13,
   parameter int          CONST_AW     = 8,
+  parameter int          STACK_DEPTH  = 32,            // py_core operand stack (shared by every call and the handler)
+  parameter int          N_FRAMES     = 16,            // py_core call depth (main program and a handler included)
   parameter logic [23:0] BOOT_ADDR    = 24'h00_0000,   // image location in flash
   parameter int          FLASH_CLKDIV = 3,             // boot sclk half period in clocks (>= 3): 33 MHz
   parameter int          WDT_RST_CYCLES = 32,          // system reset length after a watchdog expiry
@@ -349,7 +351,9 @@ module py_soc #(
 
   py_core #(
     .CODE_AW(CODE_AW),
-    .CONST_AW(CONST_AW)
+    .CONST_AW(CONST_AW),
+    .STACK_DEPTH(STACK_DEPTH),
+    .N_FRAMES(N_FRAMES)
   ) u_core (
     .clk(sclk),
     .rst_n(sys_rst_n),

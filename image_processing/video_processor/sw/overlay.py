@@ -1,7 +1,14 @@
-"""video_processor firmware: symbol_overlay, the dashed tracking box and the text.
+"""video_processor firmware: symbol_overlay, the tracking boxes and the text.
 
-Object 0 is the tracking box: a 1-pixel dashed green rectangle (dashes of 4) TRK_PAD pixels outside
-the target. Texts (3 x 5 font, on a darkened backdrop): T_NAME the image name in the upper left
+Object c * NTR + k is the box of target k of object class c, TRK_PAD pixels outside the target, 1
+pixel wide, in the class's colour (pedestrian green, face magenta, automobile cyan, vehicle orange)
+and in the style chosen for the class (camera register 0x51 + c, det_style): 0 dashed rectangle
+(dashes of 4), 1 solid rectangle, 2 dashed circle, 3 solid circle (symbol_overlay shape 3: round
+the box centre, radius half the larger side), 4 dashed oval, 5 solid oval (shape 3 with OVAL: an
+ellipse inside the box, so a long vehicle gets a long oval), 6 a solid box in the middle of the
+target (a quarter of its size, at least 8 pixels: large targets such as cars and trains are marked,
+not outlined). Pedestrians and faces are drawn on
+top of the vehicles (lower object numbers). Texts (3 x 5 font, on a darkened backdrop): T_NAME the image name in the upper left
 corner, T_CLOCK a clock (time since the core logic started, HH:MM:SS.mmm) in the upper right, T_FRAME
 "frame number <n>" in the lower left, the number counted by the overlay itself at every frame start
 (exact on every frame). Changes are committed (overlay_commit), so they apply whole at the next
@@ -11,8 +18,16 @@ from machine import mem32          # ignored by pyc: mem32 is native
 from video_regs import *
 
 TRK_PAD = 2                        # dashed box: 2 pixels outside the target
-TRK_ON = 0x2109                    # object 0: enabled rectangle outline, dashed, 1 pixel, dashes of 4
-TRK_GREEN = 0x00FF00               # stream pixel {B, G, R}
+TRK_ON = 0x2109                    # dashed box: enabled rectangle outline, dashed, 1 pixel, dashes of 4
+BOX_SOLID = 0x0101                 # enabled rectangle outline, 1 pixel
+CIRC_DASHED = 0x210F               # enabled circle, dashed, 1 pixel, dashes of 4
+CIRC_SOLID = 0x0107                # enabled circle, 1 pixel
+OVAL_DASHED = 0x212F               # enabled oval (ellipse inside the box), dashed, 1 pixel, dashes of 4
+OVAL_SOLID = 0x0127                # enabled oval, 1 pixel
+TRK_GREEN = 0x00FF00               # stream pixel {B, G, R}: pedestrian
+MAGENTA = 0xFF00FF                 # face
+CYAN = 0xFFFF00                    # automobile
+ORANGE = 0x0080FF                  # vehicle
 T_NAME = 0                         # text objects
 T_CLOCK = 1
 T_FRAME = 2
@@ -24,15 +39,66 @@ txt_sc = 0                         # text scale log2: 1x below 256 pixels across
 rem = 0                            # remainder of the last div()
 
 
+def class_colour(c):
+    if c == C_PED:
+        return TRK_GREEN
+    if c == C_FACE:
+        return MAGENTA
+    if c == C_CAR:
+        return CYAN
+    return ORANGE
+
+
+def class_style(c):
+    """Box style of class c (det_style bits 3c+2..3c)."""
+    return (det_style >> ((c << 1) + c)) & 7
+
+
+def class_shape(c):
+    """OBJ_CTRL of class c's boxes in its style."""
+    s = class_style(c)
+    if s == 1:
+        return BOX_SOLID
+    if s == 2:
+        return CIRC_DASHED
+    if s == 3:
+        return CIRC_SOLID
+    if s == 4:
+        return OVAL_DASHED
+    if s == 5:
+        return OVAL_SOLID
+    if s == 6:                                         # solid box in the middle of the target
+        return BOX_SOLID
+    return TRK_ON
+
+
+def obj_addr(c, k):
+    """Register address of overlay object c * NTR + k (class c, track k)."""
+    o = OVL + (k << 4)
+    while c > 0:
+        o += NTR << 4
+        c -= 1
+    return o
+
+
 def overlay_setup(name_len):
-    """Overlay on: object 0 green and hidden (no target yet), the texts (texts_setup)."""
-    wreg(OVL + OBJ_CTRL, 0, strings(
-        "symbol_overlay OBJ0_CTRL",
-        "0 = object 0 (the tracking box) hidden: no target found yet", ""))
-    wreg(OVL + OBJ_COLOR, TRK_GREEN, strings(
-        "symbol_overlay OBJ0_COLOR",
-        "[23:0] pixel {B, G, R} = 0x00FF00: the tracking box is drawn",
-        "in green"))
+    """Overlay on: every target box of each selected class in its colour and hidden (no target
+    yet), the other classes' boxes off, the texts (texts_setup)."""
+    c = 0
+    while c < NTRK:
+        k = 0
+        while k < NTR:
+            o = obj_addr(c, k)
+            wreg(o + OBJ_CTRL, 0, strings(
+                "symbol_overlay OBJn_CTRL (n = class x 3 + target)",
+                "0 = the target's box hidden: no target found yet", ""))
+            if det_mask & (1 << c):
+                wreg(o + OBJ_COLOR, class_colour(c), strings(
+                    "symbol_overlay OBJn_COLOR",
+                    "[23:0] pixel {B, G, R}: the class's box colour (pedestrian",
+                    "green, face magenta, automobile cyan, vehicle orange)"))
+            k += 1
+        c += 1
     texts_setup(name_len)
     text_clock(mem32[FC + FC_TIME])
     overlay_commit()
@@ -42,25 +108,31 @@ def overlay_setup(name_len):
         "every frame on its way to the display"))
 
 
-def overlay_box(x0, y0, x1, y1):
-    """Dashed box around x0..x1, y0..y1 (TRK_PAD outside, inside the frame); applies at overlay_commit."""
-    wreg(OVL + OBJ_X, (clip(x1 + TRK_PAD, cam_w - 1) << 16) | clip(x0 - TRK_PAD, cam_w - 1), strings(
-        "symbol_overlay OBJ0_X",
+def overlay_box(c, k, x0, y0, x1, y1):
+    """The box of class c's target k around x0..x1, y0..y1 (TRK_PAD outside, inside the frame) in
+    the class's style; applies at overlay_commit."""
+    o = obj_addr(c, k)
+    x1 = clip(x1 + TRK_PAD, cam_w - 1)                 # computed first: few operands pending in a call
+    x0 = clip(x0 - TRK_PAD, cam_w - 1)
+    y1 = clip(y1 + TRK_PAD, cam_h - 1)
+    y0 = clip(y0 - TRK_PAD, cam_h - 1)
+    wreg(o + OBJ_X, (x1 << 16) | x0, strings(
+        "symbol_overlay OBJn_X",
         "tracking box columns [15:0] left, [31:16] right (2 pixels",
         "outside the target, inside the frame)"))
-    wreg(OVL + OBJ_Y, (clip(y1 + TRK_PAD, cam_h - 1) << 16) | clip(y0 - TRK_PAD, cam_h - 1), strings(
-        "symbol_overlay OBJ0_Y",
+    wreg(o + OBJ_Y, (y1 << 16) | y0, strings(
+        "symbol_overlay OBJn_Y",
         "tracking box lines [15:0] top, [31:16] bottom", ""))
-    wreg(OVL + OBJ_CTRL, TRK_ON, strings(
-        "symbol_overlay OBJ0_CTRL",
-        "0x2109: [0] shown, [2:1] 0 rectangle outline, [3] dashed,",
+    wreg(o + OBJ_CTRL, class_shape(c), strings(
+        "symbol_overlay OBJn_CTRL",
+        "[0] shown, [2:1] 0 rectangle / 3 circle, [3] dashed, [5] oval,",
         "[11:8] 1 pixel wide, [14:12] 2 = dashes of 4 pixels"))
 
 
-def overlay_off():
-    wreg(OVL + OBJ_CTRL, 0, strings(
-        "symbol_overlay OBJ0_CTRL",
-        "0 = tracking box hidden (no target)", ""))
+def overlay_off(c, k):
+    wreg(obj_addr(c, k) + OBJ_CTRL, 0, strings(
+        "symbol_overlay OBJn_CTRL",
+        "0 = the target's box hidden (no target)", ""))
 
 
 def overlay_commit():

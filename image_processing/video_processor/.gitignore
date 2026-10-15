@@ -8,3 +8,6 @@ ci/logs/
 ../.DS_Store
 ../../.DS_Store
 */*/__pycache__/
+code_reviews/*.*.txt
+python-prototype
+tb/images/
