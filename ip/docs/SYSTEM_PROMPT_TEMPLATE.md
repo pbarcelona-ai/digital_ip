@@ -133,7 +133,10 @@ them over I2C / SPI, program every block, enable interrupts, report status, chec
 === 9. Implementation constraints ===
 Synthesizable, technology-independent SystemVerilog-2012 (vendor primitives only in wrappers);
 iverilog 12+, Verilator lint clean (no loops, no latches), Yosys (sv2v where needed).
-AXI4-Stream for data, AXI4-Lite for control; honour back-pressure; a block that cannot be
+AXI4-Stream for data (interface axis_if, ip/shared/src/interfaces/axis_if.sv), AXI4-Lite for
+control (interface axil_if, ip/shared/src/interfaces/axil_if.sv): discrete ports with the
+interface and modport in a comment line above each port group (Icarus cannot drive
+interface-array members; Yosys reads interfaces only via sv2v); honour back-pressure; a block that cannot be
 stalled must be documented and protected.
 One statement per line; instantiations with one parameter per line in #( ... ) and one port
 per line (a port-group macro is one port on its own line); check with

@@ -29,10 +29,8 @@ module lvds_tx (
   input  logic        dual_i,
   input  logic        bpp18_i,
   input  logic        jeida_i,
-  input  logic [23:0] rgb_i,
-  input  logic        de_i,
-  input  logic        hs_i,
-  input  logic        vs_i,
+  // vid: vid_if.sink (ip/shared/src/interfaces/vid_if.sv), DATA_W = 24 {rgb_i=data de_i=de hs_i=hs vs_i=vs}
+  vid_if.sink vid,
   output logic [27:0] link_a_o,                 // lanes 0-3, lane i in [7i +: 7]
   output logic [27:0] link_b_o,                 // dual link only
   output logic [6:0]  clk_word_o,
@@ -73,7 +71,7 @@ module lvds_tx (
       link_b_o <= '0;
       stb_o <= 1'b0;
     end else if (!dual_i) begin
-      link_a_o <= map(rgb_i, de_i, hs_i, vs_i, bpp18_i, jeida_i);
+      link_a_o <= map(vid.data, vid.de, vid.hs, vid.vs, bpp18_i, jeida_i);
       link_b_o <= '0;
       stb_o <= 1'b1;
       ph <= 1'b0;
@@ -81,12 +79,12 @@ module lvds_tx (
       ph <= ~ph;
       stb_o <= ph;                                  // a pair is complete on odd phases
       if (!ph) begin
-        first_px <= rgb_i;
-        first_de <= de_i;
+        first_px <= vid.data;
+        first_de <= vid.de;
       end
       else begin
-        link_a_o <= map(first_px, first_de, hs_i, vs_i, bpp18_i, jeida_i);
-        link_b_o <= map(rgb_i, de_i, hs_i, vs_i, bpp18_i, jeida_i);
+        link_a_o <= map(first_px, first_de, vid.hs, vid.vs, bpp18_i, jeida_i);
+        link_b_o <= map(vid.data, vid.de, vid.hs, vid.vs, bpp18_i, jeida_i);
       end
     end
   end

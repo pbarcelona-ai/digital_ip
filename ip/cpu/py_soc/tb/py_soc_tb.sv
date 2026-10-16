@@ -39,6 +39,15 @@ module py_soc_tb;
   logic fl_sclk, fl_cs_n, fl_mosi, fl_miso;
   int fl_wip;
 
+  axil_if #(.ADDR_W(16)) dut_m_ext_axil ();
+  assign dut_m_ext_axil.awready = 1'b0;
+  assign dut_m_ext_axil.wready = 1'b0;
+  assign dut_m_ext_axil.bresp = 2'b0;
+  assign dut_m_ext_axil.bvalid = 1'b0;
+  assign dut_m_ext_axil.arready = 1'b0;
+  assign dut_m_ext_axil.rdata = 32'b0;
+  assign dut_m_ext_axil.rresp = 2'b0;
+  assign dut_m_ext_axil.rvalid = 1'b0;
   py_soc #(
     .CLK_HZ(100_000_000),
     .UART_BAUD(2_000_000),
@@ -46,7 +55,8 @@ module py_soc_tb;
     .SPI_HZ(10_000_000),
     .FLASH_CLKDIV(3),
     .CLKGEN_EN(1'b0)
-  ) dut (                // clk is the CPU clock
+  ) dut (
+    // clk is the CPU clock
     .clk,
     .rst_n,
     .start_i(1'b0),
@@ -82,23 +92,7 @@ module py_soc_tb;
     .wdt_reset_o(wdt_reset),
     .core_rst_n_o(core_rst_n),
     .ext_irq_i(4'b0),
-    .m_ext_axil_awaddr(),
-    .m_ext_axil_awvalid(),
-    .m_ext_axil_awready(1'b0),
-    .m_ext_axil_wdata(),
-    .m_ext_axil_wstrb(),
-    .m_ext_axil_wvalid(),
-    .m_ext_axil_wready(1'b0),
-    .m_ext_axil_bresp(2'b0),
-    .m_ext_axil_bvalid(1'b0),
-    .m_ext_axil_bready(),
-    .m_ext_axil_araddr(),
-    .m_ext_axil_arvalid(),
-    .m_ext_axil_arready(1'b0),
-    .m_ext_axil_rdata(32'b0),
-    .m_ext_axil_rresp(2'b0),
-    .m_ext_axil_rvalid(1'b0),
-    .m_ext_axil_rready()
+    .m_ext_axil(dut_m_ext_axil)
   );
 
   // ---------------- board ----------------

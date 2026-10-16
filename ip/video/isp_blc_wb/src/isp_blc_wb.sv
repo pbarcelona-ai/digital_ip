@@ -13,8 +13,9 @@
 //   The phase restarts at every tuser (SOF) and tlast (EOL) pixel. Bypass
 //   bits and the pattern are sampled at the start of each frame, so a
 //   change never splits a frame. Clock - clk only. Reset - synchronous
-//   rst_n (active low). Latency - 2 clocks, 1 pixel per clock.
-// Date: 2026-10-01
+//   rst_n (active low). Latency - 5 clocks, 1 pixel per clock. The output goes through a 2-entry ip_axis_fifo, so s_axis_tready does
+//   not depend combinationally on m_axis_tready (+3 clocks).
+// Date: 2026-10-16
 module isp_blc_wb #(
   parameter int PW = 10                        // RAW pixel width
 ) (
@@ -28,31 +29,28 @@ module isp_blc_wb #(
   input  logic [11:0]     gain_g_i,
   input  logic [11:0]     gain_b_i,
   // RAW in
-  input  logic [PW-1:0]   s_axis_tdata,
-  input  logic            s_axis_tlast,
-  input  logic            s_axis_tuser,
-  input  logic            s_axis_tvalid,
-  output logic            s_axis_tready,
+  // s_axis: axis_if.slave (ip/shared/src/interfaces/axis_if.sv), DATA_W = PW
+  axis_if.slave s_axis,
   // RAW out
-  output logic [PW-1:0]   m_axis_tdata,
-  output logic            m_axis_tlast,
-  output logic            m_axis_tuser,
-  output logic            m_axis_tvalid,
-  input  logic            m_axis_tready
+  // m_axis: axis_if.master (ip/shared/src/interfaces/axis_if.sv), DATA_W = PW
+  axis_if.master m_axis
 );
-  wire en = !m_axis_tvalid || m_axis_tready;   // whole pipeline advances together
-  assign s_axis_tready = en;
-  wire acc = s_axis_tvalid && en;
+  // output stage: the last pipeline register (q_*) feeds a 2-entry FIFO whose ready is registered,
+  // so s_axis_tready does not depend combinationally on m_axis_tready
+  axis_if #(.DATA_W(PW), .USER_W(1)) q ();
+  wire en = !q.tvalid || q.tready;   // whole pipeline advances together
+  assign s_axis.tready = en;
+  wire acc = s_axis.tvalid && en;
 
   // CFA phase of the incoming pixel and per-frame settings
   logic xo, yo;                                // x / y parity of the next pixel
   logic [1:0] cfa_f;
   logic blc_by_f, wb_by_f;
-  wire  [1:0] cfa_now = s_axis_tuser ? cfa_i : cfa_f;
-  wire        blc_by  = s_axis_tuser ? blc_bypass_i : blc_by_f;
-  wire        wb_by   = s_axis_tuser ? wb_bypass_i  : wb_by_f;
-  wire        px_x    = s_axis_tuser ? 1'b0 : xo;
-  wire        px_y    = s_axis_tuser ? 1'b0 : yo;
+  wire  [1:0] cfa_now = s_axis.tuser ? cfa_i : cfa_f;
+  wire        blc_by  = s_axis.tuser ? blc_bypass_i : blc_by_f;
+  wire        wb_by   = s_axis.tuser ? wb_bypass_i  : wb_by_f;
+  wire        px_x    = s_axis.tuser ? 1'b0 : xo;
+  wire        px_y    = s_axis.tuser ? 1'b0 : yo;
   wire  [1:0] color   = {px_y ^ cfa_now[1], px_x ^ cfa_now[0]};
 
   // Stage 1: black level
@@ -78,31 +76,41 @@ module isp_blc_wb #(
       wb1 <= 1'b0;
       l1 <= 1'b0;
       u1 <= 1'b0;
-      m_axis_tvalid <= 1'b0;
-      m_axis_tdata <= '0;
-      m_axis_tlast <= 1'b0;
-      m_axis_tuser <= 1'b0;
+      q.tvalid <= 1'b0;
+      q.tdata <= '0;
+      q.tlast <= 1'b0;
+      q.tuser <= 1'b0;
     end else if (en) begin
       if (acc) begin
-        if (s_axis_tuser) begin
+        if (s_axis.tuser) begin
           cfa_f <= cfa_i;
           blc_by_f <= blc_bypass_i;
           wb_by_f <= wb_bypass_i;
         end
-        xo <= s_axis_tlast ? 1'b0 : ~px_x;
-        yo <= s_axis_tlast ? ~px_y : px_y;
+        xo <= s_axis.tlast ? 1'b0 : ~px_x;
+        yo <= s_axis.tlast ? ~px_y : px_y;
       end
       val1 <= acc;
       c1 <= color;
       wb1 <= wb_by;
-      l1 <= s_axis_tlast;
-      u1 <= s_axis_tuser;
-      if (blc_by) v1 <= s_axis_tdata;
-      else        v1 <= (s_axis_tdata > blc_i[color*PW +: PW]) ? s_axis_tdata - blc_i[color*PW +: PW] : '0;
-      m_axis_tvalid <= val1;
-      m_axis_tdata <= wb1 ? v1 : wb_out;
-      m_axis_tlast <= l1;
-      m_axis_tuser <= u1;
+      l1 <= s_axis.tlast;
+      u1 <= s_axis.tuser;
+      if (blc_by) v1 <= s_axis.tdata;
+      else        v1 <= (s_axis.tdata > blc_i[color*PW +: PW]) ? s_axis.tdata - blc_i[color*PW +: PW] : '0;
+      q.tvalid <= val1;
+      q.tdata <= wb1 ? v1 : wb_out;
+      q.tlast <= l1;
+      q.tuser <= u1;
     end
   end
+  ip_axis_fifo #(
+    .DATA_W(PW),
+    .DEPTH(2)
+  ) u_out_fifo (
+    .clk,
+    .rst_n,
+    .s(q),
+    .m(m_axis),
+    .level_o()
+  );
 endmodule

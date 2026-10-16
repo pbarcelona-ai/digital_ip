@@ -37,9 +37,8 @@ module vid_timing_gen (
   input  logic        lock_en_i,
   input  logic        src_ready_i,
   input  logic [15:0] lock_max_i,
-  output logic        de_o,
-  output logic        hs_o,
-  output logic        vs_o,
+  // tim: vid_if.source (ip/shared/src/interfaces/vid_if.sv) {de_o=de hs_o=hs vs_o=vs}
+  vid_if.source tim,
   output logic [15:0] x_o,
   output logic [15:0] y_o,
   output logic        sof_o,
@@ -47,6 +46,7 @@ module vid_timing_gen (
   output logic        vblank_o,
   output logic        waiting_o
 );
+  assign tim.data = '0;      // not used by this block
   logic [15:0] h, v, extra;
   logic [15:0] ha, hfp, hs, hbp, va, vfp, vs, vbp; // per-frame settings
   logic hpol, vpol;
@@ -76,9 +76,9 @@ module vid_timing_gen (
       vbp <= v_bp_i;
       hpol <= hs_pol_i;
       vpol <= vs_pol_i;
-      de_o <= 1'b0;
-      hs_o <= ~hs_pol_i;
-      vs_o <= ~vs_pol_i;
+      tim.de <= 1'b0;
+      tim.hs <= ~hs_pol_i;
+      tim.vs <= ~vs_pol_i;
       x_o <= '0;
       y_o <= '0;
       sof_o <= 1'b0;
@@ -111,14 +111,14 @@ module vid_timing_gen (
         end else v <= v + 1'b1;
       end
       // registered outputs for position (h, v)
-      de_o     <= (h < ha) && (v < va);
+      tim.de     <= (h < ha) && (v < va);
       x_o      <= h;
       y_o <= v;
       sof_o    <= (h == 0) && (v == 0);
       eol_o    <= (h == ha - 1'b1) && (v < va);
       vblank_o <= (v >= va);
-      hs_o     <= hs_act ? hpol : ~hpol;
-      vs_o     <= vs_act ? vpol : ~vpol;
+      tim.hs     <= hs_act ? hpol : ~hpol;
+      tim.vs     <= vs_act ? vpol : ~vpol;
     end
   end
 endmodule

@@ -98,23 +98,8 @@ module axi_lite_regs #(
   input  logic         rst_n,
 
   // AXI4-Lite slave
-  input  logic [7:0]   s_axil_awaddr,
-  input  logic         s_axil_awvalid,
-  output logic         s_axil_awready,
-  input  logic [31:0]  s_axil_wdata,
-  input  logic [3:0]   s_axil_wstrb,
-  input  logic         s_axil_wvalid,
-  output logic         s_axil_wready,
-  output logic [1:0]   s_axil_bresp,
-  output logic         s_axil_bvalid,
-  input  logic         s_axil_bready,
-  input  logic [7:0]   s_axil_araddr,
-  input  logic         s_axil_arvalid,
-  output logic         s_axil_arready,
-  output logic [31:0]  s_axil_rdata,
-  output logic [1:0]   s_axil_rresp,
-  output logic         s_axil_rvalid,
-  input  logic         s_axil_rready,
+  // s_axil: axil_if.slave (ip/shared/src/interfaces/axil_if.sv), ADDR_W = 8
+  axil_if.slave s_axil,
 
   // status inputs from top FSM
   input  logic         top_busy,
@@ -152,81 +137,50 @@ module axi_lite_regs #(
   logic img_width_wr, img_height_wr, center_x_wr, center_y_wr, scale_wr, calib_mode_wr, fx_wr, fy_wr, cx_wr, cy_wr;
   logic       status_wr;
   logic [2:0] status_d;
+  vision_system_regs_if u_map_r ();
+  assign u_map_r.sts_status = {cfg_recip_busy, sticky_frame_done, top_busy};
+  assign status_d = u_map_r.cfg_status;
+  assign status_wr = u_map_r.cfg_status_wr;
+  assign reg_img_width = u_map_r.cfg_img_width;
+  assign img_width_wr = u_map_r.cfg_img_width_wr;
+  assign reg_img_height = u_map_r.cfg_img_height;
+  assign img_height_wr = u_map_r.cfg_img_height_wr;
+  assign reg_k1 = u_map_r.cfg_k1;
+  assign reg_k2 = u_map_r.cfg_k2;
+  assign reg_k3 = u_map_r.cfg_k3;
+  assign reg_center_x = u_map_r.cfg_center_x;
+  assign center_x_wr = u_map_r.cfg_center_x_wr;
+  assign reg_center_y = u_map_r.cfg_center_y;
+  assign center_y_wr = u_map_r.cfg_center_y_wr;
+  assign reg_scale = u_map_r.cfg_scale;
+  assign scale_wr = u_map_r.cfg_scale_wr;
+  assign reg_interp_mode = u_map_r.cfg_interp_mode;
+  assign reg_calib_mode = u_map_r.cfg_calib_mode;
+  assign calib_mode_wr = u_map_r.cfg_calib_mode_wr;
+  assign reg_fx = u_map_r.cfg_fx;
+  assign fx_wr = u_map_r.cfg_fx_wr;
+  assign reg_fy = u_map_r.cfg_fy;
+  assign fy_wr = u_map_r.cfg_fy_wr;
+  assign reg_cx = u_map_r.cfg_cx;
+  assign cx_wr = u_map_r.cfg_cx_wr;
+  assign reg_cy = u_map_r.cfg_cy;
+  assign cy_wr = u_map_r.cfg_cy_wr;
+  assign reg_p1 = u_map_r.cfg_p1;
+  assign reg_p2 = u_map_r.cfg_p2;
+  assign reg_model_sel = u_map_r.cfg_model_sel;
+  assign reg_h11 = u_map_r.cfg_h11;
+  assign reg_h12 = u_map_r.cfg_h12;
+  assign reg_h13 = u_map_r.cfg_h13;
+  assign reg_h21 = u_map_r.cfg_h21;
+  assign reg_h22 = u_map_r.cfg_h22;
+  assign reg_h23 = u_map_r.cfg_h23;
+  assign reg_h31 = u_map_r.cfg_h31;
+  assign reg_h32 = u_map_r.cfg_h32;
   vision_system_regs u_map (
     .clk,
     .rst_n,
-    .s_axil_awaddr,
-    .s_axil_awvalid,
-    .s_axil_awready,
-    .s_axil_wdata,
-    .s_axil_wstrb,
-    .s_axil_wvalid,
-    .s_axil_wready,
-    .s_axil_bresp,
-    .s_axil_bvalid,
-    .s_axil_bready,
-    .s_axil_araddr,
-    .s_axil_arvalid,
-    .s_axil_arready,
-    .s_axil_rdata,
-    .s_axil_rresp,
-    .s_axil_rvalid,
-    .s_axil_rready,
-    .ctrl_o(),
-    .ctrl_wr_o(),
-    .status_i({cfg_recip_busy, sticky_frame_done, top_busy}),
-    .status_o(status_d),
-    .status_wr_o(status_wr),
-    .img_width_o(reg_img_width),
-    .img_width_wr_o(img_width_wr),
-    .img_height_o(reg_img_height),
-    .img_height_wr_o(img_height_wr),
-    .k1_o(reg_k1),
-    .k1_wr_o(),
-    .k2_o(reg_k2),
-    .k2_wr_o(),
-    .k3_o(reg_k3),
-    .k3_wr_o(),
-    .center_x_o(reg_center_x),
-    .center_x_wr_o(center_x_wr),
-    .center_y_o(reg_center_y),
-    .center_y_wr_o(center_y_wr),
-    .scale_o(reg_scale),
-    .scale_wr_o(scale_wr),
-    .interp_mode_o(reg_interp_mode),
-    .interp_mode_wr_o(),
-    .calib_mode_o(reg_calib_mode),
-    .calib_mode_wr_o(calib_mode_wr),
-    .fx_o(reg_fx),
-    .fx_wr_o(fx_wr),
-    .fy_o(reg_fy),
-    .fy_wr_o(fy_wr),
-    .cx_o(reg_cx),
-    .cx_wr_o(cx_wr),
-    .cy_o(reg_cy),
-    .cy_wr_o(cy_wr),
-    .p1_o(reg_p1),
-    .p1_wr_o(),
-    .p2_o(reg_p2),
-    .p2_wr_o(),
-    .model_sel_o(reg_model_sel),
-    .model_sel_wr_o(),
-    .h11_o(reg_h11),
-    .h11_wr_o(),
-    .h12_o(reg_h12),
-    .h12_wr_o(),
-    .h13_o(reg_h13),
-    .h13_wr_o(),
-    .h21_o(reg_h21),
-    .h21_wr_o(),
-    .h22_o(reg_h22),
-    .h22_wr_o(),
-    .h23_o(reg_h23),
-    .h23_wr_o(),
-    .h31_o(reg_h31),
-    .h31_wr_o(),
-    .h32_o(reg_h32),
-    .h32_wr_o()
+    .s_axil(s_axil),
+    .r(u_map_r)
   );
 
   // a write to a geometry register starts the derived-configuration compute; STATUS[1] is sticky

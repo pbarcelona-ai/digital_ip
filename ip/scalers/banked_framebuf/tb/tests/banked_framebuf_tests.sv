@@ -14,14 +14,14 @@
   task automatic write_row(input int b, input int y);
     for (int x = 0; x < w; x++) begin
       @(negedge clk);
-      wr_en = 1;
-      wr_buf = b;
-      wr_x = x;
-      wr_y = y;
-      wr_data = PIX_W'($urandom);
-      ref_img[b][y][x] = wr_data;
+      wr.en = 1;
+      wr.buf_sel = b;
+      wr.x = x;
+      wr.y = y;
+      wr.data = PIX_W'($urandom);
+      ref_img[b][y][x] = wr.data;
     end
-    @(negedge clk) wr_en = 0;
+    @(negedge clk) wr.en = 0;
   endtask
 
   // one read cycle: issue a window at (x0, y0) of buffer b (issue = 0 only

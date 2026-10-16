@@ -1,3 +1,12 @@
+../../shared/src/interfaces/axil_if.sv
+../../shared/src/interfaces/axis_if.sv
+../../shared/src/interfaces/fb_wr_if.sv
+../../shared/src/interfaces/ppi_rx_if.sv
+../../shared/src/interfaces/ppi_tx_if.sv
+../../shared/src/interfaces/regbus_if.sv
+../../shared/src/interfaces/tmds_if.sv
+../../shared/src/interfaces/vid_if.sv
+src/include/video_pipeline_regs_if.sv
 src/configuration.sv
 src/video_pipeline_map_pkg.sv
 ../../bus/axi4_lite_slave/src/axi4_lite_slave.sv

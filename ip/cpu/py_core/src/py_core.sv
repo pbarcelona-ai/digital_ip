@@ -31,7 +31,7 @@
 //   Clock - clk only. Reset - synchronous rst_n (active low).
 //   Throughput - multi-cycle FSM, 2 + operand-byte clocks per instruction,
 //   plus bus latency for mem32. Status - architecture sketch.
-// Date: 2026-10-01
+// Date: 2026-10-16
 module py_core #(
   parameter int CODE_AW     = 13,  // code memory size = 2**CODE_AW bytes
   parameter int CONST_AW    = 8,   // constant pool = 2**CONST_AW words
@@ -63,28 +63,19 @@ module py_core #(
   output logic [CONST_AW-1:0] const_addr_o,
   input  logic [33:0]         const_data_i,
   // AXI4-Lite master: peripherals and external registers
-  output logic [31:0]         m_axil_awaddr,
-  output logic                m_axil_awvalid,
-  input  logic                m_axil_awready,
-  output logic [31:0]         m_axil_wdata,
-  output logic [3:0]          m_axil_wstrb,
-  output logic                m_axil_wvalid,
-  input  logic                m_axil_wready,
-  input  logic [1:0]          m_axil_bresp,
-  input  logic                m_axil_bvalid,
-  output logic                m_axil_bready,
-  output logic [31:0]         m_axil_araddr,
-  output logic                m_axil_arvalid,
-  input  logic                m_axil_arready,
-  input  logic [31:0]         m_axil_rdata,
-  input  logic [1:0]          m_axil_rresp,
-  input  logic                m_axil_rvalid,
-  output logic                m_axil_rready
+  // m_axil: axil_if.master (ip/shared/src/interfaces/axil_if.sv), ADDR_W = 32
+  axil_if.master m_axil
 );
   import py_core_pkg::*;
   localparam int SP_W = $clog2(STACK_DEPTH + 1);
   localparam int LB_W = $clog2(N_LOCALS);
   localparam int FP_W = $clog2(N_FRAMES);
+  if (N_LOCALS < 2 || (N_LOCALS & (N_LOCALS - 1)) != 0) begin : g_chk_nl
+    $error("py_core: N_LOCALS must be a power of two >= 2");
+  end
+  if (CODE_AW > 16) begin : g_chk_aw
+    $error("py_core: CODE_AW must be <= 16 (16-bit jump targets)");
+  end
 
   typedef enum logic [3:0] {S_IDLE, S_FETCH, S_OP, S_ARG0, S_ARG1, S_EXEC, S_CONST, S_WR, S_RD, S_DONE, S_TRAP} state_e;
   state_e st;
@@ -177,7 +168,7 @@ module py_core #(
   assign const_addr_o = arg[CONST_AW-1:0];
   assign busy_o       = (st != S_IDLE) && (st != S_DONE) && (st != S_TRAP);
   assign in_irq_o     = in_irq;
-  assign m_axil_wstrb = 4'hF;
+  assign m_axil.wstrb = 4'hF;
 
   task automatic trap(input trap_e c);
     trap_cause_o <= c;
@@ -203,14 +194,14 @@ module py_core #(
       trap_cause_o <= TRAP_NONE;
       trap_pc_o <= '0;
       trap_op_o <= '0;
-      m_axil_awvalid <= 1'b0;
-      m_axil_wvalid <= 1'b0;
-      m_axil_bready <= 1'b0;
-      m_axil_arvalid <= 1'b0;
-      m_axil_rready <= 1'b0;
-      m_axil_awaddr <= '0;
-      m_axil_wdata <= '0;
-      m_axil_araddr <= '0;
+      m_axil.awvalid <= 1'b0;
+      m_axil.wvalid <= 1'b0;
+      m_axil.bready <= 1'b0;
+      m_axil.arvalid <= 1'b0;
+      m_axil.rready <= 1'b0;
+      m_axil.awaddr <= '0;
+      m_axil.wdata <= '0;
+      m_axil.araddr <= '0;
       aw_done <= 1'b0;
       w_done <= 1'b0;
       ie <= 1'b0;
@@ -344,10 +335,10 @@ module py_core #(
               else if (!is_small(tos) || !is_small(tos1)) trap(TRAP_TYPE);
               else if (!addr_ok || !data_ok) trap(TRAP_OVERFLOW);
               else begin
-                m_axil_awaddr <= a[31:0];
-                m_axil_wdata <= b[31:0];
-                m_axil_awvalid <= 1'b1;
-                m_axil_wvalid <= 1'b1;
+                m_axil.awaddr <= a[31:0];
+                m_axil.wdata <= b[31:0];
+                m_axil.awvalid <= 1'b1;
+                m_axil.wvalid <= 1'b1;
                 aw_done <= 1'b0;
                 w_done <= 1'b0;
                 st <= S_WR;
@@ -358,8 +349,8 @@ module py_core #(
               else if (!is_small(tos)) trap(TRAP_TYPE);
               else if (!raddr_ok) trap(TRAP_OVERFLOW);
               else begin
-                m_axil_araddr <= b[31:0];
-                m_axil_arvalid <= 1'b1;
+                m_axil.araddr <= b[31:0];
+                m_axil.arvalid <= 1'b1;
                 st <= S_RD;
               end
             end
@@ -413,19 +404,19 @@ module py_core #(
         end
 
         S_WR: begin
-          if (m_axil_awvalid && m_axil_awready) begin
-            m_axil_awvalid <= 1'b0;
+          if (m_axil.awvalid && m_axil.awready) begin
+            m_axil.awvalid <= 1'b0;
             aw_done <= 1'b1;
           end
-          if (m_axil_wvalid  && m_axil_wready)  begin
-            m_axil_wvalid  <= 1'b0;
+          if (m_axil.wvalid  && m_axil.wready)  begin
+            m_axil.wvalid  <= 1'b0;
             w_done  <= 1'b1;
           end
-          if ((aw_done || (m_axil_awvalid && m_axil_awready)) && (w_done || (m_axil_wvalid && m_axil_wready)))
-            m_axil_bready <= 1'b1;
-          if (m_axil_bready && m_axil_bvalid) begin
-            m_axil_bready <= 1'b0;
-            if (m_axil_bresp != 2'b00) trap(TRAP_BUS);
+          if ((aw_done || (m_axil.awvalid && m_axil.awready)) && (w_done || (m_axil.wvalid && m_axil.wready)))
+            m_axil.bready <= 1'b1;
+          if (m_axil.bready && m_axil.bvalid) begin
+            m_axil.bready <= 1'b0;
+            if (m_axil.bresp != 2'b00) trap(TRAP_BUS);
             else begin
               sp <= sp - 2'd2;
               st <= S_FETCH;
@@ -435,15 +426,15 @@ module py_core #(
 
         // Read data is unsigned: any 32-bit register value is a small int
         S_RD: begin
-          if (m_axil_arvalid && m_axil_arready) begin
-            m_axil_arvalid <= 1'b0;
-            m_axil_rready <= 1'b1;
+          if (m_axil.arvalid && m_axil.arready) begin
+            m_axil.arvalid <= 1'b0;
+            m_axil.rready <= 1'b1;
           end
-          if (m_axil_rready && m_axil_rvalid) begin
-            m_axil_rready <= 1'b0;
-            if (m_axil_rresp != 2'b00) trap(TRAP_BUS);
+          if (m_axil.rready && m_axil.rvalid) begin
+            m_axil.rready <= 1'b0;
+            if (m_axil.rresp != 2'b00) trap(TRAP_BUS);
             else begin
-              stk[sp-1] <= mk_small({1'b0, m_axil_rdata});
+              stk[sp-1] <= mk_small({1'b0, m_axil.rdata});
               st <= S_FETCH;
             end
           end

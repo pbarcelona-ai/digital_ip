@@ -67,83 +67,126 @@
 //   reads the hardware value, a write gives a pulse with its data. Unmapped
 //   words read 0 and ignore writes; above the map: DECERR. Clock - clk. Reset
 //   - synchronous active low rst_n. Latency - 2 clocks per write and read.
-// Date: 2026-10-12
+// Date: 2026-10-16
 module vision_system_regs (
   input  logic          clk,              // clock
   input  logic          rst_n,            // synchronous reset, active low
-  input  logic [7:0]    s_axil_awaddr,    // AXI4-Lite
-  input  logic          s_axil_awvalid,
-  output logic          s_axil_awready,
-  input  logic [31:0]   s_axil_wdata,
-  input  logic [3:0]    s_axil_wstrb,
-  input  logic          s_axil_wvalid,
-  output logic          s_axil_wready,
-  output logic [1:0]    s_axil_bresp,
-  output logic          s_axil_bvalid,
-  input  logic          s_axil_bready,
-  input  logic [7:0]    s_axil_araddr,
-  input  logic          s_axil_arvalid,
-  output logic          s_axil_arready,
-  output logic [31:0]   s_axil_rdata,
-  output logic [1:0]    s_axil_rresp,
-  output logic          s_axil_rvalid,
-  input  logic          s_axil_rready,
-  output logic          ctrl_o,           // CTRL (WO): data written
-  output logic          ctrl_wr_o,        // CTRL: one-clock pulse at every software write
-  input  logic [3-1:0]  status_i,         // STATUS (CMD): value read
-  output logic [3-1:0]  status_o,         // STATUS (CMD): data written
-  output logic          status_wr_o,      // STATUS: one-clock pulse at every software write
-  output logic [32-1:0] img_width_o,      // IMG_WIDTH (RW): register value
-  output logic          img_width_wr_o,   // IMG_WIDTH: one-clock pulse at every software write
-  output logic [32-1:0] img_height_o,     // IMG_HEIGHT (RW): register value
-  output logic          img_height_wr_o,  // IMG_HEIGHT: one-clock pulse at every software write
-  output logic [32-1:0] k1_o,             // K1 (RW): register value
-  output logic          k1_wr_o,          // K1: one-clock pulse at every software write
-  output logic [32-1:0] k2_o,             // K2 (RW): register value
-  output logic          k2_wr_o,          // K2: one-clock pulse at every software write
-  output logic [32-1:0] k3_o,             // K3 (RW): register value
-  output logic          k3_wr_o,          // K3: one-clock pulse at every software write
-  output logic [32-1:0] center_x_o,       // CENTER_X (RW): register value
-  output logic          center_x_wr_o,    // CENTER_X: one-clock pulse at every software write
-  output logic [32-1:0] center_y_o,       // CENTER_Y (RW): register value
-  output logic          center_y_wr_o,    // CENTER_Y: one-clock pulse at every software write
-  output logic [32-1:0] scale_o,          // SCALE (RW): register value
-  output logic          scale_wr_o,       // SCALE: one-clock pulse at every software write
-  output logic [32-1:0] interp_mode_o,    // INTERP_MODE (RW): register value
-  output logic          interp_mode_wr_o, // INTERP_MODE: one-clock pulse at every software write
-  output logic [32-1:0] calib_mode_o,     // CALIB_MODE (RW): register value
-  output logic          calib_mode_wr_o,  // CALIB_MODE: one-clock pulse at every software write
-  output logic [32-1:0] fx_o,             // FX (RW): register value
-  output logic          fx_wr_o,          // FX: one-clock pulse at every software write
-  output logic [32-1:0] fy_o,             // FY (RW): register value
-  output logic          fy_wr_o,          // FY: one-clock pulse at every software write
-  output logic [32-1:0] cx_o,             // CX (RW): register value
-  output logic          cx_wr_o,          // CX: one-clock pulse at every software write
-  output logic [32-1:0] cy_o,             // CY (RW): register value
-  output logic          cy_wr_o,          // CY: one-clock pulse at every software write
-  output logic [32-1:0] p1_o,             // P1 (RW): register value
-  output logic          p1_wr_o,          // P1: one-clock pulse at every software write
-  output logic [32-1:0] p2_o,             // P2 (RW): register value
-  output logic          p2_wr_o,          // P2: one-clock pulse at every software write
-  output logic [32-1:0] model_sel_o,      // MODEL_SEL (RW): register value
-  output logic          model_sel_wr_o,   // MODEL_SEL: one-clock pulse at every software write
-  output logic [32-1:0] h11_o,            // H11 (RW): register value
-  output logic          h11_wr_o,         // H11: one-clock pulse at every software write
-  output logic [32-1:0] h12_o,            // H12 (RW): register value
-  output logic          h12_wr_o,         // H12: one-clock pulse at every software write
-  output logic [32-1:0] h13_o,            // H13 (RW): register value
-  output logic          h13_wr_o,         // H13: one-clock pulse at every software write
-  output logic [32-1:0] h21_o,            // H21 (RW): register value
-  output logic          h21_wr_o,         // H21: one-clock pulse at every software write
-  output logic [32-1:0] h22_o,            // H22 (RW): register value
-  output logic          h22_wr_o,         // H22: one-clock pulse at every software write
-  output logic [32-1:0] h23_o,            // H23 (RW): register value
-  output logic          h23_wr_o,         // H23: one-clock pulse at every software write
-  output logic [32-1:0] h31_o,            // H31 (RW): register value
-  output logic          h31_wr_o,         // H31: one-clock pulse at every software write
-  output logic [32-1:0] h32_o,            // H32 (RW): register value
-  output logic          h32_wr_o          // H32: one-clock pulse at every software write
+  // s_axil: axil_if.slave (ip/shared/src/interfaces/axil_if.sv), ADDR_W = 8
+  axil_if.slave s_axil,
+  // r: vision_system_regs_if.regs (src/include/vision_system_regs_if.sv) {ctrl_o=cfg_ctrl ctrl_wr_o=cfg_ctrl_wr status_i=sts_status status_o=cfg_status status_wr_o=cfg_status_wr img_width_o=cfg_img_width img_width_wr_o=cfg_img_width_wr img_height_o=cfg_img_height img_height_wr_o=cfg_img_height_wr k1_o=cfg_k1 k1_wr_o=cfg_k1_wr k2_o=cfg_k2 k2_wr_o=cfg_k2_wr k3_o=cfg_k3 k3_wr_o=cfg_k3_wr center_x_o=cfg_center_x center_x_wr_o=cfg_center_x_wr center_y_o=cfg_center_y center_y_wr_o=cfg_center_y_wr scale_o=cfg_scale scale_wr_o=cfg_scale_wr interp_mode_o=cfg_interp_mode interp_mode_wr_o=cfg_interp_mode_wr calib_mode_o=cfg_calib_mode calib_mode_wr_o=cfg_calib_mode_wr fx_o=cfg_fx fx_wr_o=cfg_fx_wr fy_o=cfg_fy fy_wr_o=cfg_fy_wr cx_o=cfg_cx cx_wr_o=cfg_cx_wr cy_o=cfg_cy cy_wr_o=cfg_cy_wr p1_o=cfg_p1 p1_wr_o=cfg_p1_wr p2_o=cfg_p2 p2_wr_o=cfg_p2_wr model_sel_o=cfg_model_sel model_sel_wr_o=cfg_model_sel_wr h11_o=cfg_h11 h11_wr_o=cfg_h11_wr h12_o=cfg_h12 h12_wr_o=cfg_h12_wr h13_o=cfg_h13 h13_wr_o=cfg_h13_wr h21_o=cfg_h21 h21_wr_o=cfg_h21_wr h22_o=cfg_h22 h22_wr_o=cfg_h22_wr h23_o=cfg_h23 h23_wr_o=cfg_h23_wr h31_o=cfg_h31 h31_wr_o=cfg_h31_wr h32_o=cfg_h32 h32_wr_o=cfg_h32_wr}
+  vision_system_regs_if.regs r
 );
+  // register signals, joined to the interface r
+  logic ctrl_o;
+  logic ctrl_wr_o;
+  logic [3-1:0] status_i;
+  logic [3-1:0] status_o;
+  logic status_wr_o;
+  logic [32-1:0] img_width_o;
+  logic img_width_wr_o;
+  logic [32-1:0] img_height_o;
+  logic img_height_wr_o;
+  logic [32-1:0] k1_o;
+  logic k1_wr_o;
+  logic [32-1:0] k2_o;
+  logic k2_wr_o;
+  logic [32-1:0] k3_o;
+  logic k3_wr_o;
+  logic [32-1:0] center_x_o;
+  logic center_x_wr_o;
+  logic [32-1:0] center_y_o;
+  logic center_y_wr_o;
+  logic [32-1:0] scale_o;
+  logic scale_wr_o;
+  logic [32-1:0] interp_mode_o;
+  logic interp_mode_wr_o;
+  logic [32-1:0] calib_mode_o;
+  logic calib_mode_wr_o;
+  logic [32-1:0] fx_o;
+  logic fx_wr_o;
+  logic [32-1:0] fy_o;
+  logic fy_wr_o;
+  logic [32-1:0] cx_o;
+  logic cx_wr_o;
+  logic [32-1:0] cy_o;
+  logic cy_wr_o;
+  logic [32-1:0] p1_o;
+  logic p1_wr_o;
+  logic [32-1:0] p2_o;
+  logic p2_wr_o;
+  logic [32-1:0] model_sel_o;
+  logic model_sel_wr_o;
+  logic [32-1:0] h11_o;
+  logic h11_wr_o;
+  logic [32-1:0] h12_o;
+  logic h12_wr_o;
+  logic [32-1:0] h13_o;
+  logic h13_wr_o;
+  logic [32-1:0] h21_o;
+  logic h21_wr_o;
+  logic [32-1:0] h22_o;
+  logic h22_wr_o;
+  logic [32-1:0] h23_o;
+  logic h23_wr_o;
+  logic [32-1:0] h31_o;
+  logic h31_wr_o;
+  logic [32-1:0] h32_o;
+  logic h32_wr_o;
+  assign r.cfg_ctrl = ctrl_o;
+  assign r.cfg_ctrl_wr = ctrl_wr_o;
+  assign status_i = r.sts_status;
+  assign r.cfg_status = status_o;
+  assign r.cfg_status_wr = status_wr_o;
+  assign r.cfg_img_width = img_width_o;
+  assign r.cfg_img_width_wr = img_width_wr_o;
+  assign r.cfg_img_height = img_height_o;
+  assign r.cfg_img_height_wr = img_height_wr_o;
+  assign r.cfg_k1 = k1_o;
+  assign r.cfg_k1_wr = k1_wr_o;
+  assign r.cfg_k2 = k2_o;
+  assign r.cfg_k2_wr = k2_wr_o;
+  assign r.cfg_k3 = k3_o;
+  assign r.cfg_k3_wr = k3_wr_o;
+  assign r.cfg_center_x = center_x_o;
+  assign r.cfg_center_x_wr = center_x_wr_o;
+  assign r.cfg_center_y = center_y_o;
+  assign r.cfg_center_y_wr = center_y_wr_o;
+  assign r.cfg_scale = scale_o;
+  assign r.cfg_scale_wr = scale_wr_o;
+  assign r.cfg_interp_mode = interp_mode_o;
+  assign r.cfg_interp_mode_wr = interp_mode_wr_o;
+  assign r.cfg_calib_mode = calib_mode_o;
+  assign r.cfg_calib_mode_wr = calib_mode_wr_o;
+  assign r.cfg_fx = fx_o;
+  assign r.cfg_fx_wr = fx_wr_o;
+  assign r.cfg_fy = fy_o;
+  assign r.cfg_fy_wr = fy_wr_o;
+  assign r.cfg_cx = cx_o;
+  assign r.cfg_cx_wr = cx_wr_o;
+  assign r.cfg_cy = cy_o;
+  assign r.cfg_cy_wr = cy_wr_o;
+  assign r.cfg_p1 = p1_o;
+  assign r.cfg_p1_wr = p1_wr_o;
+  assign r.cfg_p2 = p2_o;
+  assign r.cfg_p2_wr = p2_wr_o;
+  assign r.cfg_model_sel = model_sel_o;
+  assign r.cfg_model_sel_wr = model_sel_wr_o;
+  assign r.cfg_h11 = h11_o;
+  assign r.cfg_h11_wr = h11_wr_o;
+  assign r.cfg_h12 = h12_o;
+  assign r.cfg_h12_wr = h12_wr_o;
+  assign r.cfg_h13 = h13_o;
+  assign r.cfg_h13_wr = h13_wr_o;
+  assign r.cfg_h21 = h21_o;
+  assign r.cfg_h21_wr = h21_wr_o;
+  assign r.cfg_h22 = h22_o;
+  assign r.cfg_h22_wr = h22_wr_o;
+  assign r.cfg_h23 = h23_o;
+  assign r.cfg_h23_wr = h23_wr_o;
+  assign r.cfg_h31 = h31_o;
+  assign r.cfg_h31_wr = h31_wr_o;
+  assign r.cfg_h32 = h32_o;
+  assign r.cfg_h32_wr = h32_wr_o;
   // ---------------- register map
   localparam logic [31:0] IP_ID      = "VSYS";
   localparam logic [31:0] IP_VERSION = "1.10";
@@ -182,6 +225,17 @@ module vision_system_regs (
   logic [7:0]       wr_addr, rd_addr, rd_addr_q;
   logic [31:0]      wr_data, rd_data;
   logic [3:0]       wr_strb;
+  regbus_if #(.ADDR_W(8)) bus ();               // register bus of the AXI4-Lite front end
+  assign wr_en = bus.wr;
+  assign wr_addr = bus.waddr;
+  assign wr_data = bus.wdata;
+  assign wr_strb = bus.wstrb;
+  assign rd_en = bus.rd;
+  assign rd_addr = bus.raddr;
+  assign bus.wr_err = wr_err_q;
+  assign bus.rdata = rd_data;
+  assign bus.rd_valid = 1'b1;
+  assign bus.rd_err = 1'b0;
   axi4_lite_slave #(
     .ADDR_W(8),
     .READ_WAIT(0),
@@ -189,33 +243,8 @@ module vision_system_regs (
   ) u_axil (
     .aclk(clk),
     .aresetn(rst_n),
-    .s_axil_awaddr,
-    .s_axil_awvalid,
-    .s_axil_awready,
-    .s_axil_wdata,
-    .s_axil_wstrb,
-    .s_axil_wvalid,
-    .s_axil_wready,
-    .s_axil_bresp,
-    .s_axil_bvalid,
-    .s_axil_bready,
-    .s_axil_araddr,
-    .s_axil_arvalid,
-    .s_axil_arready,
-    .s_axil_rdata,
-    .s_axil_rresp,
-    .s_axil_rvalid,
-    .s_axil_rready,
-    .wr_en_o(wr_en),
-    .wr_addr_o(wr_addr),
-    .wr_data_o(wr_data),
-    .wr_strb_o(wr_strb),
-    .wr_err_i(wr_err_q),
-    .rd_en_o(rd_en),
-    .rd_addr_o(rd_addr),
-    .rd_data_i(rd_data),
-    .rd_valid_i(1'b1),
-    .rd_err_i(1'b0)
+    .s_axil(s_axil),
+    .bus(bus)
   );
   wire [7:0] wa = {wr_addr[7:2], 2'b00};
   // byte strobes applied to the written word

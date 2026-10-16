@@ -21,8 +21,8 @@ module isp_blc_wb_tb;
   logic blc_by, wb_by;
   logic [4*PW-1:0] blc;
   logic [11:0] gr, gg, gb;
-  logic [PW-1:0] sd, md;
-  logic sl, su, sv, sr, ml, mu, mv, mr;
+  axis_if #(.DATA_W(PW), .USER_W(1)) m_axis ();
+  axis_if #(.DATA_W(PW), .USER_W(1)) s_axis ();
   isp_blc_wb #(.PW(PW)) dut (
     .clk,
     .rst_n,
@@ -33,24 +33,16 @@ module isp_blc_wb_tb;
     .gain_r_i(gr),
     .gain_g_i(gg),
     .gain_b_i(gb),
-    .s_axis_tdata(sd),
-    .s_axis_tlast(sl),
-    .s_axis_tuser(su),
-    .s_axis_tvalid(sv),
-    .s_axis_tready(sr),
-    .m_axis_tdata(md),
-    .m_axis_tlast(ml),
-    .m_axis_tuser(mu),
-    .m_axis_tvalid(mv),
-    .m_axis_tready(mr)
+    .s_axis(s_axis),
+    .m_axis(m_axis)
   );
 
   int W, H, gap_pct, bp_pct, nout;
   logic [PW-1:0] img [MAXP], exp_px [MAXP];
-  always @(posedge clk) mr <= ($urandom_range(99) >= bp_pct);
-  always @(posedge clk) if (rst_n && mv && mr) begin
-    check(md == exp_px[nout], $sformatf("pixel %0d (%0d,%0d) = %0d exp %0d", nout, nout % W, nout / W, md, exp_px[nout]));
-    check(mu == (nout == 0) && ml == (nout % W == W - 1), $sformatf("tuser/tlast at pixel %0d", nout));
+  always @(posedge clk) m_axis.tready <= ($urandom_range(99) >= bp_pct);
+  always @(posedge clk) if (rst_n && m_axis.tvalid && m_axis.tready) begin
+    check(m_axis.tdata == exp_px[nout], $sformatf("pixel %0d (%0d,%0d) = %0d exp %0d", nout, nout % W, nout / W, m_axis.tdata, exp_px[nout]));
+    check(m_axis.tuser == (nout == 0) && m_axis.tlast == (nout % W == W - 1), $sformatf("tuser/tlast at pixel %0d", nout));
     nout++;
   end
 
@@ -62,10 +54,10 @@ module isp_blc_wb_tb;
       $dumpfile("isp_blc_wb_tb.vcd");
       $dumpvars(0, isp_blc_wb_tb);
     end
-    sv = 0;
-    su = 0;
-    sl = 0;
-    sd = 0;
+    s_axis.tvalid = 0;
+    s_axis.tuser = 0;
+    s_axis.tlast = 0;
+    s_axis.tdata = 0;
     repeat (4) @(posedge clk);
     rst_n = 1;
     repeat (2) @(posedge clk);

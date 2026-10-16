@@ -15,56 +15,32 @@
 module spi_flash_ctrl_tb;
   logic aclk = 0, aresetn = 0;
   always #5 aclk = ~aclk;
-  logic [7:0]  s_axil_awaddr, s_axil_araddr;
-  logic s_axil_awvalid, s_axil_awready;
-  logic [31:0] s_axil_wdata, s_axil_rdata;
-  logic [3:0] s_axil_wstrb;
-  logic s_axil_wvalid, s_axil_wready, s_axil_bvalid, s_axil_bready;
-  logic [1:0] s_axil_bresp, s_axil_rresp;
-  logic s_axil_arvalid, s_axil_arready, s_axil_rvalid, s_axil_rready;
-  axil_bfm #(.ADDR_W(8)) bfm (.*);
-  logic [7:0] txd = 0, rxd;
-  logic txv = 0, txr, rxv, rxr = 1, rxl;
-  logic sclk, cs_n, mosi, miso, irq;
+  axil_if #(.ADDR_W(8), .DATA_W(32)) s_axil ();
+  axil_bfm #(.ADDR_W(8)) bfm (
+    .*
+  );
+  axis_if #(.DATA_W(8)) m_axis ();
+  initial m_axis.tready = 1;
+  axis_if #(.DATA_W(8)) s_axis ();
+  initial s_axis.tdata = 0;
+  initial s_axis.tvalid = 0;
+  spi_if #(.NUM_CS(1)) spi ();
+  logic irq;
   int wipc;
   spi_flash_ctrl_top dut (
     .aclk,
     .aresetn,
-    .s_axil_awaddr,
-    .s_axil_awvalid,
-    .s_axil_awready,
-    .s_axil_wdata,
-    .s_axil_wstrb,
-    .s_axil_wvalid,
-    .s_axil_wready,
-    .s_axil_bresp,
-    .s_axil_bvalid,
-    .s_axil_bready,
-    .s_axil_araddr,
-    .s_axil_arvalid,
-    .s_axil_arready,
-    .s_axil_rdata,
-    .s_axil_rresp,
-    .s_axil_rvalid,
-    .s_axil_rready,
-    .s_axis_tdata(txd),
-    .s_axis_tvalid(txv),
-    .s_axis_tready(txr),
-    .m_axis_tdata(rxd),
-    .m_axis_tvalid(rxv),
-    .m_axis_tready(rxr),
-    .m_axis_tlast(rxl),
-    .sclk_o(sclk),
-    .cs_n_o(cs_n),
-    .mosi_o(mosi),
-    .miso_i(miso),
+    .s_axil(s_axil),
+    .s_axis(s_axis),
+    .m_axis(m_axis),
+    .spi(spi),
     .irq_o(irq)
   );
   spi_flash_bfm flash (
-    .sclk,
-    .cs_n,
-    .mosi,
-    .miso,
+    .sclk(spi.sclk),
+    .cs_n(spi.cs_n),
+    .mosi(spi.mosi),
+    .miso(spi.miso),
     .wip_cycles(wipc)
   );
   int errors = 0;
@@ -74,10 +50,10 @@ module spi_flash_ctrl_tb;
   bit last_seen = 0;
   int rx_gap = 0;
   always @(posedge aclk) begin
-    if (rx_gap > 0 && rxv) begin rxr <= 0; end
-    if (rxv && rxr) begin
-      rxq.push_back(rxd);
-      if (rxl) last_seen = 1;
+    if (rx_gap > 0 && m_axis.tvalid) begin m_axis.tready <= 0; end
+    if (m_axis.tvalid && m_axis.tready) begin
+      rxq.push_back(m_axis.tdata);
+      if (m_axis.tlast) last_seen = 1;
     end
   end
   // slow rx consumer mode
@@ -86,19 +62,19 @@ module spi_flash_ctrl_tb;
   always @(posedge aclk)
     if (slow_rx) begin
       slow_cnt++;
-      rxr <= (slow_cnt % 7 == 0);
-    end else rxr <= 1;
+      m_axis.tready <= (slow_cnt % 7 == 0);
+    end else m_axis.tready <= 1;
   // transmit source
   byte txq[$];
   bit slow_tx = 0;
   int tx_cnt = 0;
   always @(posedge aclk) begin
-    if (txv && txr) begin txv <= 0; end
-    if (!txv || txr) begin
+    if (s_axis.tvalid && s_axis.tready) begin s_axis.tvalid <= 0; end
+    if (!s_axis.tvalid || s_axis.tready) begin
       tx_cnt++;
-      if (txq.size() > 0 && (!slow_tx || tx_cnt % 5 == 0) && !(txv && !txr)) begin
-        txd <= txq.pop_front();
-        txv <= 1;
+      if (txq.size() > 0 && (!slow_tx || tx_cnt % 5 == 0) && !(s_axis.tvalid && !s_axis.tready)) begin
+        s_axis.tdata <= txq.pop_front();
+        s_axis.tvalid <= 1;
       end
     end
   end

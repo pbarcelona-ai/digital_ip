@@ -23,7 +23,8 @@ module axis_to_video_tb;
 
   localparam int HA = 32, VA = 8;
   logic tpg, src_rdy;
-  logic de, hs, vs, sof, eol, vbl, wt;
+  vid_if tim ();
+  logic sof, eol, vbl, wt;
   logic [15:0] x, y;
   vid_timing_gen u_vtg (
     .clk,
@@ -42,9 +43,7 @@ module axis_to_video_tb;
     .lock_en_i(1'b1),
     .src_ready_i(src_rdy),
     .lock_max_i(16'd400),
-    .de_o(de),
-    .hs_o(hs),
-    .vs_o(vs),
+    .tim(tim),
     .x_o(x),
     .y_o(y),
     .sof_o(sof),
@@ -53,10 +52,9 @@ module axis_to_video_tb;
     .waiting_o(wt)
   );
 
-  logic [23:0] sd;
-  logic sl, su, sv, sr;
-  logic [23:0] rgb;
-  logic de_o, hs_o, vs_o, locked, uflow;
+  axis_if #(.DATA_W(24), .USER_W(1)) s_axis ();
+  vid_if #(.DATA_W(24)) vid ();
+  logic locked, uflow;
   axis_to_video #(
     .PIX_W(24),
     .FIFO_DEPTH(64)
@@ -66,20 +64,11 @@ module axis_to_video_tb;
     .tpg_en_i(tpg),
     .start_level_i(16'd8),
     .h_active_i(16'(HA)),
-    .s_axis_tdata(sd),
-    .s_axis_tlast(sl),
-    .s_axis_tuser(su),
-    .s_axis_tvalid(sv),
-    .s_axis_tready(sr),
-    .de_i(de),
-    .hs_i(hs),
-    .vs_i(vs),
+    .s_axis(s_axis),
+    .tim(tim),
     .sof_i(sof),
     .vblank_i(vbl),
-    .rgb_o(rgb),
-    .de_o(de_o),
-    .hs_o(hs_o),
-    .vs_o(vs_o),
+    .vid(vid),
     .src_ready_o(src_rdy),
     .locked_o(locked),
     .underflow_o(uflow)
@@ -99,12 +88,12 @@ module axis_to_video_tb;
   always @(posedge clk) begin
     sof_q <= sof;
     if (uflow) nunder++;
-    if (de_o) begin
+    if (vid.de) begin
       if (sof_q) begin
         cx = 0;
         cy = 0;
       end
-      cap[cy][cx] = rgb;
+      cap[cy][cx] = vid.data;
       cx++;
       if (cx == HA) begin
         cx = 0;
@@ -145,10 +134,10 @@ module axis_to_video_tb;
       $dumpvars(0, axis_to_video_tb);
     end
     tpg = 0;
-    sv = 0;
-    su = 0;
-    sl = 0;
-    sd = 0;
+    s_axis.tvalid = 0;
+    s_axis.tuser = 0;
+    s_axis.tlast = 0;
+    s_axis.tdata = 0;
     repeat (3) @(posedge clk);
     rst_n = 1;
 

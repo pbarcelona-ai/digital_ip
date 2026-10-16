@@ -1,4 +1,5 @@
 {
+  "interface": true,
  "name": "vision_system_regs",
  "ip": "vision_system",
  "id": "VSYS",

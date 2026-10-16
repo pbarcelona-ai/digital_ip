@@ -57,7 +57,7 @@
     nframes = 0;
     de_seen = 0;
     vs_prev = 1;
-    repeat (4) @(posedge vs);
+    repeat (4) @(posedge tim.vs);
     repeat (5) @(posedge clk);
     check(nframes >= 2, $sformatf("%s: %0d complete frames", name, nframes));
     $display("%s: %0d frames of %0dx%0d decoded", name, nframes, HA, VA);

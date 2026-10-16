@@ -36,15 +36,8 @@ module py_sysctl #(
   output logic [NCLK-1:0] clk_en_o,         // CLK_EN
   input  logic            clk_locked_i,     // clock generator outputs locked
   // register ports
-  input  logic [1:0]      cfg_reset_cause,     // RESET_CAUSE: data written ...
-  input  logic            cfg_reset_cause_wr,  // ... and its write pulse
-  output logic [1:0]      sts_reset_cause,     // RESET_CAUSE: value read
-  output logic [31:0]     sts_boot_status,     // BOOT_STATUS
-  output logic [31:0]     sts_cycles,          // CYCLES
-  output logic [31:0]     sts_soc_id,          // SOC_ID
-  input  logic            cfg_core_reset,      // CORE_RESET
-  input  logic [NCLK-1:0] cfg_clk_en,          // CLK_EN
-  output logic [1:0]      sts_clk_status       // CLK_STATUS
+  // regs: py_sysctl_regs_if.core (src/include/py_sysctl_regs_if.sv)
+  py_sysctl_regs_if.core regs
 );
   // Reset cause survives the system reset it describes
   logic [1:0] cause;
@@ -52,7 +45,7 @@ module py_sysctl #(
     if (!por_n) cause <= 2'b01;
     else begin
       if (wdt_reset_i) cause[1] <= 1'b1;
-      else if (aresetn && cfg_reset_cause_wr) cause <= cause & ~cfg_reset_cause;
+      else if (aresetn && regs.cfg_reset_cause_wr) cause <= cause & ~regs.cfg_reset_cause;
     end
   end
 
@@ -62,11 +55,11 @@ module py_sysctl #(
     else          cycles <= cycles + 1'b1;
   end
 
-  assign core_rst_n_o = cfg_core_reset;
-  assign clk_en_o = cfg_clk_en;
-  assign sts_reset_cause = cause;
-  assign sts_boot_status = {25'd0, boot_err_code_i, 2'd0, boot_err_i, boot_done_i};
-  assign sts_cycles = cycles;
-  assign sts_soc_id = 32'h5059_0100;
-  assign sts_clk_status = {CLKGEN, clk_locked_i};
+  assign core_rst_n_o = regs.cfg_core_reset;
+  assign clk_en_o = regs.cfg_clk_en;
+  assign regs.sts_reset_cause = cause;
+  assign regs.sts_boot_status = {25'd0, boot_err_code_i, 2'd0, boot_err_i, boot_done_i};
+  assign regs.sts_cycles = cycles;
+  assign regs.sts_soc_id = 32'h5059_0100;
+  assign regs.sts_clk_status = {CLKGEN, clk_locked_i};
 endmodule

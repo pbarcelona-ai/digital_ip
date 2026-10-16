@@ -20,9 +20,8 @@ module uart_tx (
   input  logic       parity_odd_i,
   input  logic       stop2_i,
   // Byte input stream
-  input  logic [7:0] s_tdata,
-  input  logic       s_tvalid,
-  output logic       s_tready,
+  // s: axis_if.slave (ip/shared/src/interfaces/axis_if.sv), DATA_W = 8
+  axis_if.slave s,
   // Serial output and status
   output logic       txd_o,
   output logic       busy_o
@@ -38,7 +37,7 @@ module uart_tx (
   logic [7:0] sh;          // shift register
   logic       par;         // running parity of the data bits
 
-  assign s_tready = (state == S_IDLE) & en_i;   // pop when starting a frame
+  assign s.tready = (state == S_IDLE) & en_i;   // pop when starting a frame
   assign busy_o   = (state != S_IDLE);
 
   wire bit_end = tick16_i & (tcnt == 4'd15);    // last tick of the bit
@@ -56,8 +55,8 @@ module uart_tx (
       case (state)
         S_IDLE: begin
           txd_o <= 1'b1;
-          if (s_tvalid & en_i) begin            // load a new frame
-            sh <= s_tdata;
+          if (s.tvalid & en_i) begin            // load a new frame
+            sh <= s.tdata;
             state <= S_START;
             tcnt <= '0;
             bitn <= '0;

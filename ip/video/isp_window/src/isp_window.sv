@@ -27,8 +27,9 @@
 //   width_i / height_i when it sees a start-of-frame pixel in that state.
 //   Throughput - 1 pixel per clock plus R idle input cycles per line and R
 //   lines per frame. Clock - clk only. Reset - synchronous rst_n (active
-//   low). Latency - R lines + R + 1 clocks.
-// Date: 2026-10-01
+//   low). Latency - R lines + R + 4 clocks. The output goes through a 2-entry ip_axis_fifo, so s_axis_tready does
+//   not depend combinationally on m_axis_tready (+3 clocks).
+// Date: 2026-10-16
 module isp_window #(
   parameter int N     = 3,                     // window size, odd, >= 3
   parameter int PW    = 10,                    // pixel width
@@ -40,21 +41,22 @@ module isp_window #(
   input  logic [15:0]         width_i,         // 1 + R .. MAX_W
   input  logic [15:0]         height_i,        // >= 1 + R
   // Pixels in
-  input  logic [PW-1:0]       s_axis_tdata,
-  input  logic                s_axis_tlast,
-  input  logic                s_axis_tuser,
-  input  logic                s_axis_tvalid,
-  output logic                s_axis_tready,
+  // s_axis: axis_if.slave (ip/shared/src/interfaces/axis_if.sv), DATA_W = PW
+  axis_if.slave s_axis,
   // Windows out
-  output logic [N*N*PW-1:0]   m_axis_tdata,
+  // m_axis: axis_if.master (ip/shared/src/interfaces/axis_if.sv), DATA_W = N*N*PW
+  axis_if.master m_axis,
   output logic [15:0]         m_x,
   output logic [15:0]         m_y,
-  output logic                m_axis_tlast,
-  output logic                m_axis_tuser,
-  output logic                m_axis_tvalid,
-  input  logic                m_axis_tready,
   output logic                sof_wait_o       // scan at (0,0), waiting for a frame start
 );
+  assign m_axis.tkeep = '1;      // not used by this block
+  // output stage: the last pipeline register (q_*) feeds a 2-entry FIFO whose ready is registered,
+  // so s_axis_tready does not depend combinationally on m_axis_tready
+  logic [N*N*PW-1:0] q_d;
+  logic q_l, q_u, q_v, q_r;
+  logic [15:0] q_m_x;
+  logic [15:0] q_m_y;
   if (N < 3 || N % 2 == 0) begin : g_bad $error("isp_window: N must be odd and >= 3"); end
   localparam int R  = (N - 1) / 2;
   localparam int AW = $clog2(MAX_W);
@@ -63,13 +65,13 @@ module isp_window #(
   wire  [15:0] xend = width_i + 16'(R - 1), yend = height_i + 16'(R - 1);
   wire need_in = (x < width_i) && (y < height_i);
   wire prod    = (x >= 16'(R)) && (y >= 16'(R));
-  wire o_free  = !m_axis_tvalid || m_axis_tready;
+  wire o_free  = !q_v || q_r;
   wire at_sof  = (x == 0) && (y == 0);
   assign sof_wait_o = at_sof;
-  wire drop    = need_in && at_sof && s_axis_tvalid && !s_axis_tuser;   // wait for SOF
-  wire restart = need_in && !at_sof && s_axis_tvalid && s_axis_tuser;   // early SOF: start over
-  wire advance = (need_in ? (s_axis_tvalid && !drop && !restart) : 1'b1) && (!prod || o_free);
-  assign s_axis_tready = need_in && !restart && (drop || !prod || o_free);
+  wire drop    = need_in && at_sof && s_axis.tvalid && !s_axis.tuser;   // wait for SOF
+  wire restart = need_in && !at_sof && s_axis.tvalid && s_axis.tuser;   // early SOF: start over
+  wire advance = (need_in ? (s_axis.tvalid && !drop && !restart) : 1'b1) && (!prod || o_free);
+  assign s_axis.tready = need_in && !restart && (drop || !prod || o_free);
 
   wire [15:0] nx = (x == xend) ? 16'd0 : x + 16'd1;
   wire [15:0] ny = (x == xend) ? ((y == yend) ? 16'd0 : y + 16'd1) : y;
@@ -102,7 +104,7 @@ module isp_window #(
     hi = int'(height_i);
     d = int'(x) - int'(width_i) + 1;
     sc = (BORDER != 0) ? N - 2*d : N - 1;
-    raw[0] = (y >= height_i) ? q[0] : s_axis_tdata;          // below the frame: placeholder
+    raw[0] = (y >= height_i) ? q[0] : s_axis.tdata;          // below the frame: placeholder
     for (int k = 1; k < N; k++) raw[k] = q[k-1];
     for (int k = 0; k < N; k++) begin : vrow
       int src, row;
@@ -142,12 +144,12 @@ module isp_window #(
     if (!rst_n) begin
       x <= '0;
       y <= '0;
-      m_axis_tvalid <= 1'b0;
-      m_axis_tdata <= '0;
-      m_x <= '0;
-      m_y <= '0;
-      m_axis_tlast <= 1'b0;
-      m_axis_tuser <= 1'b0;
+      q_v <= 1'b0;
+      q_d <= '0;
+      q_m_x <= '0;
+      q_m_y <= '0;
+      q_l <= 1'b0;
+      q_u <= 1'b0;
     end else begin
       if (restart) begin
         x <= '0;
@@ -160,13 +162,35 @@ module isp_window #(
         for (int k = 0; k < N; k++) cstore[N-1][k] <= col[k];
       end
       if (advance && prod) begin
-        m_axis_tvalid <= 1'b1;
-        m_axis_tdata <= win;
-        m_x <= x - 16'(R);
-        m_y <= y - 16'(R);
-        m_axis_tuser <= (x == 16'(R)) && (y == 16'(R));
-        m_axis_tlast <= (x == xend);
-      end else if (m_axis_tready) m_axis_tvalid <= 1'b0;
+        q_v <= 1'b1;
+        q_d <= win;
+        q_m_x <= x - 16'(R);
+        q_m_y <= y - 16'(R);
+        q_u <= (x == 16'(R)) && (y == 16'(R));
+        q_l <= (x == xend);
+      end else if (q_r) q_v <= 1'b0;
     end
   end
+  axis_if #(.DATA_W(N*N*PW + 32)) u_out_fifo_s ();
+  assign u_out_fifo_s.tdata = {q_m_x, q_m_y, q_d};
+  assign u_out_fifo_s.tlast = q_l;
+  assign u_out_fifo_s.tuser = q_u;
+  assign u_out_fifo_s.tvalid = q_v;
+  assign q_r = u_out_fifo_s.tready;
+  axis_if #(.DATA_W(N*N*PW + 32)) u_out_fifo_m ();
+  assign {m_x, m_y, m_axis.tdata} = u_out_fifo_m.tdata;
+  assign m_axis.tlast = u_out_fifo_m.tlast;
+  assign m_axis.tuser = u_out_fifo_m.tuser;
+  assign m_axis.tvalid = u_out_fifo_m.tvalid;
+  assign u_out_fifo_m.tready = m_axis.tready;
+  ip_axis_fifo #(
+    .DATA_W(N*N*PW + 32),
+    .DEPTH(2)
+  ) u_out_fifo (
+    .clk,
+    .rst_n,
+    .s(u_out_fifo_s),
+    .m(u_out_fifo_m),
+    .level_o()
+  );
 endmodule

@@ -169,19 +169,24 @@ def putw(w):
 
 
 def flash_read(addr, n):
-    """Start a READ (03h) of n bytes at addr; the bytes arrive on the flash data port."""
-    while mem32[FLASH + F_STATUS] & F_BUSY:
-        pass
+    """Start a READ (03h) of n bytes at addr; the bytes arrive on the flash data port. 0 when the
+    controller stays busy (timeout), else 1."""
+    if not wait_clear(FLASH + F_STATUS, F_BUSY):
+        return 0
     mem32[FLASH + F_ADDR] = addr
     mem32[FLASH + F_LEN] = n
     mem32[FLASH + F_STATUS] = F_DONE
     mem32[FLASH + F_CMD] = F_READ_DATA | F_ADDR_EN | 0x03
+    return 1
 
 
 def flash_byte():
+    """Next byte of a flash read (0 after a timeout: the read never delivers it)."""
+    t = 0
     d = mem32[FLASH + DPORT + RXDATA]
-    while not d & RX_VALID:
+    while not d & RX_VALID and t < TMO:
         d = mem32[FLASH + DPORT + RXDATA]
+        t += 1
     return d & 0xFF
 
 

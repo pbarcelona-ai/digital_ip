@@ -22,7 +22,8 @@ module hdmi_tx_tb;
   logic en, pol, mode;
   logic [1:0] ay, ac, am, aq;
   logic [6:0] vic;
-  logic de, hs, vs, sof, eol, vbl, wt;
+  vid_if tim ();
+  logic sof, eol, vbl, wt;
   logic [15:0] x, y;
   vid_timing_gen u_vtg (
     .clk,
@@ -41,9 +42,7 @@ module hdmi_tx_tb;
     .lock_en_i(1'b0),
     .src_ready_i(1'b1),
     .lock_max_i(16'd0),
-    .de_o(de),
-    .hs_o(hs),
-    .vs_o(vs),
+    .tim(tim),
     .x_o(x),
     .y_o(y),
     .sof_o(sof),
@@ -57,9 +56,14 @@ module hdmi_tx_tb;
     return {8'(px * 5 + f), 8'(py * 23 + px), 8'(px ^ (py << 3) ^ (f * 77))};
   endfunction
   always @(posedge clk) if (sof) fnum <= fnum + 1;
-  wire [23:0] rgb = de ? pix(x, y, sof ? fnum + 1 : fnum) : 24'h0;
+  wire [23:0] rgb = tim.de ? pix(x, y, sof ? fnum + 1 : fnum) : 24'h0;
 
-  logic [9:0] t0, t1, t2, tc;
+  tmds_if tmds ();
+  vid_if #(.DATA_W(24)) dut_vid ();
+  assign dut_vid.data = rgb;
+  assign dut_vid.de = tim.de;
+  assign dut_vid.hs = tim.hs;
+  assign dut_vid.vs = tim.vs;
   hdmi_tx dut (
     .clk,
     .rst_n,
@@ -70,14 +74,8 @@ module hdmi_tx_tb;
     .avi_m_i(am),
     .avi_vic_i(vic),
     .avi_q_i(aq),
-    .rgb_i(rgb),
-    .de_i(de),
-    .hs_i(hs),
-    .vs_i(vs),
-    .tmds0_o(t0),
-    .tmds1_o(t1),
-    .tmds2_o(t2),
-    .tmds_clk_o(tc)
+    .vid(dut_vid),
+    .tmds(tmds)
   );
   logic sink_en = 0;
   hdmi_bfm #(
@@ -86,9 +84,9 @@ module hdmi_tx_tb;
   ) sink (
     .clk,
     .en(sink_en),
-    .ch0(t0),
-    .ch1(t1),
-    .ch2(t2)
+    .ch0(tmds.ch0),
+    .ch1(tmds.ch1),
+    .ch2(tmds.ch2)
   );
 
   // test tasks: tests/hdmi_tx_tests.sv

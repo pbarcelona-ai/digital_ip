@@ -13,11 +13,11 @@
 //   pipeline. 'start' re-initialises the scan for a new frame. 'hold'
 //   inserts bubbles without advancing the scan; nxt_y exposes the source
 //   y of the next pixel (used for line-buffer flow control).
-// Date: 2026-09-26
+// Date: 2026-10-16
 
 module scaler_dda (
   input  logic               clk,
-  input  logic               rst_n,      // async reset, active low
+  input  logic               rst_n,      // synchronous reset, active low
   input  logic               start,      // 1-cycle pulse: begin a new frame
   input  logic               adv,        // pipeline advance
   input  logic               hold,       // 1: emit a bubble instead of a pixel
@@ -44,7 +44,7 @@ module scaler_dda (
   wire last_col = (ox == out_w - 16'd1);
   wire last_row = (oy == out_h - 16'd1);
 
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk) begin
     if (!rst_n) begin
       busy    <= 1'b0;
       ox      <= '0;

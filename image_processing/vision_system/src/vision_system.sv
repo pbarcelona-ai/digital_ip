@@ -50,37 +50,16 @@ module vision_system #(
   input  logic rst_n,
 
   // AXI4-Stream slave (video in)
-  input  logic                s_axis_tvalid,
-  output logic                s_axis_tready,
-  input  logic [barrel_pkg::PIX_W-1:0]    s_axis_tdata,
-  input  logic                s_axis_tlast,
-  input  logic                s_axis_tuser,
+  // s_axis: axis_if.slave (ip/shared/src/interfaces/axis_if.sv), DATA_W = barrel_pkg::PIX_W
+  axis_if.slave s_axis,
 
   // AXI4-Stream master (video out)
-  output logic                m_axis_tvalid,
-  input  logic                m_axis_tready,
-  output logic [barrel_pkg::PIX_W-1:0]    m_axis_tdata,
-  output logic                m_axis_tlast,
-  output logic                m_axis_tuser,
+  // m_axis: axis_if.master (ip/shared/src/interfaces/axis_if.sv), DATA_W = barrel_pkg::PIX_W
+  axis_if.master m_axis,
 
   // AXI4-Lite slave (config)
-  input  logic [7:0]   s_axil_awaddr,
-  input  logic         s_axil_awvalid,
-  output logic         s_axil_awready,
-  input  logic [31:0]  s_axil_wdata,
-  input  logic [3:0]   s_axil_wstrb,
-  input  logic         s_axil_wvalid,
-  output logic         s_axil_wready,
-  output logic [1:0]   s_axil_bresp,
-  output logic         s_axil_bvalid,
-  input  logic         s_axil_bready,
-  input  logic [7:0]   s_axil_araddr,
-  input  logic         s_axil_arvalid,
-  output logic         s_axil_arready,
-  output logic [31:0]  s_axil_rdata,
-  output logic [1:0]   s_axil_rresp,
-  output logic         s_axil_rvalid,
-  input  logic         s_axil_rready,
+  // s_axil: axil_if.slave (ip/shared/src/interfaces/axil_if.sv), ADDR_W = 8
+  axil_if.slave s_axil,
 
   output wire          sdram_clk,
   output wire          sdram_cke,
@@ -106,23 +85,7 @@ module vision_system #(
   axi_lite_regs #(.COORD_W(COORD_W)) u_regs (
     .clk,
     .rst_n,
-    .s_axil_awaddr,
-    .s_axil_awvalid,
-    .s_axil_awready,
-    .s_axil_wdata,
-    .s_axil_wstrb,
-    .s_axil_wvalid,
-    .s_axil_wready,
-    .s_axil_bresp,
-    .s_axil_bvalid,
-    .s_axil_bready,
-    .s_axil_araddr,
-    .s_axil_arvalid,
-    .s_axil_arready,
-    .s_axil_rdata,
-    .s_axil_rresp,
-    .s_axil_rvalid,
-    .s_axil_rready,
+    .s_axil(s_axil),
     .top_busy,
     .top_frame_done_pulse(frame_out_done),
     .cfg_out(cfg),
@@ -276,11 +239,7 @@ module vision_system #(
     .frame_done(frame_done_in),
     .busy(),
     .err_line_len(),
-    .s_axis_tvalid,
-    .s_axis_tready,
-    .s_axis_tdata,
-    .s_axis_tlast,
-    .s_axis_tuser,
+    .s_axis(s_axis),
     .wr_en(fb_wr_en),
     .wr_addr(fb_wr_addr),
     .wr_data(fb_wr_data)
@@ -312,11 +271,7 @@ module vision_system #(
     .fb_rd_data3,
     .fb_rd_ready,
     .fb_rd_valid,
-    .m_axis_tvalid,
-    .m_axis_tready,
-    .m_axis_tdata,
-    .m_axis_tlast,
-    .m_axis_tuser
+    .m_axis(m_axis)
   );
 
 endmodule

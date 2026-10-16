@@ -23,19 +23,19 @@
     for (int f = f0; f < f0 + n; f++)
       for (int i = 0; i < HA * VA; i++) begin
         if (f == stall_f && i == stall_at) begin
-          sv <= 0;
+          s_axis.tvalid <= 0;
           repeat (stall_cycles) @(posedge clk);
         end
-        sv <= 0;
+        s_axis.tvalid <= 0;
         while ($urandom_range(99) < gap_pct) @(posedge clk);
-        sd <= pix(i % HA, i / HA, f);
-        su <= (i == 0);
-        sl <= (i % HA == HA - 1);
-        sv <= 1;
+        s_axis.tdata <= pix(i % HA, i / HA, f);
+        s_axis.tuser <= (i == 0);
+        s_axis.tlast <= (i % HA == HA - 1);
+        s_axis.tvalid <= 1;
         @(posedge clk);
-        while (!sr) @(posedge clk);
+        while (!s_axis.tready) @(posedge clk);
       end
-    sv <= 0;
+    s_axis.tvalid <= 0;
   endtask
 
   task automatic wait_frame();

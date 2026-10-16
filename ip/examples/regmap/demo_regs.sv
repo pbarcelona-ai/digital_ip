@@ -14,6 +14,7 @@
 module demo_regs (
   input  logic        aclk,
   input  logic        aresetn,
+  // s_axil: axil_if.slave (ip/shared/src/interfaces/axil_if.sv), ADDR_W = 5
   input  logic [4:0]  s_axil_awaddr,
   input  logic        s_axil_awvalid,
   output logic        s_axil_awready,

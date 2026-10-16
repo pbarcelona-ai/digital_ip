@@ -32,11 +32,9 @@ module isp_window_tb;
 
   for (genvar g = 0; g < NI; g++) begin : g_w
     localparam int N = (g % 2) ? 5 : 3, R = (N - 1) / 2, BD = g / 2;
-    logic [PW-1:0] sd;
-    logic sl, su, sv, sr;
-    logic [N*N*PW-1:0] w;
+    axis_if #(.DATA_W(PW), .USER_W(1)) s_axis ();
+    axis_if #(.DATA_W(N*N*PW), .USER_W(1)) m_axis ();
     logic [15:0] wx, wy;
-    logic tl, tu, tv, tr;
     int n, total;
     isp_window #(
       .N(N),
@@ -48,35 +46,27 @@ module isp_window_tb;
       .rst_n,
       .width_i(W),
       .height_i(H),
-      .s_axis_tdata(sd),
-      .s_axis_tlast(sl),
-      .s_axis_tuser(su),
-      .s_axis_tvalid(sv),
-      .s_axis_tready(sr),
-      .m_axis_tdata(w),
+      .s_axis(s_axis),
+      .m_axis(m_axis),
       .m_x(wx),
-      .m_y(wy),
-      .m_axis_tlast(tl),
-      .m_axis_tuser(tu),
-      .m_axis_tvalid(tv),
-      .m_axis_tready(tr)
+      .m_y(wy)
     );
     initial begin
-      sv = 0;
-      su = 0;
-      sl = 0;
-      sd = 0;
+      s_axis.tvalid = 0;
+      s_axis.tuser = 0;
+      s_axis.tlast = 0;
+      s_axis.tdata = 0;
     end
-    always @(posedge clk) tr <= ($urandom_range(99) >= bp_pct);
-    always @(posedge clk) if (rst_n && tv && tr) begin
+    always @(posedge clk) m_axis.tready <= ($urandom_range(99) >= bp_pct);
+    always @(posedge clk) if (rst_n && m_axis.tvalid && m_axis.tready) begin
       int cx, cy;
-      if (tu) n = 0;                                 // re-anchor on every start of frame
+      if (m_axis.tuser) n = 0;                                 // re-anchor on every start of frame
       cx = n % W;
       cy = (n / W) % H;
       check(wx === 16'(cx) && wy === 16'(cy), $sformatf("N%0d B%0d: centre %0d,%0d exp %0d,%0d", N, BD, wx, wy, cx, cy));
-      check(tu == (cx == 0 && cy == 0) && tl == (cx == W - 1), $sformatf("N%0d B%0d: tuser/tlast at %0d,%0d", N, BD, cx, cy));
+      check(m_axis.tuser == (cx == 0 && cy == 0) && m_axis.tlast == (cx == W - 1), $sformatf("N%0d B%0d: tuser/tlast at %0d,%0d", N, BD, cx, cy));
       for (int r = 0; r < N; r++) for (int c = 0; c < N; c++)
-        check(w[(r*N + c)*PW +: PW] === img[bidx(cy - R + r, H, BD)][bidx(cx - R + c, W, BD)],
+        check(m_axis.tdata[(r*N + c)*PW +: PW] === img[bidx(cy - R + r, H, BD)][bidx(cx - R + c, W, BD)],
               $sformatf("N%0d B%0d: (%0d,%0d) tap r%0d c%0d", N, BD, cx, cy, r, c));
       n++;
       total++;
@@ -85,25 +75,25 @@ module isp_window_tb;
       n = 0;
       total = 0;
       if (stray) begin
-        sd <= 10'h3FF;
-        su <= 0;
-        sl <= 0;
-        sv <= 1;
+        s_axis.tdata <= 10'h3FF;
+        s_axis.tuser <= 0;
+        s_axis.tlast <= 0;
+        s_axis.tvalid <= 1;
         @(posedge clk);
-        while (!sr) @(posedge clk);
+        while (!s_axis.tready) @(posedge clk);
       end
       for (int f = 0; f < frames; f++)
         for (int yy = 0; yy < ((f == 0 && cut > 0) ? cut : H); yy++) for (int xx = 0; xx < W; xx++) begin
-          sv <= 0;
+          s_axis.tvalid <= 0;
           while ($urandom_range(99) < gap_pct) @(posedge clk);
-          sd <= img[yy][xx];
-          su <= (xx == 0 && yy == 0);
-          sl <= (xx == W - 1);
-          sv <= 1;
+          s_axis.tdata <= img[yy][xx];
+          s_axis.tuser <= (xx == 0 && yy == 0);
+          s_axis.tlast <= (xx == W - 1);
+          s_axis.tvalid <= 1;
           @(posedge clk);
-          while (!sr) @(posedge clk);
+          while (!s_axis.tready) @(posedge clk);
         end
-      sv <= 0;
+      s_axis.tvalid <= 0;
     endtask
   end
 

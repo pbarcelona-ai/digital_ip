@@ -19,9 +19,14 @@ module fb_checker #(parameter int TAPS = 4, parameter int MAX_W = 29, parameter 
                     parameter int NBUF = 1, parameter int RING = 0)
                    (input logic clk, output int errors, output int checks, output int done);
   localparam int PIX_W = 12;                      // arbitrary pixel width
-  logic                        wr_en = 0, rd_adv = 0, wr_buf = 0, rd_buf = 0;
-  logic [15:0]                 wr_x = 0, wr_y = 0, img_w = 1, img_h = 1;
-  logic [PIX_W-1:0]            wr_data = 0;
+  fb_wr_if #(.PIX_W(PIX_W)) wr ();
+  initial wr.en = 0;
+  initial wr.x = 0;
+  initial wr.y = 0;
+  initial wr.data = 0;
+  initial wr.buf_sel = 0;
+  logic                        rd_adv = 0, rd_buf = 0;
+  logic [15:0]                 img_w = 1, img_h = 1;
   logic signed [17:0]          rd_x0 = 0, rd_y0 = 0;
   logic [TAPS*TAPS*PIX_W-1:0]  rd_win;
   logic [PIX_W-1:0]            ref_img [2][MAX_H][MAX_W];  // written image per buffer
@@ -34,7 +39,9 @@ module fb_checker #(parameter int TAPS = 4, parameter int MAX_W = 29, parameter 
     .MAX_H(MAX_H),
     .NBUF(NBUF),
     .RING(RING)
-  ) dut (.*);
+  ) dut (
+    .*
+  );
 
   // clamp v into [0, hi]
   function automatic int cl(int v, int hi);

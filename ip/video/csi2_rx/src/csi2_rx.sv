@@ -31,18 +31,14 @@ module csi2_rx #(
   input  logic                  clk,           // D-PHY byte clock
   input  logic                  rst_n,
   // D-PHY PPI receive (HS mode)
-  input  logic [NLANES*8-1:0]   lane_data_i,   // byte of lane i in [8i +: 8]
-  input  logic [NLANES-1:0]     lane_valid_i,
+  // ppi: ppi_rx_if.link (ip/shared/src/interfaces/ppi_rx_if.sv), NLANES = NLANES {lane_data_i=lane_data lane_valid_i=lane_valid}
+  ppi_rx_if.link ppi,
   // Configuration (change only between frames)
   input  logic [1:0]            vc_i,          // virtual channel to receive
   input  logic [5:0]            dt_i,          // data type to stream, e.g. 0x2B RAW10
   // Payload stream
-  output logic [NLANES*8-1:0]   m_axis_tdata,
-  output logic [NLANES-1:0]     m_axis_tkeep,
-  output logic                  m_axis_tlast,
-  output logic                  m_axis_tuser,
-  output logic                  m_axis_tvalid,
-  input  logic                  m_axis_tready, // only checked for overflow_o
+  // m_axis: axis_if.master (ip/shared/src/interfaces/axis_if.sv), DATA_W = NLANES*8
+  axis_if.master m_axis,
   // Status pulses
   output logic                  frame_start_o,
   output logic                  frame_end_o,
@@ -87,19 +83,19 @@ module csi2_rx #(
       done <= '0;
       lane_valid_q <= '0;
     end else begin
-      lane_valid_q <= lane_valid_i;
+      lane_valid_q <= ppi.lane_valid;
       for (int i = 0; i < NLANES; i++) begin : lane_fifo
         logic push, pop;
-        push = lane_valid_i[i] && lf_cnt[i] != 4'd8;
+        push = ppi.lane_valid[i] && lf_cnt[i] != 4'd8;
         pop  = mw_valid && nonempty[i];
         if (push) begin
-          lf_mem[i][lf_wp[i]] <= lane_data_i[8*i +: 8];
+          lf_mem[i][lf_wp[i]] <= ppi.lane_data[8*i +: 8];
           lf_wp[i] <= lf_wp[i] + 1'b1;
         end
         if (pop) lf_rp[i] <= lf_rp[i] + 1'b1;
         lf_cnt[i] <= lf_cnt[i] + {3'd0, push} - {3'd0, pop};
-        if (lane_valid_i[i]) started[i] <= 1'b1;
-        if (started[i] && !lane_valid_i[i] && lane_valid_q[i]) done[i] <= 1'b1;
+        if (ppi.lane_valid[i]) started[i] <= 1'b1;
+        if (started[i] && !ppi.lane_valid[i] && lane_valid_q[i]) done[i] <= 1'b1;
       end
       if (burst_end) begin
         started <= '0;
@@ -267,11 +263,11 @@ module csi2_rx #(
       crc_hi <= 1'b0;
       sel <= 1'b0;
       sof_pend <= 1'b0;
-      m_axis_tvalid <= 1'b0;
-      m_axis_tdata <= '0;
-      m_axis_tkeep <= '0;
-      m_axis_tlast <= 1'b0;
-      m_axis_tuser <= 1'b0;
+      m_axis.tvalid <= 1'b0;
+      m_axis.tdata <= '0;
+      m_axis.tkeep <= '0;
+      m_axis.tlast <= 1'b0;
+      m_axis.tuser <= 1'b0;
       frame_start_o <= 1'b0;
       frame_end_o <= 1'b0;
       line_o <= 1'b0;
@@ -289,18 +285,18 @@ module csi2_rx #(
       crc_hi <= n_crc_hi;
       sel <= n_sel;
       sof_pend <= (o_any) ? 1'b0 : n_sof;
-      m_axis_tvalid <= o_any;
-      m_axis_tdata <= mw_data;
-      m_axis_tkeep <= o_keep;
-      m_axis_tlast <= o_last;
-      m_axis_tuser  <= o_any && n_sof;
+      m_axis.tvalid <= o_any;
+      m_axis.tdata <= mw_data;
+      m_axis.tkeep <= o_keep;
+      m_axis.tlast <= o_last;
+      m_axis.tuser  <= o_any && n_sof;
       frame_start_o <= e_fs;
       frame_end_o <= e_fe;
       line_o <= e_line;
       ecc_corrected_o <= e_corr;
       ecc_error_o <= e_err;
       crc_error_o <= e_crc;
-      overflow_o <= m_axis_tvalid && !m_axis_tready;
+      overflow_o <= m_axis.tvalid && !m_axis.tready;
     end
   end
 endmodule

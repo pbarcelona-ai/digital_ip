@@ -70,8 +70,15 @@ Every port gets a one-line comment. Use these standard forms:
     tuser = <start of frame | other>; tlast = <end of line | end of packet>; tkeep: <used | not used>
     Back-pressure: honour tready and never drop data; valid must not depend combinationally on ready.
     Throughput target: <e.g. 1 beat per clock>
+    Interface: AXI4-Stream ports follow axis_if (ip/shared/src/interfaces/axis_if.sv,
+    modports master / slave / monitor): discrete ports, with a comment line above the group,
+    e.g. // s_axis: axis_if.slave (ip/shared/src/interfaces/axis_if.sv), DATA_W = 24
 
 5b. AXI4-Lite control (s_axil_*), ADDR_W = <n>, 32-bit data, using ip_axil_regs:
+    Interface: AXI4-Lite ports follow axil_if (ip/shared/src/interfaces/axil_if.sv,
+    modports master / slave): discrete ports, with a comment line above the group,
+    e.g. // s_axil: axil_if.slave (ip/shared/src/interfaces/axil_if.sv), ADDR_W = 8
+    (Icarus cannot drive interface-array members; Yosys reads interfaces only via sv2v.)
     | Offset | Name | Access | Reset | Fields |
     |--------|------|--------|-------|--------|
     | 0x000  | ID   | RO     | "<4 ASCII chars>" | |

@@ -10,7 +10,7 @@
 //   hdmi_mode_i = 1 (HDMI): additionally
 //     - before every active line: 8-clock video preamble (CTL0 = 1) and a
 //       2-clock video guard band, found with an 11-clock look-ahead (the
-//       output is delayed by 11 clocks);
+//       look-ahead delays the output by 12 clocks);
 //     - once per frame, starting at the vsync leading edge: one data island
 //       (8-clock preamble, 2-clock guard band, 32-clock packet, 2-clock
 //       guard band) carrying an AVI InfoFrame (version 2): colour space
@@ -23,9 +23,9 @@
 //   before the next active line (the island and a following preamble fit).
 //   Input pixel {B, G, R} (or {Cb, Y, Cr}): component 0 in the LSBs.
 //   vs_pol_i tells which vsync level is the active one. Clock - pixel
-//   clock only. Reset - synchronous rst_n (active low). Latency - 12
-//   clocks.
-// Date: 2026-10-01
+//   clock only. Reset - synchronous rst_n (active low). Latency - 13
+//   clocks (12 look-ahead + 1 encoder).
+// Date: 2026-10-16
 module hdmi_tx (
   input  logic        clk,
   input  logic        rst_n,
@@ -36,28 +36,24 @@ module hdmi_tx (
   input  logic [1:0]  avi_m_i,
   input  logic [6:0]  avi_vic_i,
   input  logic [1:0]  avi_q_i,
-  input  logic [23:0] rgb_i,
-  input  logic        de_i,
-  input  logic        hs_i,
-  input  logic        vs_i,
-  output logic [9:0]  tmds0_o,
-  output logic [9:0]  tmds1_o,
-  output logic [9:0]  tmds2_o,
-  output logic [9:0]  tmds_clk_o
+  // vid: vid_if.sink (ip/shared/src/interfaces/vid_if.sv), DATA_W = 24 {rgb_i=data de_i=de hs_i=hs vs_i=vs}
+  vid_if.sink vid,
+  // tmds: tmds_if.source (ip/shared/src/interfaces/tmds_if.sv) {tmds0_o=ch0 tmds1_o=ch1 tmds2_o=ch2 tmds_clk_o=clk}
+  tmds_if.source tmds
 );
   localparam int D = 11;                       // look-ahead (preamble 8 + guard 2 + 1)
   localparam logic [1:0] M_CTRL = 2'd0, M_VIDEO = 2'd1, M_TERC4 = 2'd2, M_GUARD = 2'd3;
   localparam logic [9:0] GB_VID_02 = 10'b1011001100, GB_VID_1 = 10'b0100110011, GB_ISL = 10'b0100110011;
-  assign tmds_clk_o = 10'b0000011111;
+  assign tmds.clk = 10'b0000011111;
 
   // ---------------- look-ahead delay line: index 0 = what is output now
   logic [23:0] rgb_d [D+1];
   logic [D:0] de_d, hs_d, vs_d;
   always_ff @(posedge clk) begin
-    rgb_d[0] <= rgb_i;
-    de_d[0] <= de_i;
-    hs_d[0] <= hs_i;
-    vs_d[0] <= vs_i;
+    rgb_d[0] <= vid.data;
+    de_d[0] <= vid.de;
+    hs_d[0] <= vid.hs;
+    vs_d[0] <= vid.vs;
     for (int k = 1; k <= D; k++) begin
       rgb_d[k] <= rgb_d[k-1];
       de_d[k] <= de_d[k-1];
@@ -193,7 +189,7 @@ module hdmi_tx (
     .c_i(c0),
     .t_i(t0),
     .g_i(g0),
-    .q_o(tmds0_o)
+    .q_o(tmds.ch0)
   );
   tmds_encoder u_ch1 (
     .clk,
@@ -203,7 +199,7 @@ module hdmi_tx (
     .c_i(c1),
     .t_i(t1),
     .g_i(g1),
-    .q_o(tmds1_o)
+    .q_o(tmds.ch1)
   );
   tmds_encoder u_ch2 (
     .clk,
@@ -213,6 +209,6 @@ module hdmi_tx (
     .c_i(c2),
     .t_i(t2),
     .g_i(g2),
-    .q_o(tmds2_o)
+    .q_o(tmds.ch2)
   );
 endmodule

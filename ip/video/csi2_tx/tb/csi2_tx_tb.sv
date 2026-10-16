@@ -27,7 +27,8 @@ module csi2_tx_tb;
   localparam int HA = 32, VA = 8;
   logic en;
   logic yuv;
-  logic de, hs, vs, sof, eol, vbl, wt;
+  vid_if tim ();
+  logic sof, eol, vbl, wt;
   logic [15:0] x, y;
   vid_timing_gen u_vtg (
     .clk(pclk),
@@ -46,9 +47,7 @@ module csi2_tx_tb;
     .lock_en_i(1'b0),
     .src_ready_i(1'b1),
     .lock_max_i(16'd0),
-    .de_o(de),
-    .hs_o(hs),
-    .vs_o(vs),
+    .tim(tim),
     .x_o(x),
     .y_o(y),
     .sof_o(sof),
@@ -59,21 +58,25 @@ module csi2_tx_tb;
   int fcount = 0;                                 // source frame number (counts vsync edges)
   logic vs_q = 0;
   always @(posedge pclk) begin
-    vs_q <= vs;
-    if (vs && !vs_q) fcount <= fcount + 1;
+    vs_q <= tim.vs;
+    if (tim.vs && !vs_q) fcount <= fcount + 1;
   end
   function automatic logic [23:0] pix(input int px, input int py, input int f);
     return {8'(px * 5 + py), 8'(f), 8'(px ^ (py << 2))};          // {B, G, R}: G carries the frame
   endfunction
-  wire [23:0] rgb = de ? pix(x, y, fcount) : 24'h0;
+  wire [23:0] rgb = tim.de ? pix(x, y, fcount) : 24'h0;
 
   int nframes_rx [3], nlines [3], nfe [3];
   for (genvar g = 0; g < 3; g++) begin : g_l
     localparam int NL = (g == 0) ? 1 : (g == 1) ? 2 : 4;
-    logic [NL*8-1:0] ld;
-    logic [NL-1:0] lv;
-    logic req, rdy = 0, drop, uf;
+    ppi_tx_if #(.NLANES(NL)) ppi ();
+    initial ppi.tx_ready = 0;
+    logic drop, uf;
     logic [31:0] fr;
+    vid_if #(.DATA_W(24)) dut_vid ();
+    assign dut_vid.data = rgb;
+    assign dut_vid.de = tim.de;
+    assign dut_vid.vs = tim.vs;
     csi2_tx #(
       .NLANES(NL),
       .MAX_W(64)
@@ -82,9 +85,7 @@ module csi2_tx_tb;
       .prst_n,
       .enable_i(en),
       .vs_pol_i(1'b1),
-      .rgb_i(rgb),
-      .de_i(de),
-      .vs_i(vs),
+      .vid(dut_vid),
       .line_drop_o(drop),
       .frames_o(fr),
       .bclk,
@@ -92,33 +93,24 @@ module csi2_tx_tb;
       .vc_i(2'd1),
       .yuv422_i(yuv),
       .lp_gap_i(16'd6),
-      .lane_data_o(ld),
-      .lane_valid_o(lv),
-      .hs_req_o(req),
-      .tx_ready_i(rdy),
+      .ppi(ppi),
       .underflow_o(uf)
     );
     // PHY: ready a random 0-5 clocks after the request, until the request ends
     always @(posedge bclk) begin
-      if (!req) rdy <= 1'b0;
-      else if (!rdy && $urandom_range(5) == 0) rdy <= 1'b1;
+      if (!ppi.hs_req) ppi.tx_ready <= 1'b0;
+      else if (!ppi.tx_ready && $urandom_range(5) == 0) ppi.tx_ready <= 1'b1;
     end
-    logic [NL*8-1:0] td;
-    logic [NL-1:0] tk;
-    logic tl, tu, tv, fs, fe, ln, ec, ee, ce, ov;
+    axis_if #(.DATA_W(NL*8), .USER_W(1), .KEEP_W(NL)) m_axis ();
+    assign m_axis.tready = 1'b1;
+    logic fs, fe, ln, ec, ee, ce, ov;
     csi2_rx #(.NLANES(NL)) rx (
       .clk(bclk),
       .rst_n(brst_n),
-      .lane_data_i(ld),
-      .lane_valid_i(lv),
+      .ppi(ppi),
       .vc_i(2'd1),
       .dt_i(yuv ? 6'h1E : 6'h24),
-      .m_axis_tdata(td),
-      .m_axis_tkeep(tk),
-      .m_axis_tlast(tl),
-      .m_axis_tuser(tu),
-      .m_axis_tvalid(tv),
-      .m_axis_tready(1'b1),
+      .m_axis(m_axis),
       .frame_start_o(fs),
       .frame_end_o(fe),
       .line_o(ln),
@@ -139,12 +131,12 @@ module csi2_tx_tb;
         ly = 0;
       end
       if (fe) nfe[g]++;
-      if (tv) begin
-        for (int i = 0; i < NL; i++) if (tk[i]) begin
-          cur[n] = td[8*i +: 8];
+      if (m_axis.tvalid) begin
+        for (int i = 0; i < NL; i++) if (m_axis.tkeep[i]) begin
+          cur[n] = m_axis.tdata[8*i +: 8];
           n++;
         end
-        if (tl) begin
+        if (m_axis.tlast) begin
           int f, exp_n;
           logic [7:0] e;
           f = cur[1];                                // G (RGB) or Y0 (YUV) of pixel 0 = frame number

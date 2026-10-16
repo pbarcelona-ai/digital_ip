@@ -20,7 +20,7 @@
 //   including the FIFO output registers, so they can reach DEPTH+2.
 //   Clock - aclk only. Reset - synchronous aresetn (active low), FIFOs
 //   empty. Latency - FIFO fall-through 2 clocks.
-// Date: 2026-10-12
+// Date: 2026-10-16
 module py_stream_port #(
   parameter int DATA_W   = 8,              // <= 24
   parameter int TX_DEPTH = 16,             // power of two >= 2
@@ -29,94 +29,81 @@ module py_stream_port #(
   input  logic              aclk,
   input  logic              aresetn,
   // AXI-Stream master: words to the peripheral's TX input
-  output logic [DATA_W-1:0] m_axis_tdata,
-  output logic              m_axis_tvalid,
-  input  logic              m_axis_tready,
-  output logic              m_axis_tlast,
+  // m_axis: axis_if.master (ip/shared/src/interfaces/axis_if.sv), DATA_W = DATA_W
+  axis_if.master m_axis,
   // AXI-Stream slave: words from the peripheral's RX output
-  input  logic [DATA_W-1:0] s_axis_tdata,
-  input  logic              s_axis_tvalid,
-  output logic              s_axis_tready,
-  input  logic              s_axis_tlast,
+  // s_axis: axis_if.slave (ip/shared/src/interfaces/axis_if.sv), DATA_W = DATA_W
+  axis_if.slave s_axis,
   output logic              irq_o,
   // register ports
-  input  logic [24:0]       cfg_txdata,    // TXDATA: data written ...
-  input  logic              cfg_txdata_wr, // ... and its write pulse
-  output logic [31:0]       sts_rxdata,    // RXDATA: value read ...
-  input  logic              cfg_rxdata_rd, // ... and its read pulse (pop)
-  input  logic [31:0]       cfg_status,    // STATUS: data written ...
-  input  logic              cfg_status_wr, // ... and its write pulse
-  output logic [31:0]       sts_status,    // STATUS: value read
-  input  logic [2:0]        cfg_irq_en     // IRQ_EN
+  // regs: py_stream_port_regs_if.core (src/include/py_stream_port_regs_if.sv)
+  py_stream_port_regs_if.core regs
 );
+  assign m_axis.tkeep = '1;      // not used by this block
+  assign m_axis.tuser = '0;      // not used by this block
   if (DATA_W < 1 || DATA_W > 24) begin : g_bad $error("py_stream_port: DATA_W must be 1..24"); end
 
   // ---------------- TX FIFO: register writes -> peripheral ----------------
   logic tx_push, tx_ready, tx_user;
   logic [$clog2(TX_DEPTH)+1:0] tx_level;
-  assign tx_push = cfg_txdata_wr;
+  assign tx_push = regs.cfg_txdata_wr;
+  axis_if #(.DATA_W(DATA_W)) u_txf_s ();
+  assign u_txf_s.tdata = regs.cfg_txdata[DATA_W-1:0];
+  assign u_txf_s.tlast = regs.cfg_txdata[24];
+  assign u_txf_s.tuser = 1'b0;
+  assign u_txf_s.tvalid = tx_push;
+  assign tx_ready = u_txf_s.tready;
+  axis_if #(.DATA_W(DATA_W)) u_txf_m ();
+  assign m_axis.tdata = u_txf_m.tdata;
+  assign m_axis.tlast = u_txf_m.tlast;
+  assign tx_user = u_txf_m.tuser;
+  assign m_axis.tvalid = u_txf_m.tvalid;
+  assign u_txf_m.tready = m_axis.tready;
   ip_axis_fifo #(
     .DATA_W(DATA_W),
     .DEPTH(TX_DEPTH)
   ) u_txf (
     .clk(aclk),
     .rst_n(aresetn),
-    .s_tdata(cfg_txdata[DATA_W-1:0]),
-    .s_tlast(cfg_txdata[24]),
-    .s_tuser(1'b0),
-    .s_tvalid(tx_push),
-    .s_tready(tx_ready),
-    .m_tdata(m_axis_tdata),
-    .m_tlast(m_axis_tlast),
-    .m_tuser(tx_user),
-    .m_tvalid(m_axis_tvalid),
-    .m_tready(m_axis_tready),
+    .s(u_txf_s),
+    .m(u_txf_m),
     .level_o(tx_level)
   );
 
   // ---------------- RX FIFO: peripheral -> register reads ----------------
-  logic [DATA_W-1:0] rx_data;
-  logic rx_valid, rx_last, rx_pop, rx_user;
+  axis_if #(.DATA_W(DATA_W), .USER_W(1)) rx ();
   logic [$clog2(RX_DEPTH)+1:0] rx_level;
   // the read pulse comes in the clock RXDATA is returned, so popping then is safe
-  assign rx_pop = cfg_rxdata_rd && rx_valid;
+  assign rx.tready = regs.cfg_rxdata_rd && rx.tvalid;
   ip_axis_fifo #(
     .DATA_W(DATA_W),
     .DEPTH(RX_DEPTH)
   ) u_rxf (
     .clk(aclk),
     .rst_n(aresetn),
-    .s_tdata(s_axis_tdata),
-    .s_tlast(s_axis_tlast),
-    .s_tuser(1'b0),
-    .s_tvalid(s_axis_tvalid),
-    .s_tready(s_axis_tready),
-    .m_tdata(rx_data),
-    .m_tlast(rx_last),
-    .m_tuser(rx_user),
-    .m_tvalid(rx_valid),
-    .m_tready(rx_pop),
+    .s(s_axis),
+    .m(rx),
     .level_o(rx_level)
   );
 
   logic tx_ovf;
-  wire  [2:0] irq_en = cfg_irq_en;
+  wire  [2:0] irq_en = regs.cfg_irq_en;
   wire  tx_empty = (tx_level == '0);
   always_ff @(posedge aclk) begin
     if (!aresetn) begin
       tx_ovf <= 1'b0;
     end
     else begin
+      if (regs.cfg_status_wr && regs.cfg_status[2]) tx_ovf <= 1'b0;   // W1C first: a set in the same clock wins
       if (tx_push && !tx_ready) tx_ovf <= 1'b1;
-      if (cfg_status_wr && cfg_status[2]) tx_ovf <= 1'b0;
     end
   end
 
-  assign sts_rxdata = {rx_valid, 6'd0, rx_valid & rx_last, 24'(rx_valid ? rx_data : '0)};
-  assign sts_status = {12'(tx_level), 12'(rx_level), 4'd0, tx_empty, tx_ovf, tx_ready, rx_valid};
+  assign regs.sts_rxdata = {rx.tvalid, 6'd0, rx.tvalid & rx.tlast, 24'(rx.tvalid ? rx.tdata : '0)};
+  assign regs.sts_status = {12'(tx_level), 12'(rx_level), 4'd0, tx_empty, tx_ovf, tx_ready, rx.tvalid};
 
   always_ff @(posedge aclk) begin
     if (!aresetn) irq_o <= 1'b0;
-    else          irq_o <= (irq_en[0] && rx_valid) || (irq_en[1] && tx_ready) || (irq_en[2] && tx_empty);
+    else          irq_o <= (irq_en[0] && rx.tvalid) || (irq_en[1] && tx_ready) || (irq_en[2] && tx_empty);
   end
 endmodule

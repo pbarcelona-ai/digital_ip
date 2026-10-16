@@ -33,30 +33,24 @@ module axis_to_video #(
   input  logic [15:0]      start_level_i,      // pixels buffered before a frame may start
   input  logic [15:0]      h_active_i,         // for the test pattern bar width
   // Video stream in
-  input  logic [PIX_W-1:0] s_axis_tdata,
-  input  logic             s_axis_tlast,
-  input  logic             s_axis_tuser,
-  input  logic             s_axis_tvalid,
-  output logic             s_axis_tready,
+  // s_axis: axis_if.slave (ip/shared/src/interfaces/axis_if.sv), DATA_W = PIX_W
+  axis_if.slave s_axis,
   // Timing in (from vid_timing_gen)
-  input  logic             de_i,
-  input  logic             hs_i,
-  input  logic             vs_i,
+  // tim: vid_if.sink (ip/shared/src/interfaces/vid_if.sv) {de_i=de hs_i=hs vs_i=vs}
+  vid_if.sink tim,
   input  logic             sof_i,
   input  logic             vblank_i,
   // Video out
-  output logic [PIX_W-1:0] rgb_o,
-  output logic             de_o,
-  output logic             hs_o,
-  output logic             vs_o,
+  // vid: vid_if.source (ip/shared/src/interfaces/vid_if.sv), DATA_W = PIX_W {rgb_o=data de_o=de hs_o=hs vs_o=vs}
+  vid_if.source vid,
   // Status
   output logic             src_ready_o,
   output logic             locked_o,           // current frame is being taken from the input
   output logic             underflow_o
 );
   localparam int LW = $clog2(FIFO_DEPTH) + 2;
-  logic [PIX_W-1:0] f_data;
-  logic f_last, f_user, f_valid, f_ready, f_tuser_unused;
+  axis_if #(.DATA_W(PIX_W), .USER_W(1)) f ();
+  logic f_tuser_unused;
   logic [LW-1:0] level;
   ip_axis_fifo #(
     .DATA_W(PIX_W),
@@ -64,30 +58,22 @@ module axis_to_video #(
   ) u_fifo (
     .clk,
     .rst_n,
-    .s_tdata(s_axis_tdata),
-    .s_tlast(s_axis_tlast),
-    .s_tuser(s_axis_tuser),
-    .s_tvalid(s_axis_tvalid),
-    .s_tready(s_axis_tready),
-    .m_tdata(f_data),
-    .m_tlast(f_last),
-    .m_tuser(f_user),
-    .m_tvalid(f_valid),
-    .m_tready(f_ready),
+    .s(s_axis),
+    .m(f),
     .level_o(level)
   );
 
-  wire head_sof = f_valid && f_user;
+  wire head_sof = f.tvalid && f.tuser;
   assign src_ready_o = head_sof && (32'(level) >= 32'(start_level_i));
 
   logic synced;
   // What happens to this de cycle
-  wire start_ok = de_i && sof_i && head_sof;                          // frame starts from the input
-  wire take     = !tpg_en_i && de_i && (sof_i ? head_sof : (synced && f_valid && !f_user));
-  wire starve   = !tpg_en_i && de_i && !sof_i && synced && !(f_valid && !f_user);
+  wire start_ok = tim.de && sof_i && head_sof;                          // frame starts from the input
+  wire take     = !tpg_en_i && tim.de && (sof_i ? head_sof : (synced && f.tvalid && !f.tuser));
+  wire starve   = !tpg_en_i && tim.de && !sof_i && synced && !(f.tvalid && !f.tuser);
   // Discard: test pattern on, or resynchronising (drop up to the next SOF)
-  wire discard  = f_valid && (tpg_en_i || (!synced && !f_user && !(de_i && sof_i)));
-  assign f_ready = take || discard;
+  wire discard  = f.tvalid && (tpg_en_i || (!synced && !f.tuser && !(tim.de && sof_i)));
+  assign f.tready = take || discard;
 
   // Colour bars: bar index advances every h_active/8 pixels of a line (the
   // last bar takes the remainder). bar / bar_cnt describe the previous pixel.
@@ -95,7 +81,7 @@ module axis_to_video #(
   logic [2:0] bar;
   logic de_q;
   wire  [15:0] bar_w = (h_active_i >> 3) == 0 ? 16'd1 : (h_active_i >> 3);
-  wire         first = de_i && !de_q;
+  wire         first = tim.de && !de_q;
   wire         next  = !first && bar_cnt == bar_w && bar != 3'd7;
   wire  [2:0]  n_bar = first ? 3'd0 : (next ? bar + 1'b1 : bar);
   wire  [15:0] n_cnt = (first || next) ? 16'd1 : bar_cnt + 1'b1;
@@ -117,30 +103,30 @@ module axis_to_video #(
       bar_cnt <= '0;
       bar <= '0;
       de_q <= 1'b0;
-      rgb_o <= '0;
-      de_o <= 1'b0;
-      hs_o <= 1'b0;
-      vs_o <= 1'b0;
+      vid.data <= '0;
+      vid.de <= 1'b0;
+      vid.hs <= 1'b0;
+      vid.vs <= 1'b0;
       underflow_o <= 1'b0;
       locked_o <= 1'b0;
     end else begin
-      de_q <= de_i;
-      if (de_i) begin
+      de_q <= tim.de;
+      if (tim.de) begin
         bar <= n_bar;
         bar_cnt <= n_cnt;
       end
-      if (tpg_en_i || (vblank_i && !de_i)) synced <= 1'b0;       // frame over: drop leftovers
-      else if (de_i && sof_i) synced <= head_sof;
+      if (tpg_en_i || (vblank_i && !tim.de)) synced <= 1'b0;       // frame over: drop leftovers
+      else if (tim.de && sof_i) synced <= head_sof;
       else if (starve) synced <= 1'b0;
-      underflow_o <= starve || (de_i && sof_i && !head_sof && !tpg_en_i && locked_o);
-      locked_o    <= tpg_en_i ? 1'b0 : (de_i && sof_i) ? head_sof : (starve ? 1'b0 : locked_o);
-      de_o <= de_i;
-      hs_o <= hs_i;
-      vs_o <= vs_i;
-      if (!de_i)         rgb_o <= '0;
-      else if (tpg_en_i) rgb_o <= PIX_W'(bar_rgb);
-      else if (take)     rgb_o <= f_data;
-      else               rgb_o <= '0;                                // black while unsynchronised
+      underflow_o <= starve || (tim.de && sof_i && !head_sof && !tpg_en_i && locked_o);
+      locked_o    <= tpg_en_i ? 1'b0 : (tim.de && sof_i) ? head_sof : (starve ? 1'b0 : locked_o);
+      vid.de <= tim.de;
+      vid.hs <= tim.hs;
+      vid.vs <= tim.vs;
+      if (!tim.de)         vid.data <= '0;
+      else if (tpg_en_i) vid.data <= PIX_W'(bar_rgb);
+      else if (take)     vid.data <= f.tdata;
+      else               vid.data <= '0;                                // black while unsynchronised
     end
   end
 endmodule

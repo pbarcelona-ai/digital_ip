@@ -26,8 +26,8 @@
       nfe[g] = 0;
     end
     en = 1;
-    repeat (frames) begin @(posedge vs); end
-    @(posedge vs); // one more vsync closes the last frame
+    repeat (frames) begin @(posedge tim.vs); end
+    @(posedge tim.vs); // one more vsync closes the last frame
     en = 0;
     repeat (3000) @(posedge pclk);
     for (int g = 0; g < 3; g++) begin

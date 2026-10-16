@@ -89,7 +89,7 @@
   endtask
 
   task automatic test_idle();
-    check(cs_n == 1 && sclk == 0, "idle pins");
+    check(spi.cs_n == 1 && spi.sclk == 0, "idle pins");
   endtask
 
   task automatic test_jedec_id();

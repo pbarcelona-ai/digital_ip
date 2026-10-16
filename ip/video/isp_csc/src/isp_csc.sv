@@ -15,33 +15,31 @@
 //   the HDMI channel that carries it in YCbCr 4:4:4 (red channel Cr, green
 //   channel Y, blue channel Cb). bypass_i passes RGB unchanged. Both are
 //   sampled at each frame start. Clock - clk only. Reset - synchronous
-//   rst_n (active low). Latency - 2 clocks.
-// Date: 2026-10-01
+//   rst_n (active low). Latency - 5 clocks. The output goes through a 2-entry ip_axis_fifo, so s_axis_tready does
+//   not depend combinationally on m_axis_tready (+3 clocks).
+// Date: 2026-10-16
 module isp_csc (
   input  logic        clk,
   input  logic        rst_n,
   input  logic        bypass_i,
   input  logic        bt709_i,
-  input  logic [23:0] s_axis_tdata,          // {B, G, R}
-  input  logic        s_axis_tlast,
-  input  logic        s_axis_tuser,
-  input  logic        s_axis_tvalid,
-  output logic        s_axis_tready,
-  output logic [23:0] m_axis_tdata,          // {Cb, Y, Cr} or {B, G, R} when bypassed
-  output logic        m_axis_tlast,
-  output logic        m_axis_tuser,
-  output logic        m_axis_tvalid,
-  input  logic        m_axis_tready
+  // s_axis: axis_if.slave (ip/shared/src/interfaces/axis_if.sv), DATA_W = 24
+  axis_if.slave s_axis,
+  // m_axis: axis_if.master (ip/shared/src/interfaces/axis_if.sv), DATA_W = 24
+  axis_if.master m_axis
 );
-  wire en = !m_axis_tvalid || m_axis_tready;
-  assign s_axis_tready = en;
-  wire acc = s_axis_tvalid && en;
+  // output stage: the last pipeline register (q_*) feeds a 2-entry FIFO whose ready is registered,
+  // so s_axis_tready does not depend combinationally on m_axis_tready
+  axis_if #(.DATA_W(24), .USER_W(1)) q ();
+  wire en = !q.tvalid || q.tready;
+  assign s_axis.tready = en;
+  wire acc = s_axis.tvalid && en;
 
   logic by_f, m709_f;
-  wire  by   = s_axis_tuser ? bypass_i : by_f;
-  wire  m709 = s_axis_tuser ? bt709_i  : m709_f;
+  wire  by   = s_axis.tuser ? bypass_i : by_f;
+  wire  m709 = s_axis.tuser ? bt709_i  : m709_f;
 
-  wire signed [9:0] r = {2'b00, s_axis_tdata[7:0]}, g = {2'b00, s_axis_tdata[15:8]}, b = {2'b00, s_axis_tdata[23:16]};
+  wire signed [9:0] r = {2'b00, s_axis.tdata[7:0]}, g = {2'b00, s_axis.tdata[15:8]}, b = {2'b00, s_axis.tdata[23:16]};
   logic signed [18:0] sy, scb, scr;
   logic [23:0] d1;
   logic v1, l1, u1, b1;
@@ -62,12 +60,12 @@ module isp_csc (
       sy <= '0;
       scb <= '0;
       scr <= '0;
-      m_axis_tvalid <= 1'b0;
-      m_axis_tdata <= '0;
-      m_axis_tlast <= 1'b0;
-      m_axis_tuser <= 1'b0;
+      q.tvalid <= 1'b0;
+      q.tdata <= '0;
+      q.tlast <= 1'b0;
+      q.tuser <= 1'b0;
     end else if (en) begin
-      if (acc && s_axis_tuser) begin
+      if (acc && s_axis.tuser) begin
         by_f <= bypass_i;
         m709_f <= bt709_i;
       end
@@ -80,15 +78,25 @@ module isp_csc (
         scb <= -38 * r - 74 * g + 112 * b + 128;
         scr <= 112 * r - 94 * g - 18 * b + 128;
       end
-      d1 <= s_axis_tdata;
+      d1 <= s_axis.tdata;
       v1 <= acc;
-      l1 <= s_axis_tlast;
-      u1 <= s_axis_tuser;
+      l1 <= s_axis.tlast;
+      u1 <= s_axis.tuser;
       b1 <= by;
-      m_axis_tvalid <= v1;
-      m_axis_tlast <= l1;
-      m_axis_tuser <= u1;
-      m_axis_tdata  <= b1 ? d1 : {clamp(128 + (scb >>> 8)), clamp(16 + (sy >>> 8)), clamp(128 + (scr >>> 8))};
+      q.tvalid <= v1;
+      q.tlast <= l1;
+      q.tuser <= u1;
+      q.tdata  <= b1 ? d1 : {clamp(128 + (scb >>> 8)), clamp(16 + (sy >>> 8)), clamp(128 + (scr >>> 8))};
     end
   end
+  ip_axis_fifo #(
+    .DATA_W(24),
+    .DEPTH(2)
+  ) u_out_fifo (
+    .clk,
+    .rst_n,
+    .s(q),
+    .m(m_axis),
+    .level_o()
+  );
 endmodule

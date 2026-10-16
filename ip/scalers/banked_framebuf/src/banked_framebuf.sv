@@ -22,7 +22,7 @@
 //   the bank of a row does not change), coordinates stay logical and are
 //   still clamped against img_h; the caller guarantees that a row is not
 //   read after it has been overwritten.
-// Date: 2026-09-26
+// Date: 2026-10-16
 
 module banked_framebuf #(
   parameter int PIX_W = 24,     // bits per pixel
@@ -35,11 +35,8 @@ module banked_framebuf #(
 )(
   input  logic                         clk,
   // write port (one pixel per clock)
-  input  logic                         wr_en,   // write strobe
-  input  logic [15:0]                  wr_x,    // pixel column
-  input  logic [15:0]                  wr_y,    // pixel row
-  input  logic [PIX_W-1:0]             wr_data, // pixel value
-  input  logic                         wr_buf,  // buffer written (NBUF = 2)
+  // wr: fb_wr_if.store (ip/shared/src/interfaces/fb_wr_if.sv), PIX_W = PIX_W {wr_en=en wr_x=x wr_y=y wr_data=data wr_buf=buf_sel}
+  fb_wr_if.store wr,
   // window read port
   input  logic                         rd_adv,  // advance read pipeline
   input  logic                         rd_buf,  // buffer read (NBUF = 2)
@@ -67,10 +64,11 @@ module banked_framebuf #(
   localparam int DALL  = DEPTH * NBUF;            // words per bank
   localparam int AW    = (DALL <= 2) ? 1 : $clog2(DALL);   // addr width
 
-  initial begin
-    if (NBUF < 1 || NBUF > 2) $fatal(1, "banked_framebuf: NBUF must be 1 or 2");
-    if (RING > 0 && (RING < B || (RING & (RING - 1)) != 0))
-      $fatal(1, "banked_framebuf: RING must be a power of two >= %0d", B);
+  if (NBUF < 1 || NBUF > 2) begin : g_bad_nbuf
+    $error("banked_framebuf: NBUF must be 1 or 2");
+  end
+  if (RING > 0 && (RING < B || (RING & (RING - 1)) != 0)) begin : g_bad_ring
+    $error("banked_framebuf: RING must be a power of two >= %0d", B);
   end
 
   // physical row of image row y (ring mode: modulo RING, a bit mask)
@@ -106,11 +104,11 @@ module banked_framebuf #(
   logic             wen;
   logic [PIX_W-1:0] wdat;
   always_ff @(posedge clk) begin
-    wen   <= wr_en;
-    wbx   <= SELW'(wr_x % B);
-    wby   <= SELW'(wr_y % B);
-    waddr <= AW'(boff(wr_buf) + (prow(int'(wr_y)) / B) * BW + (wr_x / B));
-    wdat  <= wr_data;
+    wen   <= wr.en;
+    wbx   <= SELW'(wr.x % B);
+    wby   <= SELW'(wr.y % B);
+    waddr <= AW'(boff(wr.buf_sel) + (prow(int'(wr.y)) / B) * BW + (wr.x / B));
+    wdat  <= wr.data;
   end
 
   // ---------------------------------------------------------------------------

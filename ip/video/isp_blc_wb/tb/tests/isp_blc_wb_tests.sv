@@ -52,22 +52,22 @@
     end
     for (int i = 0; i < w * h; i++) begin
       while ($urandom_range(99) < gap_pct) begin
-        sv <= 0;
+        s_axis.tvalid <= 0;
         @(posedge clk);
       end
-      sd <= img[i];
-      su <= (i == 0);
-      sl <= (i % w == w - 1);
-      sv <= 1;
+      s_axis.tdata <= img[i];
+      s_axis.tuser <= (i == 0);
+      s_axis.tlast <= (i % w == w - 1);
+      s_axis.tvalid <= 1;
       @(posedge clk);
-      while (!sr) @(posedge clk);
+      while (!s_axis.tready) @(posedge clk);
       if (i == w * h / 2) begin                 // mid-frame changes must not take effect
         cfa <= ~p;
         blc_by <= ~bb;
         wb_by <= ~wbb;
       end
     end
-    sv <= 0;
+    s_axis.tvalid <= 0;
     repeat (20) @(posedge clk);
     check(nout == w * h, $sformatf("frame %0dx%0d: %0d pixels out", w, h, nout));
   endtask

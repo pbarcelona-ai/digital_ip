@@ -20,6 +20,7 @@ module isp_stats #(
   input  logic [CW-1:0]   sat_thr_i,
   input  logic            flush_i,
   // Monitored stream
+  // stream: axis_if.monitor (ip/shared/src/interfaces/axis_if.sv), DATA_W = 3*CW
   input  logic [3*CW-1:0] tdata,               // {B, G, R}
   input  logic            tuser,
   input  logic            tvalid,

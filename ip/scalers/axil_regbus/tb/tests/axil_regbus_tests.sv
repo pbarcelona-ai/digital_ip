@@ -6,8 +6,9 @@
 //   they use its signals, parameters and models directly. Tasks, in file
 //   order:
 //     wr  AXI write with a random AW/W order and delay and late bready
-//     rd  AXI read with late rready
-// Date: 2026-10-08
+//         (SLVERR expected on ERR_WORD)
+//     rd  AXI read with late rready (SLVERR expected on ERR_WORD)
+// Date: 2026-10-16
 // ***************
   // AXI write with a random AW/W order and delay and late bready; the
   // model is updated with the strobed bytes
@@ -16,35 +17,36 @@
     bit aw_done = 0, w_done = 0;
     int delay = $urandom_range(3, 0);
     @(negedge clk);
-    awaddr = ADDR_W'(a);
-    wdata = d;
-    wstrb = s;
-    awvalid = (order != 2);
-    wvalid = (order != 1);
+    s_axil.awaddr = ADDR_W'(a);
+    s_axil.wdata = d;
+    s_axil.wstrb = s;
+    s_axil.awvalid = (order != 2);
+    s_axil.wvalid = (order != 1);
     while (!(aw_done && w_done)) begin
       @(posedge clk);
-      if (awvalid && awready) aw_done = 1;
-      if (wvalid && wready)   w_done  = 1;
+      if (s_axil.awvalid && s_axil.awready) aw_done = 1;
+      if (s_axil.wvalid && s_axil.wready)   w_done  = 1;
       @(negedge clk);
-      if (aw_done) awvalid = 0;
-      if (w_done)  wvalid  = 0;
+      if (aw_done) s_axil.awvalid = 0;
+      if (w_done)  s_axil.wvalid  = 0;
       if (delay > 0) delay--;
       else begin
-        if (!aw_done) awvalid = 1;
-        if (!w_done)  wvalid  = 1;
+        if (!aw_done) s_axil.awvalid = 1;
+        if (!w_done)  s_axil.wvalid  = 1;
       end
     end
     repeat ($urandom_range(3, 0)) @(negedge clk);   // late bready
-    bready = 1;
+    s_axil.bready = 1;
     do @(posedge clk);
-    while (!bvalid);
+    while (!s_axil.bvalid);
     checks++;
-    if (bresp !== 2'b00) begin
+    if (s_axil.bresp !== (((a >> 2) == ERR_WORD) ? 2'b10 : 2'b00)) begin   // SLVERR on the error word
       errors++;
-      $display("ERROR: bresp");
+      $display("ERROR: write 0x%02h bresp %0d", a, s_axil.bresp);
     end
-    @(negedge clk) bready = 0;
-    for (int b = 0; b < 4; b++) if (s[b]) model[a >> 2][b*8 +: 8] = d[b*8 +: 8];
+    @(negedge clk) s_axil.bready = 0;
+    if ((a >> 2) != ERR_WORD)
+      for (int b = 0; b < 4; b++) if (s[b]) model[a >> 2][b*8 +: 8] = d[b*8 +: 8];
   endtask
 
   // AXI read with late rready; R data must stay stable while stalled
@@ -52,28 +54,28 @@
   task automatic rd(input int a);
     logic [31:0] d0;
     @(negedge clk);
-    araddr = ADDR_W'(a);
-    arvalid = 1;
+    s_axil.araddr = ADDR_W'(a);
+    s_axil.arvalid = 1;
     do @(posedge clk);
-    while (!arready);
+    while (!s_axil.arready);
     @(negedge clk);
-    arvalid = 0;
-    wait (rvalid);
-    d0 = rdata;
+    s_axil.arvalid = 0;
+    wait (s_axil.rvalid);
+    d0 = s_axil.rdata;
     repeat ($urandom_range(3, 0)) begin       // rdata must stay stable
       @(negedge clk);
-      if (rdata !== d0 || !rvalid) begin
+      if (s_axil.rdata !== d0 || !s_axil.rvalid) begin
         errors++;
         $display("ERROR: R channel unstable");
       end
     end
-    @(negedge clk) rready = 1;
+    @(negedge clk) s_axil.rready = 1;
     do @(posedge clk);
-    while (!rvalid);
+    while (!s_axil.rvalid);
     checks++;
-    if (rdata !== model[a >> 2] || rresp !== 2'b00) begin
+    if (s_axil.rdata !== model[a >> 2] || s_axil.rresp !== (((a >> 2) == ERR_WORD) ? 2'b10 : 2'b00)) begin
       errors++;
-      $display("ERROR: read 0x%02h got 0x%08h exp 0x%08h", a, rdata, model[a >> 2]);
+      $display("ERROR: read 0x%02h got 0x%08h exp 0x%08h", a, s_axil.rdata, model[a >> 2]);
     end
-    @(negedge clk) rready = 0;
+    @(negedge clk) s_axil.rready = 0;
   endtask

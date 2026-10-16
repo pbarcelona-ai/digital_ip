@@ -16,55 +16,29 @@ module i2c_master_tb;
   logic aclk = 0, aresetn = 0;
   always #(CLK_PERIOD/2) aclk = ~aclk;
 
-  logic [7:0] awaddr, araddr;
-  logic awvalid, awready, wvalid, wready;
-  logic [31:0] wdata, rdata;
-  logic [3:0] wstrb;
-  logic [1:0] bresp, rresp;
-  logic bvalid, bready, arvalid, arready, rvalid, rready;
-  logic [7:0] s_tdata, m_tdata;
-  logic s_tvalid, s_tready, s_tlast;
-  logic m_tvalid, m_tready, m_tlast;
+  axil_if #(.ADDR_W(8), .DATA_W(32)) s_axil ();
+  axis_if #(.DATA_W(8)) m ();
+  axis_if #(.DATA_W(8)) s ();
   logic scl_o, scl_t, sda_o, sda_t;
 
   tri1 sda, scl;
   assign sda = sda_t ? 1'bz : sda_o;       // master open-drain drivers
   assign scl = scl_t ? 1'bz : scl_o;
 
+  i2c_if dut_i2c ();
+  assign dut_i2c.scl_i = scl;
+  assign scl_o = dut_i2c.scl_o;
+  assign scl_t = dut_i2c.scl_t;
+  assign dut_i2c.sda_i = sda;
+  assign sda_o = dut_i2c.sda_o;
+  assign sda_t = dut_i2c.sda_t;
   i2c_top #(.FIFO_DEPTH(16)) dut (
     .aclk,
     .aresetn,
-    .s_axil_awaddr(awaddr),
-    .s_axil_awvalid(awvalid),
-    .s_axil_awready(awready),
-    .s_axil_wdata(wdata),
-    .s_axil_wstrb(wstrb),
-    .s_axil_wvalid(wvalid),
-    .s_axil_wready(wready),
-    .s_axil_bresp(bresp),
-    .s_axil_bvalid(bvalid),
-    .s_axil_bready(bready),
-    .s_axil_araddr(araddr),
-    .s_axil_arvalid(arvalid),
-    .s_axil_arready(arready),
-    .s_axil_rdata(rdata),
-    .s_axil_rresp(rresp),
-    .s_axil_rvalid(rvalid),
-    .s_axil_rready(rready),
-    .s_axis_tdata(s_tdata),
-    .s_axis_tvalid(s_tvalid),
-    .s_axis_tready(s_tready),
-    .s_axis_tlast(s_tlast),
-    .m_axis_tdata(m_tdata),
-    .m_axis_tvalid(m_tvalid),
-    .m_axis_tready(m_tready),
-    .m_axis_tlast(m_tlast),
-    .scl_i(scl),
-    .scl_o,
-    .scl_t,
-    .sda_i(sda),
-    .sda_o,
-    .sda_t
+    .s_axil(s_axil),
+    .s_axis(s),
+    .m_axis(m),
+    .i2c(dut_i2c)
   );
 
   i2c_bfm slave (
@@ -85,9 +59,9 @@ module i2c_master_tb;
   `include "i2c_master_tests.sv"
 
   // Received byte capture
-  always @(posedge aclk) if (m_tvalid && m_tready) begin
-    rx_q.push_back(m_tdata);
-    last_q.push_back(m_tlast);
+  always @(posedge aclk) if (m.tvalid && m.tready) begin
+    rx_q.push_back(m.tdata);
+    last_q.push_back(m.tlast);
   end
 
   initial begin
@@ -95,19 +69,19 @@ module i2c_master_tb;
       $dumpfile("i2c_master_tb.vcd");
       $dumpvars(0, i2c_master_tb);
     end
-    awvalid = 0;
-    wvalid = 0;
-    bready = 0;
-    arvalid = 0;
-    rready = 0;
-    awaddr = 0;
-    araddr = 0;
-    wdata = 0;
-    wstrb = 0;
-    s_tdata = 0;
-    s_tvalid = 0;
-    s_tlast = 0;
-    m_tready = 1;
+    s_axil.awvalid = 0;
+    s_axil.wvalid = 0;
+    s_axil.bready = 0;
+    s_axil.arvalid = 0;
+    s_axil.rready = 0;
+    s_axil.awaddr = 0;
+    s_axil.araddr = 0;
+    s_axil.wdata = 0;
+    s_axil.wstrb = 0;
+    s.tdata = 0;
+    s.tvalid = 0;
+    s.tlast = 0;
+    m.tready = 1;
     repeat (5) @(posedge aclk);
     aresetn = 1;
     repeat (2) @(posedge aclk);

@@ -86,12 +86,10 @@ module axis_out_ctrl #(
   input  logic                 fb_rd_valid,
 
   // AXI4-Stream master (video out)
-  output logic                 m_axis_tvalid,
-  input  logic                 m_axis_tready,
-  output logic [barrel_pkg::PIX_W-1:0]     m_axis_tdata,
-  output logic                 m_axis_tlast,
-  output logic                 m_axis_tuser
+  // m_axis: axis_if.master (ip/shared/src/interfaces/axis_if.sv), DATA_W = barrel_pkg::PIX_W
+  axis_if.master m_axis
 );
+  assign m_axis.tkeep = '1;      // not used by this block
 
   // ---------------------------------------------------------------------
   // Raster / gap generator (request side)
@@ -672,10 +670,10 @@ module axis_out_ctrl #(
     else                   active_tag_depth = interp_mode ? TOTAL_LATENCY_BICUBIC         : TOTAL_LATENCY_BILINEAR;
   end
 
-  assign m_axis_tvalid = interp_mode ? bc_valid : bl_valid;
-  assign m_axis_tdata   = interp_mode ? bc_pixel : bl_pixel;
-  assign m_axis_tlast   = USE_EXT_FB ? ext_tlast : tlast_sr[active_tag_depth-1];
-  assign m_axis_tuser   = USE_EXT_FB ? ext_tuser : tuser_sr[active_tag_depth-1];
+  assign m_axis.tvalid = interp_mode ? bc_valid : bl_valid;
+  assign m_axis.tdata   = interp_mode ? bc_pixel : bl_pixel;
+  assign m_axis.tlast   = USE_EXT_FB ? ext_tlast : tlast_sr[active_tag_depth-1];
+  assign m_axis.tuser   = USE_EXT_FB ? ext_tuser : tuser_sr[active_tag_depth-1];
 
   // ---------------------------------------------------------------------
   // Output beat counter -> frame_out_done
@@ -693,7 +691,7 @@ module axis_out_ctrl #(
       if (start_output) begin
         beats_remaining <= {1'b0, img_width} * {1'b0, img_height};
         counting <= 1'b1;
-      end else if (counting && m_axis_tvalid && m_axis_tready) begin
+      end else if (counting && m_axis.tvalid && m_axis.tready) begin
         if (beats_remaining <= 1) begin
           counting       <= 1'b0;
           frame_out_done <= 1'b1;

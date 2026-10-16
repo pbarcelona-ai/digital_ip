@@ -13,18 +13,14 @@
 module axi4_lite_slave_tb;
   logic aclk = 0, aresetn = 0;
   always #5 aclk = ~aclk;
-  logic [7:0] s_axil_awaddr, s_axil_araddr;
-  logic s_axil_awvalid, s_axil_awready;
-  logic [31:0] s_axil_wdata, s_axil_rdata;
-  logic [3:0] s_axil_wstrb;
-  logic s_axil_wvalid, s_axil_wready, s_axil_bvalid, s_axil_bready;
-  logic [1:0] s_axil_bresp, s_axil_rresp;
-  logic s_axil_arvalid, s_axil_arready, s_axil_rvalid, s_axil_rready;
-  axil_bfm #(.ADDR_W(8)) bfm (.*);
-  logic wr_en, rd_en, wr_err = 0, rd_err = 0, rd_valid = 0;
-  logic [7:0] wa, ra;
-  logic [31:0] wd, rdd;
-  logic [3:0] ws;
+  axil_if #(.ADDR_W(8), .DATA_W(32)) s_axil ();
+  axil_bfm #(.ADDR_W(8)) bfm (
+    .*
+  );
+  regbus_if #(.ADDR_W(8), .DATA_W(32)) bus ();
+  initial bus.wr_err = 0;
+  initial bus.rd_valid = 0;
+  initial bus.rd_err = 0;
   axi4_lite_slave #(
     .ADDR_W(8),
     .READ_WAIT(1),
@@ -32,49 +28,24 @@ module axi4_lite_slave_tb;
   ) dut (
     .aclk,
     .aresetn,
-    .s_axil_awaddr,
-    .s_axil_awvalid,
-    .s_axil_awready,
-    .s_axil_wdata,
-    .s_axil_wstrb,
-    .s_axil_wvalid,
-    .s_axil_wready,
-    .s_axil_bresp,
-    .s_axil_bvalid,
-    .s_axil_bready,
-    .s_axil_araddr,
-    .s_axil_arvalid,
-    .s_axil_arready,
-    .s_axil_rdata,
-    .s_axil_rresp,
-    .s_axil_rvalid,
-    .s_axil_rready,
-    .wr_en_o(wr_en),
-    .wr_addr_o(wa),
-    .wr_data_o(wd),
-    .wr_strb_o(ws),
-    .wr_err_i(wr_err),
-    .rd_en_o(rd_en),
-    .rd_addr_o(ra),
-    .rd_data_i(rdd),
-    .rd_valid_i(rd_valid),
-    .rd_err_i(rd_err)
+    .s_axil(s_axil),
+    .bus(bus)
   );
   logic [31:0] regs [0:15];
   int errors = 0;
   int rd_delay = 2;
   int pend = 0;
   always @(posedge aclk) begin
-    if (wr_en) for (int b = 0; b < 4; b++) if (ws[b]) regs[wa[5:2]][b*8 +: 8] <= wd[b*8 +: 8];
-    wr_err <= wr_en && (wa == 8'h3C);                    // last register write returns an error
-    rd_valid <= 0;
+    if (bus.wr) for (int b = 0; b < 4; b++) if (bus.wstrb[b]) regs[bus.waddr[5:2]][b*8 +: 8] <= bus.wdata[b*8 +: 8];
+    bus.wr_err <= bus.wr && (bus.waddr == 8'h3C);                    // last register write returns an error
+    bus.rd_valid <= 0;
     if (pend != 0) begin
       pend <= pend - 1;
-      if (pend == 1) rd_valid <= 1;
+      if (pend == 1) bus.rd_valid <= 1;
     end
-    if (rd_en) begin
-      rdd <= regs[ra[5:2]];
-      rd_err <= (ra == 8'h3C);
+    if (bus.rd) begin
+      bus.rdata <= regs[bus.raddr[5:2]];
+      bus.rd_err <= (bus.raddr == 8'h3C);
       pend <= rd_delay;
     end
   end

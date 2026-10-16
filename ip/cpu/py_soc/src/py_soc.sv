@@ -35,7 +35,7 @@
 //                       registers outside py_soc (address offset in the window)
 //   Unmapped addresses return DECERR (core trap TRAP_BUS).
 //
-//   Core logic reset - core_rst_n_o follows SYSCTL CORE_RESET[0] (0x0110):
+//   Core logic reset - core_rst_n_o follows SYSCTL CORE_RESET[0] (0x0120):
 //   low from every system reset until the firmware writes 1, so the logic
 //   outside py_soc (e.g. a video datapath) stays in reset until the CPU has
 //   booted and tested itself. Synchronous to clk; synchronise it per clock
@@ -61,8 +61,8 @@
 //   CLK_O[n]), phase aligned with each other. The system stays in reset
 //   until the CPU loop is locked (cpu_rst_n_o, synchronous to cpu_clk_o,
 //   for logic outside py_soc in the CPU clock domain). SYSCTL CLK_EN
-//   (0x0114) gates each clk_o[n] (reset value CLK_EN_RST), CLK_STATUS
-//   (0x0118) bit 0 shows the output loop locked, and core_rst_n_o is only
+//   (0x0124) gates each clk_o[n] (reset value CLK_EN_RST), CLK_STATUS
+//   (0x0128) bit 0 shows the output loop locked, and core_rst_n_o is only
 //   released while it is (CORE_RESET AND locked, registered), so the core
 //   logic reset keeps a single source. With CLKGEN_EN = 0 (default) clk is
 //   the CPU clock, cpu_clk_o = clk, cpu_rst_n_o = rst_n, clk_o = 0. CLK_HZ
@@ -71,7 +71,7 @@
 //   reference, CPU 200 MHz (x24 / 4), one 100 MHz output (x4 / 8); UART
 //   115200 baud, I2C 400 kHz, SPI 10 MHz, boot flash 33 MHz. For synthesis only the PLL oscillators
 //   (dpll_dco) are black boxes; see clk_gen.sv.
-// Date: 2026-10-09
+// Date: 2026-10-16
 module py_soc #(
   parameter int          CLK_HZ       = 200_000_000,  // CPU clock (with CLKGEN_EN: the generated one)
   parameter int          UART_BAUD    = 115_200,
@@ -185,23 +185,8 @@ module py_soc #(
   input  logic [3:0]          ext_irq_i,
   // External AXI4-Lite master: window 0x1_0000-0x1_FFFF (EXT_EN = 1), 16-bit offset.
   // With EXT_EN = 0 the window is not decoded (DECERR) and the port is idle.
-  output logic [15:0]         m_ext_axil_awaddr,
-  output logic                m_ext_axil_awvalid,
-  input  logic                m_ext_axil_awready,
-  output logic [31:0]         m_ext_axil_wdata,
-  output logic [3:0]          m_ext_axil_wstrb,
-  output logic                m_ext_axil_wvalid,
-  input  logic                m_ext_axil_wready,
-  input  logic [1:0]          m_ext_axil_bresp,
-  input  logic                m_ext_axil_bvalid,
-  output logic                m_ext_axil_bready,
-  output logic [15:0]         m_ext_axil_araddr,
-  output logic                m_ext_axil_arvalid,
-  input  logic                m_ext_axil_arready,
-  input  logic [31:0]         m_ext_axil_rdata,
-  input  logic [1:0]          m_ext_axil_rresp,
-  input  logic                m_ext_axil_rvalid,
-  output logic                m_ext_axil_rready
+  // m_ext_axil: axil_if.master (ip/shared/src/interfaces/axil_if.sv), ADDR_W = 16
+  axil_if.master m_ext_axil
 );
   import py_core_pkg::*;
   // The peripherals' internal FIFOs are kept minimal: py_stream_port does the buffering
@@ -277,10 +262,10 @@ module py_soc #(
   assign wdt_reset_o = wdt_rst || rst_cnt != 0;
 
   // Processor-side bus into the interconnect (driven by the boot loader, then the core)
-  logic [31:0] c_awaddr, c_wdata, c_araddr, c_rdata;
+  axil_if #(.ADDR_W(32), .DATA_W(32)) m_axil ();
+  logic [31:0] c_awaddr, c_wdata, c_araddr;
   logic [3:0] c_wstrb;
-  logic [1:0] c_bresp, c_rresp;
-  logic c_awvalid, c_awready, c_wvalid, c_wready, c_bvalid, c_bready, c_arvalid, c_arready, c_rvalid, c_rready;
+  logic c_awvalid, c_wvalid, c_bready, c_arvalid, c_rready;
 
   // ---------------- boot loader ----------------
   logic        boot_busy, boot_done, boot_done_q;
@@ -289,9 +274,6 @@ module py_soc #(
   logic [7:0] code_wdata;
   logic [CONST_AW-1:0] const_waddr;
   logic [33:0] const_wdata;
-  logic [31:0] l_awaddr, l_wdata, l_araddr;
-  logic [3:0] l_wstrb;
-  logic        l_awvalid, l_wvalid, l_bready, l_arvalid, l_rready;
 
   py_boot #(
     .CODE_AW(CODE_AW),
@@ -313,23 +295,7 @@ module py_soc #(
     .const_we_o(const_we),
     .const_waddr_o(const_waddr),
     .const_wdata_o(const_wdata),
-    .m_axil_awaddr(l_awaddr),
-    .m_axil_awvalid(l_awvalid),
-    .m_axil_awready(c_awready),
-    .m_axil_wdata(l_wdata),
-    .m_axil_wstrb(l_wstrb),
-    .m_axil_wvalid(l_wvalid),
-    .m_axil_wready(c_wready),
-    .m_axil_bresp(c_bresp),
-    .m_axil_bvalid(c_bvalid),
-    .m_axil_bready(l_bready),
-    .m_axil_araddr(l_araddr),
-    .m_axil_arvalid(l_arvalid),
-    .m_axil_arready(c_arready),
-    .m_axil_rdata(c_rdata),
-    .m_axil_rresp(c_rresp),
-    .m_axil_rvalid(c_rvalid),
-    .m_axil_rready(l_rready)
+    .m_axil(m_axil)
   );
   assign boot_done_o = boot_done;
 
@@ -349,6 +315,24 @@ module py_soc #(
   trap_e cause;
   assign trap_cause_o = cause;
 
+  axil_if #(.ADDR_W(32)) u_core_m_axil ();
+  assign p_awaddr = u_core_m_axil.awaddr;
+  assign p_awvalid = u_core_m_axil.awvalid;
+  assign u_core_m_axil.awready = m_axil.awready;
+  assign p_wdata = u_core_m_axil.wdata;
+  assign p_wstrb = u_core_m_axil.wstrb;
+  assign p_wvalid = u_core_m_axil.wvalid;
+  assign u_core_m_axil.wready = m_axil.wready;
+  assign u_core_m_axil.bresp = m_axil.bresp;
+  assign u_core_m_axil.bvalid = m_axil.bvalid;
+  assign p_bready = u_core_m_axil.bready;
+  assign p_araddr = u_core_m_axil.araddr;
+  assign p_arvalid = u_core_m_axil.arvalid;
+  assign u_core_m_axil.arready = m_axil.arready;
+  assign u_core_m_axil.rdata = m_axil.rdata;
+  assign u_core_m_axil.rresp = m_axil.rresp;
+  assign u_core_m_axil.rvalid = m_axil.rvalid;
+  assign p_rready = u_core_m_axil.rready;
   py_core #(
     .CODE_AW(CODE_AW),
     .CONST_AW(CONST_AW),
@@ -373,36 +357,20 @@ module py_soc #(
     .code_data_i(code_q),
     .const_addr_o(const_addr),
     .const_data_i(const_q),
-    .m_axil_awaddr(p_awaddr),
-    .m_axil_awvalid(p_awvalid),
-    .m_axil_awready(c_awready),
-    .m_axil_wdata(p_wdata),
-    .m_axil_wstrb(p_wstrb),
-    .m_axil_wvalid(p_wvalid),
-    .m_axil_wready(c_wready),
-    .m_axil_bresp(c_bresp),
-    .m_axil_bvalid(c_bvalid),
-    .m_axil_bready(p_bready),
-    .m_axil_araddr(p_araddr),
-    .m_axil_arvalid(p_arvalid),
-    .m_axil_arready(c_arready),
-    .m_axil_rdata(c_rdata),
-    .m_axil_rresp(c_rresp),
-    .m_axil_rvalid(c_rvalid),
-    .m_axil_rready(p_rready)
+    .m_axil(u_core_m_axil)
   );
 
   // Bus master select: the boot loader until it finishes (the core is idle meanwhile)
   wire boot_owns = !boot_done;
-  assign c_awaddr  = boot_owns ? l_awaddr  : p_awaddr;
-  assign c_awvalid = boot_owns ? l_awvalid : p_awvalid;
-  assign c_wdata   = boot_owns ? l_wdata   : p_wdata;
-  assign c_wstrb   = boot_owns ? l_wstrb   : p_wstrb;
-  assign c_wvalid  = boot_owns ? l_wvalid  : p_wvalid;
-  assign c_bready  = boot_owns ? l_bready  : p_bready;
-  assign c_araddr  = boot_owns ? l_araddr  : p_araddr;
-  assign c_arvalid = boot_owns ? l_arvalid : p_arvalid;
-  assign c_rready  = boot_owns ? l_rready  : p_rready;
+  assign c_awaddr  = boot_owns ? m_axil.awaddr  : p_awaddr;
+  assign c_awvalid = boot_owns ? m_axil.awvalid : p_awvalid;
+  assign c_wdata   = boot_owns ? m_axil.wdata   : p_wdata;
+  assign c_wstrb   = boot_owns ? m_axil.wstrb   : p_wstrb;
+  assign c_wvalid  = boot_owns ? m_axil.wvalid  : p_wvalid;
+  assign c_bready  = boot_owns ? m_axil.bready  : p_bready;
+  assign c_araddr  = boot_owns ? m_axil.araddr  : p_araddr;
+  assign c_arvalid = boot_owns ? m_axil.arvalid : p_arvalid;
+  assign c_rready  = boot_owns ? m_axil.rready  : p_rready;
 
   // ---------------- code / constant memory (written only by the boot loader) ----------------
   logic [7:0]  code_mem  [2**CODE_AW];
@@ -436,12 +404,26 @@ module py_soc #(
     py_soc_map_pkg::WDT_BASE, py_soc_map_pkg::INTC_BASE});                            // 1..0
   localparam logic [NS*32-1:0] MASK = (NS*32)'({py_soc_map_pkg::EXT_MASK, {20{py_soc_map_pkg::WIN_MASK}}});
 
-  logic [31:0] b_awaddr, b_wdata, b_araddr;
-  logic [3:0] b_wstrb;
-  logic [NS-1:0] awvalid, awready, wvalid, wready, bvalid, bready, arvalid, arready, rvalid, rready;
-  logic [NS*2-1:0] bresp, rresp;
-  logic [NS*32-1:0] rdata;
+  axil_if #(.ADDR_W(32), .DATA_W(32)) u_xbar_m_axil ();
 
+  axil_if #(.ADDR_W(32)) u_xbar_s_axil ();
+  assign u_xbar_s_axil.awaddr = c_awaddr;
+  assign u_xbar_s_axil.awvalid = c_awvalid;
+  assign m_axil.awready = u_xbar_s_axil.awready;
+  assign u_xbar_s_axil.wdata = c_wdata;
+  assign u_xbar_s_axil.wstrb = c_wstrb;
+  assign u_xbar_s_axil.wvalid = c_wvalid;
+  assign m_axil.wready = u_xbar_s_axil.wready;
+  assign m_axil.bresp = u_xbar_s_axil.bresp;
+  assign m_axil.bvalid = u_xbar_s_axil.bvalid;
+  assign u_xbar_s_axil.bready = c_bready;
+  assign u_xbar_s_axil.araddr = c_araddr;
+  assign u_xbar_s_axil.arvalid = c_arvalid;
+  assign m_axil.arready = u_xbar_s_axil.arready;
+  assign m_axil.rdata = u_xbar_s_axil.rdata;
+  assign m_axil.rresp = u_xbar_s_axil.rresp;
+  assign m_axil.rvalid = u_xbar_s_axil.rvalid;
+  assign u_xbar_s_axil.rready = c_rready;
   py_axil_xbar #(
     .NSLAVE(NS),
     .BASE(BASE),
@@ -449,82 +431,50 @@ module py_soc #(
   ) u_xbar (
     .aclk(sclk),
     .aresetn(sys_rst_n),
-    .s_axil_awaddr(c_awaddr),
-    .s_axil_awvalid(c_awvalid),
-    .s_axil_awready(c_awready),
-    .s_axil_wdata(c_wdata),
-    .s_axil_wstrb(c_wstrb),
-    .s_axil_wvalid(c_wvalid),
-    .s_axil_wready(c_wready),
-    .s_axil_bresp(c_bresp),
-    .s_axil_bvalid(c_bvalid),
-    .s_axil_bready(c_bready),
-    .s_axil_araddr(c_araddr),
-    .s_axil_arvalid(c_arvalid),
-    .s_axil_arready(c_arready),
-    .s_axil_rdata(c_rdata),
-    .s_axil_rresp(c_rresp),
-    .s_axil_rvalid(c_rvalid),
-    .s_axil_rready(c_rready),
-    .m_axil_awaddr(b_awaddr),
-    .m_axil_awvalid(awvalid),
-    .m_axil_awready(awready),
-    .m_axil_wdata(b_wdata),
-    .m_axil_wstrb(b_wstrb),
-    .m_axil_wvalid(wvalid),
-    .m_axil_wready(wready),
-    .m_axil_bresp(bresp),
-    .m_axil_bvalid(bvalid),
-    .m_axil_bready(bready),
-    .m_axil_araddr(b_araddr),
-    .m_axil_arvalid(arvalid),
-    .m_axil_arready(arready),
-    .m_axil_rdata(rdata),
-    .m_axil_rresp(rresp),
-    .m_axil_rvalid(rvalid),
-    .m_axil_rready(rready)
+    .s_axil(u_xbar_s_axil),
+    .m_axil(u_xbar_m_axil)
   );
 
   // AXI4-Lite slave port hookup for slave index K
   `define PY_AXIL_PORT(K) \
-    .s_axil_awaddr(b_awaddr[7:0]), .s_axil_awvalid(awvalid[K]), .s_axil_awready(awready[K]), \
-    .s_axil_wdata(b_wdata), .s_axil_wstrb(b_wstrb), .s_axil_wvalid(wvalid[K]), .s_axil_wready(wready[K]), \
-    .s_axil_bresp(bresp[(K)*2 +: 2]), .s_axil_bvalid(bvalid[K]), .s_axil_bready(bready[K]), \
-    .s_axil_araddr(b_araddr[7:0]), .s_axil_arvalid(arvalid[K]), .s_axil_arready(arready[K]), \
-    .s_axil_rdata(rdata[(K)*32 +: 32]), .s_axil_rresp(rresp[(K)*2 +: 2]), .s_axil_rvalid(rvalid[K]), .s_axil_rready(rready[K])
+    .s_axil_awaddr(u_xbar_m_axil.awaddr[7:0]), .s_axil_awvalid(u_xbar_m_axil.awvalid[K]), .s_axil_awready(u_xbar_m_axil.awready[K]), \
+    .s_axil_wdata(u_xbar_m_axil.wdata), .s_axil_wstrb(u_xbar_m_axil.wstrb), .s_axil_wvalid(u_xbar_m_axil.wvalid[K]), .s_axil_wready(u_xbar_m_axil.wready[K]), \
+    .s_axil_bresp(u_xbar_m_axil.bresp[(K)*2 +: 2]), .s_axil_bvalid(u_xbar_m_axil.bvalid[K]), .s_axil_bready(u_xbar_m_axil.bready[K]), \
+    .s_axil_araddr(u_xbar_m_axil.araddr[7:0]), .s_axil_arvalid(u_xbar_m_axil.arvalid[K]), .s_axil_arready(u_xbar_m_axil.arready[K]), \
+    .s_axil_rdata(u_xbar_m_axil.rdata[(K)*32 +: 32]), .s_axil_rresp(u_xbar_m_axil.rresp[(K)*2 +: 2]), .s_axil_rvalid(u_xbar_m_axil.rvalid[K]), .s_axil_rready(u_xbar_m_axil.rready[K])
 
   logic [15:0] irq_src;
   assign irq_src[15:12] = ext_irq_i;
 
   // ---------------- external window ----------------
   if (EXT_EN) begin : g_ext
-    assign m_ext_axil_awaddr = b_awaddr[15:0];
-    assign m_ext_axil_awvalid = awvalid[S_EXT];
-    assign awready[S_EXT] = m_ext_axil_awready;
-    assign m_ext_axil_wdata  = b_wdata;
-    assign m_ext_axil_wstrb   = b_wstrb;
-    assign m_ext_axil_wvalid = wvalid[S_EXT];
-    assign wready[S_EXT]      = m_ext_axil_wready;
-    assign bresp[S_EXT*2 +: 2] = m_ext_axil_bresp;
-    assign bvalid[S_EXT]  = m_ext_axil_bvalid;
-    assign m_ext_axil_bready = bready[S_EXT];
-    assign m_ext_axil_araddr = b_araddr[15:0];
-    assign m_ext_axil_arvalid = arvalid[S_EXT];
-    assign arready[S_EXT] = m_ext_axil_arready;
-    assign rdata[S_EXT*32 +: 32] = m_ext_axil_rdata;
-    assign rresp[S_EXT*2 +: 2] = m_ext_axil_rresp;
-    assign rvalid[S_EXT] = m_ext_axil_rvalid;
-    assign m_ext_axil_rready  = rready[S_EXT];
+    assign m_ext_axil.awaddr = u_xbar_m_axil.awaddr[15:0];
+    assign m_ext_axil.awvalid = u_xbar_m_axil.awvalid[S_EXT];
+    assign u_xbar_m_axil.awready[S_EXT] = m_ext_axil.awready;
+    assign m_ext_axil.wdata  = u_xbar_m_axil.wdata;
+    assign m_ext_axil.wstrb   = u_xbar_m_axil.wstrb;
+    assign m_ext_axil.wvalid = u_xbar_m_axil.wvalid[S_EXT];
+    assign u_xbar_m_axil.wready[S_EXT]      = m_ext_axil.wready;
+    assign u_xbar_m_axil.bresp[S_EXT*2 +: 2] = m_ext_axil.bresp;
+    assign u_xbar_m_axil.bvalid[S_EXT]  = m_ext_axil.bvalid;
+    assign m_ext_axil.bready = u_xbar_m_axil.bready[S_EXT];
+    assign m_ext_axil.araddr = u_xbar_m_axil.araddr[15:0];
+    assign m_ext_axil.arvalid = u_xbar_m_axil.arvalid[S_EXT];
+    assign u_xbar_m_axil.arready[S_EXT] = m_ext_axil.arready;
+    assign u_xbar_m_axil.rdata[S_EXT*32 +: 32] = m_ext_axil.rdata;
+    assign u_xbar_m_axil.rresp[S_EXT*2 +: 2] = m_ext_axil.rresp;
+    assign u_xbar_m_axil.rvalid[S_EXT] = m_ext_axil.rvalid;
+    assign m_ext_axil.rready  = u_xbar_m_axil.rready[S_EXT];
   end else begin : g_no_ext
-    assign m_ext_axil_awaddr = '0;
-    assign m_ext_axil_awvalid = 1'b0;
-    assign m_ext_axil_wdata = '0;
-    assign m_ext_axil_wstrb = '0;
-    assign m_ext_axil_wvalid = 1'b0;
-    assign m_ext_axil_bready = 1'b0;
-    assign m_ext_axil_araddr = '0;
-    assign m_ext_axil_arvalid = 1'b0;
-    assign m_ext_axil_rready = 1'b0;
+    assign m_ext_axil.awaddr = '0;
+    assign m_ext_axil.awvalid = 1'b0;
+    assign m_ext_axil.wdata = '0;
+    assign m_ext_axil.wstrb = '0;
+    assign m_ext_axil.wvalid = 1'b0;
+    assign m_ext_axil.bready = 1'b0;
+    assign m_ext_axil.araddr = '0;
+    assign m_ext_axil.arvalid = 1'b0;
+    assign m_ext_axil.rready = 1'b0;
   end
 
   // ---------------- system control ----------------
@@ -575,11 +525,14 @@ module py_soc #(
 
   // ---------------- UART x2 ----------------
   for (genvar u = 0; u < 2; u++) begin : g_uart
-    logic [7:0] tx_d, rx_d;
-    logic tx_v, tx_r, tx_l, rx_v, rx_r, rx_l;
+    logic [7:0] tx.tdata, rx.tdata;
+    logic tx.tvalid, tx.tready, tx.tlast, rx.tvalid, rx.tready, rx.tlast;
     localparam int BAUD    = u == 0 ? UART0_BAUD : UART1_BAUD;
     localparam int TX_FIFO = u == 0 ? UART0_TX_FIFO : UART1_TX_FIFO;
     localparam int RX_FIFO = u == 0 ? UART0_RX_FIFO : UART1_RX_FIFO;
+    uart_if u_uart_uart ();
+    assign uart_txd_o[u] = u_uart_uart.txd;
+    assign u_uart_uart.rxd = uart_rxd_i[u];
     uart_top #(
       .CLK_HZ(SYS_HZ),
       .BAUD(BAUD),
@@ -588,16 +541,10 @@ module py_soc #(
       .aclk(sclk),
       .aresetn(sys_rst_n),
       `PY_AXIL_PORT(S_UART + 2*u),
-      .s_axis_tdata(tx_d),
-      .s_axis_tvalid(tx_v),
-      .s_axis_tready(tx_r),
-      .s_axis_tlast(tx_l),
-      .m_axis_tdata(rx_d),
-      .m_axis_tvalid(rx_v),
-      .m_axis_tready(rx_r),
-      .m_axis_tlast(rx_l),
-      .uart_txd_o(uart_txd_o[u]),
-      .uart_rxd_i(uart_rxd_i[u]));
+      .s_axis(tx),
+      .m_axis(rx),
+      .uart(u_uart_uart)
+      );
     py_stream_port_top #(
       .DATA_W(8),
       .TX_DEPTH(TX_FIFO),
@@ -606,24 +553,26 @@ module py_soc #(
       .aclk(sclk),
       .aresetn(sys_rst_n),
       `PY_AXIL_PORT(S_UART + 2*u + 1),
-      .m_axis_tdata(tx_d),
-      .m_axis_tvalid(tx_v),
-      .m_axis_tready(tx_r),
-      .m_axis_tlast(tx_l),
-      .s_axis_tdata(rx_d),
-      .s_axis_tvalid(rx_v),
-      .s_axis_tready(rx_r),
-      .s_axis_tlast(rx_l),
-      .irq_o(irq_src[0 + u]));
+      .m_axis(tx),
+      .s_axis(rx),
+      .irq_o(irq_src[0 + u])
+      );
   end
 
   // ---------------- I2C x2 ----------------
   for (genvar n = 0; n < 2; n++) begin : g_i2c
-    logic [7:0] tx_d, rx_d;
-    logic tx_v, tx_r, tx_l, rx_v, rx_r, rx_l;
+    logic [7:0] tx.tdata, rx.tdata;
+    logic tx.tvalid, tx.tready, tx.tlast, rx.tvalid, rx.tready, rx.tlast;
     localparam int SCL_HZ  = n == 0 ? I2C0_HZ : I2C1_HZ;
     localparam int TX_FIFO = n == 0 ? I2C0_TX_FIFO : I2C1_TX_FIFO;
     localparam int RX_FIFO = n == 0 ? I2C0_RX_FIFO : I2C1_RX_FIFO;
+    i2c_if u_i2c_i2c ();
+    assign u_i2c_i2c.scl_i = i2c_scl_i[n];
+    assign i2c_scl_o[n] = u_i2c_i2c.scl_o;
+    assign i2c_scl_t[n] = u_i2c_i2c.scl_t;
+    assign u_i2c_i2c.sda_i = i2c_sda_i[n];
+    assign i2c_sda_o[n] = u_i2c_i2c.sda_o;
+    assign i2c_sda_t[n] = u_i2c_i2c.sda_t;
     i2c_top #(
       .CLK_HZ(SYS_HZ),
       .SCL_HZ(SCL_HZ),
@@ -632,20 +581,10 @@ module py_soc #(
       .aclk(sclk),
       .aresetn(sys_rst_n),
       `PY_AXIL_PORT(S_I2C + 2*n),
-      .s_axis_tdata(tx_d),
-      .s_axis_tvalid(tx_v),
-      .s_axis_tready(tx_r),
-      .s_axis_tlast(tx_l),
-      .m_axis_tdata(rx_d),
-      .m_axis_tvalid(rx_v),
-      .m_axis_tready(rx_r),
-      .m_axis_tlast(rx_l),
-      .scl_i(i2c_scl_i[n]),
-      .scl_o(i2c_scl_o[n]),
-      .scl_t(i2c_scl_t[n]),
-      .sda_i(i2c_sda_i[n]),
-      .sda_o(i2c_sda_o[n]),
-      .sda_t(i2c_sda_t[n]));
+      .s_axis(tx),
+      .m_axis(rx),
+      .i2c(u_i2c_i2c)
+      );
     py_stream_port_top #(
       .DATA_W(8),
       .TX_DEPTH(TX_FIFO),
@@ -654,15 +593,10 @@ module py_soc #(
       .aclk(sclk),
       .aresetn(sys_rst_n),
       `PY_AXIL_PORT(S_I2C + 2*n + 1),
-      .m_axis_tdata(tx_d),
-      .m_axis_tvalid(tx_v),
-      .m_axis_tready(tx_r),
-      .m_axis_tlast(tx_l),
-      .s_axis_tdata(rx_d),
-      .s_axis_tvalid(rx_v),
-      .s_axis_tready(rx_r),
-      .s_axis_tlast(rx_l),
-      .irq_o(irq_src[2 + n]));
+      .m_axis(tx),
+      .s_axis(rx),
+      .irq_o(irq_src[2 + n])
+      );
   end
 
   // ---------------- SPI x2 ----------------
@@ -671,8 +605,13 @@ module py_soc #(
     localparam int DW      = s == 0 ? SPI0_DATA_W : SPI1_DATA_W;
     localparam int TX_FIFO = s == 0 ? SPI0_TX_FIFO : SPI1_TX_FIFO;
     localparam int RX_FIFO = s == 0 ? SPI0_RX_FIFO : SPI1_RX_FIFO;
-    logic [DW-1:0] tx_d, rx_d;
-    logic tx_v, tx_r, tx_l, rx_v, rx_r, rx_l;
+    axis_if #(.DATA_W(DW)) rx ();
+    axis_if #(.DATA_W(DW)) tx ();
+    spi_if #(.NUM_CS(2)) u_spi_spi ();
+    assign spi_sclk_o[s] = u_spi_spi.sclk;
+    assign spi_mosi_o[s] = u_spi_spi.mosi;
+    assign u_spi_spi.miso = spi_miso_i[s];
+    assign spi_cs_n_o[s*2 +: 2] = u_spi_spi.cs_n;
     spi_top #(
       .CLK_HZ(SYS_HZ),
       .SCLK_HZ(SCLK_HZ),
@@ -683,18 +622,10 @@ module py_soc #(
       .aclk(sclk),
       .aresetn(sys_rst_n),
       `PY_AXIL_PORT(S_SPI + 2*s),
-      .s_axis_tdata(tx_d),
-      .s_axis_tvalid(tx_v),
-      .s_axis_tready(tx_r),
-      .s_axis_tlast(tx_l),
-      .m_axis_tdata(rx_d),
-      .m_axis_tvalid(rx_v),
-      .m_axis_tready(rx_r),
-      .m_axis_tlast(rx_l),
-      .spi_sclk_o(spi_sclk_o[s]),
-      .spi_mosi_o(spi_mosi_o[s]),
-      .spi_miso_i(spi_miso_i[s]),
-      .spi_cs_n_o(spi_cs_n_o[s*2 +: 2]));
+      .s_axis(tx),
+      .m_axis(rx),
+      .spi(u_spi_spi)
+      );
     py_stream_port_top #(
       .DATA_W(DW),
       .TX_DEPTH(TX_FIFO),
@@ -703,35 +634,34 @@ module py_soc #(
       .aclk(sclk),
       .aresetn(sys_rst_n),
       `PY_AXIL_PORT(S_SPI + 2*s + 1),
-      .m_axis_tdata(tx_d),
-      .m_axis_tvalid(tx_v),
-      .m_axis_tready(tx_r),
-      .m_axis_tlast(tx_l),
-      .s_axis_tdata(rx_d),
-      .s_axis_tvalid(rx_v),
-      .s_axis_tready(rx_r),
-      .s_axis_tlast(rx_l),
-      .irq_o(irq_src[4 + s]));
+      .m_axis(tx),
+      .s_axis(rx),
+      .irq_o(irq_src[4 + s])
+      );
   end
   // ---------------- SPI NOR flash ----------------
-  logic [7:0] fl_tx_d, fl_rx_d;
-  logic fl_tx_v, fl_tx_r, fl_tx_l, fl_rx_v, fl_rx_r, fl_rx_l;
+  axis_if #(.DATA_W(8)) fl_rx ();
+  axis_if #(.DATA_W(8)) fl_tx ();
+  logic fl_tx_l;
+  spi_if #(.NUM_CS(1)) u_flash_spi ();
+  assign flash_sclk_o = u_flash_spi.sclk;
+  assign flash_cs_n_o = u_flash_spi.cs_n;
+  assign flash_mosi_o = u_flash_spi.mosi;
+  assign u_flash_spi.miso = flash_miso_i;
   spi_flash_ctrl_top u_flash (
     .aclk(sclk),
     .aresetn(sys_rst_n),
     `PY_AXIL_PORT(S_FLASH),
-    .s_axis_tdata(fl_tx_d),
-    .s_axis_tvalid(fl_tx_v),
-    .s_axis_tready(fl_tx_r),
-    .m_axis_tdata(fl_rx_d),
-    .m_axis_tvalid(fl_rx_v),
-    .m_axis_tready(fl_rx_r),
-    .m_axis_tlast(fl_rx_l),
-    .sclk_o(flash_sclk_o),
-    .cs_n_o(flash_cs_n_o),
-    .mosi_o(flash_mosi_o),
-    .miso_i(flash_miso_i),
-    .irq_o(irq_src[10]));
+    .s_axis(fl_tx),
+    .m_axis(fl_rx),
+    .spi(u_flash_spi),
+    .irq_o(irq_src[10])
+    );
+  axis_if #(.DATA_W(8)) u_flash_port_m_axis ();
+  assign fl_tx.tdata = u_flash_port_m_axis.tdata;
+  assign fl_tx.tvalid = u_flash_port_m_axis.tvalid;
+  assign u_flash_port_m_axis.tready = fl_tx.tready;
+  assign fl_tx_l = u_flash_port_m_axis.tlast;
   py_stream_port_top #(
     .DATA_W(8),
     .TX_DEPTH(FLASH_TX_FIFO),
@@ -740,14 +670,9 @@ module py_soc #(
     .aclk(sclk),
     .aresetn(sys_rst_n),
     `PY_AXIL_PORT(S_FLASH + 1),
-    .m_axis_tdata(fl_tx_d),
-    .m_axis_tvalid(fl_tx_v),
-    .m_axis_tready(fl_tx_r),
-    .m_axis_tlast(fl_tx_l),
-    .s_axis_tdata(fl_rx_d),
-    .s_axis_tvalid(fl_rx_v),
-    .s_axis_tready(fl_rx_r),
-    .s_axis_tlast(fl_rx_l),
-    .irq_o(irq_src[11]));
+    .m_axis(u_flash_port_m_axis),
+    .s_axis(fl_rx),
+    .irq_o(irq_src[11])
+    );
   `undef PY_AXIL_PORT
 endmodule

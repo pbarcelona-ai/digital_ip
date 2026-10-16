@@ -235,6 +235,18 @@ def fence(text: str) -> str:
     return "```text\n" + text.strip() + "\n```"
 
 
+def reference_section(d: Path, name: str) -> list[str]:
+    """Section 6a: the hand-written industry reference check in <d>/docs/<name>_reference.md
+    (sources, the published algorithm, the comparison and TODO(REF-...) prompts), copied verbatim."""
+    ref = d / "docs" / f"{name}_reference.md"
+    if not ref.is_file():
+        return []
+    body = re.sub(r"^<!--.*?-->\s*", "", ref.read_text(encoding="utf-8"), flags=re.S).strip()
+    return ["## 6a. Industry reference check", "",
+            "Comparison of section 6 with published engineering references. Every difference is a "
+            "`TODO(REF-...)` written as a prompt for updating the design.", "", body, ""]
+
+
 def table(header: list[str], rows: list[list[str]]) -> str:
     esc = lambda c: (c or "-").replace("|", "\\|").replace("\n", " ")
     return "\n".join(["| " + " | ".join(header) + " |", "|" + "|".join("---" for _ in header) + "|"] +
@@ -243,6 +255,18 @@ def table(header: list[str], rows: list[list[str]]) -> str:
 
 STREAM_RE = re.compile(r"^(?P<p>(?:\w+_)?(?:s|m)_?axis\w*?)_t(?P<sig>data|valid|ready|last|user|keep|strb|id|dest)$")
 AXIL_RE = re.compile(r"^(?P<p>(?:\w+_)?[sm]_axil?\w*?)_(aw|w|b|ar|r)(addr|data|strb|valid|ready|resp|prot)$")
+
+
+AXIS_IF = "ip/shared/src/interfaces/axis_if.sv"
+AXIL_IF = "ip/shared/src/interfaces/axil_if.sv"
+INTERFACE_RULE = (
+    "Bus ports follow the library's SystemVerilog interfaces, one definition file per type: "
+    f"AXI4-Stream `axis_if` (`{AXIS_IF}`, modports master / slave / monitor) and AXI4-Lite "
+    f"`axil_if` (`{AXIL_IF}`, modports master / slave). Icarus Verilog cannot drive members of "
+    "interface arrays and Yosys reads interfaces only through sv2v, so keep discrete ports "
+    "(<prefix>_tdata, <prefix>_awaddr, ...) and put the interface and modport in a comment line "
+    "directly above each port group: `// s_axis: axis_if.slave (ip/shared/src/interfaces/axis_if.sv), "
+    "DATA_W = 24`. Testbenches and Verilator flows may instantiate the interfaces directly.")
 
 
 def interfaces(decl: ModuleDecl) -> tuple[list[str], list[Port]]:
@@ -265,16 +289,26 @@ def interfaces(decl: ModuleDecl) -> tuple[list[str], list[Port]]:
         addr = next((p.width for p in ps if p.name.endswith("awaddr")), "?")
         role = "slave" if any(p.name.endswith("awaddr") and p.direction == "input" for p in ps) else "master"
         cond = f" (when `{ps[0].define}`)" if ps[0].define else ""
-        out.append(f"- **{prefix}_*** - AXI4-Lite {role}, address {addr}, 32-bit data{cond}.")
+        out.append(f"- **{prefix}_*** - AXI4-Lite {role}, address {addr}, 32-bit data{cond}: interface "
+                   f"`axil_if.{role}` (`{AXIL_IF}`).")
     for prefix, ps in stream.items():
         sigs = {re.sub(r".*_t", "", p.name): p for p in ps}
         data = sigs.get("data")
-        role = "slave (input)" if data is None or data.direction == "input" else "master (output)"
+        ready = sigs.get("ready")
+        if data is not None and data.direction == "output":
+            role, mp = "master (output)", "master"
+        elif ready is None or ready.direction == "input":
+            role, mp = "monitor (passive tap)", "monitor"
+        else:
+            role, mp = "slave (input)", "slave"
         extra = ", ".join(f"t{k}" for k in sigs if k not in ("data", "valid", "ready"))
         cmt = "; ".join(f"t{k} = {p.comment}" for k, p in sigs.items() if p.comment)
         cond = f" (when `{ps[0].define}`)" if ps[0].define else ""
         out.append(f"- **{prefix}_t*** - AXI4-Stream {role}, tdata {data.width if data else '-'}"
-                   f"{', ' + extra if extra else ''}{cond}{'. ' + cmt if cmt else ''}.")
+                   f"{', ' + extra if extra else ''}{cond}{'. ' + cmt if cmt else ''}: interface "
+                   f"`axis_if.{mp}` (`{AXIS_IF}`).")
+    if out:
+        out += ["", INTERFACE_RULE]
     return out, other
 
 
@@ -386,6 +420,7 @@ def module_prompt(name: str, category: str, ipdir: Path, top: str, src: Path, us
               fence(whole or desc or "(no header text)"), "",
               "Describe and handle the edge cases, error recovery, latency and configuration-change rules stated above; "
               "where the text is silent, choose the safe option and document it in the file header.", "",
+              *reference_section(ipdir, name),
               extra_sections,
               "## 7. Implementation constraints", "",
               "- Synthesizable SystemVerilog-2012, technology independent (no vendor primitives; infer RAM and DSP).",
@@ -520,6 +555,7 @@ def system_prompt(name: str, d: Path, users: dict[str, set[str]], descs: dict[st
           "## 6. Architecture and behaviour", "",
           "Implement this behaviour (from the reference design's specification):", "",
           fence(whole or desc), "",
+          *reference_section(d, name),
           "## 7. Clocks, resets, clock-domain crossings and performance", "",
           f"- Clocks: {', '.join(f'`{p.name}`' for p in decl.ports if p.direction == 'input' and re.search(r'clk', p.name)) or 'see section 6'}.",
           f"- Resets: {', '.join(f'`{p.name}`' for p in decl.ports if p.direction == 'input' and re.search(r'rst|reset', p.name)) or 'see section 6'}; one `reset_sync` per domain.",

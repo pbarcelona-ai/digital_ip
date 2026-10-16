@@ -8,28 +8,24 @@ module tb_ext_sdram;
 
   logic clk = 0;
   logic rst_n = 0;
-  logic s_axis_tvalid = 0;
-  wire s_axis_tready;
-  logic [PIX_W-1:0] s_axis_tdata = 0;
-  logic s_axis_tlast = 0;
-  logic s_axis_tuser = 0;
-  wire m_axis_tvalid;
-  logic m_axis_tready = 1;
-  wire [PIX_W-1:0] m_axis_tdata;
-  wire m_axis_tlast, m_axis_tuser;
+  axis_if #(.DATA_W(PIX_W), .USER_W(1)) s_axis ();
+  initial s_axis.tvalid = 0;
+  initial s_axis.tdata = 0;
+  initial s_axis.tlast = 0;
+  initial s_axis.tuser = 0;
+  axis_if #(.DATA_W(PIX_W), .USER_W(1)) m_axis ();
+  initial m_axis.tready = 1;
 
-  logic [7:0] s_axil_awaddr = 0, s_axil_araddr = 0;
-  logic s_axil_awvalid = 0, s_axil_wvalid = 0, s_axil_bready = 0;
-  logic [31:0] s_axil_wdata = 0;
-  logic [3:0] s_axil_wstrb = 4'hf;
-  wire s_axil_awready, s_axil_wready;
-  wire [1:0] s_axil_bresp;
-  wire s_axil_bvalid;
-  logic s_axil_arvalid = 0, s_axil_rready = 0;
-  wire s_axil_arready;
-  wire [31:0] s_axil_rdata;
-  wire [1:0] s_axil_rresp;
-  wire s_axil_rvalid;
+  axil_if #(.ADDR_W(8), .DATA_W(32)) s_axil ();
+  initial s_axil.awaddr = 0;
+  initial s_axil.awvalid = 0;
+  initial s_axil.wdata = 0;
+  initial s_axil.wstrb = 4'hf;
+  initial s_axil.wvalid = 0;
+  initial s_axil.bready = 0;
+  initial s_axil.araddr = 0;
+  initial s_axil.arvalid = 0;
+  initial s_axil.rready = 0;
 
   wire sdram_clk, sdram_cke, sdram_cs_n, sdram_ras_n, sdram_cas_n, sdram_we_n;
   wire [12:0] sdram_a;
@@ -48,7 +44,9 @@ module tb_ext_sdram;
     .SDRAM_COL_W(4),
     .SDRAM_INIT_WAIT_CYCLES(4),
     .SDRAM_REFRESH_INTERVAL_CYCLES(60)
-  ) dut (.*);
+  ) dut (
+    .*
+  );
 
   always #5 clk = ~clk;
 
@@ -107,20 +105,20 @@ module tb_ext_sdram;
   `include "ext_sdram_tests.sv"
 
   always @(posedge clk) begin
-    if (rst_n && m_axis_tvalid && m_axis_tready) begin
+    if (rst_n && m_axis.tvalid && m_axis.tready) begin
       if (output_count >= FRAME_PIXELS) begin
         $display("FAIL: too many output pixels");
         errors <= errors + 1;
       end else begin
-        if (m_axis_tdata !== expected[output_count]) begin
-          $display("FAIL pixel %0d got=%h expected=%h", output_count, m_axis_tdata, expected[output_count]);
+        if (m_axis.tdata !== expected[output_count]) begin
+          $display("FAIL pixel %0d got=%h expected=%h", output_count, m_axis.tdata, expected[output_count]);
           errors <= errors + 1;
         end
-        if (m_axis_tlast !== ((output_count % WIDTH) == WIDTH-1)) begin
+        if (m_axis.tlast !== ((output_count % WIDTH) == WIDTH-1)) begin
           $display("FAIL tlast at output pixel %0d", output_count);
           errors <= errors + 1;
         end
-        if (m_axis_tuser !== (output_count == 0)) begin
+        if (m_axis.tuser !== (output_count == 0)) begin
           $display("FAIL tuser at output pixel %0d", output_count);
           errors <= errors + 1;
         end

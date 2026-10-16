@@ -12,11 +12,8 @@ module axis_async_bridge_tb;
   logic s_clk = 0, m_clk = 0, s_rst_n = 0, m_rst_n = 0;
   always #5.0 s_clk = ~s_clk;
   always #11.6 m_clk = ~m_clk;
-  logic [31:0] s_tdata, m_tdata;
-  logic [3:0] s_tkeep, m_tkeep;
-  logic s_tlast, m_tlast;
-  logic [0:0] s_tuser, m_tuser;
-  logic s_tvalid, s_tready, m_tvalid, m_tready;
+  axis_if #(.DATA_W(32), .USER_W(1), .KEEP_W(4)) m ();
+  axis_if #(.DATA_W(32), .USER_W(1), .KEEP_W(4)) s ();
   axis_async_bridge #(
     .DATA_W(32),
     .DEPTH(16),
@@ -24,20 +21,10 @@ module axis_async_bridge_tb;
   ) dut (
     .s_clk,
     .s_rst_n,
-    .s_axis_tdata(s_tdata),
-    .s_axis_tkeep(s_tkeep),
-    .s_axis_tlast(s_tlast),
-    .s_axis_tuser(s_tuser),
-    .s_axis_tvalid(s_tvalid),
-    .s_axis_tready(s_tready),
+    .s_axis(s),
     .m_clk,
     .m_rst_n,
-    .m_axis_tdata(m_tdata),
-    .m_axis_tkeep(m_tkeep),
-    .m_axis_tlast(m_tlast),
-    .m_axis_tuser(m_tuser),
-    .m_axis_tvalid(m_tvalid),
-    .m_axis_tready(m_tready)
+    .m_axis(m)
   );
   int errors = 0, sent = 0, got = 0;
   localparam int NBEATS = 2000;
@@ -45,30 +32,30 @@ module axis_async_bridge_tb;
   int plen;
   // Source: packets of 1..12 beats
   always @(posedge s_clk) if (s_rst_n) begin
-    if (s_tvalid && s_tready) begin
-      expq.push_back({s_tuser, s_tlast, s_tkeep, s_tdata});
+    if (s.tvalid && s.tready) begin
+      expq.push_back({s.tuser, s.tlast, s.tkeep, s.tdata});
       sent++;
     end
-    if (!s_tvalid || s_tready) begin
+    if (!s.tvalid || s.tready) begin
       if (sent < NBEATS && $urandom_range(0, 9) < 7) begin
         if (plen == 0) plen = $urandom_range(1, 12);
-        s_tvalid <= 1;
-        s_tdata <= $urandom;
-        s_tkeep <= (plen == 1) ? 4'(4'hF >> $urandom_range(0, 3)) : 4'hF;
-        s_tlast <= (plen == 1);
-        s_tuser <= (plen == 1) ? $urandom_range(0, 1) : 0;
+        s.tvalid <= 1;
+        s.tdata <= $urandom;
+        s.tkeep <= (plen == 1) ? 4'(4'hF >> $urandom_range(0, 3)) : 4'hF;
+        s.tlast <= (plen == 1);
+        s.tuser <= (plen == 1) ? $urandom_range(0, 1) : 0;
         plen--;
-      end else s_tvalid <= 0;
+      end else s.tvalid <= 0;
     end
   end
   always @(posedge m_clk) if (m_rst_n) begin
-    m_tready <= ($urandom_range(0, 9) < 6);
-    if (m_tvalid && m_tready) begin
+    m.tready <= ($urandom_range(0, 9) < 6);
+    if (m.tvalid && m.tready) begin
       logic [37:0] e;
       e = expq.pop_front();
-      if ({m_tuser, m_tlast, m_tkeep, m_tdata} !== e) begin
+      if ({m.tuser, m.tlast, m.tkeep, m.tdata} !== e) begin
         errors++;
-        $display("ERROR beat %0d got %h exp %h", got, {m_tuser, m_tlast, m_tkeep, m_tdata}, e);
+        $display("ERROR beat %0d got %h exp %h", got, {m.tuser, m.tlast, m.tkeep, m.tdata}, e);
         end
       got++;
     end
@@ -78,13 +65,13 @@ module axis_async_bridge_tb;
       $dumpfile("axis_async_bridge_tb.vcd");
       $dumpvars(0, axis_async_bridge_tb);
     end
-    s_tvalid = 0;
-    m_tready = 0;
+    s.tvalid = 0;
+    m.tready = 0;
     plen = 0;
-    s_tdata = 0;
-    s_tkeep = 0;
-    s_tlast = 0;
-    s_tuser = 0;
+    s.tdata = 0;
+    s.tkeep = 0;
+    s.tlast = 0;
+    s.tuser = 0;
     repeat (5) @(posedge s_clk);
     s_rst_n = 1;
     m_rst_n = 1;

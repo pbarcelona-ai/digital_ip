@@ -31,12 +31,12 @@
   task automatic send(input [31:0] w, input bit last);
     @(posedge aclk);
     #1;
-    s_axis_tdata = w;
-    s_axis_tvalid = 1;
-    s_axis_tlast = last;
-    wait (s_axis_tready);
+    s_axis.tdata = w;
+    s_axis.tvalid = 1;
+    s_axis.tlast = last;
+    wait (s_axis.tready);
     @(posedge aclk);
-    #1 s_axis_tvalid = 0;
+    #1 s_axis.tvalid = 0;
   endtask
 
   // Configure and run one single-word transfer, check both directions
@@ -60,7 +60,7 @@
           p, h, l, n, slv_rx, mosi_w & mask));
     check(rxq[0] == (miso_w & mask), $sformatf("mode %0d%0d lsb=%0d n=%0d MISO got %08h exp %08h",
           p, h, l, n, rxq[0], miso_w & mask));
-    check(cs_n == '1, "CS not released after tlast");
+    check(spi.cs_n == '1, "CS not released after tlast");
   endtask
 
   task automatic test_id_block();
@@ -131,7 +131,7 @@
     check(slv_words - words0 == 3, $sformatf("slave saw %0d words in burst", slv_words));
     check(rxlast[0] == 0 && rxlast[1] == 0 && rxlast[2] == 1, "rx tlast pattern");
     check(rxq[0] == 8'h3C && rxq[2] == 8'h3C, "burst miso data");
-    check(cs_n == '1, "CS not released after burst");
+    check(spi.cs_n == '1, "CS not released after burst");
   endtask
 
   task automatic test_cs_select();
@@ -139,7 +139,7 @@
     bfm.write(8'h00, {16'd0, 8'd3, 4'd0, 3'b000, 1'b1});
     rxq.delete();
     send(8'h55, 1);
-    wait (cs_n[3] == 0);
-    check(cs_n == 4'b0111, "CS3 select");
+    wait (spi.cs_n[3] == 0);
+    check(spi.cs_n == 4'b0111, "CS3 select");
     while (rxq.size() != 1) @(posedge aclk);
   endtask

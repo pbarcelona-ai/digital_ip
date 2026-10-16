@@ -20,9 +20,8 @@ module isp_demosaic_tb;
   logic [15:0] W, H;
   logic [1:0] cfa;
   logic by;
-  logic [PW-1:0] sd;
-  logic [3*PW-1:0] md;
-  logic sl, su, sv, sr, ml, mu, mv, mr;
+  axis_if #(.DATA_W(PW), .USER_W(1)) s_axis ();
+  axis_if #(.DATA_W(3*PW), .USER_W(1)) m_axis ();
   isp_demosaic #(
     .PW(PW),
     .MAX_W(64)
@@ -33,16 +32,8 @@ module isp_demosaic_tb;
     .height_i(H),
     .cfa_i(cfa),
     .bypass_i(by),
-    .s_axis_tdata(sd),
-    .s_axis_tlast(sl),
-    .s_axis_tuser(su),
-    .s_axis_tvalid(sv),
-    .s_axis_tready(sr),
-    .m_axis_tdata(md),
-    .m_axis_tlast(ml),
-    .m_axis_tuser(mu),
-    .m_axis_tvalid(mv),
-    .m_axis_tready(mr)
+    .s_axis(s_axis),
+    .m_axis(m_axis)
   );
 
   int gap_pct, bp_pct, nout, max_err, max_err_in;
@@ -50,13 +41,13 @@ module isp_demosaic_tb;
   logic [PW-1:0] img [MAXP];
   logic [3*PW-1:0] exp_px [MAXP];
   int truth [MAXP][3];
-  always @(posedge clk) mr <= ($urandom_range(99) >= bp_pct);
-  always @(posedge clk) if (rst_n && mv && mr) begin
-    check(md == exp_px[nout], $sformatf("pixel (%0d,%0d) = %h exp %h", nout % W, nout / W, md, exp_px[nout]));
-    check(mu == (nout == 0) && ml == (nout % W == W - 1), $sformatf("tuser/tlast at pixel %0d", nout));
+  always @(posedge clk) m_axis.tready <= ($urandom_range(99) >= bp_pct);
+  always @(posedge clk) if (rst_n && m_axis.tvalid && m_axis.tready) begin
+    check(m_axis.tdata == exp_px[nout], $sformatf("pixel (%0d,%0d) = %h exp %h", nout % W, nout / W, m_axis.tdata, exp_px[nout]));
+    check(m_axis.tuser == (nout == 0) && m_axis.tlast == (nout % W == W - 1), $sformatf("tuser/tlast at pixel %0d", nout));
     if (ramp) for (int k = 0; k < 3; k++) begin
       int d, xx, yy;
-      d = int'(md[k*PW +: PW]) - truth[nout][k];
+      d = int'(m_axis.tdata[k*PW +: PW]) - truth[nout][k];
       if (d < 0) d = -d;
       xx = nout % W;
       yy = nout / W;
@@ -82,10 +73,10 @@ module isp_demosaic_tb;
       $dumpfile("isp_demosaic_tb.vcd");
       $dumpvars(0, isp_demosaic_tb);
     end
-    sv = 0;
-    su = 0;
-    sl = 0;
-    sd = 0;
+    s_axis.tvalid = 0;
+    s_axis.tuser = 0;
+    s_axis.tlast = 0;
+    s_axis.tdata = 0;
     W = 16;
     H = 8;
     cfa = 0;

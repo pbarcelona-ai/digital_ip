@@ -4,13 +4,13 @@
 // Description: Reset synchronizer. Version 1.0.0. Brings an asynchronous
 //   reset into the clk domain. ASYNC_ASSERT=1 (default) asserts the output
 //   immediately and releases it synchronously after STAGES clocks;
-//   ASYNC_ASSERT=0 samples the input with the clock so both edges are
-//   synchronous. Polarity of the input and output is selectable. Clock -
+//   ASYNC_ASSERT=0 first passes the request through a two-flop synchroniser,
+//   so both edges are synchronous (assertion 3 clocks after arst_i). Polarity of the input and output is selectable. Clock -
 //   clk; arst_i may be asynchronous. Reset state - output asserted.
 //   Latency - release takes STAGES clocks (assert is immediate for async
 //   type). Timing - the flops are marked async_reg. Errors - STAGES<2
 //   rejected at elaboration.
-// Date: 2026-09-29
+// Date: 2026-10-16
 module reset_sync #(
   parameter int STAGES       = 2,
   parameter bit ACTIVE_LOW_IN  = 1'b1,   // polarity of arst_i
@@ -32,8 +32,12 @@ module reset_sync #(
       if (asserted) sr <= '0;
       else sr <= {sr[STAGES-2:0], 1'b1};
   end else begin : g_sync
+    // the request is synchronised first, so an asynchronous arst_i never reaches the output flop
+    (* async_reg = "true", shreg_extract = "no" *) logic [1:0] req_s;
     always_ff @(posedge clk)
-      if (asserted) sr <= '0;
+      req_s <= {req_s[0], asserted};
+    always_ff @(posedge clk)
+      if (req_s[1]) sr <= '0;
       else sr <= {sr[STAGES-2:0], 1'b1};
   end
   assign rst_o = ACTIVE_LOW_OUT ? sr[STAGES-1] : ~sr[STAGES-1];

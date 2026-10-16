@@ -11,7 +11,7 @@
 //   RRESP / RDATA) are passed back unchanged.
 //   Latency: 1-2 cycles per channel added to each transaction.
 //   Dependencies: none
-// Date: 2026-09-26
+// Date: 2026-10-16
 
 module axil_split #(
   parameter int ADDR_W  = 15,              // master address width
@@ -79,7 +79,7 @@ module axil_split #(
     end
   end
 
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk) begin
     if (!rst_n) begin
       wst <= W_COLLECT;
       aw_held <= 0;
@@ -155,7 +155,7 @@ module axil_split #(
     end
   end
 
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk) begin
     if (!rst_n) begin
       rst_q <= R_IDLE;
       rsel <= 0;

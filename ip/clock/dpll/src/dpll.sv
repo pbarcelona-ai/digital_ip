@@ -27,7 +27,7 @@
 //   with half period T_ref * D * O[n] / (2 M) from the measured reference
 //   period (exact ratio, edge times taken from one start so related outputs
 //   keep coincident edges); locked_o rises 64 reference cycles after rst_n.
-// Date: 2026-10-10
+// Date: 2026-10-16
 `timescale 1ns/1ps
 module dpll #(
   parameter longint REF_KHZ      = 33_333,       // 33.333 MHz board clock
@@ -90,8 +90,10 @@ module dpll #(
       // rounding drift); a rising edge is skipped while en_i[n] is low (glitch-free gate)
       forever begin
         k++;
-        // an unknown enable (register not yet reset) counts as off: the clock never sticks at X
-        clk_o[n] = #(t_start + k * half - $realtime) (clk_o[n] ? 1'b0 : en_i[n] === 1'b1);
+        #(t_start + k * half - $realtime);
+        // the enable is sampled at the edge itself, as in dpll_dco; an unknown enable (register
+        // not yet reset) counts as off: the clock never sticks at X
+        clk_o[n] = clk_o[n] ? 1'b0 : (en_i[n] === 1'b1);
       end
     end
   end

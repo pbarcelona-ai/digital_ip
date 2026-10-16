@@ -12,7 +12,7 @@
 //   Reset - none. Timing - one masked compare per region. Errors -
 //   overlapping regions rejected at elaboration; NSLAVE < 1 rejected. Latency
 //   - 0 clocks (combinational).
-// Date: 2026-09-29
+// Date: 2026-10-16
 module axi4_lite_decoder #(
   parameter int ADDR_W = 32,
   parameter int NSLAVE = 4,
@@ -38,6 +38,12 @@ module axi4_lite_decoder #(
         j
       );
       end
+    end
+  end
+  // a base with bits outside its mask would never match
+  for (genvar i = 0; i < NSLAVE; i++) begin : g_cb
+    if ((BASE[i*ADDR_W +: ADDR_W] & ~MASK[i*ADDR_W +: ADDR_W]) != '0) begin : g_bad_base
+      $error("axi4_lite_decoder: region %0d base has bits outside its mask", i);
     end
   end
   logic [NSLAVE-1:0] hit;

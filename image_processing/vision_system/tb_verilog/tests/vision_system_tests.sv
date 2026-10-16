@@ -24,33 +24,33 @@
   task automatic axil_write(input int addr, input longint data);
     begin
       @(posedge clk);
-      s_axil_awaddr  <= addr[7:0];
-      s_axil_awvalid <= 1'b1;
-      s_axil_wdata   <= data[31:0];
-      s_axil_wstrb   <= 4'hF;
-      s_axil_wvalid  <= 1'b1;
+      s_axil.awaddr  <= addr[7:0];
+      s_axil.awvalid <= 1'b1;
+      s_axil.wdata   <= data[31:0];
+      s_axil.wstrb   <= 4'hF;
+      s_axil.wvalid  <= 1'b1;
       @(posedge clk);
-      s_axil_awvalid <= 1'b0;
-      s_axil_wvalid  <= 1'b0;
-      while (s_axil_bvalid !== 1'b1) @(posedge clk);
-      s_axil_bready <= 1'b1;
+      s_axil.awvalid <= 1'b0;
+      s_axil.wvalid  <= 1'b0;
+      while (s_axil.bvalid !== 1'b1) @(posedge clk);
+      s_axil.bready <= 1'b1;
       @(posedge clk);
-      s_axil_bready <= 1'b0;
+      s_axil.bready <= 1'b0;
     end
   endtask
 
   task automatic axil_read(input int addr, output logic [31:0] data);
     begin
       @(posedge clk);
-      s_axil_araddr  <= addr[7:0];
-      s_axil_arvalid <= 1'b1;
+      s_axil.araddr  <= addr[7:0];
+      s_axil.arvalid <= 1'b1;
       @(posedge clk);
-      s_axil_arvalid <= 1'b0;
-      while (s_axil_rvalid !== 1'b1) @(posedge clk);
-      data = s_axil_rdata;
-      s_axil_rready <= 1'b1;
+      s_axil.arvalid <= 1'b0;
+      while (s_axil.rvalid !== 1'b1) @(posedge clk);
+      data = s_axil.rdata;
+      s_axil.rready <= 1'b1;
       @(posedge clk);
-      s_axil_rready <= 1'b0;
+      s_axil.rready <= 1'b0;
     end
   endtask
 
@@ -63,16 +63,16 @@
     begin
       for (y = 0; y < h; y = y + 1) begin
         for (x = 0; x < w; x = x + 1) begin
-          s_axis_tvalid <= 1'b1;
-          s_axis_tdata  <= {img_r[y*w+x], img_g[y*w+x], img_b[y*w+x]};
-          s_axis_tlast  <= (x == w-1);
-          s_axis_tuser  <= (x == 0) && (y == 0);
+          s_axis.tvalid <= 1'b1;
+          s_axis.tdata  <= {img_r[y*w+x], img_g[y*w+x], img_b[y*w+x]};
+          s_axis.tlast  <= (x == w-1);
+          s_axis.tuser  <= (x == 0) && (y == 0);
           do @(posedge clk);
-          while (!s_axis_tready);
+          while (!s_axis.tready);
         end
-        s_axis_tvalid <= 1'b0;
-        s_axis_tlast  <= 1'b0;
-        s_axis_tuser  <= 1'b0;
+        s_axis.tvalid <= 1'b0;
+        s_axis.tlast  <= 1'b0;
+        s_axis.tuser  <= 1'b0;
         repeat (LINE_GAP) @(posedge clk);
       end
     end
@@ -94,13 +94,13 @@
       cap_tuser_err = 1'b0;
       while (cap_count < cap_total) begin
         @(posedge clk);
-        if (m_axis_tvalid === 1'b1 && m_axis_tready === 1'b1) begin
+        if (m_axis.tvalid === 1'b1 && m_axis.tready === 1'b1) begin
           x = cap_count % w;
-          cap_r[cap_count] = m_axis_tdata[23:16];
-          cap_g[cap_count] = m_axis_tdata[15:8];
-          cap_b[cap_count] = m_axis_tdata[7:0];
-          if (m_axis_tlast !== (x == w-1)) cap_tlast_err = 1'b1;
-          if (cap_count == 0 && m_axis_tuser !== 1'b1) cap_tuser_err = 1'b1;
+          cap_r[cap_count] = m_axis.tdata[23:16];
+          cap_g[cap_count] = m_axis.tdata[15:8];
+          cap_b[cap_count] = m_axis.tdata[7:0];
+          if (m_axis.tlast !== (x == w-1)) cap_tlast_err = 1'b1;
+          if (cap_count == 0 && m_axis.tuser !== 1'b1) cap_tuser_err = 1'b1;
           cap_count = cap_count + 1;
         end
       end

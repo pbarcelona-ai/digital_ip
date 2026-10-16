@@ -1,0 +1,105 @@
+// ***************
+// Filename: software_flow.dot
+// Author: FPGA Cores 4 U
+// Description: Flow of the video_processor firmware (sw/*.py, compiled by
+//   ip/cpu/py_core/tools/pyc.py into one flash image and run by py_core):
+//   boot, main() sections 1-9 with their decisions, the interrupt handler
+//   isr(), the per-frame tracking loop of section 8 and the tracker state
+//   machine (tracker.py). Each box names the function and its module; the
+//   "stage" values are the global the testbench watches.
+//   Render: make diagram
+// Date: 2026-10-16
+// ***************
+digraph video_processor_software {
+  graph [rankdir=TB, newrank=true, compound=true, bgcolor="white", pad=0.3, nodesep=0.35, ranksep=0.4,
+         fontname="Helvetica", fontsize=12, labelloc=t, labeljust=l,
+         label=<<FONT POINT-SIZE="22"><B>video_processor: software flow</B></FONT><BR ALIGN="LEFT"/><FONT POINT-SIZE="11" COLOR="#4b5563">Firmware sw/*.py (pyc.py inlines every module into one image, py_boot copies it from SPI flash at reset). Blue = main program, orange = interrupt handler,<BR ALIGN="LEFT"/>green = tracking loop (section 8), purple = tracker state per target. Grey text: function (module); stage = value of the global the testbench watches.</FONT><BR ALIGN="LEFT"/>>];
+  node  [shape=box, style="rounded,filled", fillcolor="#eff6ff", color="#1e3a8a", fontname="Helvetica", fontsize=10, margin="0.12,0.06"];
+  edge  [arrowsize=0.8, penwidth=1.6, fontname="Helvetica", fontsize=9, color="#374151", fontcolor="#374151"];
+
+  // ======================= boot and main =======================
+  subgraph cluster_main {
+    label=<<FONT POINT-SIZE="14"><B>main()</B></FONT>   <FONT COLOR="#6b7280">sw/video_proc.py</FONT>>;
+    style="rounded"; color="#1e3a8a"; penwidth=1.8;
+
+    reset   [label=<<B>Reset released</B><BR/><FONT COLOR="#6b7280">py_boot: flash image -&gt; code / constant memory</FONT>>, shape=oval, fillcolor="#f3f4f6", color="#6b7280"];
+    install [label=<<B>irq_handler(isr)</B><BR/><FONT COLOR="#6b7280">start = SYSCTL CYCLES</FONT>>];
+    s1      [label=<<B>1. Boot-up report</B><BR/><FONT COLOR="#6b7280">cpu_init / boot_report (video_init.py)   stage 1</FONT>>];
+    s2      [label=<<B>2. CPU peripheral self-test</B><BR/>SYSCTL, INTC, GPIO, UART1, UART0, SPI, I2C, flash, WDT<BR/><FONT COLOR="#6b7280">test_* (video_init.py)   stage 2</FONT>>];
+    s3      [label=<<B>3. CPU register dump</B><BR/><FONT COLOR="#6b7280">dump_cpu (video_init.py)   stage 3</FONT>>];
+    ok      [label="all self-tests passed?\n(core logic released:\nSYSCTL CORE_RESET)", shape=diamond, fillcolor="#fefce8", color="#a16207"];
+    s4      [label=<<B>4. Video set-up</B> (camera stopped)<BR/>serial clocks, camera reset / frame gap (I2C 0 CCI),<BR/>vision_system, blur_sharpen, video_pipeline, interrupts<BR/><FONT COLOR="#6b7280">video_setup (video_setup.py), camera.py   every write reported (wreg)</FONT>>];
+    quick   [label="GPIO0[31] quick strap\nor direct transcript?", shape=diamond, fillcolor="#fefce8", color="#a16207"];
+    s5      [label=<<B>5. Register dump</B><BR/>CPU domain + video domain<BR/><FONT COLOR="#6b7280">dump_cpu, dump_video (video_dump.py)   stage 5</FONT>>];
+    s6      [label=<<B>6. Video start</B><BR/>camera "stream on" (I2C 0), frames flow, checks<BR/><FONT COLOR="#6b7280">video_start (video_setup.py)   LED_RUN when no error   stage 100</FONT>>];
+    s7      [label=<<B>7. Frame counters and image sequence</B><BR/>wait idle, clear counts / event log, count the sequence<BR/><FONT COLOR="#6b7280">frame_sequence (sequence.py), events.py   stage 160 / 161</FONT>>];
+    s8      [label=<<B>8. Object detection and tracking</B><BR/>for each camera tracking sequence (reg 0x56, loaded = 0x57)<BR/><FONT COLOR="#6b7280">track (tracking.py)   stage 169 / 170 / 180</FONT>>];
+    s9      [label=<<B>9. Summary</B><BR/>checks passed / failed, "END OF REPORT", UART drained<BR/><FONT COLOR="#6b7280">stage 200</FONT>>];
+    idle    [label="while True: pass\n(interrupts still served)", shape=oval, fillcolor="#f3f4f6", color="#6b7280"];
+
+    reset -> install -> s1 -> s2 -> s3 -> ok;
+    ok -> s4 [label=" yes"];
+    ok -> s9 [label=" no: video sections skipped", style=dashed];
+    s4 -> quick;
+    quick -> s5 [label=" no"];
+    quick -> s6 [label=" yes: skip dump", style=dashed];
+    s5 -> s6 -> s7 -> s8 -> s9 -> idle;
+  }
+
+  // ======================= tracking loop =======================
+  subgraph cluster_track {
+    label=<<FONT POINT-SIZE="14"><B>Section 8: one tracking sequence</B></FONT>   <FONT COLOR="#6b7280">track_sequence (tracking.py)</FONT>>;
+    style="rounded"; color="#15803d"; penwidth=1.8;
+    node [fillcolor="#f0fdf4", color="#15803d"];
+    t_wait  [label=<<B>Wait for the sequence's settings</B><BR/>camera reg 0x57 &gt;= sequence number (bounded)<BR/><FONT COLOR="#6b7280">camera_byte (camera.py)</FONT>>];
+    t_setup [label=<<B>track_setup</B><BR/>frame size from camera regs 0x30-0x33 -&gt; every block (frame_size),<BR/>classes / box styles / max targets (0x50-0x55),<BR/>detectors (detect_setup), feature_detect, overlay boxes and texts<BR/><FONT COLOR="#6b7280">tracking.py, tracker.py, overlay.py, search.py</FONT>>];
+    t_ev    [label=<<B>events_start</B> (first stage, tracker, last stage)<BR/>wait for GPIO0[29] (sequence active)<BR/><FONT COLOR="#6b7280">events.py, sequence.py   stage 170</FONT>>];
+    t_next  [label="event_next():\nnext logged frame event?", shape=diamond, fillcolor="#fefce8", color="#a16207"];
+    t_line  [label=<<B>Transcript line</B><BR/>first stage / last stage: frame number, time<BR/><FONT COLOR="#6b7280">event_next (events.py)</FONT>>];
+    t_step  [label=<<B>track_event(n)</B> per selected class:<BR/>read blobs (BLOB_X / Y / N), shape check (class_ok),<BR/>assign blobs to tracks (nearest_blob, gated),<BR/>track_step, move box + search window, COMMIT overlay<BR/><FONT COLOR="#6b7280">tracking.py, tracker.py, search.py, overlay.py</FONT>>];
+    t_end   [label="sequence ended (GPIO0[29] = 0)\nand quiet for TRK_QUIET?", shape=diamond, fillcolor="#fefce8", color="#a16207"];
+    t_rep   [label=<<B>Sequence report</B><BR/>frames, targets found per class, CPU time per step<BR/><FONT COLOR="#6b7280">stage 180</FONT>>];
+    t_wait -> t_setup -> t_ev -> t_next;
+    t_next -> t_line [label=" stage event"];
+    t_next -> t_step [label=" tracker event"];
+    t_next -> t_end  [label=" none"];
+    t_line -> t_end;
+    t_step -> t_end;
+    t_end -> t_next  [label=" no"];
+    t_end -> t_rep   [label=" yes"];
+  }
+  s8 -> t_wait [lhead=cluster_track, label=" per sequence", style=dashed];
+  t_rep -> s8 [ltail=cluster_track, label=" next sequence / done", style=dashed];
+
+  // ======================= tracker states =======================
+  subgraph cluster_states {
+    label=<<FONT POINT-SIZE="14"><B>Tracker state per target</B></FONT>   <FONT COLOR="#6b7280">track_step (tracker.py): alpha-beta, alpha = 1, beta = 1/2</FONT>>;
+    style="rounded"; color="#7e22ce"; penwidth=1.8;
+    node [fillcolor="#faf5ff", color="#7e22ce", shape=ellipse];
+    st_search [label=<<B>SEARCH</B><BR/>window = whole frame>];
+    st_track  [label=<<B>TRACK</B><BR/>window around the prediction<BR/>v = (v + (z - x)) / 2>];
+    st_coast  [label=<<B>COAST</B><BR/>missed: box moves with v>];
+    st_search -> st_track [label=" blob found"];
+    st_track  -> st_track [label=" found"];
+    st_track  -> st_coast [label=" missed"];
+    st_coast  -> st_track [label=" found"];
+    st_coast  -> st_coast [label=" missed < TRK_LOST"];
+    st_coast  -> st_search [label=" TRK_LOST misses (lost)"];
+  }
+  t_step -> st_search [lhead=cluster_states, style=dotted, arrowhead=none];
+
+  // ======================= interrupt handler =======================
+  subgraph cluster_isr {
+    label=<<FONT POINT-SIZE="14"><B>isr()</B></FONT>   <FONT COLOR="#6b7280">sw/video_proc.py, any time interrupts are enabled</FONT>>;
+    style="rounded"; color="#c2410c"; penwidth=1.8;
+    node [fillcolor="#fff7ed", color="#c2410c"];
+    i_in   [label=<<B>Interrupt</B><BR/>pending = INTC MASKED<BR/>(write reports paused)>, shape=oval];
+    i_gpio [label=<<B>IRQ 6 GPIO0</B>: clear INT_STATUS (W1C)<BR/>MONO_SEL edge -&gt; set_format (ISP BYPASS)<BR/>SEQ_ACTIVE -&gt; seq_seen = 1>];
+    i_fc   [label=<<B>IRQ 13 / 14 frame_counter</B><BR/>fc_first = COUNT0 / fc_last = COUNT1,<BR/>clear STATUS (W1C) and read it back>];
+    i_st   [label=<<B>IRQ 12 isp_stats</B><BR/>frames += 1, clear INTC PENDING>];
+    i_cpu  [label=<<B>cpu_isr</B> (video_init.py)<BR/>software, GPIO2, watchdog>];
+    i_ret  [label="RETURN_FROM_IRQ", shape=oval];
+    i_in -> i_gpio -> i_fc -> i_st -> i_cpu -> i_ret;
+  }
+  install -> i_in [style=dotted, label=" installs", constraint=false];
+}

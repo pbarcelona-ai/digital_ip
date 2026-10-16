@@ -9,7 +9,7 @@
 //   Protocol checkers watch the master link and both slave links.
 //   Plusargs: +VCD=<file>, +NO_VCD, +TIMEOUT_MS=<n>.
 //   The test tasks are in tests/axil_split_tests.sv (`included).
-// Date: 2026-09-26
+// Date: 2026-10-16
 
 `timescale 1ns/1ps
 module tb_axil_split;
@@ -73,48 +73,43 @@ module tb_axil_split;
   logic [31:0] rf [2][64];
   int          wr_cnt [2];
   for (genvar g = 0; g < 2; g++) begin : g_slave
-    logic              reg_wr, reg_rd;
-    logic [ADDR_W-1:0] reg_waddr, reg_raddr;
-    logic [31:0]       reg_wdata, reg_rdata;
-    logic [3:0]        reg_wstrb;
+    regbus_if #(.ADDR_W(ADDR_W), .DATA_W(32)) reg_bus ();
+    assign reg_bus.rd_err = 1'b0;
+    assign reg_bus.wr_err = 1'b0;
+    axil_if #(.ADDR_W(ADDR_W)) u_slave_s_axil ();
+    assign u_slave_s_axil.awaddr = m_awaddr[g*ADDR_W +: ADDR_W];
+    assign u_slave_s_axil.awvalid = m_awvalid[g];
+    assign m_awready[g] = u_slave_s_axil.awready;
+    assign u_slave_s_axil.wdata = m_wdata[g*32 +: 32];
+    assign u_slave_s_axil.wstrb = m_wstrb[g*4 +: 4];
+    assign u_slave_s_axil.wvalid = m_wvalid[g];
+    assign m_wready[g] = u_slave_s_axil.wready;
+    assign m_bresp[g*2 +: 2] = u_slave_s_axil.bresp;
+    assign m_bvalid[g] = u_slave_s_axil.bvalid;
+    assign u_slave_s_axil.bready = m_bready[g];
+    assign u_slave_s_axil.araddr = m_araddr[g*ADDR_W +: ADDR_W];
+    assign u_slave_s_axil.arvalid = m_arvalid[g];
+    assign m_arready[g] = u_slave_s_axil.arready;
+    assign m_rdata[g*32 +: 32] = u_slave_s_axil.rdata;
+    assign m_rresp[g*2 +: 2] = u_slave_s_axil.rresp;
+    assign m_rvalid[g] = u_slave_s_axil.rvalid;
+    assign u_slave_s_axil.rready = m_rready[g];
     axil_regbus #(.ADDR_W(ADDR_W)) u_slave (
       .clk,
       .rst_n,
-      .s_axil_awaddr(m_awaddr[g*ADDR_W +: ADDR_W]),
-      .s_axil_awvalid(m_awvalid[g]),
-      .s_axil_awready(m_awready[g]),
-      .s_axil_wdata(m_wdata[g*32 +: 32]),
-      .s_axil_wstrb(m_wstrb[g*4 +: 4]),
-      .s_axil_wvalid(m_wvalid[g]),
-      .s_axil_wready(m_wready[g]),
-      .s_axil_bresp(m_bresp[g*2 +: 2]),
-      .s_axil_bvalid(m_bvalid[g]),
-      .s_axil_bready(m_bready[g]),
-      .s_axil_araddr(m_araddr[g*ADDR_W +: ADDR_W]),
-      .s_axil_arvalid(m_arvalid[g]),
-      .s_axil_arready(m_arready[g]),
-      .s_axil_rdata(m_rdata[g*32 +: 32]),
-      .s_axil_rresp(m_rresp[g*2 +: 2]),
-      .s_axil_rvalid(m_rvalid[g]),
-      .s_axil_rready(m_rready[g]),
-      .reg_wr,
-      .reg_waddr,
-      .reg_wdata,
-      .reg_wstrb,
-      .reg_rd,
-      .reg_raddr,
-      .reg_rdata
+      .s_axil(u_slave_s_axil),
+      .bus(reg_bus)
     );
     always_ff @(posedge clk) begin
-      if (reg_wr) begin
-        rf[g][reg_waddr[7:2]] <= reg_wdata;
+      if (reg_bus.wr) begin
+        rf[g][reg_bus.waddr[7:2]] <= reg_bus.wdata;
         wr_cnt[g]++;
-        if (reg_waddr[SEL] != 1'(g)) begin
+        if (reg_bus.waddr[SEL] != 1'(g)) begin
           errors++;
-          $display("ERROR: slave %0d got a write for address 0x%0h", g, reg_waddr);
+          $display("ERROR: slave %0d got a write for address 0x%0h", g, reg_bus.waddr);
         end
       end
-      if (reg_rd) reg_rdata <= rf[g][reg_raddr[7:2]];
+      if (reg_bus.rd) reg_bus.rdata <= rf[g][reg_bus.raddr[7:2]];
     end
     axil_checker #(
       .ADDR_W(ADDR_W),

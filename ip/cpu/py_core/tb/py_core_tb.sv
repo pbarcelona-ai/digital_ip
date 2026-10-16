@@ -28,10 +28,7 @@ module py_core_tb;
   logic [7:0] code_q;
   logic [CONST_AW-1:0] const_addr;
   logic [33:0] const_q;
-  logic [31:0] awaddr, wdata, araddr, rdata;
-  logic [3:0] wstrb;
-  logic [1:0] bresp, rresp;
-  logic awvalid, awready, wvalid, wready, bvalid, bready, arvalid, arready, rvalid, rready;
+  axil_if #(.ADDR_W(32), .DATA_W(32)) m_axil ();
 
   py_core #(
     .CODE_AW(CODE_AW),
@@ -55,23 +52,7 @@ module py_core_tb;
     .code_data_i(code_q),
     .const_addr_o(const_addr),
     .const_data_i(const_q),
-    .m_axil_awaddr(awaddr),
-    .m_axil_awvalid(awvalid),
-    .m_axil_awready(awready),
-    .m_axil_wdata(wdata),
-    .m_axil_wstrb(wstrb),
-    .m_axil_wvalid(wvalid),
-    .m_axil_wready(wready),
-    .m_axil_bresp(bresp),
-    .m_axil_bvalid(bvalid),
-    .m_axil_bready(bready),
-    .m_axil_araddr(araddr),
-    .m_axil_arvalid(arvalid),
-    .m_axil_arready(arready),
-    .m_axil_rdata(rdata),
-    .m_axil_rresp(rresp),
-    .m_axil_rvalid(rvalid),
-    .m_axil_rready(rready)
+    .m_axil(m_axil)
   );
 
   // ---------------- code / const memories ----------------
@@ -95,45 +76,45 @@ module py_core_tb;
   logic [31:0] aw_q, w_q;
   always @(posedge clk) begin
     if (!rst_n) begin
-      awready <= 0;
-      wready <= 0;
-      bvalid <= 0;
-      arready <= 0;
-      rvalid <= 0;
+      m_axil.awready <= 0;
+      m_axil.wready <= 0;
+      m_axil.bvalid <= 0;
+      m_axil.arready <= 0;
+      m_axil.rvalid <= 0;
       aw_seen <= 0;
       w_seen <= 0;
     end else begin
-      awready <= ($urandom % 3 == 0) && !aw_seen;
-      wready <= ($urandom % 3 == 0) && !w_seen;
-      arready <= ($urandom % 3 == 0) && !rvalid && !arready;
-      if (awvalid && awready) begin
+      m_axil.awready <= ($urandom % 3 == 0) && !aw_seen;
+      m_axil.wready <= ($urandom % 3 == 0) && !w_seen;
+      m_axil.arready <= ($urandom % 3 == 0) && !m_axil.rvalid && !m_axil.arready;
+      if (m_axil.awvalid && m_axil.awready) begin
         aw_seen <= 1;
-        aw_q <= awaddr;
-        awready <= 0;
+        aw_q <= m_axil.awaddr;
+        m_axil.awready <= 0;
       end
-      if (wvalid && wready)   begin
+      if (m_axil.wvalid && m_axil.wready)   begin
         w_seen  <= 1;
-        w_q  <= wdata;
-        wready  <= 0;
+        w_q  <= m_axil.wdata;
+        m_axil.wready  <= 0;
       end
-      if (aw_seen && w_seen && !bvalid) begin
-        bvalid <= 1;
-        bresp <= (aw_q == BAD) ? 2'b10 : 2'b00;
+      if (aw_seen && w_seen && !m_axil.bvalid) begin
+        m_axil.bvalid <= 1;
+        m_axil.bresp <= (aw_q == BAD) ? 2'b10 : 2'b00;
         if (aw_q == GPIO) gpio_log.push_back(w_q);
         if (aw_q != BAD) sram[aw_q[11:2]] = w_q;
       end
-      if (bvalid && bready) begin
-        bvalid <= 0;
+      if (m_axil.bvalid && m_axil.bready) begin
+        m_axil.bvalid <= 0;
         aw_seen <= 0;
         w_seen <= 0;
       end
-      if (arvalid && arready && !rvalid) begin
-        rvalid <= 1;
-        rresp <= (araddr == BAD) ? 2'b10 : 2'b00;
-        arready <= 0;
-        rdata  <= (araddr == ID) ? 32'h8000_0000 : sram[araddr[11:2]];
+      if (m_axil.arvalid && m_axil.arready && !m_axil.rvalid) begin
+        m_axil.rvalid <= 1;
+        m_axil.rresp <= (m_axil.araddr == BAD) ? 2'b10 : 2'b00;
+        m_axil.arready <= 0;
+        m_axil.rdata  <= (m_axil.araddr == ID) ? 32'h8000_0000 : sram[m_axil.araddr[11:2]];
       end
-      if (rvalid && rready) rvalid <= 0;
+      if (m_axil.rvalid && m_axil.rready) m_axil.rvalid <= 0;
     end
   end
 

@@ -45,26 +45,26 @@
   task automatic axil_write_abs(input [7:0] a, input [31:0] d);
     @(posedge aclk);
     #1;
-    awaddr = a;
-    awvalid = 1;
-    wdata = d;
-    wstrb = 4'hF;
-    wvalid = 1;
-    bready = 1;
+    s_axil.awaddr = a;
+    s_axil.awvalid = 1;
+    s_axil.wdata = d;
+    s_axil.wstrb = 4'hF;
+    s_axil.wvalid = 1;
+    s_axil.bready = 1;
     fork
       begin
-        wait (awready);
+        wait (s_axil.awready);
         @(posedge aclk);
-        #1 awvalid = 0;
+        #1 s_axil.awvalid = 0;
       end
       begin
-        wait (wready);
+        wait (s_axil.wready);
         @(posedge aclk);
-        #1 wvalid = 0;
+        #1 s_axil.wvalid = 0;
       end
     join
-    wait (bvalid);
-    last_bresp = bresp;
+    wait (s_axil.bvalid);
+    last_bresp = s_axil.bresp;
     @(posedge aclk);
     #1;
   endtask
@@ -72,14 +72,14 @@
   task automatic axil_read_abs(input [7:0] a, output [31:0] d);
     @(posedge aclk);
     #1;
-    araddr = a;
-    arvalid = 1;
-    rready = 1;
-    wait (arready);
+    s_axil.araddr = a;
+    s_axil.arvalid = 1;
+    s_axil.rready = 1;
+    wait (s_axil.arready);
     @(posedge aclk);
-    #1 arvalid = 0;
-    wait (rvalid);
-    d = rdata;
+    #1 s_axil.arvalid = 0;
+    wait (s_axil.rvalid);
+    d = s_axil.rdata;
     @(posedge aclk);
     #1;
   endtask
@@ -87,12 +87,12 @@
   task automatic stream_send(input [7:0] b);
     @(posedge aclk);
     #1;
-    s_tdata = b;
-    s_tvalid = 1;
-    s_tlast = 0;
-    wait (s_tready);
+    s.tdata = b;
+    s.tvalid = 1;
+    s.tlast = 0;
+    wait (s.tready);
     @(posedge aclk);
-    #1 s_tvalid = 0;
+    #1 s.tvalid = 0;
   endtask
 
   // Run a transaction and wait for the done flag

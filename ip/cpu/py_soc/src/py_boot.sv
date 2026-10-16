@@ -40,23 +40,8 @@ module py_boot #(
   output logic [CONST_AW-1:0] const_waddr_o,
   output logic [33:0]         const_wdata_o,
   // AXI4-Lite master
-  output logic [31:0]         m_axil_awaddr,
-  output logic                m_axil_awvalid,
-  input  logic                m_axil_awready,
-  output logic [31:0]         m_axil_wdata,
-  output logic [3:0]          m_axil_wstrb,
-  output logic                m_axil_wvalid,
-  input  logic                m_axil_wready,
-  input  logic [1:0]          m_axil_bresp,
-  input  logic                m_axil_bvalid,
-  output logic                m_axil_bready,
-  output logic [31:0]         m_axil_araddr,
-  output logic                m_axil_arvalid,
-  input  logic                m_axil_arready,
-  input  logic [31:0]         m_axil_rdata,
-  input  logic [1:0]          m_axil_rresp,
-  input  logic                m_axil_rvalid,
-  output logic                m_axil_rready
+  // m_axil: axil_if.master (ip/shared/src/interfaces/axil_if.sv), ADDR_W = 32
+  axil_if.master m_axil
 );
   localparam logic [31:0] MAGIC    = 32'h3143_5950;               // "PYC1"
   localparam logic [31:0] CMD_READ = 32'h0001_0103;               // 03h, address, read data
@@ -75,7 +60,7 @@ module py_boot #(
   bus_e bst;
   logic op_done, op_err, aw_ok, w_ok;
   logic [31:0] op_rdata;
-  assign m_axil_wstrb = 4'hF;
+  assign m_axil.wstrb = 4'hF;
 
   logic [95:0]  hdr;                     // header bytes, byte 0 in [7:0]
   logic [3:0]   hcnt;
@@ -109,14 +94,14 @@ module py_boot #(
       op_rdata <= '0;
       aw_ok <= 1'b0;
       w_ok <= 1'b0;
-      m_axil_awaddr <= '0;
-      m_axil_wdata <= '0;
-      m_axil_araddr <= '0;
-      m_axil_awvalid <= 1'b0;
-      m_axil_wvalid <= 1'b0;
-      m_axil_bready <= 1'b0;
-      m_axil_arvalid <= 1'b0;
-      m_axil_rready <= 1'b0;
+      m_axil.awaddr <= '0;
+      m_axil.wdata <= '0;
+      m_axil.araddr <= '0;
+      m_axil.awvalid <= 1'b0;
+      m_axil.wvalid <= 1'b0;
+      m_axil.bready <= 1'b0;
+      m_axil.arvalid <= 1'b0;
+      m_axil.rready <= 1'b0;
       hdr <= '0;
       hcnt <= '0;
       idx <= '0;
@@ -141,32 +126,32 @@ module py_boot #(
       // Bus engine: op_done pulses for one clock with op_err / op_rdata
       case (bst)
         B_WR: begin
-          if (m_axil_awvalid && m_axil_awready) begin
-            m_axil_awvalid <= 1'b0;
+          if (m_axil.awvalid && m_axil.awready) begin
+            m_axil.awvalid <= 1'b0;
             aw_ok <= 1'b1;
           end
-          if (m_axil_wvalid  && m_axil_wready)  begin
-            m_axil_wvalid  <= 1'b0;
+          if (m_axil.wvalid  && m_axil.wready)  begin
+            m_axil.wvalid  <= 1'b0;
             w_ok  <= 1'b1;
           end
-          if ((aw_ok || (m_axil_awvalid && m_axil_awready)) && (w_ok || (m_axil_wvalid && m_axil_wready))) m_axil_bready <= 1'b1;
-          if (m_axil_bready && m_axil_bvalid) begin
-            m_axil_bready <= 1'b0;
+          if ((aw_ok || (m_axil.awvalid && m_axil.awready)) && (w_ok || (m_axil.wvalid && m_axil.wready))) m_axil.bready <= 1'b1;
+          if (m_axil.bready && m_axil.bvalid) begin
+            m_axil.bready <= 1'b0;
             op_done <= 1'b1;
-            op_err <= (m_axil_bresp != 2'b00);
+            op_err <= (m_axil.bresp != 2'b00);
             bst <= B_IDLE;
           end
         end
         B_RD: begin
-          if (m_axil_arvalid && m_axil_arready) begin
-            m_axil_arvalid <= 1'b0;
-            m_axil_rready <= 1'b1;
+          if (m_axil.arvalid && m_axil.arready) begin
+            m_axil.arvalid <= 1'b0;
+            m_axil.rready <= 1'b1;
           end
-          if (m_axil_rready && m_axil_rvalid) begin
-            m_axil_rready <= 1'b0;
+          if (m_axil.rready && m_axil.rvalid) begin
+            m_axil.rready <= 1'b0;
             op_done <= 1'b1;
-            op_err <= (m_axil_rresp != 2'b00);
-            op_rdata <= m_axil_rdata;
+            op_err <= (m_axil.rresp != 2'b00);
+            op_rdata <= m_axil.rdata;
             bst <= B_IDLE;
           end
         end
@@ -302,16 +287,16 @@ module py_boot #(
       endcase
 
       if (do_wr) begin
-        m_axil_awaddr <= do_a;
-        m_axil_wdata <= do_d;
-        m_axil_awvalid <= 1'b1;
-        m_axil_wvalid <= 1'b1;
+        m_axil.awaddr <= do_a;
+        m_axil.wdata <= do_d;
+        m_axil.awvalid <= 1'b1;
+        m_axil.wvalid <= 1'b1;
         aw_ok <= 1'b0;
         w_ok <= 1'b0;
         bst <= B_WR;
       end else if (do_rd) begin
-        m_axil_araddr <= do_a;
-        m_axil_arvalid <= 1'b1;
+        m_axil.araddr <= do_a;
+        m_axil.arvalid <= 1'b1;
         bst <= B_RD;
       end
     end

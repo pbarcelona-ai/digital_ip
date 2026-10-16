@@ -21,7 +21,8 @@ module vid_timing_gen_tb;
   logic en;
   logic [15:0] ha, hf, hs, hb, va, vf, vs, vb, lmax;
   logic hp, vp, lk, rdy;
-  logic de, hso, vso, sof, eol, vbl, wt;
+  vid_if tim ();
+  logic sof, eol, vbl, wt;
   logic [15:0] x, y;
   vid_timing_gen dut (
     .clk,
@@ -40,9 +41,7 @@ module vid_timing_gen_tb;
     .lock_en_i(lk),
     .src_ready_i(rdy),
     .lock_max_i(lmax),
-    .de_o(de),
-    .hs_o(hso),
-    .vs_o(vso),
+    .tim(tim),
     .x_o(x),
     .y_o(y),
     .sof_o(sof),

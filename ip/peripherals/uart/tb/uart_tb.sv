@@ -18,53 +18,24 @@ module uart_tb;
   logic aclk = 0, aresetn = 0;
   always #(CLK_PERIOD/2) aclk = ~aclk;
 
-  logic [7:0] awaddr, araddr;
-  logic awvalid, awready, wvalid, wready;
-  logic [31:0] wdata, rdata;
-  logic [3:0] wstrb;
-  logic [1:0] bresp, rresp;
-  logic bvalid, bready, arvalid, arready, rvalid, rready;
-  logic [7:0] s_tdata, m_tdata;
-  logic s_tvalid, s_tready, s_tlast;
-  logic m_tvalid, m_tready, m_tlast;
-  logic txd, rxd;
+  axil_if #(.ADDR_W(8), .DATA_W(32)) s_axil ();
+  axis_if #(.DATA_W(8)) m ();
+  axis_if #(.DATA_W(8)) s ();
+  uart_if dut_uart ();
 
   uart_top #(.FIFO_DEPTH(16)) dut (
     .aclk,
     .aresetn,
-    .s_axil_awaddr(awaddr),
-    .s_axil_awvalid(awvalid),
-    .s_axil_awready(awready),
-    .s_axil_wdata(wdata),
-    .s_axil_wstrb(wstrb),
-    .s_axil_wvalid(wvalid),
-    .s_axil_wready(wready),
-    .s_axil_bresp(bresp),
-    .s_axil_bvalid(bvalid),
-    .s_axil_bready(bready),
-    .s_axil_araddr(araddr),
-    .s_axil_arvalid(arvalid),
-    .s_axil_arready(arready),
-    .s_axil_rdata(rdata),
-    .s_axil_rresp(rresp),
-    .s_axil_rvalid(rvalid),
-    .s_axil_rready(rready),
-    .s_axis_tdata(s_tdata),
-    .s_axis_tvalid(s_tvalid),
-    .s_axis_tready(s_tready),
-    .s_axis_tlast(s_tlast),
-    .m_axis_tdata(m_tdata),
-    .m_axis_tvalid(m_tvalid),
-    .m_axis_tready(m_tready),
-    .m_axis_tlast(m_tlast),
-    .uart_txd_o(txd),
-    .uart_rxd_i(rxd)
+    .s_axil(s_axil),
+    .s_axis(s),
+    .m_axis(m),
+    .uart(dut_uart)
   );
 
   // UART line partner: drives the DUT receiver, checks the DUT transmitter
   uart_bfm #(.BIT_NS(BIT_NS)) uart (
-    .txd(rxd),
-    .rxd(txd)
+    .txd(dut_uart.rxd),
+    .rxd(dut_uart.txd)
   );
 
   int errors = 0;
@@ -95,12 +66,12 @@ module uart_tb;
   byte rx_q[$];
   int  rx_count = 0;
   logic m_user_dummy;
-  always @(posedge aclk) if (m_tvalid && m_tready) begin
+  always @(posedge aclk) if (m.tvalid && m.tready) begin
     check(rx_q.size() != 0, "unexpected rx byte");
     if (rx_q.size() != 0) begin
       logic [7:0] e;
       e = rx_q.pop_front();
-      check(m_tdata == e, $sformatf("rx byte got %02h exp %02h", m_tdata, e));
+      check(m.tdata == e, $sformatf("rx byte got %02h exp %02h", m.tdata, e));
     end
     rx_count++;
   end
@@ -111,19 +82,19 @@ module uart_tb;
       $dumpfile("uart_tb.vcd");
       $dumpvars(0, uart_tb);
     end
-    awvalid = 0;
-    wvalid = 0;
-    bready = 0;
-    arvalid = 0;
-    rready = 0;
-    awaddr = 0;
-    araddr = 0;
-    wdata = 0;
-    wstrb = 0;
-    s_tdata = 0;
-    s_tvalid = 0;
-    s_tlast = 0;
-    m_tready = 1;
+    s_axil.awvalid = 0;
+    s_axil.wvalid = 0;
+    s_axil.bready = 0;
+    s_axil.arvalid = 0;
+    s_axil.rready = 0;
+    s_axil.awaddr = 0;
+    s_axil.araddr = 0;
+    s_axil.wdata = 0;
+    s_axil.wstrb = 0;
+    s.tdata = 0;
+    s.tvalid = 0;
+    s.tlast = 0;
+    m.tready = 1;
     repeat (5) @(posedge aclk);
     aresetn = 1;
     repeat (2) @(posedge aclk);

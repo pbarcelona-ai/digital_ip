@@ -24,14 +24,9 @@ module blur_sharpen_tb;
     $finish;
   end
 
-  logic [8:0] s_axil_awaddr, s_axil_araddr;
-  logic s_axil_awvalid, s_axil_awready, s_axil_wvalid, s_axil_wready;
-  logic [31:0] s_axil_wdata, s_axil_rdata;
-  logic [3:0] s_axil_wstrb;
-  logic [1:0] s_axil_bresp, s_axil_rresp;
-  logic s_axil_bvalid, s_axil_bready, s_axil_arvalid, s_axil_arready, s_axil_rvalid, s_axil_rready;
-  logic [C*CW-1:0] sd, md;
-  logic sl, su, sv, sr, ml, mu, mv, mr;
+  axil_if #(.ADDR_W(9), .DATA_W(32)) s_axil ();
+  axis_if #(.DATA_W(C*CW), .USER_W(1)) m_axis ();
+  axis_if #(.DATA_W(C*CW), .USER_W(1)) s_axis ();
 
   blur_sharpen_top #(
     .N(N),
@@ -41,33 +36,9 @@ module blur_sharpen_tb;
   ) dut (
     .clk,
     .rst_n,
-    .s_axil_awaddr,
-    .s_axil_awvalid,
-    .s_axil_awready,
-    .s_axil_wdata,
-    .s_axil_wstrb,
-    .s_axil_wvalid,
-    .s_axil_wready,
-    .s_axil_bresp,
-    .s_axil_bvalid,
-    .s_axil_bready,
-    .s_axil_araddr,
-    .s_axil_arvalid,
-    .s_axil_arready,
-    .s_axil_rdata,
-    .s_axil_rresp,
-    .s_axil_rvalid,
-    .s_axil_rready,
-    .s_axis_tdata(sd),
-    .s_axis_tlast(sl),
-    .s_axis_tuser(su),
-    .s_axis_tvalid(sv),
-    .s_axis_tready(sr),
-    .m_axis_tdata(md),
-    .m_axis_tlast(ml),
-    .m_axis_tuser(mu),
-    .m_axis_tvalid(mv),
-    .m_axis_tready(mr)
+    .s_axil(s_axil),
+    .s_axis(s_axis),
+    .m_axis(m_axis)
   );
   axil_bfm #(.ADDR_W(9)) bfm (
     .aclk(clk),
@@ -79,16 +50,16 @@ module blur_sharpen_tb;
     .MAXH(MAXH)
   ) vid (
     .clk,
-    .s_tdata(sd),
-    .s_tlast(sl),
-    .s_tuser(su),
-    .s_tvalid(sv),
-    .s_tready(sr),
-    .m_tdata(md),
-    .m_tlast(ml),
-    .m_tuser(mu),
-    .m_tvalid(mv),
-    .m_tready(mr)
+    .s_tdata(s_axis.tdata),
+    .s_tlast(s_axis.tlast),
+    .s_tuser(s_axis.tuser),
+    .s_tvalid(s_axis.tvalid),
+    .s_tready(s_axis.tready),
+    .m_tdata(m_axis.tdata),
+    .m_tlast(m_axis.tlast),
+    .m_tuser(m_axis.tuser),
+    .m_tvalid(m_axis.tvalid),
+    .m_tready(m_axis.tready)
   );
   conv2d_ref #(
     .N(N),

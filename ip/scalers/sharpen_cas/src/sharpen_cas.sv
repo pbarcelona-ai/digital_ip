@@ -42,10 +42,12 @@
 //     0x038 CAPS      (RO) [7:0] 3 (kernel) [15:8] CHANNELS [23:16] COMP_W
 //     0x03C MAX_SIZE  (RO) [15:0] MAX_W
 //     0x050 SHARPNESS [8:0] 0..256  (0 = gentle, 256 = maximum)
+//   Responses: SLVERR for writes to read-only words and for any access to an
+//   unmapped word (the access has no effect); 0x00C reads 0 (OKAY).
 //
 //   Throughput: 1 pixel / clock (W+1 cycles per line).
 //   Dependencies: axil_regbus
-// Date: 2026-10-12
+// Date: 2026-10-16
 
 module sharpen_cas #(
   parameter int CHANNELS = 3,
@@ -121,6 +123,7 @@ module sharpen_cas #(
   // Registers
   // ===========================================================================
   logic              reg_wr, reg_rd;
+  logic              rd_err_q, wr_err_q;   // SLVERR answers, 1 cycle after reg_rd / reg_wr
   logic [ADDR_W-1:0] reg_waddr, reg_raddr;
   logic [31:0]       reg_wdata, reg_rdata;
   logic [3:0]        reg_wstrb;
@@ -154,8 +157,35 @@ module sharpen_cas #(
     .reg_wstrb,
     .reg_rd,
     .reg_raddr,
-    .reg_rdata
+    .reg_rdata,
+    .reg_rd_err(rd_err_q),
+    .reg_wr_err(wr_err_q)
   );
+
+  // SLVERR: writes to read-only words (ID block, FRAME_CNT .. MAX_SIZE) and any access to an
+  // unmapped word; refused writes have no effect
+  logic w_ok, r_ok;
+  wire  w_hi = (32'(reg_waddr) >> 8) != 0, r_hi = (32'(reg_raddr) >> 8) != 0;
+  always_comb begin
+    case (reg_waddr[7:0])
+      8'h10, 8'h14, 8'h18, 8'h50: w_ok = !w_hi;
+      default:                    w_ok = 1'b0;
+    endcase
+    case (reg_raddr[7:0])
+      8'h00, 8'h04, 8'h08, 8'h0C, 8'h10, 8'h14, 8'h18,
+      8'h30, 8'h34, 8'h38, 8'h3C, 8'h50: r_ok = !r_hi;
+      default:                           r_ok = 1'b0;
+    endcase
+  end
+  always_ff @(posedge clk) begin
+    if (!rst_n) begin
+      wr_err_q <= 1'b0;
+      rd_err_q <= 1'b0;
+    end else begin
+      wr_err_q <= reg_wr && !w_ok;
+      if (reg_rd) rd_err_q <= !r_ok;
+    end
+  end
 
   logic        enable, bypass;
   logic [15:0] cfg_w, cfg_h;
@@ -165,7 +195,7 @@ module sharpen_cas #(
   logic [31:0] frame_cnt;
   logic        active;                              // a frame is in flight
 
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk) begin
     if (!rst_n) begin
       enable <= 1'b0;
       bypass <= 1'b0;
@@ -177,7 +207,7 @@ module sharpen_cas #(
       st_eol_err <= 1'b0;
       reg_rdata <= '0;
     end else begin
-      if (reg_wr) begin
+      if (reg_wr && w_ok) begin
         case (reg_waddr[7:0])
           8'h10: begin
             enable <= reg_wdata[0];
@@ -249,7 +279,7 @@ module sharpen_cas #(
   wire [1:0]  lb_wrow = active ? iy[1:0] : 2'd0;
   wire [15:0] lb_wcol = active ? ix : 16'd0;
 
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk) begin
     if (!rst_n) begin
       active <= 1'b0;
       in_done <= 1'b0;
@@ -325,7 +355,7 @@ module sharpen_cas #(
   logic [XW-1:0] s0_col;
   logic [1:0]    s0_bt, s0_bm, s0_bb;
 
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk) begin
     if (!rst_n) begin
       oy <= '0;
       oj <= '0;
@@ -375,7 +405,7 @@ module sharpen_cas #(
 
   // rows_read counts rows whose last RAM read has been performed
   assign rows_read_inc = adv && s0_v && s0_rowlast;
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk) begin
     if (!rst_n)                  rows_read <= '0;
     else if (beat && !active)    rows_read <= '0;
     else if (rows_read_inc)      rows_read <= rows_read + 16'd1;
@@ -406,7 +436,7 @@ module sharpen_cas #(
       if (adv) bq[r] <= mem[s0_col];
     end
   end
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk) begin
     if (!rst_n)               s1_v <= 1'b0;
     else if (beat && !active) s1_v <= 1'b0;
     else if (adv)             s1_v <= s0_v;
@@ -416,7 +446,7 @@ module sharpen_cas #(
   logic [PIX_W-1:0] wn [3][3];
   logic             s2_v, s2_sof, s2_eol, s2_eof;
 
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk) begin
     if (!rst_n) begin
       s2_v <= 1'b0;
       s2_sof <= 0;
@@ -492,7 +522,7 @@ module sharpen_cas #(
     return p[c*COMP_W +: COMP_W];
   endfunction
 
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk) begin
     if (!rst_n) begin
       be_v <= '0;
       for (int k = 0; k < NBE; k++) be_f[k] <= '0;
@@ -586,7 +616,7 @@ module sharpen_cas #(
   end
 
   logic m_eof;
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk) begin
     if (!rst_n) begin
       m_axis_tvalid <= 1'b0;
       m_axis_tdata <= '0;

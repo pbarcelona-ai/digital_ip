@@ -114,23 +114,8 @@ module video_pipeline #(
   input  logic                pix_clk,
   input  logic                pix_rst_n,
   // AXI4-Lite slave (pix_clk)
-  input  logic [14:0]         s_axil_awaddr,
-  input  logic                s_axil_awvalid,
-  output logic                s_axil_awready,
-  input  logic [31:0]         s_axil_wdata,
-  input  logic [3:0]          s_axil_wstrb,
-  input  logic                s_axil_wvalid,
-  output logic                s_axil_wready,
-  output logic [1:0]          s_axil_bresp,
-  output logic                s_axil_bvalid,
-  input  logic                s_axil_bready,
-  input  logic [14:0]         s_axil_araddr,
-  input  logic                s_axil_arvalid,
-  output logic                s_axil_arready,
-  output logic [31:0]         s_axil_rdata,
-  output logic [1:0]          s_axil_rresp,
-  output logic                s_axil_rvalid,
-  input  logic                s_axil_rready,
+  // s_axil: axil_if.slave (ip/shared/src/interfaces/axil_if.sv), ADDR_W = 15
+  axil_if.slave s_axil,
   // Video out
 `ifdef VP_HDMI
   output logic [9:0]          tmds0_o,
@@ -165,16 +150,10 @@ module video_pipeline #(
 `ifdef VP_INSERT
   // Insert point after isp_csc (CTRL[7]): 24-bit AXI4-Stream video out to an
   // external block (e.g. vision_system) and back; tuser = SOF, tlast = EOL
-  output logic [23:0]         ins_m_axis_tdata,
-  output logic                ins_m_axis_tlast,
-  output logic                ins_m_axis_tuser,
-  output logic                ins_m_axis_tvalid,
-  input  logic                ins_m_axis_tready,
-  input  logic [23:0]         ins_s_axis_tdata,
-  input  logic                ins_s_axis_tlast,
-  input  logic                ins_s_axis_tuser,
-  input  logic                ins_s_axis_tvalid,
-  output logic                ins_s_axis_tready,
+  // ins_m_axis: axis_if.master (ip/shared/src/interfaces/axis_if.sv), DATA_W = 24
+  axis_if.master ins_m_axis,
+  // ins_s_axis: axis_if.slave (ip/shared/src/interfaces/axis_if.sv), DATA_W = 24
+  axis_if.slave ins_s_axis,
 `endif
   // End-of-frame markers (pix_clk pulses, e.g. for a frame counter): the last pixel of a frame
   // leaving csi2_raw_unpack (first ISP stage, FRAME_SIZE height) / entering axis_to_video (last
@@ -183,6 +162,7 @@ module video_pipeline #(
   output logic                eof_out_o,
   output logic                stats_done_o       // pulse: new statistics available
 );
+  assign ins_m_axis.tkeep = '1;      // not used by this block
 `ifndef VP_CONFIGURATION_SV
   if (1) begin : g_no_config $error("video_pipeline: compile src/configuration.sv first (see scripts/build.f)"); end
 `endif
@@ -234,23 +214,23 @@ module video_pipeline #(
   ) u_split (
     .clk,
     .rst_n,
-    .s_awaddr(s_axil_awaddr),
-    .s_awvalid(s_axil_awvalid),
-    .s_awready(s_axil_awready),
-    .s_wdata(s_axil_wdata),
-    .s_wstrb(s_axil_wstrb),
-    .s_wvalid(s_axil_wvalid),
-    .s_wready(s_axil_wready),
-    .s_bresp(s_axil_bresp),
-    .s_bvalid(s_axil_bvalid),
-    .s_bready(s_axil_bready),
-    .s_araddr(s_axil_araddr),
-    .s_arvalid(s_axil_arvalid),
-    .s_arready(s_axil_arready),
-    .s_rdata(s_axil_rdata),
-    .s_rresp(s_axil_rresp),
-    .s_rvalid(s_axil_rvalid),
-    .s_rready(s_axil_rready),
+    .s_awaddr(s_axil.awaddr),
+    .s_awvalid(s_axil.awvalid),
+    .s_awready(s_axil.awready),
+    .s_wdata(s_axil.wdata),
+    .s_wstrb(s_axil.wstrb),
+    .s_wvalid(s_axil.wvalid),
+    .s_wready(s_axil.wready),
+    .s_bresp(s_axil.bresp),
+    .s_bvalid(s_axil.bvalid),
+    .s_bready(s_axil.bready),
+    .s_araddr(s_axil.araddr),
+    .s_arvalid(s_axil.arvalid),
+    .s_arready(s_axil.arready),
+    .s_rdata(s_axil.rdata),
+    .s_rresp(s_axil.rresp),
+    .s_rvalid(s_axil.rvalid),
+    .s_rready(s_axil.rready),
     .m_awaddr(sp_awaddr),
     .m_awvalid(sp_awvalid),
     .m_awready(sp_awready),
@@ -281,133 +261,97 @@ module video_pipeline #(
   assign regs[27*32 +: 32] = gamma_data_d;
   assign regs[57*32 +: 32] = dsi_cmd_d;
   assign regs[58*32 +: 32] = dsi_cmd_byte_d;
+  axil_if #(.ADDR_W(9)) u_regs_s_axil ();
+  assign u_regs_s_axil.awaddr = sp_awaddr[8:0];
+  assign u_regs_s_axil.awvalid = sp_awvalid[0];
+  assign sp_awready[0] = u_regs_s_axil.awready;
+  assign u_regs_s_axil.wdata = sp_wdata[31:0];
+  assign u_regs_s_axil.wstrb = sp_wstrb[3:0];
+  assign u_regs_s_axil.wvalid = sp_wvalid[0];
+  assign sp_wready[0] = u_regs_s_axil.wready;
+  assign sp_bresp[1:0] = u_regs_s_axil.bresp;
+  assign sp_bvalid[0] = u_regs_s_axil.bvalid;
+  assign u_regs_s_axil.bready = sp_bready[0];
+  assign u_regs_s_axil.araddr = sp_araddr[8:0];
+  assign u_regs_s_axil.arvalid = sp_arvalid[0];
+  assign sp_arready[0] = u_regs_s_axil.arready;
+  assign sp_rdata[31:0] = u_regs_s_axil.rdata;
+  assign sp_rresp[1:0] = u_regs_s_axil.rresp;
+  assign sp_rvalid[0] = u_regs_s_axil.rvalid;
+  assign u_regs_s_axil.rready = sp_rready[0];
+  video_pipeline_regs_if u_regs_r ();
+  assign regs[1*32 +: 32] = u_regs_r.cfg_ctrl;
+  assign regs[2*32 +: 32] = u_regs_r.cfg_bypass;
+  assign u_regs_r.sts_status = rd[3*32 +: 32];
+  assign regs[4*32 +: 32] = u_regs_r.cfg_csi;
+  assign regs[5*32 +: 32] = u_regs_r.cfg_frame_size;
+  assign regs[6*32 +: 32] = u_regs_r.cfg_blc_r;
+  assign regs[7*32 +: 32] = u_regs_r.cfg_blc_gr;
+  assign regs[8*32 +: 32] = u_regs_r.cfg_blc_gb;
+  assign regs[9*32 +: 32] = u_regs_r.cfg_blc_b;
+  assign regs[10*32 +: 32] = u_regs_r.cfg_wb_r;
+  assign regs[11*32 +: 32] = u_regs_r.cfg_wb_g;
+  assign regs[12*32 +: 32] = u_regs_r.cfg_wb_b;
+  assign regs[13*32 +: 32] = u_regs_r.cfg_dpc_thr;
+  assign regs[14*32 +: 32] = u_regs_r.cfg_ccm_c00;
+  assign regs[15*32 +: 32] = u_regs_r.cfg_ccm_c01;
+  assign regs[16*32 +: 32] = u_regs_r.cfg_ccm_c02;
+  assign regs[17*32 +: 32] = u_regs_r.cfg_ccm_c10;
+  assign regs[18*32 +: 32] = u_regs_r.cfg_ccm_c11;
+  assign regs[19*32 +: 32] = u_regs_r.cfg_ccm_c12;
+  assign regs[20*32 +: 32] = u_regs_r.cfg_ccm_c20;
+  assign regs[21*32 +: 32] = u_regs_r.cfg_ccm_c21;
+  assign regs[22*32 +: 32] = u_regs_r.cfg_ccm_c22;
+  assign regs[23*32 +: 32] = u_regs_r.cfg_ccm_off_r;
+  assign regs[24*32 +: 32] = u_regs_r.cfg_ccm_off_g;
+  assign regs[25*32 +: 32] = u_regs_r.cfg_ccm_off_b;
+  assign regs[26*32 +: 32] = u_regs_r.cfg_gamma_addr;
+  assign gamma_addr_wr = u_regs_r.cfg_gamma_addr_wr;
+  assign gamma_data_d = u_regs_r.cfg_gamma_data;
+  assign gamma_data_wr = u_regs_r.cfg_gamma_data_wr;
+  assign regs[28*32 +: 32] = u_regs_r.cfg_stat_thr;
+  assign u_regs_r.sts_stat_sum_r = rd[29*32 +: 32];
+  assign u_regs_r.sts_stat_sum_g = rd[30*32 +: 32];
+  assign u_regs_r.sts_stat_sum_b = rd[31*32 +: 32];
+  assign u_regs_r.sts_stat_pix = rd[32*32 +: 32];
+  assign u_regs_r.sts_stat_clip = rd[33*32 +: 32];
+  assign u_regs_r.sts_stat_frames = rd[34*32 +: 32];
+  assign regs[35*32 +: 32] = u_regs_r.cfg_h_active;
+  assign regs[36*32 +: 32] = u_regs_r.cfg_h_fp;
+  assign regs[37*32 +: 32] = u_regs_r.cfg_h_sync;
+  assign regs[38*32 +: 32] = u_regs_r.cfg_h_bp;
+  assign regs[39*32 +: 32] = u_regs_r.cfg_v_active;
+  assign regs[40*32 +: 32] = u_regs_r.cfg_v_fp;
+  assign regs[41*32 +: 32] = u_regs_r.cfg_v_sync;
+  assign regs[42*32 +: 32] = u_regs_r.cfg_v_bp;
+  assign regs[43*32 +: 32] = u_regs_r.cfg_sync_pol;
+  assign regs[44*32 +: 32] = u_regs_r.cfg_lock_max;
+  assign regs[45*32 +: 32] = u_regs_r.cfg_start_level;
+  assign regs[46*32 +: 32] = u_regs_r.cfg_avi;
+  assign u_regs_r.sts_csi_frames = rd[47*32 +: 32];
+  assign u_regs_r.sts_ecc_corr = rd[48*32 +: 32];
+  assign u_regs_r.sts_ecc_err = rd[49*32 +: 32];
+  assign u_regs_r.sts_crc_err = rd[50*32 +: 32];
+  assign u_regs_r.sts_underflows = rd[51*32 +: 32];
+  assign u_regs_r.sts_dpc_corr = rd[52*32 +: 32];
+  assign u_regs_r.sts_csi_overflow = rd[53*32 +: 32];
+  assign regs[54*32 +: 32] = u_regs_r.cfg_out_ctrl;
+  assign regs[55*32 +: 32] = u_regs_r.cfg_dsi_gaps;
+  assign regs[56*32 +: 32] = u_regs_r.cfg_csitx_gap;
+  assign dsi_cmd_d = u_regs_r.cfg_dsi_cmd;
+  assign dsi_cmd_wr = u_regs_r.cfg_dsi_cmd_wr;
+  assign dsi_cmd_byte_d = u_regs_r.cfg_dsi_cmd_byte;
+  assign dsi_cmd_byte_wr = u_regs_r.cfg_dsi_cmd_byte_wr;
+  assign u_regs_r.sts_tx_status = rd[59*32 +: 32];
+  assign u_regs_r.sts_dsi_drops = rd[60*32 +: 32];
+  assign u_regs_r.sts_csitx_drops = rd[61*32 +: 32];
+  assign u_regs_r.sts_csitx_frames = rd[62*32 +: 32];
+  assign u_regs_r.sts_build_cfg = rd[63*32 +: 32];
   video_pipeline_regs u_regs (
     .clk(clk),
     .rst_n(rst_n),
-    .s_axil_awaddr(sp_awaddr[8:0]),
-    .s_axil_awvalid(sp_awvalid[0]),
-    .s_axil_awready(sp_awready[0]),
-    .s_axil_wdata(sp_wdata[31:0]),
-    .s_axil_wstrb(sp_wstrb[3:0]),
-    .s_axil_wvalid(sp_wvalid[0]),
-    .s_axil_wready(sp_wready[0]),
-    .s_axil_bresp(sp_bresp[1:0]),
-    .s_axil_bvalid(sp_bvalid[0]),
-    .s_axil_bready(sp_bready[0]),
-    .s_axil_araddr(sp_araddr[8:0]),
-    .s_axil_arvalid(sp_arvalid[0]),
-    .s_axil_arready(sp_arready[0]),
-    .s_axil_rdata(sp_rdata[31:0]),
-    .s_axil_rresp(sp_rresp[1:0]),
-    .s_axil_rvalid(sp_rvalid[0]),
-    .s_axil_rready(sp_rready[0]),
-    .ctrl_o(regs[1*32 +: 32]),
-    .ctrl_wr_o(),
-    .bypass_o(regs[2*32 +: 32]),
-    .bypass_wr_o(),
-    .status_i(rd[3*32 +: 32]),
-    .csi_o(regs[4*32 +: 32]),
-    .csi_wr_o(),
-    .frame_size_o(regs[5*32 +: 32]),
-    .frame_size_wr_o(),
-    .blc_r_o(regs[6*32 +: 32]),
-    .blc_r_wr_o(),
-    .blc_gr_o(regs[7*32 +: 32]),
-    .blc_gr_wr_o(),
-    .blc_gb_o(regs[8*32 +: 32]),
-    .blc_gb_wr_o(),
-    .blc_b_o(regs[9*32 +: 32]),
-    .blc_b_wr_o(),
-    .wb_r_o(regs[10*32 +: 32]),
-    .wb_r_wr_o(),
-    .wb_g_o(regs[11*32 +: 32]),
-    .wb_g_wr_o(),
-    .wb_b_o(regs[12*32 +: 32]),
-    .wb_b_wr_o(),
-    .dpc_thr_o(regs[13*32 +: 32]),
-    .dpc_thr_wr_o(),
-    .ccm_c00_o(regs[14*32 +: 32]),
-    .ccm_c00_wr_o(),
-    .ccm_c01_o(regs[15*32 +: 32]),
-    .ccm_c01_wr_o(),
-    .ccm_c02_o(regs[16*32 +: 32]),
-    .ccm_c02_wr_o(),
-    .ccm_c10_o(regs[17*32 +: 32]),
-    .ccm_c10_wr_o(),
-    .ccm_c11_o(regs[18*32 +: 32]),
-    .ccm_c11_wr_o(),
-    .ccm_c12_o(regs[19*32 +: 32]),
-    .ccm_c12_wr_o(),
-    .ccm_c20_o(regs[20*32 +: 32]),
-    .ccm_c20_wr_o(),
-    .ccm_c21_o(regs[21*32 +: 32]),
-    .ccm_c21_wr_o(),
-    .ccm_c22_o(regs[22*32 +: 32]),
-    .ccm_c22_wr_o(),
-    .ccm_off_r_o(regs[23*32 +: 32]),
-    .ccm_off_r_wr_o(),
-    .ccm_off_g_o(regs[24*32 +: 32]),
-    .ccm_off_g_wr_o(),
-    .ccm_off_b_o(regs[25*32 +: 32]),
-    .ccm_off_b_wr_o(),
-    .gamma_addr_o(regs[26*32 +: 32]),
-    .gamma_addr_wr_o(gamma_addr_wr),
-    .gamma_data_o(gamma_data_d),
-    .gamma_data_wr_o(gamma_data_wr),
-    .stat_thr_o(regs[28*32 +: 32]),
-    .stat_thr_wr_o(),
-    .stat_sum_r_i(rd[29*32 +: 32]),
-    .stat_sum_g_i(rd[30*32 +: 32]),
-    .stat_sum_b_i(rd[31*32 +: 32]),
-    .stat_pix_i(rd[32*32 +: 32]),
-    .stat_clip_i(rd[33*32 +: 32]),
-    .stat_frames_i(rd[34*32 +: 32]),
-    .h_active_o(regs[35*32 +: 32]),
-    .h_active_wr_o(),
-    .h_fp_o(regs[36*32 +: 32]),
-    .h_fp_wr_o(),
-    .h_sync_o(regs[37*32 +: 32]),
-    .h_sync_wr_o(),
-    .h_bp_o(regs[38*32 +: 32]),
-    .h_bp_wr_o(),
-    .v_active_o(regs[39*32 +: 32]),
-    .v_active_wr_o(),
-    .v_fp_o(regs[40*32 +: 32]),
-    .v_fp_wr_o(),
-    .v_sync_o(regs[41*32 +: 32]),
-    .v_sync_wr_o(),
-    .v_bp_o(regs[42*32 +: 32]),
-    .v_bp_wr_o(),
-    .sync_pol_o(regs[43*32 +: 32]),
-    .sync_pol_wr_o(),
-    .lock_max_o(regs[44*32 +: 32]),
-    .lock_max_wr_o(),
-    .start_level_o(regs[45*32 +: 32]),
-    .start_level_wr_o(),
-    .avi_o(regs[46*32 +: 32]),
-    .avi_wr_o(),
-    .csi_frames_i(rd[47*32 +: 32]),
-    .ecc_corr_i(rd[48*32 +: 32]),
-    .ecc_err_i(rd[49*32 +: 32]),
-    .crc_err_i(rd[50*32 +: 32]),
-    .underflows_i(rd[51*32 +: 32]),
-    .dpc_corr_i(rd[52*32 +: 32]),
-    .csi_overflow_i(rd[53*32 +: 32]),
-    .out_ctrl_o(regs[54*32 +: 32]),
-    .out_ctrl_wr_o(),
-    .dsi_gaps_o(regs[55*32 +: 32]),
-    .dsi_gaps_wr_o(),
-    .csitx_gap_o(regs[56*32 +: 32]),
-    .csitx_gap_wr_o(),
-    .dsi_cmd_o(dsi_cmd_d),
-    .dsi_cmd_wr_o(dsi_cmd_wr),
-    .dsi_cmd_byte_o(dsi_cmd_byte_d),
-    .dsi_cmd_byte_wr_o(dsi_cmd_byte_wr),
-    .tx_status_i(rd[59*32 +: 32]),
-    .dsi_drops_i(rd[60*32 +: 32]),
-    .csitx_drops_i(rd[61*32 +: 32]),
-    .csitx_frames_i(rd[62*32 +: 32]),
-    .build_cfg_i(rd[63*32 +: 32])
+    .s_axil(u_regs_s_axil),
+    .r(u_regs_r)
   );
 
   wire        out_en  = regs[1*32 + 0], hdmi_mode = regs[1*32 + 1], tpg = regs[1*32 + 2], lock_en = regs[1*32 + 3];
@@ -417,9 +361,7 @@ module video_pipeline #(
   wire [15:0] fw = regs[5*32 +: 16], fh = regs[5*32 + 16 +: 16];
 
   // ================================================================ CSI-2 (byte clock)
-  logic [NLANES*8-1:0] b_data;
-  logic [NLANES-1:0] b_keep;
-  logic b_last, b_user, b_valid, b_ready;
+  axis_if #(.DATA_W(NLANES*8), .USER_W(1), .KEEP_W(NLANES)) b ();
   logic p_fs, p_corr, p_err, p_crc, p_ovf;
 `ifdef VP_CSI2_RX
   // Data type / VC are quasi-static: change them only while the camera is stopped
@@ -428,23 +370,18 @@ module video_pipeline #(
     csi_cfg_s1 <= regs[4*32 +: 8];
     csi_cfg_s2 <= csi_cfg_s1;
   end
-  logic [NLANES*8-1:0] c_data;
-  logic [NLANES-1:0] c_keep;
-  logic c_last, c_user, c_valid, c_ready;
+  axis_if #(.DATA_W(NLANES*8), .USER_W(1), .KEEP_W(NLANES)) c ();
   logic e_fs, e_fe, e_line, e_corr, e_err, e_crc, e_ovf;
+  ppi_rx_if #(.NLANES(NLANES)) u_csi_ppi ();
+  assign u_csi_ppi.lane_data = lane_data_i;
+  assign u_csi_ppi.lane_valid = lane_valid_i;
   csi2_rx #(.NLANES(NLANES)) u_csi (
     .clk(byte_clk),
     .rst_n(byte_rst_n),
-    .lane_data_i,
-    .lane_valid_i,
+    .ppi(u_csi_ppi),
     .vc_i(csi_cfg_s2[7:6]),
     .dt_i(csi_cfg_s2[5:0]),
-    .m_axis_tdata(c_data),
-    .m_axis_tkeep(c_keep),
-    .m_axis_tlast(c_last),
-    .m_axis_tuser(c_user),
-    .m_axis_tvalid(c_valid),
-    .m_axis_tready(c_ready),
+    .m_axis(c),
     .frame_start_o(e_fs),
     .frame_end_o(e_fe),
     .line_o(e_line),
@@ -461,20 +398,10 @@ module video_pipeline #(
   ) u_cdc (
     .s_clk(byte_clk),
     .s_rst_n(byte_rst_n),
-    .s_axis_tdata(c_data),
-    .s_axis_tkeep(c_keep),
-    .s_axis_tlast(c_last),
-    .s_axis_tuser(c_user),
-    .s_axis_tvalid(c_valid),
-    .s_axis_tready(c_ready),
+    .s_axis(c),
     .m_clk(clk),
     .m_rst_n(rst_n),
-    .m_axis_tdata(b_data),
-    .m_axis_tkeep(b_keep),
-    .m_axis_tlast(b_last),
-    .m_axis_tuser(b_user),
-    .m_axis_tvalid(b_valid),
-    .m_axis_tready(b_ready)
+    .m_axis(b)
   );
 
   // Status events into the pixel domain
@@ -530,11 +457,11 @@ module video_pipeline #(
   );
 `else
   // No camera: the ISP input stays idle
-  assign b_data = '0;
-  assign b_keep = '0;
-  assign b_last = 1'b0;
-  assign b_user = 1'b0;
-  assign b_valid = 1'b0;
+  assign b.tdata = '0;
+  assign b.tkeep = '0;
+  assign b.tlast = 1'b0;
+  assign b.tuser = 1'b0;
+  assign b.tvalid = 1'b0;
   assign p_fs = 1'b0;
   assign p_corr = 1'b0;
   assign p_err = 1'b0;
@@ -543,8 +470,7 @@ module video_pipeline #(
 `endif
 
   // ================================================================ ISP (pixel clock)
-  logic [RW-1:0] u_d;
-  logic u_l, u_u, u_v, u_r;
+  axis_if #(.DATA_W(RW), .USER_W(1)) u ();
   csi2_raw_unpack #(
     .IN_BYTES(NLANES),
     .OUT_W(RW)
@@ -552,21 +478,11 @@ module video_pipeline #(
     .clk,
     .rst_n,
     .fmt_i(regs[4*32 +: 6]),
-    .s_axis_tdata(b_data),
-    .s_axis_tkeep(b_keep),
-    .s_axis_tlast(b_last),
-    .s_axis_tuser(b_user),
-    .s_axis_tvalid(b_valid),
-    .s_axis_tready(b_ready),
-    .m_axis_tdata(u_d),
-    .m_axis_tlast(u_l),
-    .m_axis_tuser(u_u),
-    .m_axis_tvalid(u_v),
-    .m_axis_tready(u_r)
+    .s_axis(b),
+    .m_axis(u)
   );
 
-  logic [RW-1:0] g_d;
-  logic g_l, g_u, g_v, g_r;
+  axis_if #(.DATA_W(RW), .USER_W(1)) g ();
   isp_blc_wb #(.PW(RW)) u_blc_wb (
     .clk,
     .rst_n,
@@ -577,20 +493,12 @@ module video_pipeline #(
     .gain_r_i(regs[10*32 +: 12]),
     .gain_g_i(regs[11*32 +: 12]),
     .gain_b_i(regs[12*32 +: 12]),
-    .s_axis_tdata(u_d),
-    .s_axis_tlast(u_l),
-    .s_axis_tuser(u_u),
-    .s_axis_tvalid(u_v),
-    .s_axis_tready(u_r),
-    .m_axis_tdata(g_d),
-    .m_axis_tlast(g_l),
-    .m_axis_tuser(g_u),
-    .m_axis_tvalid(g_v),
-    .m_axis_tready(g_r)
+    .s_axis(u),
+    .m_axis(g)
   );
 
-  logic [RW-1:0] p_d;
-  logic p_l, p_u, p_v, p_r, dpc_corr;
+  axis_if #(.DATA_W(RW), .USER_W(1)) p ();
+  logic dpc_corr;
   isp_dpc #(
     .PW(RW),
     .MAX_W(MAX_W)
@@ -602,20 +510,11 @@ module video_pipeline #(
     .bypass_i(byp[2]),
     .thr_i(regs[13*32 +: RW]),
     .corrected_o(dpc_corr),
-    .s_axis_tdata(g_d),
-    .s_axis_tlast(g_l),
-    .s_axis_tuser(g_u),
-    .s_axis_tvalid(g_v),
-    .s_axis_tready(g_r),
-    .m_axis_tdata(p_d),
-    .m_axis_tlast(p_l),
-    .m_axis_tuser(p_u),
-    .m_axis_tvalid(p_v),
-    .m_axis_tready(p_r)
+    .s_axis(g),
+    .m_axis(p)
   );
 
-  logic [3*RW-1:0] d_d;
-  logic d_l, d_u, d_v, d_r;
+  axis_if #(.DATA_W(3*RW), .USER_W(1)) d ();
   isp_demosaic #(
     .PW(RW),
     .MAX_W(MAX_W)
@@ -626,20 +525,11 @@ module video_pipeline #(
     .height_i(fh),
     .cfa_i(cfa),
     .bypass_i(byp[3]),
-    .s_axis_tdata(p_d),
-    .s_axis_tlast(p_l),
-    .s_axis_tuser(p_u),
-    .s_axis_tvalid(p_v),
-    .s_axis_tready(p_r),
-    .m_axis_tdata(d_d),
-    .m_axis_tlast(d_l),
-    .m_axis_tuser(d_u),
-    .m_axis_tvalid(d_v),
-    .m_axis_tready(d_r)
+    .s_axis(p),
+    .m_axis(d)
   );
 
-  logic [3*RW-1:0] m_d;
-  logic m_l, m_u, m_v, m_r;
+  axis_if #(.DATA_W(3*RW), .USER_W(1)) m ();
   logic [9*16-1:0] coef;
   logic [3*16-1:0] offs;
   always_comb begin
@@ -652,16 +542,16 @@ module video_pipeline #(
     .bypass_i(byp[4]),
     .coef_i(coef),
     .off_i(offs),
-    .s_axis_tdata(d_d),
-    .s_axis_tlast(d_l),
-    .s_axis_tuser(d_u),
-    .s_axis_tvalid(d_v),
-    .s_axis_tready(d_r),
-    .m_axis_tdata(m_d),
-    .m_axis_tlast(m_l),
-    .m_axis_tuser(m_u),
-    .m_axis_tvalid(m_v),
-    .m_axis_tready(m_r)
+    .s_axis_tdata(d.tdata),
+    .s_axis_tlast(d.tlast),
+    .s_axis_tuser(d.tuser),
+    .s_axis_tvalid(d.tvalid),
+    .s_axis_tready(d.tready),
+    .m_axis_tdata(m.tdata),
+    .m_axis_tlast(m.tlast),
+    .m_axis_tuser(m.tuser),
+    .m_axis_tvalid(m.tvalid),
+    .m_axis_tready(m.tready)
   );
 
   // Statistics on linear RGB (after the CCM)
@@ -672,10 +562,10 @@ module video_pipeline #(
     .rst_n,
     .sat_thr_i(regs[28*32 +: RW]),
     .flush_i(1'b0),
-    .tdata(m_d),
-    .tuser(m_u),
-    .tvalid(m_v),
-    .tready(m_r),
+    .tdata(m.tdata),
+    .tuser(m.tuser),
+    .tvalid(m.tvalid),
+    .tready(m.tready),
     .sum_r_o(st_r),
     .sum_g_o(st_g),
     .sum_b_o(st_b),
@@ -707,8 +597,7 @@ module video_pipeline #(
       end
     end
   end
-  logic [23:0] gm_d;
-  logic gm_l, gm_u, gm_v, gm_r;
+  axis_if #(.DATA_W(24), .USER_W(1)) gm ();
   isp_gamma #(
     .IN_W(RW),
     .OUT_W(8)
@@ -719,35 +608,18 @@ module video_pipeline #(
     .lut_we_i(g_we),
     .lut_addr_i(g_wa),
     .lut_data_i(g_wd),
-    .s_axis_tdata(m_d),
-    .s_axis_tlast(m_l),
-    .s_axis_tuser(m_u),
-    .s_axis_tvalid(m_v),
-    .s_axis_tready(m_r),
-    .m_axis_tdata(gm_d),
-    .m_axis_tlast(gm_l),
-    .m_axis_tuser(gm_u),
-    .m_axis_tvalid(gm_v),
-    .m_axis_tready(gm_r)
+    .s_axis(m),
+    .m_axis(gm)
   );
 
-  logic [23:0] cq_d;
-  logic cq_l, cq_u, cq_v, cq_r;
+  axis_if #(.DATA_W(24), .USER_W(1)) cq ();
   isp_csc u_csc (
     .clk,
     .rst_n,
     .bypass_i(byp[6]),
     .bt709_i(bt709),
-    .s_axis_tdata(gm_d),
-    .s_axis_tlast(gm_l),
-    .s_axis_tuser(gm_u),
-    .s_axis_tvalid(gm_v),
-    .s_axis_tready(gm_r),
-    .m_axis_tdata(cq_d),
-    .m_axis_tlast(cq_l),
-    .m_axis_tuser(cq_u),
-    .m_axis_tvalid(cq_v),
-    .m_axis_tready(cq_r)
+    .s_axis(gm),
+    .m_axis(cq)
   );
 
   // ================================================================ insert point (`VP_INSERT)
@@ -763,15 +635,15 @@ module video_pipeline #(
   logic ir_l, ir_u, ir_v, ir_r, im_r;
   logic ins_en_s, ins_mode;
 `ifdef VP_INSERT
-  assign ins_m_axis_tdata = cq_d;
-  assign ins_m_axis_tlast = cq_l;
-  assign ins_m_axis_tuser = cq_u;
-  assign im_r = ins_m_axis_tready;
-  assign ir_d = ins_s_axis_tdata;
-  assign ir_l = ins_s_axis_tlast;
-  assign ir_u = ins_s_axis_tuser;
-  assign ir_v = ins_s_axis_tvalid;
-  assign ins_s_axis_tready = ir_r;
+  assign ins_m_axis.tdata = cq.tdata;
+  assign ins_m_axis.tlast = cq.tlast;
+  assign ins_m_axis.tuser = cq.tuser;
+  assign im_r = ins_m_axis.tready;
+  assign ir_d = ins_s_axis.tdata;
+  assign ir_l = ins_s_axis.tlast;
+  assign ir_u = ins_s_axis.tuser;
+  assign ir_v = ins_s_axis.tvalid;
+  assign ins_s_axis.tready = ir_r;
   wire ins_en = regs[1*32 + 7];
 `else
   assign im_r = 1'b0;
@@ -781,17 +653,17 @@ module video_pipeline #(
   assign ir_v = 1'b0;
   wire ins_en = 1'b0;
 `endif
-  wire cq_sof     = cq_v && cq_u;
+  wire cq_sof     = cq.tvalid && cq.tuser;
   wire ins_sel    = cq_sof ? ins_en_s : ins_mode;          // route of the beat presented by isp_csc
   wire ret_direct = !ins_mode || (cq_sof && !ins_sel);     // the stream on comes from isp_csc
 `ifdef VP_INSERT
-  assign ins_m_axis_tvalid = cq_v && ins_sel;
+  assign ins_m_axis.tvalid = cq.tvalid && ins_sel;
 `endif
-  assign cs_v = ret_direct ? (cq_v && !ins_sel) : ir_v;
-  assign cs_d = ret_direct ? cq_d : ir_d;
-  assign cs_l = ret_direct ? cq_l : ir_l;
-  assign cs_u = ret_direct ? cq_u : ir_u;
-  assign cq_r = ins_sel ? im_r : (ret_direct && cs_r);
+  assign cs_v = ret_direct ? (cq.tvalid && !ins_sel) : ir_v;
+  assign cs_d = ret_direct ? cq.tdata : ir_d;
+  assign cs_l = ret_direct ? cq.tlast : ir_l;
+  assign cs_u = ret_direct ? cq.tuser : ir_u;
+  assign cq.tready = ins_sel ? im_r : (ret_direct && cs_r);
   assign ir_r = ret_direct ? 1'b1 : cs_r;                  // drain returns that are no longer wanted
   always_ff @(posedge clk) begin
     if (!rst_n) begin
@@ -800,7 +672,7 @@ module video_pipeline #(
     end
     else begin
       if (!cq_sof) ins_en_s <= ins_en;
-      if (cq_sof && cq_r) ins_mode <= ins_sel;
+      if (cq_sof && cq.tready) ins_mode <= ins_sel;
     end
   end
 
@@ -815,8 +687,7 @@ module video_pipeline #(
   //            (a frame the scaler can no longer finish).
   // Scaler output that belongs to no queued frame is drained, so switching
   // the scaler in or out of the path (BYPASS[7]) recovers by itself.
-  logic [23:0] o_d;
-  logic o_l, o_u, o_v, o_r;
+  axis_if #(.DATA_W(24), .USER_W(1)) o ();
   logic [3:0] rq; // route queue, entry 0 first: 1 = scaler
   logic [2:0] rq_n;
   logic sof_pushed, sof_route, in_route;
@@ -825,8 +696,8 @@ module video_pipeline #(
   wire  push      = at_sof && !sof_pushed && rq_n != 3'd4;
   wire  route_now = at_sof ? sof_route : in_route;
   wire  in_block  = at_sof && !sof_pushed;          // until its route is queued
-  logic [23:0] sc_d;
-  logic sc_l, sc_u, sc_v, sc_r, sc_in_r, by_r;
+  axis_if #(.DATA_W(24), .USER_W(1)) sc ();
+  logic sc_in_r, by_r;
   assign cs_r = !in_block && (route_now ? sc_in_r : by_r);
   wire  in_beat = cs_v && cs_r;
 
@@ -840,20 +711,20 @@ module video_pipeline #(
   wire  cur_route  = out_busy ? out_route : rq[0];
   wire  out_sel    = out_busy || pop;
   // A new SOF from the scaler ends the frame in progress and waits for the next one
-  wire  sc_restart = out_busy && out_route && sc_v && sc_u && out_lines != 0;
+  wire  sc_restart = out_busy && out_route && sc.tvalid && sc.tuser && out_lines != 0;
   // The next frame's SOF waits until the bypassed frame in progress is closed
   wire  by_cur     = out_sel && !cur_route;
   wire  by_hold    = out_busy && !out_route && by_started && at_sof;
-  assign by_r = by_cur && o_r && !by_hold;
-  assign sc_r = (out_sel && cur_route) ? (o_r && !sc_restart) : !sc_pending;   // drain orphan output
-  assign o_v  = out_sel && (cur_route ? (sc_v && !sc_restart) : (cs_v && !route_now && !in_block && !by_hold));
-  assign o_d  = cur_route ? sc_d : cs_d;
-  assign o_l  = cur_route ? sc_l : cs_l;
-  assign o_u  = cur_route ? sc_u : cs_u;
-  wire  out_beat = o_v && o_r;
+  assign by_r = by_cur && o.tready && !by_hold;
+  assign sc.tready = (out_sel && cur_route) ? (o.tready && !sc_restart) : !sc_pending;   // drain orphan output
+  assign o.tvalid  = out_sel && (cur_route ? (sc.tvalid && !sc_restart) : (cs_v && !route_now && !in_block && !by_hold));
+  assign o.tdata  = cur_route ? sc.tdata : cs_d;
+  assign o.tlast  = cur_route ? sc.tlast : cs_l;
+  assign o.tuser  = cur_route ? sc.tuser : cs_u;
+  wire  out_beat = o.tvalid && o.tready;
   wire  by_end   = by_hold && sof_pushed;
   wire  sc_end   = out_busy && out_route &&
-                   ((out_beat && o_l && out_lines + 1'b1 >= v_act) ||            // full frame
+                   ((out_beat && o.tlast && out_lines + 1'b1 >= v_act) ||            // full frame
                     sc_restart ||                                                // scaler restarted
                     (idle == 16'hFFFF));                                         // scaler stalled
   wire  out_end  = by_end || sc_end;
@@ -887,7 +758,7 @@ module video_pipeline #(
         by_started <= 1'b0;
       end
       if (by_cur && in_beat && cs_u) by_started <= 1'b1;            // also in the pick clock
-      if (out_beat && o_l) out_lines <= out_lines + 1'b1;
+      if (out_beat && o.tlast) out_lines <= out_lines + 1'b1;
       if (out_busy) idle <= out_beat ? 16'd0 : (idle == 16'hFFFF ? idle : idle + 1'b1);
       if (out_end) out_busy <= 1'b0;
       case ({push, pop})
@@ -909,6 +780,30 @@ module video_pipeline #(
   end
 
   if (SCALER) begin : g_scaler
+    axil_if #(.ADDR_W(14)) u_scaler_s_axil ();
+    assign u_scaler_s_axil.awaddr = sp_awaddr[15 +: 14];
+    assign u_scaler_s_axil.awvalid = sp_awvalid[1];
+    assign sp_awready[1] = u_scaler_s_axil.awready;
+    assign u_scaler_s_axil.wdata = sp_wdata[63:32];
+    assign u_scaler_s_axil.wstrb = sp_wstrb[7:4];
+    assign u_scaler_s_axil.wvalid = sp_wvalid[1];
+    assign sp_wready[1] = u_scaler_s_axil.wready;
+    assign sp_bresp[3:2] = u_scaler_s_axil.bresp;
+    assign sp_bvalid[1] = u_scaler_s_axil.bvalid;
+    assign u_scaler_s_axil.bready = sp_bready[1];
+    assign u_scaler_s_axil.araddr = sp_araddr[15 +: 14];
+    assign u_scaler_s_axil.arvalid = sp_arvalid[1];
+    assign sp_arready[1] = u_scaler_s_axil.arready;
+    assign sp_rdata[63:32] = u_scaler_s_axil.rdata;
+    assign sp_rresp[3:2] = u_scaler_s_axil.rresp;
+    assign sp_rvalid[1] = u_scaler_s_axil.rvalid;
+    assign u_scaler_s_axil.rready = sp_rready[1];
+    axis_if #(.DATA_W(CHANNELS * COMP_W)) u_scaler_s_axis ();
+    assign u_scaler_s_axis.tdata = cs_d;
+    assign u_scaler_s_axis.tvalid = cs_v && route_now && !in_block;
+    assign sc_in_r = u_scaler_s_axis.tready;
+    assign u_scaler_s_axis.tuser = cs_u;
+    assign u_scaler_s_axis.tlast = cs_l;
     scaler_bilinear #(
       .CHANNELS(3),
       .COMP_W(8),
@@ -919,40 +814,16 @@ module video_pipeline #(
     ) u_scaler (
       .clk,
       .rst_n,
-      .s_axil_awaddr(sp_awaddr[15 +: 14]),
-      .s_axil_awvalid(sp_awvalid[1]),
-      .s_axil_awready(sp_awready[1]),
-      .s_axil_wdata(sp_wdata[63:32]),
-      .s_axil_wstrb(sp_wstrb[7:4]),
-      .s_axil_wvalid(sp_wvalid[1]),
-      .s_axil_wready(sp_wready[1]),
-      .s_axil_bresp(sp_bresp[3:2]),
-      .s_axil_bvalid(sp_bvalid[1]),
-      .s_axil_bready(sp_bready[1]),
-      .s_axil_araddr(sp_araddr[15 +: 14]),
-      .s_axil_arvalid(sp_arvalid[1]),
-      .s_axil_arready(sp_arready[1]),
-      .s_axil_rdata(sp_rdata[63:32]),
-      .s_axil_rresp(sp_rresp[3:2]),
-      .s_axil_rvalid(sp_rvalid[1]),
-      .s_axil_rready(sp_rready[1]),
-      .s_axis_tdata(cs_d),
-      .s_axis_tvalid(cs_v && route_now && !in_block),
-      .s_axis_tready(sc_in_r),
-      .s_axis_tuser(cs_u),
-      .s_axis_tlast(cs_l),
-      .m_axis_tdata(sc_d),
-      .m_axis_tvalid(sc_v),
-      .m_axis_tready(sc_r),
-      .m_axis_tuser(sc_u),
-      .m_axis_tlast(sc_l)
+      .s_axil(u_scaler_s_axil),
+      .s_axis(u_scaler_s_axis),
+      .m_axis(sc)
     );
   end else begin : g_no_scaler
     assign sc_in_r = 1'b0;
-    assign sc_v = 1'b0;
-    assign sc_d = '0;
-    assign sc_l = 1'b0;
-    assign sc_u = 1'b0;
+    assign sc.tvalid = 1'b0;
+    assign sc.tdata = '0;
+    assign sc.tlast = 1'b0;
+    assign sc.tuser = 1'b0;
     // Answer the scaler window with SLVERR
     logic aw_q, b_q, ar_q;
     assign sp_awready[1] = !b_q;
@@ -979,7 +850,8 @@ module video_pipeline #(
   end
 
   // ================================================================ video output
-  logic de, hs, vs, sof, eol, vbl, waiting, src_ready;
+  vid_if tim ();
+  logic sof, eol, vbl, waiting, src_ready;
   logic [15:0] vx, vy;
   vid_timing_gen u_vtg (
     .clk,
@@ -998,9 +870,7 @@ module video_pipeline #(
     .lock_en_i(lock_en),
     .src_ready_i(src_ready),
     .lock_max_i(regs[44*32 +: 16]),
-    .de_o(de),
-    .hs_o(hs),
-    .vs_o(vs),
+    .tim(tim),
     .x_o(vx),
     .y_o(vy),
     .sof_o(sof),
@@ -1012,8 +882,8 @@ module video_pipeline #(
   // ================================================================ end-of-frame markers
   // Line count from the SOF beat (tuser); the tlast of line height - 1 ends the frame.
   logic [15:0] ln_in, ln_out;
-  wire  [15:0] ln_in_c  = u_u ? 16'd0 : ln_in;
-  wire  [15:0] ln_out_c = o_u ? 16'd0 : ln_out;
+  wire  [15:0] ln_in_c  = u.tuser ? 16'd0 : ln_in;
+  wire  [15:0] ln_out_c = o.tuser ? 16'd0 : ln_out;
   always_ff @(posedge clk) begin
     if (!rst_n) begin
       ln_in <= '0;
@@ -1024,16 +894,16 @@ module video_pipeline #(
     else begin
       eof_in_o <= 1'b0;
       eof_out_o <= 1'b0;
-      if (u_v && u_r) begin
-        if (!u_l)                ln_in <= ln_in_c;
+      if (u.tvalid && u.tready) begin
+        if (!u.tlast)                ln_in <= ln_in_c;
         else if (ln_in_c == fh - 16'd1) begin
           ln_in <= '0;
           eof_in_o <= 1'b1;
         end
         else                     ln_in <= ln_in_c + 16'd1;
       end
-      if (o_v && o_r) begin
-        if (!o_l)                ln_out <= ln_out_c;
+      if (o.tvalid && o.tready) begin
+        if (!o.tlast)                ln_out <= ln_out_c;
         else if (ln_out_c == v_act - 16'd1) begin
           ln_out <= '0;
           eof_out_o <= 1'b1;
@@ -1043,8 +913,8 @@ module video_pipeline #(
     end
   end
 
-  logic [23:0] v_rgb;
-  logic v_de, v_hs, v_vs, locked, underflow;
+  vid_if #(.DATA_W(24)) v ();
+  logic locked, underflow;
   axis_to_video #(
     .PIX_W(24),
     .FIFO_DEPTH(OUT_FIFO)
@@ -1054,20 +924,11 @@ module video_pipeline #(
     .tpg_en_i(tpg),
     .start_level_i(regs[45*32 +: 16]),
     .h_active_i(regs[35*32 +: 16]),
-    .s_axis_tdata(o_d),
-    .s_axis_tlast(o_l),
-    .s_axis_tuser(o_u),
-    .s_axis_tvalid(o_v),
-    .s_axis_tready(o_r),
-    .de_i(de),
-    .hs_i(hs),
-    .vs_i(vs),
+    .s_axis(o),
+    .tim(tim),
     .sof_i(sof),
     .vblank_i(vbl),
-    .rgb_o(v_rgb),
-    .de_o(v_de),
-    .hs_o(v_hs),
-    .vs_o(v_vs),
+    .vid(v),
     .src_ready_o(src_ready),
     .locked_o(locked),
     .underflow_o(underflow)
@@ -1076,6 +937,11 @@ module video_pipeline #(
   // AVI InfoFrame follows the CSC: RGB when bypassed, else YCbCr 4:4:4 BT.601 / BT.709
 `ifdef VP_HDMI
   wire csc_on = !byp[6];
+  tmds_if u_hdmi_tmds ();
+  assign tmds0_o = u_hdmi_tmds.ch0;
+  assign tmds1_o = u_hdmi_tmds.ch1;
+  assign tmds2_o = u_hdmi_tmds.ch2;
+  assign tmds_clk_o = u_hdmi_tmds.clk;
   hdmi_tx u_hdmi (
     .clk,
     .rst_n,
@@ -1086,23 +952,26 @@ module video_pipeline #(
     .avi_m_i(regs[46*32 + 8 +: 2]),
     .avi_vic_i(regs[46*32 +: 7]),
     .avi_q_i(regs[46*32 + 10 +: 2]),
-    .rgb_i(v_rgb),
-    .de_i(v_de),
-    .hs_i(v_hs),
-    .vs_i(v_vs),
-    .tmds0_o,
-    .tmds1_o,
-    .tmds2_o,
-    .tmds_clk_o
+    .vid(v),
+    .tmds(u_hdmi_tmds)
   );
 `endif
 
   // ================================================================ LVDS / DSI / CSI-2 outputs
   wire [31:0] oc = regs[54*32 +: 32];
 `ifdef VP_LVDS
-  lvds_tx u_lvds (.clk, .rst_n, .dual_i(oc[0]), .bpp18_i(oc[1]), .jeida_i(oc[2]),
-    .rgb_i(v_rgb), .de_i(v_de), .hs_i(v_hs), .vs_i(v_vs),
-    .link_a_o(lvds_a_o), .link_b_o(lvds_b_o), .clk_word_o(lvds_clk_word_o), .stb_o(lvds_stb_o));
+  lvds_tx u_lvds (
+    .clk,
+    .rst_n,
+    .dual_i(oc[0]),
+    .bpp18_i(oc[1]),
+    .jeida_i(oc[2]),
+    .vid(v),
+    .link_a_o(lvds_a_o),
+    .link_b_o(lvds_b_o),
+    .clk_word_o(lvds_clk_word_o),
+    .stb_o(lvds_stb_o)
+    );
 `endif
 
   logic dsi_drop, dsi_busy, dsi_busy_p, dsi_uf, ctx_drop, ctx_uf;
@@ -1120,13 +989,33 @@ module video_pipeline #(
   end
 `endif
 `ifdef VP_DSI
-  dsi_tx #(.NLANES(DSI_LANES), .MAX_W(MAX_W)) u_dsi (.pclk(clk), .prst_n(rst_n), .video_en_i(oc[4]),
-    .hs_pol_i(regs[43*32 + 0]), .vs_pol_i(regs[43*32 + 1]), .rgb_i(v_rgb), .de_i(v_de), .hs_i(v_hs), .vs_i(v_vs),
-    .cmd_wr_i(dsi_cmd_wr), .cmd_i(dsi_cmd_d[24:0]), .cmd_byte_wr_i(dsi_cmd_byte_wr), .cmd_byte_i(dsi_cmd_byte_d[7:0]),
-    .line_drop_o(dsi_drop), .bclk(tx_byte_clk), .brst_n(tx_byte_rst_n),
-    .vc_i(oc_s2[7:6]), .eotp_i(oc_s2[5]), .sync_gap_i(dg_s2[15:0]), .line_gap_i(dg_s2[31:16]),
-    .lane_data_o(dsi_lane_data_o), .lane_valid_o(dsi_lane_valid_o), .hs_req_o(dsi_hs_req_o), .tx_ready_i(dsi_tx_ready_i),
-    .cmd_busy_o(dsi_busy), .underflow_o(dsi_uf));
+  ppi_tx_if #(.NLANES(DSI_LANES)) u_dsi_ppi ();
+  assign dsi_lane_data_o = u_dsi_ppi.lane_data;
+  assign dsi_lane_valid_o = u_dsi_ppi.lane_valid;
+  assign dsi_hs_req_o = u_dsi_ppi.hs_req;
+  assign u_dsi_ppi.tx_ready = dsi_tx_ready_i;
+  dsi_tx #(.NLANES(DSI_LANES), .MAX_W(MAX_W)) u_dsi (
+    .pclk(clk),
+    .prst_n(rst_n),
+    .video_en_i(oc[4]),
+    .hs_pol_i(regs[43*32 + 0]),
+    .vs_pol_i(regs[43*32 + 1]),
+    .vid(v),
+    .cmd_wr_i(dsi_cmd_wr),
+    .cmd_i(dsi_cmd_d[24:0]),
+    .cmd_byte_wr_i(dsi_cmd_byte_wr),
+    .cmd_byte_i(dsi_cmd_byte_d[7:0]),
+    .line_drop_o(dsi_drop),
+    .bclk(tx_byte_clk),
+    .brst_n(tx_byte_rst_n),
+    .vc_i(oc_s2[7:6]),
+    .eotp_i(oc_s2[5]),
+    .sync_gap_i(dg_s2[15:0]),
+    .line_gap_i(dg_s2[31:16]),
+    .ppi(u_dsi_ppi),
+    .cmd_busy_o(dsi_busy),
+    .underflow_o(dsi_uf)
+    );
   bit_sync u_dsi_busy (
     .clk,
     .rst_n,
@@ -1138,11 +1027,27 @@ module video_pipeline #(
   assign dsi_busy_p = 1'b0;
 `endif
 `ifdef VP_CSI2_TX
-  csi2_tx #(.NLANES(CSITX_LANES), .MAX_W(MAX_W)) u_csitx (.pclk(clk), .prst_n(rst_n), .enable_i(oc[8]),
-    .vs_pol_i(regs[43*32 + 1]), .rgb_i(v_rgb), .de_i(v_de), .vs_i(v_vs), .line_drop_o(ctx_drop), .frames_o(ctx_frames),
-    .bclk(tx_byte_clk), .brst_n(tx_byte_rst_n), .vc_i(oc_s2[11:10]), .yuv422_i(oc_s2[9]), .lp_gap_i(cg_s2[15:0]),
-    .lane_data_o(csitx_lane_data_o), .lane_valid_o(csitx_lane_valid_o), .hs_req_o(csitx_hs_req_o), .tx_ready_i(csitx_tx_ready_i),
-    .underflow_o(ctx_uf));
+  ppi_tx_if #(.NLANES(CSITX_LANES)) u_csitx_ppi ();
+  assign csitx_lane_data_o = u_csitx_ppi.lane_data;
+  assign csitx_lane_valid_o = u_csitx_ppi.lane_valid;
+  assign csitx_hs_req_o = u_csitx_ppi.hs_req;
+  assign u_csitx_ppi.tx_ready = csitx_tx_ready_i;
+  csi2_tx #(.NLANES(CSITX_LANES), .MAX_W(MAX_W)) u_csitx (
+    .pclk(clk),
+    .prst_n(rst_n),
+    .enable_i(oc[8]),
+    .vs_pol_i(regs[43*32 + 1]),
+    .vid(v),
+    .line_drop_o(ctx_drop),
+    .frames_o(ctx_frames),
+    .bclk(tx_byte_clk),
+    .brst_n(tx_byte_rst_n),
+    .vc_i(oc_s2[11:10]),
+    .yuv422_i(oc_s2[9]),
+    .lp_gap_i(cg_s2[15:0]),
+    .ppi(u_csitx_ppi),
+    .underflow_o(ctx_uf)
+    );
 `else
   assign ctx_drop = 1'b0;
   assign ctx_frames = '0;

@@ -25,8 +25,9 @@ module conv2d_core_tb;
   logic [NN*COEF_W-1:0] coef;
   logic [4:0] shift;
   logic [15:0] w, h;
-  logic [C*CW-1:0] sd, md;
-  logic sl, su, sv, sr, ml, mu, mv, mr, fr;
+  axis_if #(.DATA_W(C*CW), .USER_W(1)) m_axis ();
+  axis_if #(.DATA_W(C*CW), .USER_W(1)) s_axis ();
+  logic fr;
   conv2d_core #(
     .N(N),
     .C(C),
@@ -41,16 +42,8 @@ module conv2d_core_tb;
     .height_i(h),
     .coef_i(coef),
     .shift_i(shift),
-    .s_axis_tdata(sd),
-    .s_axis_tlast(sl),
-    .s_axis_tuser(su),
-    .s_axis_tvalid(sv),
-    .s_axis_tready(sr),
-    .m_axis_tdata(md),
-    .m_axis_tlast(ml),
-    .m_axis_tuser(mu),
-    .m_axis_tvalid(mv),
-    .m_axis_tready(mr),
+    .s_axis(s_axis),
+    .m_axis(m_axis),
     .frame_o(fr),
     .sof_wait_o()
   );
@@ -60,16 +53,16 @@ module conv2d_core_tb;
     .MAXH(MAXH)
   ) vid (
     .clk,
-    .s_tdata(sd),
-    .s_tlast(sl),
-    .s_tuser(su),
-    .s_tvalid(sv),
-    .s_tready(sr),
-    .m_tdata(md),
-    .m_tlast(ml),
-    .m_tuser(mu),
-    .m_tvalid(mv),
-    .m_tready(mr)
+    .s_tdata(s_axis.tdata),
+    .s_tlast(s_axis.tlast),
+    .s_tuser(s_axis.tuser),
+    .s_tvalid(s_axis.tvalid),
+    .s_tready(s_axis.tready),
+    .m_tdata(m_axis.tdata),
+    .m_tlast(m_axis.tlast),
+    .m_tuser(m_axis.tuser),
+    .m_tvalid(m_axis.tvalid),
+    .m_tready(m_axis.tready)
   );
   conv2d_ref #(
     .N(N),
@@ -143,7 +136,7 @@ module conv2d_core_tb;
       fork
         vid.send(W, H);
         begin
-          while (!(mv && mr && mu)) @(posedge clk);
+          while (!(m_axis.tvalid && m_axis.tready && m_axis.tuser)) @(posedge clk);
           for (int i = 0; i < NN; i++) coef[i*COEF_W +: COEF_W] = kb[i*32 +: COEF_W];
           shift = 5'd4;
         end

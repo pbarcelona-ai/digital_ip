@@ -39,34 +39,24 @@ module frame_counter #(
   input  logic [NCH-1:0] eof_i,                  // frame marker pulses
   output logic [NCH-1:0] irq_o,                  // per channel: marker seen, enabled, not yet cleared
   // register map (frame_counter_regs, joined in frame_counter_top)
-  input  logic [NCH-1:0]   cfg_irq_en,           // IRQ_EN
-  input  logic [NCH-1:0]   cfg_status,           // STATUS (marker seen, cleared by software)
-  output logic [NCH-1:0]   sts_status_set,       // STATUS set: the markers
-  input  logic [NCH-1:0]   cfg_clear,            // CLEAR data ...
-  input  logic             cfg_clear_wr,         // ... and its write pulse
-  output logic [31:0]      sts_event,            // EVENT
-  output logic [31:0]      sts_event_time,       // EVENT_TIME
-  input  logic [1:0]       cfg_event_pop,        // EVENT_POP data ...
-  input  logic             cfg_event_pop_wr,     // ... and its write pulse
-  output logic [NCH*32-1:0] sts_count,           // COUNT[i]
-  output logic [31:0]      sts_time,             // TIME
-  input  logic [NCH-1:0]   cfg_ev_en             // EV_EN
+  // regs: frame_counter_regs_if.core (src/include/frame_counter_regs_if.sv)
+  frame_counter_regs_if.core regs
 );
   if (NCH < 1 || NCH > 8) begin : g_bad_nch $error("frame_counter: NCH must be 1..8"); end
   if (EVQ < 2 || (EVQ & (EVQ - 1)) != 0) begin : g_bad_evq $error("frame_counter: EVQ must be a power of two >= 2"); end
   if (TS_DIV < 1) begin : g_bad_ts $error("frame_counter: TS_DIV must be >= 1"); end
 
   // ---------------- register ports
-  wire [NCH-1:0] irq_en = cfg_irq_en, ev_en = cfg_ev_en, status = cfg_status, clear_mask = cfg_clear;
-  wire clear = cfg_clear_wr, pop_wr = cfg_event_pop_wr;
-  wire [1:0] pop_data = cfg_event_pop;
+  wire [NCH-1:0] irq_en = regs.cfg_irq_en, ev_en = regs.cfg_ev_en, status = regs.cfg_status, clear_mask = regs.cfg_clear;
+  wire clear = regs.cfg_clear_wr, pop_wr = regs.cfg_event_pop_wr;
+  wire [1:0] pop_data = regs.cfg_event_pop;
   logic [31:0] ev_word, ev_time, ts;
   logic [NCH*32-1:0] count_flat;
-  assign sts_status_set = eof_i;                 // a marker sets STATUS (and wins over a clear)
-  assign sts_event = ev_word;
-  assign sts_event_time = ev_time;
-  assign sts_count = count_flat;
-  assign sts_time = ts;
+  assign regs.sts_status_set = eof_i;                 // a marker sets STATUS (and wins over a clear)
+  assign regs.sts_event = ev_word;
+  assign regs.sts_event_time = ev_time;
+  assign regs.sts_count = count_flat;
+  assign regs.sts_time = ts;
   localparam int QW = $clog2(EVQ);
   logic [31:0] count [NCH];
   logic [31:0] n_count [NCH];                    // counts after this clock

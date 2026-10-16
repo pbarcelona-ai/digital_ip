@@ -21,9 +21,9 @@
     int first, matched, k0;
     shift_req = ph;
     nsent = 0;
-    s0 = 0;
-    s1 = 0;
-    s2 = 0;
+    tmds.ch0 = 0;
+    tmds.ch1 = 0;
+    tmds.ch2 = 0;
     prst_n = 0;
     srst_n = 0;
     #50;

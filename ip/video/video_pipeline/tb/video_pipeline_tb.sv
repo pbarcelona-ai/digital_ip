@@ -46,19 +46,15 @@ module video_pipeline_tb;
   // ---------------- DUT ----------------
   logic [15:0] ld;
   logic [1:0] lv;
-  logic [14:0] s_axil_awaddr, s_axil_araddr;
-  logic s_axil_awvalid, s_axil_awready, s_axil_wvalid, s_axil_wready;
-  logic [31:0] s_axil_wdata, s_axil_rdata;
-  logic [3:0] s_axil_wstrb;
-  logic [1:0] s_axil_bresp, s_axil_rresp;
-  logic s_axil_bvalid, s_axil_bready, s_axil_arvalid, s_axil_arready, s_axil_rvalid, s_axil_rready;
+  axil_if #(.ADDR_W(15), .DATA_W(32)) s_axil ();
   logic [9:0] t0, t1, t2, tc;
   logic sdone;
   logic [27:0] lva, lvb;
   logic [6:0] lvc;
   logic lvs;
-  logic [15:0] dsi_d, ctx_d;
-  logic [1:0] dsi_v, ctx_v;
+  ppi_rx_if #(.NLANES(2)) ctx ();
+  logic [15:0] dsi_d;
+  logic [1:0] dsi_v;
   logic dsi_req, ctx_req, dsi_rdy = 0, ctx_rdy = 0;
   video_pipeline #(
     .NLANES(2),
@@ -66,60 +62,45 @@ module video_pipeline_tb;
     .CSI_FIFO(256),
     .OUT_FIFO(512)
   ) dut (
-`ifdef VP_CSI2_RX
+    `ifdef VP_CSI2_RX
     .byte_clk,
     .byte_rst_n,
     .lane_data_i(ld),
     .lane_valid_i(lv),
-`endif
+    `endif
     .pix_clk,
     .pix_rst_n,
-    .s_axil_awaddr,
-    .s_axil_awvalid,
-    .s_axil_awready,
-    .s_axil_wdata,
-    .s_axil_wstrb,
-    .s_axil_wvalid,
-    .s_axil_wready,
-    .s_axil_bresp,
-    .s_axil_bvalid,
-    .s_axil_bready,
-    .s_axil_araddr,
-    .s_axil_arvalid,
-    .s_axil_arready,
-    .s_axil_rdata,
-    .s_axil_rresp,
-    .s_axil_rvalid,
-    .s_axil_rready,
-`ifdef VP_HDMI
+    .s_axil(s_axil),
+    `ifdef VP_HDMI
     .tmds0_o(t0),
     .tmds1_o(t1),
     .tmds2_o(t2),
     .tmds_clk_o(tc),
-`endif
+    `endif
 `ifdef VP_LVDS
     .lvds_a_o(lva),
     .lvds_b_o(lvb),
     .lvds_clk_word_o(lvc),
     .lvds_stb_o(lvs),
-`endif
+    `endif
 `ifdef VP_MIPI_TX
     .tx_byte_clk(byte_clk),
     .tx_byte_rst_n(byte_rst_n),
-`endif
+    `endif
 `ifdef VP_DSI
     .dsi_lane_data_o(dsi_d),
     .dsi_lane_valid_o(dsi_v),
     .dsi_hs_req_o(dsi_req),
     .dsi_tx_ready_i(dsi_rdy),
-`endif
+    `endif
 `ifdef VP_CSI2_TX
-    .csitx_lane_data_o(ctx_d),
-    .csitx_lane_valid_o(ctx_v),
+    .csitx_lane_data_o(ctx.lane_data),
+    .csitx_lane_valid_o(ctx.lane_valid),
     .csitx_hs_req_o(ctx_req),
     .csitx_tx_ready_i(ctx_rdy),
-`endif
-    .stats_done_o(sdone));
+    `endif
+    .stats_done_o(sdone)
+    );
   // Outputs of interfaces that are not built stay idle
 `ifndef VP_HDMI
   assign t0 = 10'b1101010100;
@@ -139,8 +120,8 @@ module video_pipeline_tb;
   assign dsi_req = 1'b0;
 `endif
 `ifndef VP_CSI2_TX
-  assign ctx_d = '0;
-  assign ctx_v = '0;
+  assign ctx.lane_data = '0;
+  assign ctx.lane_valid = '0;
   assign ctx_req = 1'b0;
 `endif
   // D-PHY models: fixed start-of-transmission time
@@ -161,22 +142,16 @@ module video_pipeline_tb;
     .lane_valid(dsi_v)
   );
   // CSI-2 TX looped back into a receiver
-  logic [15:0] cr_d;
-  logic [1:0] cr_k;
-  logic cr_l, cr_u, cr_v, cr_fs, cr_fe, cr_ln, cr_ec, cr_ee, cr_ce, cr_ov;
+  axis_if #(.DATA_W(16), .USER_W(1), .KEEP_W(2)) cr ();
+  assign cr.tready = 1'b1;
+  logic cr_fs, cr_fe, cr_ln, cr_ec, cr_ee, cr_ce, cr_ov;
   csi2_rx #(.NLANES(2)) ctx_rx (
     .clk(byte_clk),
     .rst_n(byte_rst_n),
-    .lane_data_i(ctx_d),
-    .lane_valid_i(ctx_v),
+    .ppi(ctx),
     .vc_i(2'd2),
     .dt_i(6'h24),
-    .m_axis_tdata(cr_d),
-    .m_axis_tkeep(cr_k),
-    .m_axis_tlast(cr_l),
-    .m_axis_tuser(cr_u),
-    .m_axis_tvalid(cr_v),
-    .m_axis_tready(1'b1),
+    .m_axis(cr),
     .frame_start_o(cr_fs),
     .frame_end_o(cr_fe),
     .line_o(cr_ln),
@@ -193,12 +168,12 @@ module video_pipeline_tb;
       if (ctx_y == H) ctx_frames++;
       ctx_y = 0;
     end
-    if (cr_v) begin
-      for (int i = 0; i < 2; i++) if (cr_k[i] && ctx_y < H && ctx_n < 3 * W) begin
-        ctx_line[ctx_y][ctx_n] = cr_d[8*i +: 8];
+    if (cr.tvalid) begin
+      for (int i = 0; i < 2; i++) if (cr.tkeep[i] && ctx_y < H && ctx_n < 3 * W) begin
+        ctx_line[ctx_y][ctx_n] = cr.tdata[8*i +: 8];
         ctx_n++;
       end
-      if (cr_l) begin
+      if (cr.tlast) begin
         ctx_n = 0;
         ctx_y++;
       end

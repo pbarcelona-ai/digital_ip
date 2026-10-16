@@ -36,75 +36,62 @@ module vs_stream_adapter #(
   input  logic             clk,
   input  logic             rst_n,
   // from the insert point
-  input  logic [PIX_W-1:0] s_axis_tdata,
-  input  logic             s_axis_tlast,
-  input  logic             s_axis_tuser,
-  input  logic             s_axis_tvalid,
-  output logic             s_axis_tready,
+  // s_axis: axis_if.slave (ip/shared/src/interfaces/axis_if.sv), DATA_W = PIX_W
+  axis_if.slave s_axis,
   // to vision_system
-  output logic [PIX_W-1:0] m_axis_tdata,
-  output logic             m_axis_tlast,
-  output logic             m_axis_tuser,
-  output logic             m_axis_tvalid,
-  input  logic             m_axis_tready,
+  // m_axis: axis_if.master (ip/shared/src/interfaces/axis_if.sv), DATA_W = PIX_W
+  axis_if.master m_axis,
   // from vision_system (no back-pressure)
-  input  logic [PIX_W-1:0] r_s_axis_tdata,
-  input  logic             r_s_axis_tlast,
-  input  logic             r_s_axis_tuser,
-  input  logic             r_s_axis_tvalid,
-  output logic             r_s_axis_tready,      // always 1
+  // r_s_axis: axis_if.slave (ip/shared/src/interfaces/axis_if.sv), DATA_W = PIX_W
+  axis_if.slave r_s_axis,
   // back to the insert point
-  output logic [PIX_W-1:0] r_m_axis_tdata,
-  output logic             r_m_axis_tlast,
-  output logic             r_m_axis_tuser,
-  output logic             r_m_axis_tvalid,
-  input  logic             r_m_axis_tready,
+  // r_m_axis: axis_if.master (ip/shared/src/interfaces/axis_if.sv), DATA_W = PIX_W
+  axis_if.master r_m_axis,
   output logic [31:0]      frames_o,
   output logic [31:0]      drops_o,
   output logic [31:0]      ret_drops_o
 );
+  assign m_axis.tkeep = '1;      // not used by this block
   // ---------------- return path ----------------
   logic rf_ready;
   logic [$clog2(RET_FIFO)+1:0] rf_level;
-  assign r_s_axis_tready = 1'b1;
+  assign r_s_axis.tready = 1'b1;
+  axis_if #(.DATA_W(PIX_W)) u_ret_fifo_s ();
+  assign u_ret_fifo_s.tdata = r_s_axis.tdata;
+  assign u_ret_fifo_s.tlast = r_s_axis.tlast;
+  assign u_ret_fifo_s.tuser = r_s_axis.tuser;
+  assign u_ret_fifo_s.tvalid = r_s_axis.tvalid;
+  assign rf_ready = u_ret_fifo_s.tready;
   ip_axis_fifo #(
     .DATA_W(PIX_W),
     .DEPTH(RET_FIFO)
   ) u_ret_fifo (
     .clk,
     .rst_n,
-    .s_tdata(r_s_axis_tdata),
-    .s_tlast(r_s_axis_tlast),
-    .s_tuser(r_s_axis_tuser),
-    .s_tvalid(r_s_axis_tvalid),
-    .s_tready(rf_ready),
-    .m_tdata(r_m_axis_tdata),
-    .m_tlast(r_m_axis_tlast),
-    .m_tuser(r_m_axis_tuser),
-    .m_tvalid(r_m_axis_tvalid),
-    .m_tready(r_m_axis_tready),
+    .s(u_ret_fifo_s),
+    .m(r_m_axis),
     .level_o(rf_level)
   );
-  wire ret_empty = rf_level == 0 && !r_s_axis_tvalid;
+  wire ret_empty = rf_level == 0 && !r_s_axis.tvalid;
   always_ff @(posedge clk) begin
     if (!rst_n) ret_drops_o <= '0;
-    else if (r_s_axis_tvalid && !rf_ready) ret_drops_o <= ret_drops_o + 1'b1;
+    else if (r_s_axis.tvalid && !rf_ready) ret_drops_o <= ret_drops_o + 1'b1;
   end
 
   // ---------------- forward path ----------------
   typedef enum logic [1:0] {S_DROP, S_PASS, S_GAP} state_e;
   state_e st;
   logic [$clog2(GAP+1)-1:0] gap;
-  wire sof  = s_axis_tvalid && s_axis_tuser;
+  wire sof  = s_axis.tvalid && s_axis.tuser;
   // A SOF decides the frame: forward it if vision_system takes it now
-  wire take = sof ? (m_axis_tready && ret_empty) : (st == S_PASS);
+  wire take = sof ? (m_axis.tready && ret_empty) : (st == S_PASS);
   wire fwd  = (st != S_GAP) && take;
 
-  assign m_axis_tdata  = s_axis_tdata;
-  assign m_axis_tlast  = s_axis_tlast;
-  assign m_axis_tuser  = s_axis_tuser;
-  assign m_axis_tvalid = s_axis_tvalid && fwd;
-  assign s_axis_tready = (st != S_GAP) && (fwd ? m_axis_tready : 1'b1);
+  assign m_axis.tdata  = s_axis.tdata;
+  assign m_axis.tlast  = s_axis.tlast;
+  assign m_axis.tuser  = s_axis.tuser;
+  assign m_axis.tvalid = s_axis.tvalid && fwd;
+  assign s_axis.tready = (st != S_GAP) && (fwd ? m_axis.tready : 1'b1);
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
@@ -114,12 +101,12 @@ module vs_stream_adapter #(
       drops_o <= '0;
     end else begin
       case (st)
-        S_DROP, S_PASS: if (s_axis_tvalid && s_axis_tready) begin
+        S_DROP, S_PASS: if (s_axis.tvalid && s_axis.tready) begin
           if (sof) begin
             if (fwd) frames_o <= frames_o + 1'b1;
             else drops_o <= drops_o + 1'b1;
           end
-          if (fwd && s_axis_tlast) begin
+          if (fwd && s_axis.tlast) begin
             st <= S_GAP;
             gap <= GAP[$bits(gap)-1:0];
           end

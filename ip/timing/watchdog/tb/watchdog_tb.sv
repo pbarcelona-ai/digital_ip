@@ -14,35 +14,15 @@ module watchdog_tb;
   logic aclk = 0, aresetn = 0;
   always #5 aclk = ~aclk;
   // AXI-Lite wires (names match DUT ports so .* connects the BFM)
-  logic [7:0]  s_axil_awaddr, s_axil_araddr;
-  logic s_axil_awvalid, s_axil_awready;
-  logic [31:0] s_axil_wdata, s_axil_rdata;
-  logic [3:0] s_axil_wstrb;
-  logic s_axil_wvalid, s_axil_wready, s_axil_bvalid, s_axil_bready;
-  logic [1:0] s_axil_bresp, s_axil_rresp;
-  logic s_axil_arvalid, s_axil_arready, s_axil_rvalid, s_axil_rready;
-  axil_bfm #(.ADDR_W(8)) bfm (.*);
+  axil_if #(.ADDR_W(8), .DATA_W(32)) s_axil ();
+  axil_bfm #(.ADDR_W(8)) bfm (
+    .*
+  );
   logic irq, wdt_rst;
   watchdog_top #(.RESET_CYCLES(8)) dut (
     .aclk,
     .aresetn,
-    .s_axil_awaddr,
-    .s_axil_awvalid,
-    .s_axil_awready,
-    .s_axil_wdata,
-    .s_axil_wstrb,
-    .s_axil_wvalid,
-    .s_axil_wready,
-    .s_axil_bresp,
-    .s_axil_bvalid,
-    .s_axil_bready,
-    .s_axil_araddr,
-    .s_axil_arvalid,
-    .s_axil_arready,
-    .s_axil_rdata,
-    .s_axil_rresp,
-    .s_axil_rvalid,
-    .s_axil_rready,
+    .s_axil(s_axil),
     .irq_o(irq),
     .wdt_reset_o(wdt_rst)
   );

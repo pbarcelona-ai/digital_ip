@@ -15,10 +15,11 @@
 //   vc_i. Lines are buffered (mipi_line_buf): the link must carry a line
 //   (width x 3 or 2 bytes / NLANES byte clocks plus about 40 clocks of
 //   overhead) within a line time; otherwise lines are dropped and
-//   line_drop_o pulses. Config is quasi-static (change it between frames,
+//   line_drop_o pulses (also when the event FIFO towards the byte clock has no
+//   room, e.g. with the byte clock stopped: no line buffer is ever leaked). Config is quasi-static (change it between frames,
 //   or with enable_i low). Clocks - pclk, bclk (D-PHY byte clock). Resets -
 //   synchronous per domain, active low.
-// Date: 2026-10-02
+// Date: 2026-10-16
 module csi2_tx #(
   parameter int NLANES = 2,
   parameter int MAX_W  = 2048
@@ -28,9 +29,8 @@ module csi2_tx #(
   input  logic                  prst_n,
   input  logic                  enable_i,
   input  logic                  vs_pol_i,
-  input  logic [23:0]           rgb_i,
-  input  logic                  de_i,
-  input  logic                  vs_i,
+  // vid: vid_if.sink (ip/shared/src/interfaces/vid_if.sv), DATA_W = 24 {rgb_i=data de_i=de vs_i=vs}
+  vid_if.sink vid,
   output logic                  line_drop_o,
   output logic [31:0]           frames_o,
   // Byte side
@@ -39,10 +39,8 @@ module csi2_tx #(
   input  logic [1:0]            vc_i,
   input  logic                  yuv422_i,         // 0 RGB888, 1 YUV422 8-bit
   input  logic [15:0]           lp_gap_i,
-  output logic [NLANES*8-1:0]   lane_data_o,
-  output logic [NLANES-1:0]     lane_valid_o,
-  output logic                  hs_req_o,
-  input  logic                  tx_ready_i,
+  // ppi: ppi_tx_if.link (ip/shared/src/interfaces/ppi_tx_if.sv), NLANES = NLANES {lane_data_o=lane_data lane_valid_o=lane_valid hs_req_o=hs_req tx_ready_i=tx_ready}
+  ppi_tx_if.link ppi,
   output logic                  underflow_o
 );
   localparam int AW = $clog2(MAX_W / 2);
@@ -55,24 +53,31 @@ module csi2_tx #(
   // ================================================================ pixel side
   logic de_q, vs_q, frame_open, sof_line, line_sof;
   logic [15:0] fnum;
-  wire  vs_lead  = (vs_i == vs_pol_i) && (vs_q != vs_pol_i);
-  wire  line_end = de_q && !de_i;
+  wire  vs_lead  = (vid.vs == vs_pol_i) && (vs_q != vs_pol_i);
+  wire  line_end = de_q && !vid.de;
   logic lr;
   logic lbuf;
   logic [15:0] lwidth;
   logic [35:0] ev_w;
   logic ev_wv, ev_wr;
+  // a line is only taken when the event FIFO can hold its event (and a frame end): a lost event
+  // would leave its line buffer allocated for good
+  logic [4:0] ev_lvl;
+  logic line_ok, lb_drop;
+  wire  line_start = vid.de && !de_q;
+  wire  ev_room = (ev_lvl <= 5'd14);
+  wire  px_ok = line_start ? ev_room : line_ok;
 
   mipi_line_buf #(.MAX_W(MAX_W)) u_lb (
     .pclk,
     .prst_n,
-    .px_i(rgb_i),
-    .px_valid_i(de_i && enable_i && frame_open),
+    .px_i(vid.data),
+    .px_valid_i(vid.de && enable_i && frame_open && px_ok),
     .line_end_i(line_end),
     .line_ready_o(lr),
     .line_buf_o(lbuf),
     .line_width_o(lwidth),
-    .line_drop_o(line_drop_o),
+    .line_drop_o(lb_drop),
     .bclk,
     .brst_n,
     .rd_buf_i(lb_buf),
@@ -105,9 +110,9 @@ module csi2_tx #(
       fnum <= 16'd0;
       frames_o <= '0;
     end else begin
-      de_q <= de_i;
-      vs_q <= vs_i;
-      if (de_i && !de_q) begin
+      de_q <= vid.de;
+      vs_q <= vid.vs;
+      if (vid.de && !de_q) begin
         line_sof <= sof_line;
         sof_line <= 1'b0;
       end
@@ -123,6 +128,12 @@ module csi2_tx #(
     end
   end
 
+  always_ff @(posedge pclk) begin
+    if (!prst_n) line_ok <= 1'b0;
+    else if (line_start) line_ok <= ev_room;
+  end
+  // dropped lines: line buffers full, no room for the event, or an event lost (frame end on a full FIFO)
+  assign line_drop_o = lb_drop || (line_start && enable_i && frame_open && !ev_room) || (ev_wv && !ev_wr);
   // Line events are rare compared to the clocks, so a frame-end event in the
   // same clock as a line event cannot happen (a line ends before vsync).
   logic [35:0] ev;
@@ -136,7 +147,7 @@ module csi2_tx #(
     .wdata(ev_w),
     .wvalid(ev_wv),
     .wready(ev_wr),
-    .wlevel_o(),
+    .wlevel_o(ev_lvl),
     .rclk(bclk),
     .rrst_n(brst_n),
     .rdata(ev),
@@ -187,10 +198,10 @@ module csi2_tx #(
     .pl_data_i(8'd0),
     .pl_valid_i(1'b0),
     .pl_ready_o(),
-    .lane_data_o,
-    .lane_valid_o,
-    .hs_req_o,
-    .tx_ready_i,
+    .lane_data_o(ppi.lane_data),
+    .lane_valid_o(ppi.lane_valid),
+    .hs_req_o(ppi.hs_req),
+    .tx_ready_i(ppi.tx_ready),
     .busy_o(),
     .underflow_o
   );

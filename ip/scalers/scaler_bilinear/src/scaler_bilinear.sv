@@ -15,7 +15,7 @@
 //   Throughput: 1 output pixel/clock. Latency: one input frame (default
 //   and PINGPONG = 1) or a few input lines (LINE_BUF = 1).
 //   Uses: axil_regbus, scaler_ctrl, scaler_dda, banked_framebuf.
-// Date: 2026-09-26
+// Date: 2026-10-16
 
 module scaler_bilinear #(
   parameter int CHANNELS = 3,        // components per pixel
@@ -30,38 +30,18 @@ module scaler_bilinear #(
   localparam int PIX_W   = CHANNELS * COMP_W   // bits per pixel
 )(
   input  logic              clk,            // clock
-  input  logic              rst_n,          // async reset, active low
+  input  logic              rst_n,          // synchronous reset, active low
   // AXI4-Lite control slave (register map in the file header)
-  input  logic [ADDR_W-1:0] s_axil_awaddr,
-  input  logic              s_axil_awvalid,
-  output logic              s_axil_awready,
-  input  logic [31:0]       s_axil_wdata,
-  input  logic [3:0]        s_axil_wstrb,
-  input  logic              s_axil_wvalid,
-  output logic              s_axil_wready,
-  output logic [1:0]        s_axil_bresp,
-  output logic              s_axil_bvalid,
-  input  logic              s_axil_bready,
-  input  logic [ADDR_W-1:0] s_axil_araddr,
-  input  logic              s_axil_arvalid,
-  output logic              s_axil_arready,
-  output logic [31:0]       s_axil_rdata,
-  output logic [1:0]        s_axil_rresp,
-  output logic              s_axil_rvalid,
-  input  logic              s_axil_rready,
+  // s_axil: axil_if.slave (ip/shared/src/interfaces/axil_if.sv), ADDR_W = ADDR_W
+  axil_if.slave s_axil,
   // AXI4-Stream video in (raster order)
-  input  logic [PIX_W-1:0]  s_axis_tdata,   // pixel, component 0 in LSBs
-  input  logic              s_axis_tvalid,
-  output logic              s_axis_tready,  // low while generating
-  input  logic              s_axis_tuser,   // start of frame
-  input  logic              s_axis_tlast,   // end of line
+  // s_axis: axis_if.slave (ip/shared/src/interfaces/axis_if.sv), DATA_W = PIX_W
+  axis_if.slave s_axis,
   // AXI4-Stream video out (raster order)
-  output logic [PIX_W-1:0]  m_axis_tdata,   // scaled pixel
-  output logic              m_axis_tvalid,
-  input  logic              m_axis_tready,  // back-pressure stalls all
-  output logic              m_axis_tuser,   // start of frame
-  output logic              m_axis_tlast    // end of line
+  // m_axis: axis_if.master (ip/shared/src/interfaces/axis_if.sv), DATA_W = PIX_W
+  axis_if.master m_axis
 );
+  assign m_axis.tkeep = '1;      // not used by this block
 
   // Identification: IP_ID = ASCII "BLIN";
   // CAPS = {PHASE_BITS, COMP_W, CHANNELS, taps}
@@ -84,30 +64,31 @@ module scaler_bilinear #(
   localparam int WIN_T   = 2;                            // window size
   localparam int NBUF    = PINGPONG ? 2 : 1;
   localparam int LB_ROWS = LINE_BUF ? pow2ceil_i(WIN_T + 2 < 4 ? 4 : WIN_T + 2) : 0;
-  initial if (PINGPONG && LINE_BUF)
-    $fatal(1, "scaler_bilinear: PINGPONG and LINE_BUF are mutually exclusive");
+  if (PHASE_BITS < 1 || PHASE_BITS > 15) begin : g_bad_pb
+    $error("scaler_bilinear: PHASE_BITS must be 1..15");
+  end
+  if (PINGPONG && LINE_BUF) begin : g_bad_mode
+    $error("scaler_bilinear: PINGPONG and LINE_BUF are mutually exclusive");
+  end
 
   // ---------------------------------------------------------------- control
   // scaler_ctrl implements the AXI-Lite common registers, captures the
   // input frame into the frame buffer and sequences capture/generate.
-  logic               fb_we;           // frame buffer write port
-  logic [15:0]        fb_wx, fb_wy;
-  logic [PIX_W-1:0]   fb_wdata;
+  fb_wr_if #(.PIX_W(PIX_W)) wr ();
   logic               gen_start, gen_done;  // frame captured / frame sent
-  logic               fb_wbuf, gen_buf;     // ping-pong buffer selects
+  logic               gen_buf;     // ping-pong buffer selects
   logic               lb_hold;              // line buffer: source rows missing
   logic signed [31:0] d_nxt_y, a_y;         // y of next / stage-A pixel
   logic [15:0]        in_w, in_h, out_w, out_h;   // IN_SIZE / OUT_SIZE
   logic [31:0]        step_x, step_y;  // STEP_X/Y   (u16.16)
   logic signed [31:0] offs_x, offs_y;  // OFFS_X/Y   (s16.16)
-  logic               ext_wr, ext_rd;  // IP register bus (>= 0x040)
-  logic [ADDR_W-1:0]  ext_waddr, ext_raddr;
-  logic [31:0]        ext_wdata;
+  regbus_if #(.ADDR_W(ADDR_W), .DATA_W(32)) ext ();
+  assign ext.rdata = 32'd0;
 
   // ---------------------------------------------------------------- pipeline
   // Global pipeline advance: every stage moves forward unless the output
   // register holds a beat the sink has not accepted yet.
-  wire adv = !m_axis_tvalid || m_axis_tready;
+  wire adv = !m_axis.tvalid || m_axis.tready;
 
   // stage 0 : DDA - source coordinate (s16.16) of each output pixel
   logic               d_valid, d_sof, d_eol, d_eof, d_busy;
@@ -157,11 +138,7 @@ module scaler_bilinear #(
     .RING(LB_ROWS)
   ) u_fb (
     .clk,
-    .wr_en(fb_we),
-    .wr_x(fb_wx),
-    .wr_y(fb_wy),
-    .wr_data(fb_wdata),
-    .wr_buf(fb_wbuf),
+    .wr(wr),
     .rd_adv(adv),
     .rd_buf(gen_buf),
     .rd_x0(ix),
@@ -205,14 +182,14 @@ module scaler_bilinear #(
     end
   end
 
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk) begin
     if (!rst_n) begin
       v_q           <= '0;
       for (int k = 0; k < NST; k++) f_q[k] <= '0;
-      m_axis_tvalid <= 1'b0;
-      m_axis_tdata  <= '0;
-      m_axis_tuser  <= 1'b0;
-      m_axis_tlast  <= 1'b0;
+      m_axis.tvalid <= 1'b0;
+      m_axis.tdata  <= '0;
+      m_axis.tuser  <= 1'b0;
+      m_axis.tlast  <= 1'b0;
       m_eof         <= 1'b0;
     end else if (gen_start) begin
       v_q           <= '0;           // flush at the start of a frame
@@ -223,9 +200,9 @@ module scaler_bilinear #(
         v_q[k] <= v_q[k-1];
         f_q[k] <= f_q[k-1];
       end
-      m_axis_tvalid <= v_q[NST-1];
-      m_axis_tdata  <= out_c;
-      {m_eof, m_axis_tlast, m_axis_tuser} <= f_q[NST-1];
+      m_axis.tvalid <= v_q[NST-1];
+      m_axis.tdata  <= out_c;
+      {m_eof, m_axis.tlast, m_axis.tuser} <= f_q[NST-1];
     end
   end
 
@@ -262,7 +239,7 @@ module scaler_bilinear #(
   // y of the pixel in read stage A (line-buffer flow control)
   always_ff @(posedge clk) if (adv) a_y <= d_y;
 
-  assign gen_done = m_axis_tvalid && m_axis_tready && m_eof;
+  assign gen_done = m_axis.tvalid && m_axis.tready && m_eof;
 
   // Control, registers and frame buffers. Instantiated last so every
   // signal it connects to is declared above it.
@@ -279,37 +256,14 @@ module scaler_bilinear #(
     .LB_ROWS(LB_ROWS),
     .LB_TAPS(WIN_T),
     .LB_CTR(0),
-    .LB_RND(1 << (16 - PHASE_BITS - 1))
+    .LB_RND(1 << (16 - PHASE_BITS - 1)),
+    .EXT_WORDS(0)                       // no IP-specific registers: 0x050 and up answer SLVERR
   ) u_ctrl (
     .clk,
     .rst_n,
-    .s_axil_awaddr,
-    .s_axil_awvalid,
-    .s_axil_awready,
-    .s_axil_wdata,
-    .s_axil_wstrb,
-    .s_axil_wvalid,
-    .s_axil_wready,
-    .s_axil_bresp,
-    .s_axil_bvalid,
-    .s_axil_bready,
-    .s_axil_araddr,
-    .s_axil_arvalid,
-    .s_axil_arready,
-    .s_axil_rdata,
-    .s_axil_rresp,
-    .s_axil_rvalid,
-    .s_axil_rready,
-    .s_axis_tdata,
-    .s_axis_tvalid,
-    .s_axis_tready,
-    .s_axis_tuser,
-    .s_axis_tlast,
-    .fb_we,
-    .fb_wx,
-    .fb_wy,
-    .fb_wdata,
-    .fb_wbuf,
+    .s_axil(s_axil),
+    .s_axis(s_axis),
+    .fb(wr),
     .gen_buf,
     .gen_start,
     .gen_done,
@@ -328,11 +282,6 @@ module scaler_bilinear #(
     .cfg_step_y(step_y),
     .cfg_offs_x(offs_x),
     .cfg_offs_y(offs_y),
-    .ext_wr,
-    .ext_waddr,
-    .ext_wdata,
-    .ext_rd,
-    .ext_raddr,
-    .ext_rdata(32'd0)
+    .ext(ext)
   );
 endmodule

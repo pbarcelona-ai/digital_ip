@@ -19,41 +19,11 @@ module py_axil_xbar #(
   input  logic                 aclk,
   input  logic                 aresetn,
   // Master port (from the processor)
-  input  logic [31:0]          s_axil_awaddr,
-  input  logic                 s_axil_awvalid,
-  output logic                 s_axil_awready,
-  input  logic [31:0]          s_axil_wdata,
-  input  logic [3:0]           s_axil_wstrb,
-  input  logic                 s_axil_wvalid,
-  output logic                 s_axil_wready,
-  output logic [1:0]           s_axil_bresp,
-  output logic                 s_axil_bvalid,
-  input  logic                 s_axil_bready,
-  input  logic [31:0]          s_axil_araddr,
-  input  logic                 s_axil_arvalid,
-  output logic                 s_axil_arready,
-  output logic [31:0]          s_axil_rdata,
-  output logic [1:0]           s_axil_rresp,
-  output logic                 s_axil_rvalid,
-  input  logic                 s_axil_rready,
+  // s_axil: axil_if.slave (ip/shared/src/interfaces/axil_if.sv), ADDR_W = 32
+  axil_if.slave s_axil,
   // Slave ports (broadcast address/data, per-slave handshakes)
-  output logic [31:0]          m_axil_awaddr,
-  output logic [NSLAVE-1:0]    m_axil_awvalid,
-  input  logic [NSLAVE-1:0]    m_axil_awready,
-  output logic [31:0]          m_axil_wdata,
-  output logic [3:0]           m_axil_wstrb,
-  output logic [NSLAVE-1:0]    m_axil_wvalid,
-  input  logic [NSLAVE-1:0]    m_axil_wready,
-  input  logic [NSLAVE*2-1:0]  m_axil_bresp,
-  input  logic [NSLAVE-1:0]    m_axil_bvalid,
-  output logic [NSLAVE-1:0]    m_axil_bready,
-  output logic [31:0]          m_axil_araddr,
-  output logic [NSLAVE-1:0]    m_axil_arvalid,
-  input  logic [NSLAVE-1:0]    m_axil_arready,
-  input  logic [NSLAVE*32-1:0] m_axil_rdata,
-  input  logic [NSLAVE*2-1:0]  m_axil_rresp,
-  input  logic [NSLAVE-1:0]    m_axil_rvalid,
-  output logic [NSLAVE-1:0]    m_axil_rready
+  // m_axil: axil_if.master (ip/shared/src/interfaces/axil_if.sv), ADDR_W = 32
+  axil_if.master m_axil
 );
   logic [NSLAVE-1:0] aw_hit, ar_hit;
   logic aw_miss, ar_miss, aw_multi, ar_multi;
@@ -63,7 +33,7 @@ module py_axil_xbar #(
     .BASE(BASE),
     .MASK(MASK)
   ) u_dec_aw (
-    .addr_i(s_axil_awaddr),
+    .addr_i(s_axil.awaddr),
     .sel_o(aw_hit),
     .miss_o(aw_miss),
     .multi_o(aw_multi)
@@ -74,16 +44,16 @@ module py_axil_xbar #(
     .BASE(BASE),
     .MASK(MASK)
   ) u_dec_ar (
-    .addr_i(s_axil_araddr),
+    .addr_i(s_axil.araddr),
     .sel_o(ar_hit),
     .miss_o(ar_miss),
     .multi_o(ar_multi)
   );
 
-  assign m_axil_awaddr = s_axil_awaddr;
-  assign m_axil_wdata = s_axil_wdata;
-  assign m_axil_wstrb = s_axil_wstrb;
-  assign m_axil_araddr = s_axil_araddr;
+  assign m_axil.awaddr = s_axil.awaddr;
+  assign m_axil.wdata = s_axil.wdata;
+  assign m_axil.wstrb = s_axil.wstrb;
+  assign m_axil.araddr = s_axil.araddr;
 
   // ---------------- write ----------------
   typedef enum logic [1:0] {W_IDLE, W_FWD, W_ERR, W_ERR_B} wst_e;
@@ -98,37 +68,37 @@ module py_axil_xbar #(
       err_w <= 1'b0;
     end
     else case (wst)
-      W_IDLE: if (s_axil_awvalid) begin
+      W_IDLE: if (s_axil.awvalid) begin
         wsel <= aw_hit;
         err_aw <= 1'b0;
         err_w <= 1'b0;
         if (aw_miss) wst <= W_ERR;
         else wst <= W_FWD;
       end
-      W_FWD:  if (s_axil_bvalid && s_axil_bready) wst <= W_IDLE;
+      W_FWD:  if (s_axil.bvalid && s_axil.bready) wst <= W_IDLE;
       W_ERR: begin                                   // swallow AW and W, then DECERR
-        if (s_axil_awvalid) err_aw <= 1'b1;
-        if (s_axil_wvalid)  err_w  <= 1'b1;
-        if ((err_aw || s_axil_awvalid) && (err_w || s_axil_wvalid)) wst <= W_ERR_B;
+        if (s_axil.awvalid) err_aw <= 1'b1;
+        if (s_axil.wvalid)  err_w  <= 1'b1;
+        if ((err_aw || s_axil.awvalid) && (err_w || s_axil.wvalid)) wst <= W_ERR_B;
       end
-      W_ERR_B: if (s_axil_bready) wst <= W_IDLE;
+      W_ERR_B: if (s_axil.bready) wst <= W_IDLE;
       default: wst <= W_IDLE;
     endcase
   end
   wire w_fwd = (wst == W_FWD);
-  assign m_axil_awvalid = w_fwd ? wsel & {NSLAVE{s_axil_awvalid}} : '0;
-  assign m_axil_wvalid  = w_fwd ? wsel & {NSLAVE{s_axil_wvalid}}  : '0;
-  assign m_axil_bready  = w_fwd ? wsel & {NSLAVE{s_axil_bready}}  : '0;
+  assign m_axil.awvalid = w_fwd ? wsel & {NSLAVE{s_axil.awvalid}} : '0;
+  assign m_axil.wvalid  = w_fwd ? wsel & {NSLAVE{s_axil.wvalid}}  : '0;
+  assign m_axil.bready  = w_fwd ? wsel & {NSLAVE{s_axil.bready}}  : '0;
   always_comb begin
-    s_axil_awready = (wst == W_ERR) && !err_aw;
-    s_axil_wready  = (wst == W_ERR) && !err_w;
-    s_axil_bvalid  = (wst == W_ERR_B);
-    s_axil_bresp   = (wst == W_ERR_B) ? 2'b11 : 2'b00;
+    s_axil.awready = (wst == W_ERR) && !err_aw;
+    s_axil.wready  = (wst == W_ERR) && !err_w;
+    s_axil.bvalid  = (wst == W_ERR_B);
+    s_axil.bresp   = (wst == W_ERR_B) ? 2'b11 : 2'b00;
     for (int i = 0; i < NSLAVE; i++) if (w_fwd && wsel[i]) begin
-      s_axil_awready = m_axil_awready[i];
-      s_axil_wready = m_axil_wready[i];
-      s_axil_bvalid  = m_axil_bvalid[i];
-      s_axil_bresp  = m_axil_bresp[i*2 +: 2];
+      s_axil.awready = m_axil.awready[i];
+      s_axil.wready = m_axil.wready[i];
+      s_axil.bvalid  = m_axil.bvalid[i];
+      s_axil.bresp  = m_axil.bresp[i*2 +: 2];
     end
   end
 
@@ -142,13 +112,13 @@ module py_axil_xbar #(
       rsel <= '0;
     end
     else case (rst)
-      R_IDLE: if (s_axil_arvalid) begin
+      R_IDLE: if (s_axil.arvalid) begin
         rsel <= ar_hit;
         if (ar_miss) rst <= R_ERR;
         else rst <= R_FWD;
       end
-      R_FWD:  if (s_axil_rvalid && s_axil_rready) rst <= R_IDLE;
-      R_ERR:  if (s_axil_rvalid && s_axil_rready) rst <= R_IDLE;
+      R_FWD:  if (s_axil.rvalid && s_axil.rready) rst <= R_IDLE;
+      R_ERR:  if (s_axil.rvalid && s_axil.rready) rst <= R_IDLE;
       default: rst <= R_IDLE;
     endcase
   end
@@ -156,21 +126,21 @@ module py_axil_xbar #(
   logic r_err_ar;
   always_ff @(posedge aclk) begin
     if (!aresetn || rst != R_ERR) r_err_ar <= 1'b0;
-    else if (s_axil_arvalid) r_err_ar <= 1'b1;
+    else if (s_axil.arvalid) r_err_ar <= 1'b1;
   end
   wire r_fwd = (rst == R_FWD);
-  assign m_axil_arvalid = r_fwd ? rsel & {NSLAVE{s_axil_arvalid}} : '0;
-  assign m_axil_rready  = r_fwd ? rsel & {NSLAVE{s_axil_rready}}  : '0;
+  assign m_axil.arvalid = r_fwd ? rsel & {NSLAVE{s_axil.arvalid}} : '0;
+  assign m_axil.rready  = r_fwd ? rsel & {NSLAVE{s_axil.rready}}  : '0;
   always_comb begin
-    s_axil_arready = (rst == R_ERR) && !r_err_ar;
-    s_axil_rvalid  = (rst == R_ERR) && r_err_ar;
-    s_axil_rresp   = s_axil_rvalid ? 2'b11 : 2'b00;
-    s_axil_rdata   = '0;
+    s_axil.arready = (rst == R_ERR) && !r_err_ar;
+    s_axil.rvalid  = (rst == R_ERR) && r_err_ar;
+    s_axil.rresp   = s_axil.rvalid ? 2'b11 : 2'b00;
+    s_axil.rdata   = '0;
     for (int i = 0; i < NSLAVE; i++) if (r_fwd && rsel[i]) begin
-      s_axil_arready = m_axil_arready[i];
-      s_axil_rvalid = m_axil_rvalid[i];
-      s_axil_rresp   = m_axil_rresp[i*2 +: 2];
-      s_axil_rdata = m_axil_rdata[i*32 +: 32];
+      s_axil.arready = m_axil.arready[i];
+      s_axil.rvalid = m_axil.rvalid[i];
+      s_axil.rresp   = m_axil.rresp[i*2 +: 2];
+      s_axil.rdata = m_axil.rdata[i*32 +: 32];
     end
   end
 endmodule

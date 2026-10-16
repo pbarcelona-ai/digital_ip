@@ -20,53 +20,16 @@ module tb_scale_pincushion_landscape;
   logic clk=0, rst_n=0;
   always #5 clk=~clk;
 
-  logic s_axis_tvalid, s_axis_tready, s_axis_tlast, s_axis_tuser;
-  logic [PIX_W-1:0] s_axis_tdata;
-  logic m_axis_tvalid, m_axis_tready, m_axis_tlast, m_axis_tuser;
-  logic [PIX_W-1:0] m_axis_tdata;
-  logic [7:0] s_axil_awaddr;
-  logic s_axil_awvalid, s_axil_awready;
-  logic [31:0] s_axil_wdata;
-  logic [3:0] s_axil_wstrb;
-  logic s_axil_wvalid, s_axil_wready;
-  logic [1:0] s_axil_bresp;
-  logic s_axil_bvalid, s_axil_bready;
-  logic [7:0] s_axil_araddr;
-  logic s_axil_arvalid, s_axil_arready;
-  logic [31:0] s_axil_rdata;
-  logic [1:0] s_axil_rresp;
-  logic s_axil_rvalid, s_axil_rready;
+  axis_if #(.DATA_W(PIX_W), .USER_W(1)) s_axis ();
+  axis_if #(.DATA_W(PIX_W), .USER_W(1)) m_axis ();
+  axil_if #(.ADDR_W(8), .DATA_W(32)) s_axil ();
 
   vision_system dut (
     .clk,
     .rst_n,
-    .s_axis_tvalid,
-    .s_axis_tready,
-    .s_axis_tdata,
-    .s_axis_tlast,
-    .s_axis_tuser,
-    .m_axis_tvalid,
-    .m_axis_tready,
-    .m_axis_tdata,
-    .m_axis_tlast,
-    .m_axis_tuser,
-    .s_axil_awaddr,
-    .s_axil_awvalid,
-    .s_axil_awready,
-    .s_axil_wdata,
-    .s_axil_wstrb,
-    .s_axil_wvalid,
-    .s_axil_wready,
-    .s_axil_bresp,
-    .s_axil_bvalid,
-    .s_axil_bready,
-    .s_axil_araddr,
-    .s_axil_arvalid,
-    .s_axil_arready,
-    .s_axil_rdata,
-    .s_axil_rresp,
-    .s_axil_rvalid,
-    .s_axil_rready
+    .s_axis(s_axis),
+    .m_axis(m_axis),
+    .s_axil(s_axil)
   );
 
   logic [7:0] warp_r[];
@@ -89,16 +52,16 @@ module tb_scale_pincushion_landscape;
   `include "scale_pincushion_landscape_tests.sv"
 
   initial begin
-    m_axis_tready<=1'b1;
-    s_axis_tvalid<=1'b0;
-    s_axis_tlast<=1'b0;
-    s_axis_tuser<=1'b0;
-    s_axis_tdata<='0;
-    s_axil_awvalid<=1'b0;
-    s_axil_wvalid<=1'b0;
-    s_axil_bready<=1'b0;
-    s_axil_arvalid<=1'b0;
-    s_axil_rready<=1'b0;
+    m_axis.tready<=1'b1;
+    s_axis.tvalid<=1'b0;
+    s_axis.tlast<=1'b0;
+    s_axis.tuser<=1'b0;
+    s_axis.tdata<='0;
+    s_axil.awvalid<=1'b0;
+    s_axil.wvalid<=1'b0;
+    s_axil.bready<=1'b0;
+    s_axil.arvalid<=1'b0;
+    s_axil.rready<=1'b0;
     rst_n=1'b0;
     repeat(5) @(posedge clk);
     rst_n=1'b1;

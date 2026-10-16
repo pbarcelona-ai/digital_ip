@@ -18,31 +18,23 @@ module isp_csc_tb;
   int errors = 0;
 
   logic by, m709;
-  logic [23:0] sd, md;
-  logic sl, su, sv, sr, ml, mu, mv, mr;
+  axis_if #(.DATA_W(24), .USER_W(1)) m_axis ();
+  axis_if #(.DATA_W(24), .USER_W(1)) s_axis ();
   isp_csc dut (
     .clk,
     .rst_n,
     .bypass_i(by),
     .bt709_i(m709),
-    .s_axis_tdata(sd),
-    .s_axis_tlast(sl),
-    .s_axis_tuser(su),
-    .s_axis_tvalid(sv),
-    .s_axis_tready(sr),
-    .m_axis_tdata(md),
-    .m_axis_tlast(ml),
-    .m_axis_tuser(mu),
-    .m_axis_tvalid(mv),
-    .m_axis_tready(mr)
+    .s_axis(s_axis),
+    .m_axis(m_axis)
   );
 
   int W, gap_pct, bp_pct, nout;
   logic [23:0] img [MAXP], exp_px [MAXP];
-  always @(posedge clk) mr <= ($urandom_range(99) >= bp_pct);
-  always @(posedge clk) if (rst_n && mv && mr) begin
-    check(md == exp_px[nout], $sformatf("pixel %0d = %h exp %h (in %h)", nout, md, exp_px[nout], img[nout]));
-    check(mu == (nout == 0) && ml == (nout % W == W - 1), $sformatf("tuser/tlast at pixel %0d", nout));
+  always @(posedge clk) m_axis.tready <= ($urandom_range(99) >= bp_pct);
+  always @(posedge clk) if (rst_n && m_axis.tvalid && m_axis.tready) begin
+    check(m_axis.tdata == exp_px[nout], $sformatf("pixel %0d = %h exp %h (in %h)", nout, m_axis.tdata, exp_px[nout], img[nout]));
+    check(m_axis.tuser == (nout == 0) && m_axis.tlast == (nout % W == W - 1), $sformatf("tuser/tlast at pixel %0d", nout));
     nout++;
   end
 
@@ -85,10 +77,10 @@ module isp_csc_tb;
             $sformatf("matrix %0d: white -> %h", m, wh));
       check(gy[7:0] >= 127 && gy[7:0] <= 129 && gy[23:16] >= 127 && gy[23:16] <= 129, $sformatf("matrix %0d: grey -> %h", m, gy));
     end
-    sv = 0;
-    su = 0;
-    sl = 0;
-    sd = 0;
+    s_axis.tvalid = 0;
+    s_axis.tuser = 0;
+    s_axis.tlast = 0;
+    s_axis.tdata = 0;
     by = 0;
     m709 = 0;
     repeat (4) @(posedge clk);

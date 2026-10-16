@@ -18,10 +18,8 @@
 module tmds_serializer (
   input  logic       pix_clk,
   input  logic       pix_rst_n,
-  input  logic [9:0] tmds0_i,
-  input  logic [9:0] tmds1_i,
-  input  logic [9:0] tmds2_i,
-  input  logic [9:0] tmds_clk_i,
+  // tmds: tmds_if.sink (ip/shared/src/interfaces/tmds_if.sv) {tmds0_i=ch0 tmds1_i=ch1 tmds2_i=ch2 tmds_clk_i=clk}
+  tmds_if.sink tmds,
   input  logic       ser_clk,
   input  logic       ser_rst_n,
   output logic [3:0] serial_o                   // {clock, ch2, ch1, ch0}
@@ -35,7 +33,7 @@ module tmds_serializer (
       tog <= 1'b0;
     end
     else begin
-      sym_q <= {tmds_clk_i, tmds2_i, tmds1_i, tmds0_i};
+      sym_q <= {tmds.clk, tmds.ch2, tmds.ch1, tmds.ch0};
       tog <= ~tog;
     end
   end

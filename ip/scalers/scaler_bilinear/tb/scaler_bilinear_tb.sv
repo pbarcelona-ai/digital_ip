@@ -11,7 +11,7 @@
 //   Inputs/outputs are written as PPM P6 images. Compile with
 //   -DTB_MAX_W/-DTB_MAX_H for images larger than 48x40.
 //   The test tasks are in tests/scaler_bilinear_tests.sv (`included).
-// Date: 2026-09-26
+// Date: 2026-10-16
 
 `timescale 1ns/1ps
 
@@ -46,18 +46,43 @@ module tb_scaler_bilinear;
   `include "scaler_tb_lib.svh"
 
   // Device under test
+  axil_if #(.ADDR_W(ADDR_W)) dut_s_axil ();
+  assign dut_s_axil.awaddr = awaddr;
+  assign dut_s_axil.awvalid = awvalid;
+  assign awready = dut_s_axil.awready;
+  assign dut_s_axil.wdata = wdata;
+  assign dut_s_axil.wstrb = wstrb;
+  assign dut_s_axil.wvalid = wvalid;
+  assign wready = dut_s_axil.wready;
+  assign bresp = dut_s_axil.bresp;
+  assign bvalid = dut_s_axil.bvalid;
+  assign dut_s_axil.bready = bready;
+  assign dut_s_axil.araddr = araddr;
+  assign dut_s_axil.arvalid = arvalid;
+  assign arready = dut_s_axil.arready;
+  assign rdata = dut_s_axil.rdata;
+  assign rresp = dut_s_axil.rresp;
+  assign rvalid = dut_s_axil.rvalid;
+  assign dut_s_axil.rready = rready;
+  axis_if #(.DATA_W(CHANNELS * COMP_W)) dut_s_axis ();
+  assign dut_s_axis.tdata = s_tdata;
+  assign dut_s_axis.tvalid = s_tvalid;
+  assign s_tready = dut_s_axis.tready;
+  assign dut_s_axis.tuser = s_tuser;
+  assign dut_s_axis.tlast = s_tlast;
+  axis_if #(.DATA_W(CHANNELS * COMP_W)) dut_m_axis ();
+  assign m_tdata = dut_m_axis.tdata;
+  assign m_tvalid = dut_m_axis.tvalid;
+  assign dut_m_axis.tready = m_tready;
+  assign m_tuser = dut_m_axis.tuser;
+  assign m_tlast = dut_m_axis.tlast;
   scaler_bilinear #(.PINGPONG(`TB_PINGPONG), .LINE_BUF(`TB_LINE_BUF), .CHANNELS(CHANNELS), .COMP_W(COMP_W), .MAX_W(MAX_W),
                     .MAX_H(MAX_H), .ADDR_W(ADDR_W), .PHASE_BITS(PHASE_BITS)) dut (
-    .clk, .rst_n,
-    .s_axil_awaddr(awaddr), .s_axil_awvalid(awvalid), .s_axil_awready(awready),
-    .s_axil_wdata(wdata), .s_axil_wstrb(wstrb), .s_axil_wvalid(wvalid), .s_axil_wready(wready),
-    .s_axil_bresp(bresp), .s_axil_bvalid(bvalid), .s_axil_bready(bready),
-    .s_axil_araddr(araddr), .s_axil_arvalid(arvalid), .s_axil_arready(arready),
-    .s_axil_rdata(rdata), .s_axil_rresp(rresp), .s_axil_rvalid(rvalid), .s_axil_rready(rready),
-    .s_axis_tdata(s_tdata), .s_axis_tvalid(s_tvalid), .s_axis_tready(s_tready),
-    .s_axis_tuser(s_tuser), .s_axis_tlast(s_tlast),
-    .m_axis_tdata(m_tdata), .m_axis_tvalid(m_tvalid), .m_axis_tready(m_tready),
-    .m_axis_tuser(m_tuser), .m_axis_tlast(m_tlast)
+    .clk,
+    .rst_n,
+    .s_axil(dut_s_axil),
+    .s_axis(dut_s_axis),
+    .m_axis(dut_m_axis)
   );
 
   // ---------------------------------------------------------------- golden
@@ -92,6 +117,8 @@ module tb_scaler_bilinear;
     reset_dut();
     axil_check(12'h024, 32'h424C_494E);     // IP_ID "BLIN"
     check_id_block('h0, 32'h424C_494E);      // ID block: ID, VERSION, DATE
+    axil_read_err('h050);                    // no IP-specific registers (EXT_WORDS = 0): SLVERR
+    axil_write_err('h050, 32'h1);
     axil_check(12'h028, {8'(PHASE_BITS), 8'(COMP_W), 8'(CHANNELS), 8'd2});
     if (use_file) begin
       run_file_suite();              // +IMG=<file.ppm>

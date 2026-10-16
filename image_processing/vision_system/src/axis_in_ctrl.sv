@@ -38,11 +38,8 @@ module axis_in_ctrl #(
   output logic                    err_line_len,  // sticky: a line didn't match img_width (diagnostic)
 
   // AXI4-Stream slave
-  input  logic                    s_axis_tvalid,
-  output logic                    s_axis_tready,
-  input  logic [barrel_pkg::PIX_W-1:0]        s_axis_tdata,
-  input  logic                    s_axis_tlast,
-  input  logic                    s_axis_tuser,
+  // s_axis: axis_if.slave (ip/shared/src/interfaces/axis_if.sv), DATA_W = barrel_pkg::PIX_W
+  axis_if.slave s_axis,
 
   // frame_buffer write port
   output logic                    wr_en,
@@ -55,16 +52,16 @@ module axis_in_ctrl #(
   logic [COORD_W-1:0] row_cnt;
   logic                active;   // mid-frame
 
-  assign s_axis_tready = capture_en && fb_wr_ready;
-  assign wr_en   = capture_en && s_axis_tvalid && s_axis_tready;
+  assign s_axis.tready = capture_en && fb_wr_ready;
+  assign wr_en   = capture_en && s_axis.tvalid && s_axis.tready;
   // The tuser (first-pixel-of-frame) beat must always land at address 0,
   // regardless of whatever addr_cnt was left holding at the end of the
   // *previous* frame (addr_cnt is only guaranteed to already be 0 on the
   // very first frame after reset -- every subsequent frame needs this
   // explicit override, or its first pixel silently corrupts a stale
   // address instead of address 0).
-  assign wr_addr = (wr_en && s_axis_tuser) ? '0 : addr_cnt;
-  assign wr_data = s_axis_tdata;
+  assign wr_addr = (wr_en && s_axis.tuser) ? '0 : addr_cnt;
+  assign wr_data = s_axis.tdata;
   assign busy    = active;
 
   always_ff @(posedge clk or negedge rst_n) begin
@@ -78,7 +75,7 @@ module axis_in_ctrl #(
     end else begin
       frame_done <= 1'b0;
       if (wr_en) begin
-        if (s_axis_tuser) begin
+        if (s_axis.tuser) begin
           // start-of-frame: restart addressing regardless of prior state
           addr_cnt <= 1'b1; // this beat consumes address 0
           col_cnt  <= (img_width == 1) ? '0 : 1'b1;
@@ -89,8 +86,8 @@ module axis_in_ctrl #(
           col_cnt  <= col_cnt + 1'b1;
         end
 
-        if (s_axis_tlast) begin
-          if (!s_axis_tuser && (col_cnt != img_width - 1))
+        if (s_axis.tlast) begin
+          if (!s_axis.tuser && (col_cnt != img_width - 1))
             err_line_len <= 1'b1;
           col_cnt <= '0;
           if (row_cnt == img_height - 1) begin

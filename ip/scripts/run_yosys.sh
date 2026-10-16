@@ -20,7 +20,19 @@ fi
 command -v yosys >/dev/null || { echo "yosys not found"; exit 1; }
 BUILD_ROOT="${BUILD_ROOT:-$REPO/build}"
 OUT="$BUILD_ROOT/yosys/$IP"; rm -rf "$OUT"; mkdir -p "$OUT"
-if [ -f "$IPDIR/scripts/sv2v" ]; then
+# A top with SystemVerilog interface ports cannot be a Yosys top: wrap it in
+# a discrete-port <top>_syn (syn_wrap.py) and read everything through sv2v
+SRCS="$(filelist "$IP" | tr '\n' ' ')"
+IFSRCS="$(grep -l '^[[:space:]]*interface[[:space:]]' $SRCS 2>/dev/null | tr '\n' ' ' || true)"
+TOPSRC="$(grep -l "^[[:space:]]*module[[:space:]][[:space:]]*$TOP\b" $SRCS | head -1)"
+if [ -n "$IFSRCS" ] && [ -n "$TOPSRC" ] && python3 "$REPO/scripts/syn_wrap.py" "$TOPSRC" "$TOP" $IFSRCS > "$OUT/${TOP}_syn.sv"; then
+  command -v sv2v >/dev/null || { echo "sv2v not found"; exit 1; }
+  sv2v -DSYNTHESIS $SRCS "$OUT/${TOP}_syn.sv" > "$OUT/$IP.sv2v.v"
+  TOP="${TOP}_syn"
+  { echo "# generated from $CAT/$IP/scripts/build.f via sv2v, top wrapped by syn_wrap.py"
+    echo "read_verilog -sv $OUT/$IP.sv2v.v"
+    echo "hierarchy -check -top $TOP"; } > "$OUT/read_design.ys"
+elif [ -f "$IPDIR/scripts/sv2v" ]; then
   # IP includes sources the Yosys SystemVerilog reader cannot parse (e.g. the
   # scaler family): convert the whole file list with sv2v first, as the
   # scaler flow does

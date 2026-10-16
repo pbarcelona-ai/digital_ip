@@ -36,31 +36,21 @@ module spi_flash_ctrl (
   input  logic        aclk,
   input  logic        aresetn,
   // AXI-Stream: bytes to write to the flash
-  input  logic [7:0]  s_axis_tdata,
-  input  logic        s_axis_tvalid,
-  output logic        s_axis_tready,
+  // s_axis: axis_if.slave (ip/shared/src/interfaces/axis_if.sv), DATA_W = 8
+  axis_if.slave s_axis,
   // AXI-Stream: bytes read from the flash
-  output logic [7:0]  m_axis_tdata,
-  output logic        m_axis_tvalid,
-  input  logic        m_axis_tready,
-  output logic        m_axis_tlast,
+  // m_axis: axis_if.master (ip/shared/src/interfaces/axis_if.sv), DATA_W = 8
+  axis_if.master m_axis,
   // SPI pins
-  output logic        sclk_o,
-  output logic        cs_n_o,
-  output logic        mosi_o,
-  input  logic        miso_i,
+  // spi: spi_if.master (ip/shared/src/interfaces/spi_if.sv), NUM_CS = 1 {sclk_o=sclk mosi_o=mosi miso_i=miso cs_n_o=cs_n}
+  spi_if.master spi,
   output logic        irq_o,
   // register ports
-  input  logic [31:0] cfg_cmd,           // CMD
-  input  logic        cfg_cmd_wr,        // CMD write pulse: start
-  input  logic [23:0] cfg_addr,          // ADDR
-  input  logic [15:0] cfg_len,           // LEN
-  input  logic [15:0] cfg_clkdiv,        // CLKDIV
-  input  logic [2:0]  cfg_status,        // STATUS: data written ...
-  input  logic        cfg_status_wr,     // ... and its write pulse
-  output logic [2:0]  sts_status,        // STATUS: value read
-  input  logic        cfg_irq_en         // IRQ_EN
+  // regs: spi_flash_ctrl_regs_if.core (src/include/spi_flash_ctrl_regs_if.sv)
+  spi_flash_ctrl_regs_if.core regs
 );
+  assign m_axis.tkeep = '1;      // not used by this block
+  assign m_axis.tuser = '0;      // not used by this block
   typedef enum logic [3:0] {S_IDLE, S_CSLOW, S_LOAD, S_WTX, S_SHIFT, S_WRX, S_CSHOLD, S_CSGAP} st_t;
   st_t st;
   logic [15:0] hc;
@@ -74,16 +64,16 @@ module spi_flash_ctrl (
   logic [7:0] opcode;
   logic [23:0] addr;
   logic [15:0] cs_wait;
-  wire [15:0] half = (cfg_clkdiv < 16'd3) ? 16'd3 : cfg_clkdiv;
+  wire [15:0] half = (regs.cfg_clkdiv < 16'd3) ? 16'd3 : regs.cfg_clkdiv;
   wire hc_done = (hc == half - 1'b1);
-  wire start = cfg_cmd_wr && (st == S_IDLE);
-  assign cs_n_o = (st == S_IDLE) | (st == S_CSGAP);
-  assign mosi_o = tx_sr[7];
-  assign sclk_o = sclk_hi;
-  assign s_axis_tready = (st == S_WTX);
-  assign irq_o = done_f & cfg_irq_en;
+  wire start = regs.cfg_cmd_wr && (st == S_IDLE);
+  assign spi.cs_n = (st == S_IDLE) | (st == S_CSGAP);
+  assign spi.mosi = tx_sr[7];
+  assign spi.sclk = sclk_hi;
+  assign s_axis.tready = (st == S_WTX);
+  assign irq_o = done_f & regs.cfg_irq_en;
   always_ff @(posedge aclk) begin
-    miso_s1 <= miso_i;
+    miso_s1 <= spi.miso;
     miso_s <= miso_s1;
   end
   always_ff @(posedge aclk) begin
@@ -106,32 +96,32 @@ module spi_flash_ctrl (
       opcode <= '0;
       addr <= '0;
       cs_wait <= '0;
-      m_axis_tdata <= '0;
-      m_axis_tvalid <= 1'b0;
-      m_axis_tlast <= 1'b0;
+      m_axis.tdata <= '0;
+      m_axis.tvalid <= 1'b0;
+      m_axis.tlast <= 1'b0;
       last_rx <= 1'b0;
     end else begin
-      if (cfg_status_wr) begin
-        if (cfg_status[1]) done_f <= 1'b0;
-        if (cfg_status[2]) err_f <= 1'b0;
+      if (regs.cfg_status_wr) begin
+        if (regs.cfg_status[1]) done_f <= 1'b0;
+        if (regs.cfg_status[2]) err_f <= 1'b0;
       end
-      if (cfg_cmd_wr && st != S_IDLE) err_f <= 1'b1;
-      if (m_axis_tvalid && m_axis_tready) begin
-        m_axis_tvalid <= 1'b0;
-        m_axis_tlast <= 1'b0;
+      if (regs.cfg_cmd_wr && st != S_IDLE) err_f <= 1'b1;
+      if (m_axis.tvalid && m_axis.tready) begin
+        m_axis.tvalid <= 1'b0;
+        m_axis.tlast <= 1'b0;
       end
       case (st)
         S_IDLE: begin
           sclk_hi <= 1'b0;
           hc <= '0;
           if (start) begin
-            opcode <= cfg_cmd[7:0];
-            rd_en <= cfg_cmd[16];
-            wr_en <= cfg_cmd[17];
-            dummy_left <= cfg_cmd[15:12];
-            addr_left <= cfg_cmd[8] ? 2'd3 : 2'd0;
-            addr <= cfg_addr;
-            data_left <= cfg_len;
+            opcode <= regs.cfg_cmd[7:0];
+            rd_en <= regs.cfg_cmd[16];
+            wr_en <= regs.cfg_cmd[17];
+            dummy_left <= regs.cfg_cmd[15:12];
+            addr_left <= regs.cfg_cmd[8] ? 2'd3 : 2'd0;
+            addr <= regs.cfg_addr;
+            data_left <= regs.cfg_len;
             sent_op <= 1'b0;
             done_f <= 1'b0;
             st <= S_CSLOW;
@@ -176,8 +166,8 @@ module spi_flash_ctrl (
             hc <= '0;
           end
         end
-        S_WTX: if (s_axis_tvalid) begin
-          tx_sr <= s_axis_tdata;
+        S_WTX: if (s_axis.tvalid) begin
+          tx_sr <= s_axis.tdata;
           st <= S_SHIFT;
         end
         S_SHIFT: begin
@@ -195,10 +185,10 @@ module spi_flash_ctrl (
             end
           end else hc <= hc + 1'b1;
         end
-        S_WRX: if (!m_axis_tvalid) begin
-          m_axis_tdata <= rx_sr;
-          m_axis_tvalid <= 1'b1;
-          m_axis_tlast <= last_rx;
+        S_WRX: if (!m_axis.tvalid) begin
+          m_axis.tdata <= rx_sr;
+          m_axis.tvalid <= 1'b1;
+          m_axis.tlast <= last_rx;
           st <= S_LOAD;
         end
         S_CSHOLD: begin
@@ -222,5 +212,5 @@ module spi_flash_ctrl (
       endcase
     end
   end
-  assign sts_status = {err_f, done_f, (st != S_IDLE)};
+  assign regs.sts_status = {err_f, done_f, (st != S_IDLE)};
 endmodule

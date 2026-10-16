@@ -12,7 +12,7 @@
 //   parent block. Latency - as documented in the parent block, fixed and
 //   independent of data. Errors - none reported here, out-of-range parameters
 //   stop elaboration or are handled by the parent block.
-// Date: 2026-09-29
+// Date: 2026-10-16
 module i2c_master_fsm (
   input  logic        clk,
   input  logic        rst_n,
@@ -23,14 +23,11 @@ module i2c_master_fsm (
   input  logic [6:0]  addr_i,
   input  logic [15:0] len_i,         // data bytes (0 = address probe)
   // Bytes to write
-  input  logic [7:0]  s_tdata,
-  input  logic        s_tvalid,
-  output logic        s_tready,
+  // s: axis_if.slave (ip/shared/src/interfaces/axis_if.sv), DATA_W = 8
+  axis_if.slave s,
   // Bytes read
-  output logic [7:0]  m_tdata,
-  output logic        m_tvalid,
-  output logic        m_tlast,
-  input  logic        m_tready,
+  // m: axis_if.master (ip/shared/src/interfaces/axis_if.sv), DATA_W = 8
+  axis_if.master m,
   // Bit engine interface
   output logic        bc_valid,
   output logic [1:0]  bc_cmd,
@@ -45,6 +42,8 @@ module i2c_master_fsm (
   output logic        nack_o,        // one clock with done
   output logic        arb_o          // one clock with done
 );
+  assign m.tkeep = '1;      // not used by this block
+  assign m.tuser = '0;      // not used by this block
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
 
   localparam logic [1:0] C_START = 2'd0, C_STOP = 2'd1, C_WR = 2'd2, C_RD = 2'd3;
@@ -61,10 +60,10 @@ module i2c_master_fsm (
   logic        is_addr, rw_q, nostop_q, nack_f, arb_f;
 
   assign busy_o   = (state != ST_IDLE);
-  assign s_tready = (state == ST_WFETCH);
-  assign m_tvalid = (state == ST_RPUSH);
-  assign m_tdata  = sh;
-  assign m_tlast  = (left == 16'd1);
+  assign s.tready = (state == ST_WFETCH);
+  assign m.tvalid = (state == ST_RPUSH);
+  assign m.tdata  = sh;
+  assign m.tlast  = (left == 16'd1);
 
   // Command issue is combinational from the state (engine is idle here)
   always_comb begin
@@ -126,6 +125,10 @@ module i2c_master_fsm (
         arb_f <= 1'b1;
         bc_abort <= 1'b1;
         state <= ST_DONE;
+      end else if (!enable_i && (state == ST_WFETCH || state == ST_RPUSH)) begin
+        // master disabled while waiting on its streams (bit engine idle): end with a STOP, report NACK
+        nack_f <= 1'b1;
+        state <= ST_STOP_I;
       end else begin
         case (state)
           ST_IDLE: if (start_i & enable_i) begin
@@ -164,8 +167,8 @@ module i2c_master_fsm (
               state <= state_t'((left == 16'd1) ? ST_END : ST_WFETCH);
             end
           end
-          ST_WFETCH: if (s_tvalid) begin
-            sh <= s_tdata;
+          ST_WFETCH: if (s.tvalid) begin
+            sh <= s.tdata;
             nbit <= '0;
             state <= ST_TXB_I;
           end
@@ -176,7 +179,7 @@ module i2c_master_fsm (
             nbit <= nbit + 4'd1;
             state <= state_t'((nbit == 4'd7) ? ST_RPUSH : ST_RBIT_I);
           end
-          ST_RPUSH: if (m_tready) state <= ST_RACK_I;
+          ST_RPUSH: if (m.tready) state <= ST_RACK_I;
           ST_RACK_I: state <= ST_RACK_W;
           ST_RACK_W: if (bc_done) begin
             left <= left - 16'd1;

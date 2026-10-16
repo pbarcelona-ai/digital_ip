@@ -9,9 +9,10 @@
 //   coef = diag(1024), off = 0. The arithmetic shift rounds half up.
 //   bypass_i (sampled at each frame start) passes pixels unchanged through
 //   the same latency. Pixel {B, G, R}, component 0 in the LSBs. Clock - clk
-//   only. Reset - synchronous rst_n (active low). Latency - 3 clocks,
-//   1 pixel per clock (9 multipliers, map to DSP blocks).
-// Date: 2026-10-01
+//   only. Reset - synchronous rst_n (active low). Latency - 6 clocks,
+//   1 pixel per clock (9 multipliers, map to DSP blocks). The output goes through a 2-entry ip_axis_fifo, so s_axis_tready does
+//   not depend combinationally on m_axis_tready (+3 clocks).
+// Date: 2026-10-16
 module isp_ccm #(
   parameter int PW = 10
 ) (
@@ -20,26 +21,23 @@ module isp_ccm #(
   input  logic            bypass_i,
   input  logic [9*16-1:0] coef_i,
   input  logic [3*16-1:0] off_i,
-  input  logic [3*PW-1:0] s_axis_tdata,
-  input  logic            s_axis_tlast,
-  input  logic            s_axis_tuser,
-  input  logic            s_axis_tvalid,
-  output logic            s_axis_tready,
-  output logic [3*PW-1:0] m_axis_tdata,
-  output logic            m_axis_tlast,
-  output logic            m_axis_tuser,
-  output logic            m_axis_tvalid,
-  input  logic            m_axis_tready
+  // s_axis: axis_if.slave (ip/shared/src/interfaces/axis_if.sv), DATA_W = 3*PW
+  axis_if.slave s_axis,
+  // m_axis: axis_if.master (ip/shared/src/interfaces/axis_if.sv), DATA_W = 3*PW
+  axis_if.master m_axis
 );
+  // output stage: the last pipeline register (q_*) feeds a 2-entry FIFO whose ready is registered,
+  // so s_axis_tready does not depend combinationally on m_axis_tready
+  axis_if #(.DATA_W((3*PW)), .USER_W(1)) q ();
   localparam int MW = PW + 17;                 // product width (unsigned PW+1 x signed 16)
   localparam int SW = MW + 3;                  // sum of 3 products + rounding + offset
 
-  wire en = !m_axis_tvalid || m_axis_tready;
-  assign s_axis_tready = en;
-  wire acc = s_axis_tvalid && en;
+  wire en = !q.tvalid || q.tready;
+  assign s_axis.tready = en;
+  wire acc = s_axis.tvalid && en;
 
   logic by_f;
-  wire  by = s_axis_tuser ? bypass_i : by_f;
+  wire  by = s_axis.tuser ? bypass_i : by_f;
 
   // Stage 1: products
   logic signed [MW-1:0] p [3][3];
@@ -69,18 +67,18 @@ module isp_ccm #(
       b2 <= 1'b0;
       d1 <= '0;
       d2 <= '0;
-      m_axis_tvalid <= 1'b0;
-      m_axis_tdata <= '0;
-      m_axis_tlast <= 1'b0;
-      m_axis_tuser <= 1'b0;
+      q.tvalid <= 1'b0;
+      q.tdata <= '0;
+      q.tlast <= 1'b0;
+      q.tuser <= 1'b0;
     end else if (en) begin
-      if (acc && s_axis_tuser) by_f <= bypass_i;
+      if (acc && s_axis.tuser) by_f <= bypass_i;
       for (int i = 0; i < 3; i++) for (int j = 0; j < 3; j++)
-        p[i][j] <= $signed({1'b0, s_axis_tdata[j*PW +: PW]}) * $signed(coef_i[(3*i + j)*16 +: 16]);
-      d1 <= s_axis_tdata;
+        p[i][j] <= $signed({1'b0, s_axis.tdata[j*PW +: PW]}) * $signed(coef_i[(3*i + j)*16 +: 16]);
+      d1 <= s_axis.tdata;
       v1 <= acc;
-      l1 <= s_axis_tlast;
-      u1 <= s_axis_tuser;
+      l1 <= s_axis.tlast;
+      u1 <= s_axis.tuser;
       b1 <= by;
 
       for (int i = 0; i < 3; i++)
@@ -91,10 +89,20 @@ module isp_ccm #(
       u2 <= u1;
       b2 <= b1;
 
-      m_axis_tvalid <= v2;
-      m_axis_tlast <= l2;
-      m_axis_tuser <= u2;
-      m_axis_tdata  <= b2 ? d2 : {clamp(sum[2]), clamp(sum[1]), clamp(sum[0])};
+      q.tvalid <= v2;
+      q.tlast <= l2;
+      q.tuser <= u2;
+      q.tdata  <= b2 ? d2 : {clamp(sum[2]), clamp(sum[1]), clamp(sum[0])};
     end
   end
+  ip_axis_fifo #(
+    .DATA_W(3*PW),
+    .DEPTH(2)
+  ) u_out_fifo (
+    .clk,
+    .rst_n,
+    .s(q),
+    .m(m_axis),
+    .level_o()
+  );
 endmodule

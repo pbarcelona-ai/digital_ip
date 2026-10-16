@@ -17,7 +17,9 @@
 //                  the line width must be even);
 //                  then the CRC-16 checksum
 //     LONG_BYTES - header {DI, WC = data, ECC}, payload = `data` bytes from
-//                  the byte input pl_* (at most 64), then the checksum
+//                  the byte input pl_* (at most MAX_BYTES = 64; a longer
+//                  command is rejected: its payload is taken and dropped,
+//                  cmd_err_o pulses), then the checksum
 //     GAP        - no packet, only the LP time below
 //   eotp appends the DSI End of Transmission packet (08 0F 0F 01) to the
 //   same burst; gap holds LP state for that many byte clocks after it.
@@ -30,7 +32,7 @@
 //   a violation. Line buffer read - lb_addr_o (pixel pair index, pairs
 //   {odd, even} in 48 bits) with lb_data_i one clock later. Clock - D-PHY
 //   byte clock. Reset - synchronous rst_n (active low).
-// Date: 2026-10-02
+// Date: 2026-10-16
 module mipi_tx_engine #(
   parameter int NLANES = 2,                      // 1, 2 or 4
   parameter int MAX_W  = 2048
@@ -51,16 +53,16 @@ module mipi_tx_engine #(
   input  logic                  pl_valid_i,
   output logic                  pl_ready_o,
   // D-PHY PPI transmit
-  output logic [NLANES*8-1:0]   lane_data_o,
-  output logic [NLANES-1:0]     lane_valid_o,    // byte accepted on this lane this clock
-  output logic                  hs_req_o,
-  input  logic                  tx_ready_i,
+  // ppi: ppi_tx_if.link (ip/shared/src/interfaces/ppi_tx_if.sv), NLANES = NLANES {lane_data_o=lane_data lane_valid_o=lane_valid hs_req_o=hs_req tx_ready_i=tx_ready}
+  ppi_tx_if.link ppi,
   output logic                  busy_o,
-  output logic                  underflow_o
+  output logic                  underflow_o,
+  output logic                  cmd_err_o        // pulse: a LONG_BYTES command over MAX_BYTES was rejected
 );
   if (NLANES != 1 && NLANES != 2 && NLANES != 4) begin : g_bad $error("mipi_tx_engine: NLANES must be 1, 2 or 4"); end
   localparam int AW = $clog2(MAX_W / 2);
   localparam int QCAP = 80, QW = 7;              // byte queue
+  localparam int MAX_BYTES = 64;                 // longest LONG_BYTES payload (fits QCAP with header, CRC, EoTp)
   localparam int START_TH = 24;
 
   // ---------------- command fields
@@ -97,13 +99,13 @@ module mipi_tx_engine #(
   logic [2:0] fn;
   logic burst, all_enq;
   wire  [2:0] wbytes = (cnt >= NLANES) ? 3'(NLANES) : 3'(cnt);
-  wire  pop   = burst && tx_ready_i && (cnt >= NLANES || all_enq) && cnt != 0;
+  wire  pop   = burst && ppi.tx_ready && (cnt >= NLANES || all_enq) && cnt != 0;
   wire  [2:0] popn = pop ? wbytes : 3'd0;
   wire  [QW:0] cnt_after = cnt - popn;
   wire  space6 = (cnt_after + 6 <= QCAP);
 
   // ---------------- fill sequencer
-  typedef enum logic [2:0] {F_IDLE, F_HDR, F_LINE, F_BYTES, F_CRC, F_EOTP, F_DRAIN, F_GAP} fst_e;
+  typedef enum logic [3:0] {F_IDLE, F_HDR, F_LINE, F_BYTES, F_CRC, F_EOTP, F_DRAIN, F_GAP, F_SKIP} fst_e;
   fst_e fst;
   logic [1:0] k_type, k_fmt;
   logic [7:0] k_di;
@@ -179,7 +181,7 @@ module mipi_tx_engine #(
       default: ;
     endcase
   end
-  assign pl_ready_o = (fst == F_BYTES) && space6;
+  assign pl_ready_o = ((fst == F_BYTES) && space6) || (fst == F_SKIP);
   assign lb_buf_o   = k_buf;
   assign lb_addr_o  = (fst == F_HDR) ? '0 : (consume ? ra + 1'b1 : ra);
   assign cmd_ready_o = (fst == F_IDLE);
@@ -207,12 +209,14 @@ module mipi_tx_engine #(
       burst <= 1'b0;
       all_enq <= 1'b0;
       underflow_o <= 1'b0;
-      hs_req_o <= 1'b0;
-      lane_valid_o <= '0;
-      lane_data_o <= '0;
+      cmd_err_o <= 1'b0;
+      ppi.hs_req <= 1'b0;
+      ppi.lane_valid <= '0;
+      ppi.lane_data <= '0;
     end else begin
       lb_done_o <= 1'b0;
       underflow_o <= 1'b0;
+      cmd_err_o <= 1'b0;
       // ---- fill sequencer
       case (fst)
         F_IDLE: if (cmd_valid_i) begin
@@ -230,6 +234,12 @@ module mipi_tx_engine #(
           if (c_type == 2'd3) begin
             gap_cnt <= c_gap;
             fst <= F_GAP;
+          end
+          else if (c_type == 2'd2 && c_data > 16'(MAX_BYTES)) begin
+            // too long to queue before its burst starts (the burst would never start): rejected,
+            // its payload bytes are taken and dropped
+            cmd_err_o <= 1'b1;
+            fst <= F_SKIP;
           end
           else fst <= F_HDR;
         end
@@ -258,6 +268,13 @@ module mipi_tx_engine #(
             fst <= F_GAP;
           end
         end
+        F_SKIP: if (pl_valid_i) begin           // drop the rejected command's payload
+          rem <= rem - 16'd1;
+          if (rem == 16'd1) begin
+            gap_cnt <= k_gap;
+            fst <= F_GAP;
+          end
+        end
         F_GAP:
           if (gap_cnt == 0) fst <= F_IDLE;
           else gap_cnt <= gap_cnt - 1'b1;
@@ -277,13 +294,13 @@ module mipi_tx_engine #(
       end
 
       // ---- output: one word of up to NLANES bytes per accepted clock
-      lane_valid_o <= '0;
+      ppi.lane_valid <= '0;
       if (pop) begin
         logic [QW-1:0] r;
         r = rp;
         for (int l = 0; l < NLANES; l++) begin
-          lane_data_o[8*l +: 8] <= q[r];
-          lane_valid_o[l] <= (3'(l) < wbytes);
+          ppi.lane_data[8*l +: 8] <= q[r];
+          ppi.lane_valid[l] <= (3'(l) < wbytes);
           if (3'(l) < wbytes) r = (r == QW'(QCAP - 1)) ? '0 : r + 1'b1;
         end
         rp <= r;
@@ -291,11 +308,11 @@ module mipi_tx_engine #(
       // hs_req_o is high from the burst start through the clock of its last word
       if (!burst && cnt != 0 && (all_enq || (k_type == 2'd1 && cnt >= START_TH))) begin
         burst <= 1'b1;
-        hs_req_o <= 1'b1;
+        ppi.hs_req <= 1'b1;
       end
       else if (burst && all_enq && cnt_after == 0 && pop) burst <= 1'b0;
-      else if (!burst) hs_req_o <= 1'b0;
-      if (burst && tx_ready_i && !all_enq && cnt < NLANES) underflow_o <= 1'b1;
+      else if (!burst) ppi.hs_req <= 1'b0;
+      if (burst && ppi.tx_ready && !all_enq && cnt < NLANES) underflow_o <= 1'b1;
     end
   end
 endmodule

@@ -3,10 +3,12 @@
 // Author: FPGA Cores 4 U
 // Description: Self-checking testbench for reset_sync. Checks asynchronous
 //   assertion (output active immediately), synchronous release exactly
-//   STAGES clocks after arst_i deasserts, the fully synchronous variant,
+//   STAGES clocks after arst_i deasserts, the fully synchronous variant
+//   (request synchronised first: assertion on the third clock edge, release
+//   STAGES + 2 clocks after arst_i),
 //   and both polarity options. Prints TEST PASSED on success.
 //   The test tasks are in tests/reset_sync_tests.sv (`included).
-// Date: 2026-09-29
+// Date: 2026-10-16
 `timescale 1ns/1ps
 module reset_sync_tb;
   logic clk = 0;
@@ -56,16 +58,20 @@ module reset_sync_tb;
       @(posedge clk);
       #1 n++;
     end
-    check(n == 3, $sformatf("sync-variant release latency %0d exp 3", n));
+    // sync variant: the request is synchronised first (2 clocks), then STAGES = 3 clocks
+    check(n == 5, $sformatf("sync-variant release latency %0d exp 5", n));
     check(r_hi == 0, "active-high output should be low after release");
     // asynchronous assertion mid-cycle
     #2.2 arst_n = 0;
     #0.1;
     check(r_async == 0 && r_hi == 1, "async assert must be immediate");
     check(r_sync == 1, "sync variant must not react before clock edge");
+    repeat (2) @(posedge clk);
+    #1;
+    check(r_sync == 1, "sync variant must not assert before its request is synchronised");
     @(posedge clk);
     #1;
-    check(r_sync == 0, "sync variant asserts at clock edge (STAGES flops clear)");
+    check(r_sync == 0, "sync variant asserts on the third clock edge (request synchronised)");
     if (errors == 0) $display("TEST PASSED");
     else $display("TEST FAILED (%0d errors)", errors);
     $finish;

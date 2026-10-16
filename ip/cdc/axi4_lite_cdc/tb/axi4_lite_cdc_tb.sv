@@ -5,69 +5,29 @@
 //   bridge. A 100 MHz AXI-Lite master (BFM) accesses a register file that
 //   runs on an unrelated 37 MHz clock through the bridge. Tests
 //   write/readback, byte strobes, back-to-back transactions, response
-//   codes for out-of-range addresses and a random access soak. Prints TEST
+//   codes for out-of-range addresses, a random access soak, and a write and a
+//   read issued in the same clock (the write goes first, neither is lost). Prints TEST
 //   PASSED on success.
 //   The test tasks are in tests/axi4_lite_cdc_tests.sv (`included).
-// Date: 2026-09-29
+// Date: 2026-10-16
 `timescale 1ns/1ps
 module axi4_lite_cdc_tb;
   logic aclk = 0, mclk = 0, aresetn = 0, mresetn = 0;
   always #5.0 aclk = ~aclk;
   always #13.5 mclk = ~mclk;
   // AXI-Lite wires (names match DUT ports so .* connects the BFM)
-  logic [7:0]  s_axil_awaddr, s_axil_araddr;
-  logic s_axil_awvalid, s_axil_awready;
-  logic [31:0] s_axil_wdata, s_axil_rdata;
-  logic [3:0] s_axil_wstrb;
-  logic s_axil_wvalid, s_axil_wready, s_axil_bvalid, s_axil_bready;
-  logic [1:0] s_axil_bresp, s_axil_rresp;
-  logic s_axil_arvalid, s_axil_arready, s_axil_rvalid, s_axil_rready;
-  axil_bfm #(.ADDR_W(8)) bfm (.*);
-  logic [7:0] m_awaddr, m_araddr;
-  logic m_awvalid, m_awready, m_wvalid, m_wready, m_bvalid, m_bready;
-  logic m_arvalid, m_arready, m_rvalid, m_rready;
-  logic [31:0] m_wdata, m_rdata;
-  logic [3:0] m_wstrb;
-  logic [1:0] m_bresp, m_rresp;
+  axil_if #(.ADDR_W(8), .DATA_W(32)) s_axil ();
+  axil_bfm #(.ADDR_W(8)) bfm (
+    .*
+  );
+  axil_if #(.ADDR_W(8), .DATA_W(32)) m ();
   axi4_lite_cdc #(.ADDR_W(8)) dut (
     .s_clk(aclk),
     .s_rst_n(aresetn),
-    .s_axil_awaddr,
-    .s_axil_awvalid,
-    .s_axil_awready,
-    .s_axil_wdata,
-    .s_axil_wstrb,
-    .s_axil_wvalid,
-    .s_axil_wready,
-    .s_axil_bresp,
-    .s_axil_bvalid,
-    .s_axil_bready,
-    .s_axil_araddr,
-    .s_axil_arvalid,
-    .s_axil_arready,
-    .s_axil_rdata,
-    .s_axil_rresp,
-    .s_axil_rvalid,
-    .s_axil_rready,
+    .s_axil(s_axil),
     .m_clk(mclk),
     .m_rst_n(mresetn),
-    .m_axil_awaddr(m_awaddr),
-    .m_axil_awvalid(m_awvalid),
-    .m_axil_awready(m_awready),
-    .m_axil_wdata(m_wdata),
-    .m_axil_wstrb(m_wstrb),
-    .m_axil_wvalid(m_wvalid),
-    .m_axil_wready(m_wready),
-    .m_axil_bresp(m_bresp),
-    .m_axil_bvalid(m_bvalid),
-    .m_axil_bready(m_bready),
-    .m_axil_araddr(m_araddr),
-    .m_axil_arvalid(m_arvalid),
-    .m_axil_arready(m_arready),
-    .m_axil_rdata(m_rdata),
-    .m_axil_rresp(m_rresp),
-    .m_axil_rvalid(m_rvalid),
-    .m_axil_rready(m_rready)
+    .m_axil(m)
   );
   logic [8*32-1:0] regs;
   logic [7:0] wrp;
@@ -78,23 +38,7 @@ module axi4_lite_cdc_tb;
   ) slave (
     .aclk(mclk),
     .aresetn(mresetn),
-    .s_axil_awaddr(m_awaddr),
-    .s_axil_awvalid(m_awvalid),
-    .s_axil_awready(m_awready),
-    .s_axil_wdata(m_wdata),
-    .s_axil_wstrb(m_wstrb),
-    .s_axil_wvalid(m_wvalid),
-    .s_axil_wready(m_wready),
-    .s_axil_bresp(m_bresp),
-    .s_axil_bvalid(m_bvalid),
-    .s_axil_bready(m_bready),
-    .s_axil_araddr(m_araddr),
-    .s_axil_arvalid(m_arvalid),
-    .s_axil_arready(m_arready),
-    .s_axil_rdata(m_rdata),
-    .s_axil_rresp(m_rresp),
-    .s_axil_rvalid(m_rvalid),
-    .s_axil_rready(m_rready),
+    .s_axil(m),
     .reg_o(regs),
     .wr_pulse_o(wrp),
     .wr_data_o(wrd),
@@ -149,6 +93,22 @@ module axi4_lite_cdc_tb;
       end
     end
     check(bfm.resp_errors == 0, "unexpected AXI errors");
+    // ---- Test 5: AW / W and AR in the same clock: the write goes first, the read is not lost ----
+    for (int n = 0; n < 8; n++) begin
+      logic [31:0] wv;
+      int wr_i, rd_i;
+      wr_i = n;
+      rd_i = (n + 3) % 8;
+      wv = 32'hC0DE_0000 + n;
+      fork
+        bfm.write(wr_i * 4, wv);
+        bfm.read(rd_i * 4, rd);
+      join
+      check(rd == model[rd_i], $sformatf("concurrent read reg %0d got %h exp %h", rd_i, rd, model[rd_i]));
+      model[wr_i] = wv;
+      bfm.read(wr_i * 4, rd);
+      check(rd == wv, $sformatf("concurrent write reg %0d got %h exp %h", wr_i, rd, wv));
+    end
     if (errors == 0) $display("TEST PASSED");
     else $display("TEST FAILED (%0d errors)", errors);
     $finish;

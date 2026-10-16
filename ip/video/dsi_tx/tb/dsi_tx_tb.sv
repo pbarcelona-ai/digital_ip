@@ -30,7 +30,8 @@ module dsi_tx_tb;
   logic ven = 0, cwr = 0, bwr = 0;
   logic [24:0] cmd = '0;
   logic [7:0] cb = '0;
-  logic de, hs, vs, sof, eol, vbl, wt;
+  vid_if tim ();
+  logic sof, eol, vbl, wt;
   logic [15:0] x, y;
   vid_timing_gen u_vtg (
     .clk(pclk),
@@ -49,9 +50,7 @@ module dsi_tx_tb;
     .lock_en_i(1'b0),
     .src_ready_i(1'b1),
     .lock_max_i(16'd0),
-    .de_o(de),
-    .hs_o(hs),
-    .vs_o(vs),
+    .tim(tim),
     .x_o(x),
     .y_o(y),
     .sof_o(sof),
@@ -62,19 +61,24 @@ module dsi_tx_tb;
   int fcount = 0;
   logic vs_q = 1;
   always @(posedge pclk) begin
-    vs_q <= vs;
-    if (!vs && vs_q) fcount <= fcount + 1;
+    vs_q <= tim.vs;
+    if (!tim.vs && vs_q) fcount <= fcount + 1;
   end
   function automatic logic [23:0] pix(input int px, input int py, input int f);
     return {8'(px * 3 + py), 8'(f * 16 + py), 8'(px ^ 8'h5A)};          // {B, G, R}
   endfunction
-  wire [23:0] rgb = de ? pix(x, y, fcount) : 24'h0;
+  wire [23:0] rgb = tim.de ? pix(x, y, fcount) : 24'h0;
 
   for (genvar g = 0; g < 3; g++) begin : g_l
     localparam int NL = (g == 0) ? 1 : (g == 1) ? 2 : 4;
-    logic [NL*8-1:0] ld;
-    logic [NL-1:0] lv;
-    logic req, rdy = 0, drop, uf, busy;
+    ppi_tx_if #(.NLANES(NL)) ppi ();
+    initial ppi.tx_ready = 0;
+    logic drop, uf, busy;
+    vid_if #(.DATA_W(24)) dut_vid ();
+    assign dut_vid.data = rgb;
+    assign dut_vid.de = tim.de;
+    assign dut_vid.hs = tim.hs;
+    assign dut_vid.vs = tim.vs;
     dsi_tx #(
       .NLANES(NL),
       .MAX_W(64)
@@ -84,10 +88,7 @@ module dsi_tx_tb;
       .video_en_i(ven),
       .hs_pol_i(1'b0),
       .vs_pol_i(1'b0),
-      .rgb_i(rgb),
-      .de_i(de),
-      .hs_i(hs),
-      .vs_i(vs),
+      .vid(dut_vid),
       .cmd_wr_i(cwr),
       .cmd_i(cmd),
       .cmd_byte_wr_i(bwr),
@@ -99,31 +100,28 @@ module dsi_tx_tb;
       .eotp_i(1'b1),
       .sync_gap_i(16'd10),
       .line_gap_i(16'd6),
-      .lane_data_o(ld),
-      .lane_valid_o(lv),
-      .hs_req_o(req),
-      .tx_ready_i(rdy),
+      .ppi(ppi),
       .cmd_busy_o(busy),
       .underflow_o(uf)
     );
     // PHY: a fixed start-of-transmission time of 6 byte clocks, as a D-PHY has
     int sot = 0;
     always @(posedge bclk) begin
-      if (!req) begin
-        rdy <= 1'b0;
+      if (!ppi.hs_req) begin
+        ppi.tx_ready <= 1'b0;
         sot = 0;
       end
-      else if (!rdy) begin
+      else if (!ppi.tx_ready) begin
         sot++;
-        if (sot == 6) rdy <= 1'b1;
+        if (sot == 6) ppi.tx_ready <= 1'b1;
       end
       if (brst_n) check(!uf, $sformatf("%0d lanes: engine underflow", NL));
     end
     always @(posedge pclk) if (prst_n) check(!drop, $sformatf("%0d lanes: line dropped", NL));
     dsi_bfm #(.NL(NL)) rx (
       .clk(bclk),
-      .lane_data(ld),
-      .lane_valid(lv)
+      .lane_data(ppi.lane_data),
+      .lane_valid(ppi.lane_valid)
     );
   end
 
@@ -162,10 +160,10 @@ module dsi_tx_tb;
     send_cmd(1, 8'h39, 16'd5, 5, 8'h70);           // DCS long write, 5 bytes
     repeat (3000) @(posedge pclk);
     ven = 1;
-    repeat (4) @(posedge vs);                     // 4 frame starts (vs active low: edges both ways)
+    repeat (4) @(posedge tim.vs);                     // 4 frame starts (vs active low: edges both ways)
     repeat (4) begin
-      wait (!vs);
-      wait (vs);
+      wait (!tim.vs);
+      wait (tim.vs);
     end
     repeat (2 * HTOT) @(posedge pclk);
     check_log(0, 1, g_l[0].rx.npk, 6, 4);

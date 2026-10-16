@@ -16,7 +16,11 @@
 //   generator. eotp_i appends an End of Transmission packet to every
 //   burst. Virtual channel vc_i. A line needs (width x 3 + 12) / NLANES
 //   byte clocks plus the LP transitions; lines that do not fit are dropped
-//   (line_drop_o).
+//   (line_drop_o; also when its event cannot be queued, e.g. with the byte
+//   clock stopped). Long commands carry at most 64 payload bytes: a longer one
+//   is rejected (cmd_err_o, its payload bytes are dropped); writes to a full
+//   command / payload queue are lost and flagged (cmd_ovf_o / pay_ovf_o): at
+//   most 16 queued commands and 256 queued payload bytes.
 //   Commands - for panel initialisation, while video_en_i is low: write the
 //   payload bytes of a long command with cmd_byte_wr_i / cmd_byte_i, then
 //   cmd_wr_i with cmd_i = {long, data type, data / word count}; e.g.
@@ -26,7 +30,7 @@
 //   accept commands in LP escape mode need the PHY's escape-mode path.
 //   Clocks - pclk (video, commands), bclk (D-PHY byte clock). Resets -
 //   synchronous per domain, active low.
-// Date: 2026-10-02
+// Date: 2026-10-16
 module dsi_tx #(
   parameter int NLANES = 2,
   parameter int MAX_W  = 2048
@@ -37,10 +41,8 @@ module dsi_tx #(
   input  logic                  video_en_i,
   input  logic                  hs_pol_i,
   input  logic                  vs_pol_i,
-  input  logic [23:0]           rgb_i,
-  input  logic                  de_i,
-  input  logic                  hs_i,
-  input  logic                  vs_i,
+  // vid: vid_if.sink (ip/shared/src/interfaces/vid_if.sv), DATA_W = 24 {rgb_i=data de_i=de hs_i=hs vs_i=vs}
+  vid_if.sink vid,
   input  logic                  cmd_wr_i,
   input  logic [24:0]           cmd_i,           // {long, data type, data / word count}
   input  logic                  cmd_byte_wr_i,
@@ -53,12 +55,13 @@ module dsi_tx #(
   input  logic                  eotp_i,
   input  logic [15:0]           sync_gap_i,      // LP clocks after a sync packet
   input  logic [15:0]           line_gap_i,      // LP clocks after a pixel packet
-  output logic [NLANES*8-1:0]   lane_data_o,
-  output logic [NLANES-1:0]     lane_valid_o,
-  output logic                  hs_req_o,
-  input  logic                  tx_ready_i,
+  // ppi: ppi_tx_if.link (ip/shared/src/interfaces/ppi_tx_if.sv), NLANES = NLANES {lane_data_o=lane_data lane_valid_o=lane_valid hs_req_o=hs_req tx_ready_i=tx_ready}
+  ppi_tx_if.link ppi,
   output logic                  cmd_busy_o,      // byte clock: commands queued or being sent
-  output logic                  underflow_o
+  output logic                  underflow_o,
+  output logic                  cmd_err_o,       // pulse (pclk): a long command over 64 payload bytes was rejected
+  output logic                  cmd_ovf_o,       // pulse (pclk): DSI command written while its queue was full (lost)
+  output logic                  pay_ovf_o        // pulse (pclk): payload byte written while its queue was full (lost)
 );
   localparam int AW = $clog2(MAX_W / 2);
   logic lb_buf, lb_done;
@@ -69,22 +72,28 @@ module dsi_tx #(
   logic de_q, hs_q, vs_q, pend;
   logic pbuf;
   logic [15:0] pwidth;
-  wire  hs_lead  = (hs_i == hs_pol_i) && (hs_q != hs_pol_i);
-  wire  vs_act   = (vs_i == vs_pol_i);
+  wire  hs_lead  = (vid.hs == hs_pol_i) && (hs_q != hs_pol_i);
+  wire  vs_act   = (vid.vs == vs_pol_i);
   wire  vs_lead  = vs_act && (vs_q != vs_pol_i);
-  wire  line_end = de_q && !de_i;
+  wire  line_end = de_q && !vid.de;
   logic lr, lbuf;
   logic [15:0] lwidth;
+  // a line is only taken when its event can be queued and no earlier line is still waiting for one
+  logic [4:0] ev_lvl;
+  logic ev_wr, line_ok, lb_drop;
+  wire  line_start = vid.de && !de_q;
+  wire  ev_room = (ev_lvl <= 5'd14) && !pend;
+  wire  px_ok = line_start ? ev_room : line_ok;
   mipi_line_buf #(.MAX_W(MAX_W)) u_lb (
     .pclk,
     .prst_n,
-    .px_i(rgb_i),
-    .px_valid_i(de_i && video_en_i),
+    .px_i(vid.data),
+    .px_valid_i(vid.de && video_en_i && px_ok),
     .line_end_i(line_end),
     .line_ready_o(lr),
     .line_buf_o(lbuf),
     .line_width_o(lwidth),
-    .line_drop_o(line_drop_o),
+    .line_drop_o(lb_drop),
     .bclk,
     .brst_n,
     .rd_buf_i(lb_buf),
@@ -105,15 +114,15 @@ module dsi_tx #(
       pwidth <= '0;
     end
     else begin
-      de_q <= de_i;
-      hs_q <= hs_i;
-      vs_q <= vs_i;
+      de_q <= vid.de;
+      hs_q <= vid.hs;
+      vs_q <= vid.vs;
       if (lr) begin
         pend <= 1'b1;
         pbuf <= lbuf;
         pwidth <= lwidth;
       end
-      else if (hs_lead) pend <= 1'b0;
+      else if (hs_lead && ev_wr) pend <= 1'b0;      // kept until its event is queued
     end
   end
   // vsync is aligned with the hsync leading edge (CEA-861); vs_lead or vsync
@@ -133,8 +142,8 @@ module dsi_tx #(
     .wrst_n(prst_n),
     .wdata(ev_w),
     .wvalid(hs_lead && video_en_i),
-    .wready(),
-    .wlevel_o(),
+    .wready(ev_wr),
+    .wlevel_o(ev_lvl),
     .rclk(bclk),
     .rrst_n(brst_n),
     .rdata(ev),
@@ -144,6 +153,7 @@ module dsi_tx #(
 
   // Commands and their payload bytes
   logic [24:0] cq;
+  logic cq_wr, pb_wr;                               // command / payload queues not full (pclk)
   logic cq_v, cq_r;
   logic [7:0] pb;
   logic pb_v, pb_r;
@@ -155,7 +165,7 @@ module dsi_tx #(
     .wrst_n(prst_n),
     .wdata(cmd_i),
     .wvalid(cmd_wr_i),
-    .wready(),
+    .wready(cq_wr),
     .wlevel_o(),
     .rclk(bclk),
     .rrst_n(brst_n),
@@ -171,7 +181,7 @@ module dsi_tx #(
     .wrst_n(prst_n),
     .wdata(cmd_byte_i),
     .wvalid(cmd_byte_wr_i),
-    .wready(),
+    .wready(pb_wr),
     .wlevel_o(),
     .rclk(bclk),
     .rrst_n(brst_n),
@@ -217,6 +227,25 @@ module dsi_tx #(
   end
   logic eng_busy;
   assign cmd_busy_o = cq_v || (eng_busy && !ev_v);
+  always_ff @(posedge pclk) begin
+    if (!prst_n) line_ok <= 1'b0;
+    else if (line_start) line_ok <= ev_room;
+  end
+  // dropped lines: line buffers full, no room for the event, or a sync event lost (FIFO full)
+  assign line_drop_o = lb_drop || (line_start && video_en_i && !ev_room) || (hs_lead && video_en_i && !ev_wr);
+  assign cmd_ovf_o = cmd_wr_i && !cq_wr;
+  assign pay_ovf_o = cmd_byte_wr_i && !pb_wr;
+  logic eng_err;
+  pulse_sync u_err (
+    .src_clk(bclk),
+    .src_rst_n(brst_n),
+    .pulse_i(eng_err),
+    .busy_o(),
+    .drop_o(),
+    .dst_clk(pclk),
+    .dst_rst_n(prst_n),
+    .pulse_o(cmd_err_o)
+  );
 
   mipi_tx_engine #(
     .NLANES(NLANES),
@@ -234,11 +263,9 @@ module dsi_tx #(
     .pl_data_i(pb),
     .pl_valid_i(pb_v),
     .pl_ready_o(pb_r),
-    .lane_data_o,
-    .lane_valid_o,
-    .hs_req_o,
-    .tx_ready_i,
+    .ppi(ppi),
     .busy_o(eng_busy),
-    .underflow_o
+    .underflow_o,
+    .cmd_err_o(eng_err)
   );
 endmodule

@@ -320,11 +320,7 @@ module video_processor #(
 `endif
 
   // ================================================================ control CPU
-  logic [15:0] c_awaddr, c_araddr;
-  logic [31:0] c_wdata, c_rdata;
-  logic [3:0] c_wstrb;
-  logic [1:0] c_bresp, c_rresp;
-  logic c_awvalid, c_awready, c_wvalid, c_wready, c_bvalid, c_bready, c_arvalid, c_arready, c_rvalid, c_rready;
+  axil_if #(.ADDR_W(16), .DATA_W(32)) c ();
   logic irq_stats;
   logic [1:0] irq_frame;
   py_soc #(
@@ -412,23 +408,7 @@ module video_processor #(
     .wdt_reset_o,
     .core_rst_n_o(core_rel),
     .ext_irq_i({ext_irq_i, irq_frame, irq_stats}),
-    .m_ext_axil_awaddr(c_awaddr),
-    .m_ext_axil_awvalid(c_awvalid),
-    .m_ext_axil_awready(c_awready),
-    .m_ext_axil_wdata(c_wdata),
-    .m_ext_axil_wstrb(c_wstrb),
-    .m_ext_axil_wvalid(c_wvalid),
-    .m_ext_axil_wready(c_wready),
-    .m_ext_axil_bresp(c_bresp),
-    .m_ext_axil_bvalid(c_bvalid),
-    .m_ext_axil_bready(c_bready),
-    .m_ext_axil_araddr(c_araddr),
-    .m_ext_axil_arvalid(c_arvalid),
-    .m_ext_axil_arready(c_arready),
-    .m_ext_axil_rdata(c_rdata),
-    .m_ext_axil_rresp(c_rresp),
-    .m_ext_axil_rvalid(c_rvalid),
-    .m_ext_axil_rready(c_rready)
+    .m_ext_axil(c)
   );
 
   // isp_stats frame done (pix_clk pulse) -> intc source 12
@@ -473,14 +453,14 @@ module video_processor #(
       got_w <= 1'b0;
       got_ar <= 1'b0;
     end else begin
-      if (c_bvalid && c_bready) begin
+      if (c.bvalid && c.bready) begin
         got_aw <= 1'b0;
         got_w <= 1'b0;
       end
-      if (c_rvalid && c_rready) got_ar <= 1'b0;
-      if (c_awvalid && c_awready) got_aw <= 1'b1;
-      if (c_wvalid && c_wready) got_w <= 1'b1;
-      if (c_arvalid && c_arready) got_ar <= 1'b1;
+      if (c.rvalid && c.rready) got_ar <= 1'b0;
+      if (c.awvalid && c.awready) got_aw <= 1'b1;
+      if (c.wvalid && c.wready) got_w <= 1'b1;
+      if (c.arvalid && c.arready) got_ar <= 1'b1;
       // open only while holding (no CPU handshake can happen in that cycle); close as soon as
       // CORE_RESET clears, before pix_rst_n is even synchronised back
       if (!core_up || !core_rel) ext_pass <= 1'b0;
@@ -488,65 +468,47 @@ module video_processor #(
     end
   end
   assign ext_hold  = !ext_pass && core_rel && !got_aw && !got_w && !got_ar;
-  assign g_awvalid = c_awvalid && ext_pass;
-  assign g_wvalid  = c_wvalid && ext_pass;
-  assign g_bready  = c_bready && ext_pass;
-  assign g_arvalid = c_arvalid && ext_pass;
-  assign g_rready  = c_rready && ext_pass;
-  assign c_awready = ext_pass ? g_awready : !ext_hold && !got_aw;
-  assign c_wready  = ext_pass ? g_wready : !ext_hold && !got_w;
-  assign c_bvalid  = ext_pass ? g_bvalid : got_aw && got_w;
-  assign c_bresp   = ext_pass ? g_bresp : 2'b10;     // SLVERR
-  assign c_arready = ext_pass ? g_arready : !ext_hold && !got_ar;
-  assign c_rvalid  = ext_pass ? g_rvalid : got_ar;
-  assign c_rdata   = ext_pass ? g_rdata : 32'd0;
-  assign c_rresp   = ext_pass ? g_rresp : 2'b10;     // SLVERR
+  assign g_awvalid = c.awvalid && ext_pass;
+  assign g_wvalid  = c.wvalid && ext_pass;
+  assign g_bready  = c.bready && ext_pass;
+  assign g_arvalid = c.arvalid && ext_pass;
+  assign g_rready  = c.rready && ext_pass;
+  assign c.awready = ext_pass ? g_awready : !ext_hold && !got_aw;
+  assign c.wready  = ext_pass ? g_wready : !ext_hold && !got_w;
+  assign c.bvalid  = ext_pass ? g_bvalid : got_aw && got_w;
+  assign c.bresp   = ext_pass ? g_bresp : 2'b10;     // SLVERR
+  assign c.arready = ext_pass ? g_arready : !ext_hold && !got_ar;
+  assign c.rvalid  = ext_pass ? g_rvalid : got_ar;
+  assign c.rdata   = ext_pass ? g_rdata : 32'd0;
+  assign c.rresp   = ext_pass ? g_rresp : 2'b10;     // SLVERR
 
   // ================================================================ control interconnect (pix_clk)
-  logic [15:0] v_awaddr, v_araddr;
-  logic [31:0] v_wdata, v_rdata;
-  logic [3:0] v_wstrb;
-  logic [1:0] v_bresp, v_rresp;
-  logic v_awvalid, v_awready, v_wvalid, v_wready, v_bvalid, v_bready, v_arvalid, v_arready, v_rvalid, v_rready;
+  axil_if #(.ADDR_W(16), .DATA_W(32)) v ();
+  axil_if #(.ADDR_W(16)) u_axil_cdc_s_axil ();
+  assign u_axil_cdc_s_axil.awaddr = c.awaddr;
+  assign u_axil_cdc_s_axil.awvalid = g_awvalid;
+  assign g_awready = u_axil_cdc_s_axil.awready;
+  assign u_axil_cdc_s_axil.wdata = c.wdata;
+  assign u_axil_cdc_s_axil.wstrb = c.wstrb;
+  assign u_axil_cdc_s_axil.wvalid = g_wvalid;
+  assign g_wready = u_axil_cdc_s_axil.wready;
+  assign g_bresp = u_axil_cdc_s_axil.bresp;
+  assign g_bvalid = u_axil_cdc_s_axil.bvalid;
+  assign u_axil_cdc_s_axil.bready = g_bready;
+  assign u_axil_cdc_s_axil.araddr = c.araddr;
+  assign u_axil_cdc_s_axil.arvalid = g_arvalid;
+  assign g_arready = u_axil_cdc_s_axil.arready;
+  assign g_rdata = u_axil_cdc_s_axil.rdata;
+  assign g_rresp = u_axil_cdc_s_axil.rresp;
+  assign g_rvalid = u_axil_cdc_s_axil.rvalid;
+  assign u_axil_cdc_s_axil.rready = g_rready;
   axi4_lite_cdc #(.ADDR_W(16)) u_axil_cdc (
     .s_clk(cpu_clk),
-    .s_rst_n(cpu_rst_n && ext_pass),                 // reset while the gate is closed
-    .s_axil_awaddr(c_awaddr),
-    .s_axil_awvalid(g_awvalid),
-    .s_axil_awready(g_awready),
-    .s_axil_wdata(c_wdata),
-    .s_axil_wstrb(c_wstrb),
-    .s_axil_wvalid(g_wvalid),
-    .s_axil_wready(g_wready),
-    .s_axil_bresp(g_bresp),
-    .s_axil_bvalid(g_bvalid),
-    .s_axil_bready(g_bready),
-    .s_axil_araddr(c_araddr),
-    .s_axil_arvalid(g_arvalid),
-    .s_axil_arready(g_arready),
-    .s_axil_rdata(g_rdata),
-    .s_axil_rresp(g_rresp),
-    .s_axil_rvalid(g_rvalid),
-    .s_axil_rready(g_rready),
+    .s_rst_n(cpu_rst_n && ext_pass),
+    .s_axil(u_axil_cdc_s_axil),
     .m_clk(pix_clk),
     .m_rst_n(pix_rst_n),
-    .m_axil_awaddr(v_awaddr),
-    .m_axil_awvalid(v_awvalid),
-    .m_axil_awready(v_awready),
-    .m_axil_wdata(v_wdata),
-    .m_axil_wstrb(v_wstrb),
-    .m_axil_wvalid(v_wvalid),
-    .m_axil_wready(v_wready),
-    .m_axil_bresp(v_bresp),
-    .m_axil_bvalid(v_bvalid),
-    .m_axil_bready(v_bready),
-    .m_axil_araddr(v_araddr),
-    .m_axil_arvalid(v_arvalid),
-    .m_axil_arready(v_arready),
-    .m_axil_rdata(v_rdata),
-    .m_axil_rresp(v_rresp),
-    .m_axil_rvalid(v_rvalid),
-    .m_axil_rready(v_rready)
+    .m_axil(v)
   );
 
   // Slaves: 0 video_pipeline, then vision_system and blur_sharpen when built, then frame_counter, then
@@ -592,11 +554,25 @@ module video_processor #(
   endfunction
   localparam logic [NS*32-1:0] VBASE = bus_map(1'b0);
   localparam logic [NS*32-1:0] VMASK = bus_map(1'b1);
-  logic [31:0] b_awaddr, b_araddr, b_wdata;
-  logic [3:0] b_wstrb;
-  logic [NS-1:0] b_awvalid, b_awready, b_wvalid, b_wready, b_bvalid, b_bready, b_arvalid, b_arready, b_rvalid, b_rready;
-  logic [NS*2-1:0] b_bresp, b_rresp;
-  logic [NS*32-1:0] b_rdata;
+  axil_if #(.ADDR_W(32), .DATA_W(32)) b ();
+  axil_if #(.ADDR_W(32)) u_vbus_s_axil ();
+  assign u_vbus_s_axil.awaddr = {16'd0, v.awaddr};
+  assign u_vbus_s_axil.awvalid = v.awvalid;
+  assign v.awready = u_vbus_s_axil.awready;
+  assign u_vbus_s_axil.wdata = v.wdata;
+  assign u_vbus_s_axil.wstrb = v.wstrb;
+  assign u_vbus_s_axil.wvalid = v.wvalid;
+  assign v.wready = u_vbus_s_axil.wready;
+  assign v.bresp = u_vbus_s_axil.bresp;
+  assign v.bvalid = u_vbus_s_axil.bvalid;
+  assign u_vbus_s_axil.bready = v.bready;
+  assign u_vbus_s_axil.araddr = {16'd0, v.araddr};
+  assign u_vbus_s_axil.arvalid = v.arvalid;
+  assign v.arready = u_vbus_s_axil.arready;
+  assign v.rdata = u_vbus_s_axil.rdata;
+  assign v.rresp = u_vbus_s_axil.rresp;
+  assign v.rvalid = u_vbus_s_axil.rvalid;
+  assign u_vbus_s_axil.rready = v.rready;
   py_axil_xbar #(
     .NSLAVE(NS),
     .BASE(VBASE),
@@ -604,45 +580,13 @@ module video_processor #(
   ) u_vbus (
     .aclk(pix_clk),
     .aresetn(pix_rst_n),
-    .s_axil_awaddr({16'd0, v_awaddr}),
-    .s_axil_awvalid(v_awvalid),
-    .s_axil_awready(v_awready),
-    .s_axil_wdata(v_wdata),
-    .s_axil_wstrb(v_wstrb),
-    .s_axil_wvalid(v_wvalid),
-    .s_axil_wready(v_wready),
-    .s_axil_bresp(v_bresp),
-    .s_axil_bvalid(v_bvalid),
-    .s_axil_bready(v_bready),
-    .s_axil_araddr({16'd0, v_araddr}),
-    .s_axil_arvalid(v_arvalid),
-    .s_axil_arready(v_arready),
-    .s_axil_rdata(v_rdata),
-    .s_axil_rresp(v_rresp),
-    .s_axil_rvalid(v_rvalid),
-    .s_axil_rready(v_rready),
-    .m_axil_awaddr(b_awaddr),
-    .m_axil_awvalid(b_awvalid),
-    .m_axil_awready(b_awready),
-    .m_axil_wdata(b_wdata),
-    .m_axil_wstrb(b_wstrb),
-    .m_axil_wvalid(b_wvalid),
-    .m_axil_wready(b_wready),
-    .m_axil_bresp(b_bresp),
-    .m_axil_bvalid(b_bvalid),
-    .m_axil_bready(b_bready),
-    .m_axil_araddr(b_araddr),
-    .m_axil_arvalid(b_arvalid),
-    .m_axil_arready(b_arready),
-    .m_axil_rdata(b_rdata),
-    .m_axil_rresp(b_rresp),
-    .m_axil_rvalid(b_rvalid),
-    .m_axil_rready(b_rready)
+    .s_axil(u_vbus_s_axil),
+    .m_axil(b)
   );
 
   // ================================================================ video pipeline
 `ifdef VP_HDMI
-  logic [9:0]  tmds0, tmds1, tmds2, tmds_clk;
+  tmds_if tmds ();
 `endif
 `ifdef VP_LVDS
   logic [27:0] lvds_a, lvds_b;
@@ -650,10 +594,29 @@ module video_processor #(
   logic lvds_stb;
 `endif
 `ifdef VP_INSERT
-  logic [23:0] im_d, ir_d;
-  logic im_l, im_u, im_v, im_r, ir_l, ir_u, ir_v, ir_r;
+  axis_if #(.DATA_W(24), .USER_W(1)) ir ();
+  logic [23:0] im_d;
+  axis_if #(.DATA_W(24), .USER_W(1)) im ();
 `endif
   logic eof_first, eof_last;                         // end-of-frame markers of the first / last stage
+  axil_if #(.ADDR_W(15)) u_pipe_s_axil ();
+  assign u_pipe_s_axil.awaddr = b.awaddr[14:0];
+  assign u_pipe_s_axil.awvalid = b.awvalid[0];
+  assign b.awready[0] = u_pipe_s_axil.awready;
+  assign u_pipe_s_axil.wdata = b.wdata;
+  assign u_pipe_s_axil.wstrb = b.wstrb;
+  assign u_pipe_s_axil.wvalid = b.wvalid[0];
+  assign b.wready[0] = u_pipe_s_axil.wready;
+  assign b.bresp[1:0] = u_pipe_s_axil.bresp;
+  assign b.bvalid[0] = u_pipe_s_axil.bvalid;
+  assign u_pipe_s_axil.bready = b.bready[0];
+  assign u_pipe_s_axil.araddr = b.araddr[14:0];
+  assign u_pipe_s_axil.arvalid = b.arvalid[0];
+  assign b.arready[0] = u_pipe_s_axil.arready;
+  assign b.rdata[31:0] = u_pipe_s_axil.rdata;
+  assign b.rresp[1:0] = u_pipe_s_axil.rresp;
+  assign b.rvalid[0] = u_pipe_s_axil.rvalid;
+  assign u_pipe_s_axil.rready = b.rready[0];
   video_pipeline #(
     .NLANES(NLANES),
     .MAX_W(MAX_W),
@@ -663,74 +626,52 @@ module video_processor #(
     .DSI_LANES(DSI_LANES),
     .CSITX_LANES(CSITX_LANES)
   ) u_pipe (
-`ifdef VP_CSI2_RX
+    `ifdef VP_CSI2_RX
     .byte_clk,
     .byte_rst_n,
     .lane_data_i(cam_lane_data_i),
     .lane_valid_i(cam_lane_valid_i),
-`endif
+    `endif
     .pix_clk,
     .pix_rst_n,
-    .s_axil_awaddr(b_awaddr[14:0]),
-    .s_axil_awvalid(b_awvalid[0]),
-    .s_axil_awready(b_awready[0]),
-    .s_axil_wdata(b_wdata),
-    .s_axil_wstrb(b_wstrb),
-    .s_axil_wvalid(b_wvalid[0]),
-    .s_axil_wready(b_wready[0]),
-    .s_axil_bresp(b_bresp[1:0]),
-    .s_axil_bvalid(b_bvalid[0]),
-    .s_axil_bready(b_bready[0]),
-    .s_axil_araddr(b_araddr[14:0]),
-    .s_axil_arvalid(b_arvalid[0]),
-    .s_axil_arready(b_arready[0]),
-    .s_axil_rdata(b_rdata[31:0]),
-    .s_axil_rresp(b_rresp[1:0]),
-    .s_axil_rvalid(b_rvalid[0]),
-    .s_axil_rready(b_rready[0]),
-`ifdef VP_HDMI
-    .tmds0_o(tmds0),
-    .tmds1_o(tmds1),
-    .tmds2_o(tmds2),
-    .tmds_clk_o(tmds_clk),
-`endif
+    .s_axil(u_pipe_s_axil),
+    `ifdef VP_HDMI
+    .tmds0_o(tmds.ch0),
+    .tmds1_o(tmds.ch1),
+    .tmds2_o(tmds.ch2),
+    .tmds_clk_o(tmds.clk),
+    `endif
 `ifdef VP_LVDS
     .lvds_a_o(lvds_a),
     .lvds_b_o(lvds_b),
     .lvds_clk_word_o(lvds_clk_word),
     .lvds_stb_o(lvds_stb),
-`endif
+    `endif
 `ifdef VP_MIPI_TX
     .tx_byte_clk,
     .tx_byte_rst_n,
-`endif
+    `endif
 `ifdef VP_DSI
     .dsi_lane_data_o,
     .dsi_lane_valid_o,
     .dsi_hs_req_o,
     .dsi_tx_ready_i,
-`endif
+    `endif
 `ifdef VP_CSI2_TX
     .csitx_lane_data_o,
     .csitx_lane_valid_o,
     .csitx_hs_req_o,
     .csitx_tx_ready_i,
-`endif
+    `endif
 `ifdef VP_INSERT
     .ins_m_axis_tdata(im_d),
-    .ins_m_axis_tlast(im_l),
-    .ins_m_axis_tuser(im_u),
-    .ins_m_axis_tvalid(im_v),
-    .ins_m_axis_tready(im_r),
-    .ins_s_axis_tdata(ir_d),
-    .ins_s_axis_tlast(ir_l),
-    .ins_s_axis_tuser(ir_u),
-    .ins_s_axis_tvalid(ir_v),
-    .ins_s_axis_tready(ir_r),
-`endif
+    .ins_m_axis(im),
+    .ins_s_axis(ir),
+    `endif
     .eof_in_o(eof_first),
     .eof_out_o(eof_last),
-    .stats_done_o);
+    .stats_done_o
+    );
 
   // ================================================================ frame counters
   // Interrupt levels (pix_clk) synchronised to cpu_clk; the CPU clears them through STATUS. Channels,
@@ -748,6 +689,24 @@ module video_processor #(
   assign ev_vs_out = 1'b0;
   assign ev_trk = 1'b0;
 `endif
+  axil_if #(.ADDR_W(8)) u_frame_cnt_s_axil ();
+  assign u_frame_cnt_s_axil.awaddr = b.awaddr[7:0];
+  assign u_frame_cnt_s_axil.awvalid = b.awvalid[S_FC];
+  assign b.awready[S_FC] = u_frame_cnt_s_axil.awready;
+  assign u_frame_cnt_s_axil.wdata = b.wdata;
+  assign u_frame_cnt_s_axil.wstrb = b.wstrb;
+  assign u_frame_cnt_s_axil.wvalid = b.wvalid[S_FC];
+  assign b.wready[S_FC] = u_frame_cnt_s_axil.wready;
+  assign b.bresp[S_FC*2 +: 2] = u_frame_cnt_s_axil.bresp;
+  assign b.bvalid[S_FC] = u_frame_cnt_s_axil.bvalid;
+  assign u_frame_cnt_s_axil.bready = b.bready[S_FC];
+  assign u_frame_cnt_s_axil.araddr = b.araddr[7:0];
+  assign u_frame_cnt_s_axil.arvalid = b.arvalid[S_FC];
+  assign b.arready[S_FC] = u_frame_cnt_s_axil.arready;
+  assign b.rdata[S_FC*32 +: 32] = u_frame_cnt_s_axil.rdata;
+  assign b.rresp[S_FC*2 +: 2] = u_frame_cnt_s_axil.rresp;
+  assign b.rvalid[S_FC] = u_frame_cnt_s_axil.rvalid;
+  assign u_frame_cnt_s_axil.rready = b.rready[S_FC];
   frame_counter_top #(
     .NCH(5),
     .EVQ(128),
@@ -757,23 +716,7 @@ module video_processor #(
     .rst_n(pix_rst_n),
     .eof_i({ev_trk, ev_vs_out, ev_vs_in, eof_last, eof_first}),
     .irq_o(irq_frame_pix),
-    .s_axil_awaddr(b_awaddr[7:0]),
-    .s_axil_awvalid(b_awvalid[S_FC]),
-    .s_axil_awready(b_awready[S_FC]),
-    .s_axil_wdata(b_wdata),
-    .s_axil_wstrb(b_wstrb),
-    .s_axil_wvalid(b_wvalid[S_FC]),
-    .s_axil_wready(b_wready[S_FC]),
-    .s_axil_bresp(b_bresp[S_FC*2 +: 2]),
-    .s_axil_bvalid(b_bvalid[S_FC]),
-    .s_axil_bready(b_bready[S_FC]),
-    .s_axil_araddr(b_araddr[7:0]),
-    .s_axil_arvalid(b_arvalid[S_FC]),
-    .s_axil_arready(b_arready[S_FC]),
-    .s_axil_rdata(b_rdata[S_FC*32 +: 32]),
-    .s_axil_rresp(b_rresp[S_FC*2 +: 2]),
-    .s_axil_rvalid(b_rvalid[S_FC]),
-    .s_axil_rready(b_rready[S_FC])
+    .s_axil(u_frame_cnt_s_axil)
   );
   // Levels: after the CPU's STATUS write-1-to-clear completes (B response), the level takes about 2
   // more cpu_clk cycles to drop at the intc. The handler must not return right after the clear: it
@@ -793,77 +736,60 @@ module video_processor #(
 
   // ================================================================ vision_system at the insert point
 `ifdef VP_INSERT
-  logic [23:0] vo_d; // after vision_system (or straight from the insert point)
-  logic vo_l, vo_u, vo_v, vo_r;
+  axis_if #(.DATA_W(24), .USER_W(1)) vo ();
 `endif
 `ifdef VP_VISION
-  logic [23:0] va_d, vr_d;
-  logic va_l, va_u, va_v, va_r, vr_l, vr_u, vr_v, vr_r;
+  axis_if #(.DATA_W(24), .USER_W(1)) vr ();
+  axis_if #(.DATA_W(24), .USER_W(1)) va ();
+  axis_if #(.DATA_W(24)) u_vs_adapt_s_axis ();
+  assign u_vs_adapt_s_axis.tdata = im_d;
+  assign u_vs_adapt_s_axis.tlast = im.tlast;
+  assign u_vs_adapt_s_axis.tuser = im.tuser;
+  assign u_vs_adapt_s_axis.tvalid = im.tvalid;
+  assign im.tready = u_vs_adapt_s_axis.tready;
   vs_stream_adapter #(
     .GAP(barrel_pkg::LINE_GAP_CYCLES + 3),
     .RET_FIFO(VS_RET_FIFO)
   ) u_vs_adapt (
     .clk(pix_clk),
     .rst_n(pix_rst_n),
-    .s_axis_tdata(im_d),
-    .s_axis_tlast(im_l),
-    .s_axis_tuser(im_u),
-    .s_axis_tvalid(im_v),
-    .s_axis_tready(im_r),
-    .m_axis_tdata(va_d),
-    .m_axis_tlast(va_l),
-    .m_axis_tuser(va_u),
-    .m_axis_tvalid(va_v),
-    .m_axis_tready(va_r),
-    .r_s_axis_tdata(vr_d),
-    .r_s_axis_tlast(vr_l),
-    .r_s_axis_tuser(vr_u),
-    .r_s_axis_tvalid(vr_v),
-    .r_s_axis_tready(vr_r),
-    .r_m_axis_tdata(vo_d),
-    .r_m_axis_tlast(vo_l),
-    .r_m_axis_tuser(vo_u),
-    .r_m_axis_tvalid(vo_v),
-    .r_m_axis_tready(vo_r),
+    .s_axis(u_vs_adapt_s_axis),
+    .m_axis(va),
+    .r_s_axis(vr),
+    .r_m_axis(vo),
     .frames_o(),
     .drops_o(),
     .ret_drops_o()
   );
-  assign ev_vs_in = va_v && va_r && va_u;           // frame admitted into vision_system
-  assign ev_vs_out = vr_v && vr_r && vr_u;          // corrected frame starts coming out
+  assign ev_vs_in = va.tvalid && va.tready && va.tuser;           // frame admitted into vision_system
+  assign ev_vs_out = vr.tvalid && vr.tready && vr.tuser;          // corrected frame starts coming out
+  axil_if #(.ADDR_W(8)) u_vision_s_axil ();
+  assign u_vision_s_axil.awaddr = b.awaddr[7:0];
+  assign u_vision_s_axil.awvalid = b.awvalid[S_VS];
+  assign b.awready[S_VS] = u_vision_s_axil.awready;
+  assign u_vision_s_axil.wdata = b.wdata;
+  assign u_vision_s_axil.wstrb = b.wstrb;
+  assign u_vision_s_axil.wvalid = b.wvalid[S_VS];
+  assign b.wready[S_VS] = u_vision_s_axil.wready;
+  assign b.bresp[S_VS*2 +: 2] = u_vision_s_axil.bresp;
+  assign b.bvalid[S_VS] = u_vision_s_axil.bvalid;
+  assign u_vision_s_axil.bready = b.bready[S_VS];
+  assign u_vision_s_axil.araddr = b.araddr[7:0];
+  assign u_vision_s_axil.arvalid = b.arvalid[S_VS];
+  assign b.arready[S_VS] = u_vision_s_axil.arready;
+  assign b.rdata[S_VS*32 +: 32] = u_vision_s_axil.rdata;
+  assign b.rresp[S_VS*2 +: 2] = u_vision_s_axil.rresp;
+  assign b.rvalid[S_VS] = u_vision_s_axil.rvalid;
+  assign u_vision_s_axil.rready = b.rready[S_VS];
   vision_system #(
     .ADDR_W(VS_ADDR_W),
     .USE_EXT_FB(VS_USE_EXT_FB)
   ) u_vision (
     .clk(pix_clk),
     .rst_n(pix_rst_n),
-    .s_axis_tvalid(va_v),
-    .s_axis_tready(va_r),
-    .s_axis_tdata(va_d),
-    .s_axis_tlast(va_l),
-    .s_axis_tuser(va_u),
-    .m_axis_tvalid(vr_v),
-    .m_axis_tready(vr_r),
-    .m_axis_tdata(vr_d),
-    .m_axis_tlast(vr_l),
-    .m_axis_tuser(vr_u),
-    .s_axil_awaddr(b_awaddr[7:0]),
-    .s_axil_awvalid(b_awvalid[S_VS]),
-    .s_axil_awready(b_awready[S_VS]),
-    .s_axil_wdata(b_wdata),
-    .s_axil_wstrb(b_wstrb),
-    .s_axil_wvalid(b_wvalid[S_VS]),
-    .s_axil_wready(b_wready[S_VS]),
-    .s_axil_bresp(b_bresp[S_VS*2 +: 2]),
-    .s_axil_bvalid(b_bvalid[S_VS]),
-    .s_axil_bready(b_bready[S_VS]),
-    .s_axil_araddr(b_araddr[7:0]),
-    .s_axil_arvalid(b_arvalid[S_VS]),
-    .s_axil_arready(b_arready[S_VS]),
-    .s_axil_rdata(b_rdata[S_VS*32 +: 32]),
-    .s_axil_rresp(b_rresp[S_VS*2 +: 2]),
-    .s_axil_rvalid(b_rvalid[S_VS]),
-    .s_axil_rready(b_rready[S_VS]),
+    .s_axis(va),
+    .m_axis(vr),
+    .s_axil(u_vision_s_axil),
     .sdram_clk,
     .sdram_cke,
     .sdram_cs_n,
@@ -878,34 +804,49 @@ module video_processor #(
 `elsif VP_INSERT
   assign ev_vs_in = 1'b0;
   assign ev_vs_out = 1'b0;
-  assign vo_d = im_d;
-  assign vo_l = im_l;
-  assign vo_u = im_u;
-  assign vo_v = im_v;
-  assign im_r = vo_r;
+  assign vo.tdata = im_d;
+  assign vo.tlast = im.tlast;
+  assign vo.tuser = im.tuser;
+  assign vo.tvalid = im.tvalid;
+  assign im.tready = vo.tready;
 `endif
 
   // ================================================================ blur_sharpen after vision_system
 `ifdef VP_INSERT
-  logic [23:0] fo_d; // after blur_sharpen (or straight from vision_system)
-  logic fo_l, fo_u, fo_v, fo_r;
+  axis_if #(.DATA_W(24), .USER_W(1)) fo ();
 `endif
 `ifdef VP_FILTER
-  blur_sharpen_top #(.N(FILT_N), .C(3), .CW(8), .MAX_W(MAX_W)) u_filter (.clk(pix_clk), .rst_n(pix_rst_n),
-    .s_axil_awaddr(b_awaddr[8:0]), .s_axil_awvalid(b_awvalid[S_FLT]), .s_axil_awready(b_awready[S_FLT]),
-    .s_axil_wdata(b_wdata), .s_axil_wstrb(b_wstrb), .s_axil_wvalid(b_wvalid[S_FLT]), .s_axil_wready(b_wready[S_FLT]),
-    .s_axil_bresp(b_bresp[S_FLT*2 +: 2]), .s_axil_bvalid(b_bvalid[S_FLT]), .s_axil_bready(b_bready[S_FLT]),
-    .s_axil_araddr(b_araddr[8:0]), .s_axil_arvalid(b_arvalid[S_FLT]), .s_axil_arready(b_arready[S_FLT]),
-    .s_axil_rdata(b_rdata[S_FLT*32 +: 32]), .s_axil_rresp(b_rresp[S_FLT*2 +: 2]), .s_axil_rvalid(b_rvalid[S_FLT]),
-    .s_axil_rready(b_rready[S_FLT]),
-    .s_axis_tdata(vo_d), .s_axis_tlast(vo_l), .s_axis_tuser(vo_u), .s_axis_tvalid(vo_v), .s_axis_tready(vo_r),
-    .m_axis_tdata(fo_d), .m_axis_tlast(fo_l), .m_axis_tuser(fo_u), .m_axis_tvalid(fo_v), .m_axis_tready(fo_r));
+  axil_if #(.ADDR_W(9)) u_filter_s_axil ();
+  assign u_filter_s_axil.awaddr = b.awaddr[8:0];
+  assign u_filter_s_axil.awvalid = b.awvalid[S_FLT];
+  assign b.awready[S_FLT] = u_filter_s_axil.awready;
+  assign u_filter_s_axil.wdata = b.wdata;
+  assign u_filter_s_axil.wstrb = b.wstrb;
+  assign u_filter_s_axil.wvalid = b.wvalid[S_FLT];
+  assign b.wready[S_FLT] = u_filter_s_axil.wready;
+  assign b.bresp[S_FLT*2 +: 2] = u_filter_s_axil.bresp;
+  assign b.bvalid[S_FLT] = u_filter_s_axil.bvalid;
+  assign u_filter_s_axil.bready = b.bready[S_FLT];
+  assign u_filter_s_axil.araddr = b.araddr[8:0];
+  assign u_filter_s_axil.arvalid = b.arvalid[S_FLT];
+  assign b.arready[S_FLT] = u_filter_s_axil.arready;
+  assign b.rdata[S_FLT*32 +: 32] = u_filter_s_axil.rdata;
+  assign b.rresp[S_FLT*2 +: 2] = u_filter_s_axil.rresp;
+  assign b.rvalid[S_FLT] = u_filter_s_axil.rvalid;
+  assign u_filter_s_axil.rready = b.rready[S_FLT];
+  blur_sharpen_top #(.N(FILT_N), .C(3), .CW(8), .MAX_W(MAX_W)) u_filter (
+    .clk(pix_clk),
+    .rst_n(pix_rst_n),
+    .s_axil(u_filter_s_axil),
+    .s_axis(vo),
+    .m_axis(fo)
+    );
 `elsif VP_INSERT
-  assign fo_d = vo_d;
-  assign fo_l = vo_l;
-  assign fo_u = vo_u;
-  assign fo_v = vo_v;
-  assign vo_r = fo_r;
+  assign fo.tdata = vo.tdata;
+  assign fo.tlast = vo.tlast;
+  assign fo.tuser = vo.tuser;
+  assign fo.tvalid = vo.tvalid;
+  assign vo.tready = fo.tready;
 `endif
 
   // ================================================================ target tracking and symbol overlay
@@ -920,6 +861,24 @@ module video_processor #(
   // edge and motion features of every pixel, computed once for all the detectors (passive tap on the
   // same stream; the bits belong to the beat they come with)
   logic [1:0] feat;
+  axil_if #(.ADDR_W(8)) u_feat_s_axil ();
+  assign u_feat_s_axil.awaddr = b.awaddr[7:0];
+  assign u_feat_s_axil.awvalid = b.awvalid[S_FEAT];
+  assign b.awready[S_FEAT] = u_feat_s_axil.awready;
+  assign u_feat_s_axil.wdata = b.wdata;
+  assign u_feat_s_axil.wstrb = b.wstrb;
+  assign u_feat_s_axil.wvalid = b.wvalid[S_FEAT];
+  assign b.wready[S_FEAT] = u_feat_s_axil.wready;
+  assign b.bresp[S_FEAT*2 +: 2] = u_feat_s_axil.bresp;
+  assign b.bvalid[S_FEAT] = u_feat_s_axil.bvalid;
+  assign u_feat_s_axil.bready = b.bready[S_FEAT];
+  assign u_feat_s_axil.araddr = b.araddr[7:0];
+  assign u_feat_s_axil.arvalid = b.arvalid[S_FEAT];
+  assign b.arready[S_FEAT] = u_feat_s_axil.arready;
+  assign b.rdata[S_FEAT*32 +: 32] = u_feat_s_axil.rdata;
+  assign b.rresp[S_FEAT*2 +: 2] = u_feat_s_axil.rresp;
+  assign b.rvalid[S_FEAT] = u_feat_s_axil.rvalid;
+  assign u_feat_s_axil.rready = b.rready[S_FEAT];
   feature_detect_top #(
     .MAXW(MAX_W),
     .MAXH(FEAT_MAX_H),
@@ -927,59 +886,37 @@ module video_processor #(
   ) u_feat (
     .clk(pix_clk),
     .rst_n(pix_rst_n),
-    .s_axis_tdata(fo_d),
-    .s_axis_tlast(fo_l),
-    .s_axis_tuser(fo_u),
-    .s_axis_tvalid(fo_v),
-    .s_axis_tready(fo_r),
+    .s_axis(fo),
     .feat_o(feat),
     .done_o(),
-    .s_axil_awaddr(b_awaddr[7:0]),
-    .s_axil_awvalid(b_awvalid[S_FEAT]),
-    .s_axil_awready(b_awready[S_FEAT]),
-    .s_axil_wdata(b_wdata),
-    .s_axil_wstrb(b_wstrb),
-    .s_axil_wvalid(b_wvalid[S_FEAT]),
-    .s_axil_wready(b_wready[S_FEAT]),
-    .s_axil_bresp(b_bresp[S_FEAT*2 +: 2]),
-    .s_axil_bvalid(b_bvalid[S_FEAT]),
-    .s_axil_bready(b_bready[S_FEAT]),
-    .s_axil_araddr(b_araddr[7:0]),
-    .s_axil_arvalid(b_arvalid[S_FEAT]),
-    .s_axil_arready(b_arready[S_FEAT]),
-    .s_axil_rdata(b_rdata[S_FEAT*32 +: 32]),
-    .s_axil_rresp(b_rresp[S_FEAT*2 +: 2]),
-    .s_axil_rvalid(b_rvalid[S_FEAT]),
-    .s_axil_rready(b_rready[S_FEAT])
+    .s_axil(u_feat_s_axil)
   );
   for (genvar c = 0; c < NTRK; c++) begin : g_trk
+    axil_if #(.ADDR_W(9)) u_track_s_axil ();
+    assign u_track_s_axil.awaddr = b.awaddr[8:0];
+    assign u_track_s_axil.awvalid = b.awvalid[S_TRK + c];
+    assign b.awready[S_TRK + c] = u_track_s_axil.awready;
+    assign u_track_s_axil.wdata = b.wdata;
+    assign u_track_s_axil.wstrb = b.wstrb;
+    assign u_track_s_axil.wvalid = b.wvalid[S_TRK + c];
+    assign b.wready[S_TRK + c] = u_track_s_axil.wready;
+    assign b.bresp[(S_TRK + c)*2 +: 2] = u_track_s_axil.bresp;
+    assign b.bvalid[S_TRK + c] = u_track_s_axil.bvalid;
+    assign u_track_s_axil.bready = b.bready[S_TRK + c];
+    assign u_track_s_axil.araddr = b.araddr[8:0];
+    assign u_track_s_axil.arvalid = b.arvalid[S_TRK + c];
+    assign b.arready[S_TRK + c] = u_track_s_axil.arready;
+    assign b.rdata[(S_TRK + c)*32 +: 32] = u_track_s_axil.rdata;
+    assign b.rresp[(S_TRK + c)*2 +: 2] = u_track_s_axil.rresp;
+    assign b.rvalid[S_TRK + c] = u_track_s_axil.rvalid;
+    assign u_track_s_axil.rready = b.rready[S_TRK + c];
     object_tracker_top u_track (
       .clk(pix_clk),
       .rst_n(pix_rst_n),
       .feat_i(feat),
-      .s_axis_tdata(fo_d),
-      .s_axis_tlast(fo_l),
-      .s_axis_tuser(fo_u),
-      .s_axis_tvalid(fo_v),
-      .s_axis_tready(fo_r),
+      .s_axis(fo),
       .done_o(trk_done[c]),
-      .s_axil_awaddr(b_awaddr[8:0]),
-      .s_axil_awvalid(b_awvalid[S_TRK + c]),
-      .s_axil_awready(b_awready[S_TRK + c]),
-      .s_axil_wdata(b_wdata),
-      .s_axil_wstrb(b_wstrb),
-      .s_axil_wvalid(b_wvalid[S_TRK + c]),
-      .s_axil_wready(b_wready[S_TRK + c]),
-      .s_axil_bresp(b_bresp[(S_TRK + c)*2 +: 2]),
-      .s_axil_bvalid(b_bvalid[S_TRK + c]),
-      .s_axil_bready(b_bready[S_TRK + c]),
-      .s_axil_araddr(b_araddr[8:0]),
-      .s_axil_arvalid(b_arvalid[S_TRK + c]),
-      .s_axil_arready(b_arready[S_TRK + c]),
-      .s_axil_rdata(b_rdata[(S_TRK + c)*32 +: 32]),
-      .s_axil_rresp(b_rresp[(S_TRK + c)*2 +: 2]),
-      .s_axil_rvalid(b_rvalid[S_TRK + c]),
-      .s_axil_rready(b_rready[S_TRK + c])
+      .s_axil(u_track_s_axil)
     );
   end
   symbol_overlay_top #(
@@ -988,48 +925,53 @@ module video_processor #(
   ) u_overlay (
     .clk(pix_clk),
     .rst_n(pix_rst_n),
-    .s_axis_tdata(fo_d),
-    .s_axis_tlast(fo_l),
-    .s_axis_tuser(fo_u),
-    .s_axis_tvalid(fo_v),
-    .s_axis_tready(fo_r),
-    .m_axis_tdata(ir_d),
-    .m_axis_tlast(ir_l),
-    .m_axis_tuser(ir_u),
-    .m_axis_tvalid(ir_v),
-    .m_axis_tready(ir_r),
-    .s_axil_awaddr(b_awaddr[9:0]),
-    .s_axil_awvalid(b_awvalid[S_OVL]),
-    .s_axil_awready(b_awready[S_OVL]),
-    .s_axil_wdata(b_wdata),
-    .s_axil_wstrb(b_wstrb),
-    .s_axil_wvalid(b_wvalid[S_OVL]),
-    .s_axil_wready(b_wready[S_OVL]),
-    .s_axil_bresp(b_bresp[S_OVL*2 +: 2]),
-    .s_axil_bvalid(b_bvalid[S_OVL]),
-    .s_axil_bready(b_bready[S_OVL]),
-    .s_axil_araddr(b_araddr[9:0]),
-    .s_axil_arvalid(b_arvalid[S_OVL]),
-    .s_axil_arready(b_arready[S_OVL]),
-    .s_axil_rdata(b_rdata[S_OVL*32 +: 32]),
-    .s_axil_rresp(b_rresp[S_OVL*2 +: 2]),
-    .s_axil_rvalid(b_rvalid[S_OVL]),
-    .s_axil_rready(b_rready[S_OVL])
+    .s_axis_tdata(fo.tdata),
+    .s_axis_tlast(fo.tlast),
+    .s_axis_tuser(fo.tuser),
+    .s_axis_tvalid(fo.tvalid),
+    .s_axis_tready(fo.tready),
+    .m_axis_tdata(ir.tdata),
+    .m_axis_tlast(ir.tlast),
+    .m_axis_tuser(ir.tuser),
+    .m_axis_tvalid(ir.tvalid),
+    .m_axis_tready(ir.tready),
+    .s_axil_awaddr(b.awaddr[9:0]),
+    .s_axil_awvalid(b.awvalid[S_OVL]),
+    .s_axil_awready(b.awready[S_OVL]),
+    .s_axil_wdata(b.wdata),
+    .s_axil_wstrb(b.wstrb),
+    .s_axil_wvalid(b.wvalid[S_OVL]),
+    .s_axil_wready(b.wready[S_OVL]),
+    .s_axil_bresp(b.bresp[S_OVL*2 +: 2]),
+    .s_axil_bvalid(b.bvalid[S_OVL]),
+    .s_axil_bready(b.bready[S_OVL]),
+    .s_axil_araddr(b.araddr[9:0]),
+    .s_axil_arvalid(b.arvalid[S_OVL]),
+    .s_axil_arready(b.arready[S_OVL]),
+    .s_axil_rdata(b.rdata[S_OVL*32 +: 32]),
+    .s_axil_rresp(b.rresp[S_OVL*2 +: 2]),
+    .s_axil_rvalid(b.rvalid[S_OVL]),
+    .s_axil_rready(b.rready[S_OVL])
   );
 `elsif VP_INSERT
   assign ev_trk = 1'b0;
-  assign ir_d = fo_d;
-  assign ir_l = fo_l;
-  assign ir_u = fo_u;
-  assign ir_v = fo_v;
-  assign fo_r = ir_r;
+  assign ir.tdata = fo.tdata;
+  assign ir.tlast = fo.tlast;
+  assign ir.tuser = fo.tuser;
+  assign ir.tvalid = fo.tvalid;
+  assign fo.tready = ir.tready;
 `endif
 
   // ================================================================ serializers
 `ifdef VP_HDMI
   tmds_serializer u_tmds_ser (
-    .pix_clk, .pix_rst_n, .tmds0_i(tmds0), .tmds1_i(tmds1), .tmds2_i(tmds2), .tmds_clk_i(tmds_clk),
-    .ser_clk(tmds_ser_clk), .ser_rst_n(tmds_ser_rst_n), .serial_o(tmds_serial_o));
+    .pix_clk,
+    .pix_rst_n,
+    .tmds(tmds),
+    .ser_clk(tmds_ser_clk),
+    .ser_rst_n(tmds_ser_rst_n),
+    .serial_o(tmds_serial_o)
+    );
 `endif
 `ifdef VP_LVDS
   lvds_serializer #(.NL(5)) u_lvds_ser_a (

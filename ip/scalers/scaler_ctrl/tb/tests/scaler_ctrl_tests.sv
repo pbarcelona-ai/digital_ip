@@ -17,19 +17,19 @@
   task automatic beat(logic [PIX_W-1:0] d, bit u, bit l);
     @(negedge clk);
     while ($urandom_range(3, 0) == 0) begin
-      s_tvalid = 0;
+      s.tvalid = 0;
       @(negedge clk);
     end
-    s_tvalid = 1;
-    s_tdata = d;
-    s_tuser = u;
-    s_tlast = l;
+    s.tvalid = 1;
+    s.tdata = d;
+    s.tuser = u;
+    s.tlast = l;
     do @(posedge clk);
-    while (!s_tready);
+    while (!s.tready);
     @(negedge clk);
-    s_tvalid = 0;
-    s_tuser = 0;
-    s_tlast = 0;
+    s.tvalid = 0;
+    s.tuser = 0;
+    s.tlast = 0;
   endtask
 
   // Send an input frame (optionally junk first, a restarted partial
@@ -153,7 +153,7 @@
     stall = 0;
     repeat (40) begin
       @(posedge clk);
-      if (s_tvalid && !s_tready) stall++;
+      if (s.tvalid && !s.tready) stall++;
     end
     checks++;
     if (stall < 30) begin

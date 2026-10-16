@@ -110,6 +110,8 @@ diagram:
 	dot -Tsvg docs/clock_diagram.dot -o docs/clock_diagram.svg
 	dot -Tpng -Gdpi=100 docs/clock_diagram.dot -o docs/clock_diagram.png
 	dot -Tsvg docs/reset_diagram.dot -o docs/reset_diagram.svg
+	dot -Tsvg docs/software_flow.dot -o docs/software_flow.svg
+	dot -Tpng -Gdpi=100 docs/software_flow.dot -o docs/software_flow.png
 	dot -Tpng -Gdpi=100 docs/reset_diagram.dot -o docs/reset_diagram.png
 	dot -Tsvg docs/tracking_diagram.dot -o docs/tracking_diagram.svg
 	dot -Tpng -Gdpi=110 docs/tracking_diagram.dot -o docs/tracking_diagram.png

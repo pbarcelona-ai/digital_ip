@@ -9,7 +9,7 @@
 //   OKAY responses, R data stable while rready is low.
 //   Plusargs: +VCD=<file> waveform file, +NO_VCD disables dumping.
 //   The test tasks are in tests/axil_regbus_tests.sv (`included).
-// Date: 2026-09-26
+// Date: 2026-10-16
 
 `timescale 1ns/1ps
 module tb_axil_regbus;
@@ -21,88 +21,73 @@ module tb_axil_regbus;
   int   errors = 0, checks = 0;           // result counters
 
   // AXI4-Lite master side (driven by the tasks below)
-  logic [ADDR_W-1:0] awaddr = '0, araddr = '0;
-  logic awvalid = 0, wvalid = 0, bready = 0, arvalid = 0, rready = 0;
-  logic [31:0] wdata = '0;
-  logic [3:0] wstrb = '0;
-  wire awready, wready, bvalid, arready, rvalid;
-  wire [1:0] bresp, rresp;
-  wire [31:0] rdata;
+  axil_if #(.ADDR_W(ADDR_W), .DATA_W(32)) s_axil ();
+  initial s_axil.awaddr = '0;
+  initial s_axil.awvalid = 0;
+  initial s_axil.wdata = '0;
+  initial s_axil.wstrb = '0;
+  initial s_axil.wvalid = 0;
+  initial s_axil.bready = 0;
+  initial s_axil.araddr = '0;
+  initial s_axil.arvalid = 0;
+  initial s_axil.rready = 0;
 
   // register bus side
-  logic              reg_wr, reg_rd;
-  logic [ADDR_W-1:0] reg_waddr, reg_raddr;
-  logic [31:0]       reg_wdata, reg_rdata;
-  logic [3:0]        reg_wstrb;
+  regbus_if #(.ADDR_W(ADDR_W), .DATA_W(32)) reg_bus ();
 
   // Device under test
   axil_regbus #(.ADDR_W(ADDR_W)) dut (
     .clk,
     .rst_n,
-    .s_axil_awaddr(awaddr),
-    .s_axil_awvalid(awvalid),
-    .s_axil_awready(awready),
-    .s_axil_wdata(wdata),
-    .s_axil_wstrb(wstrb),
-    .s_axil_wvalid(wvalid),
-    .s_axil_wready(wready),
-    .s_axil_bresp(bresp),
-    .s_axil_bvalid(bvalid),
-    .s_axil_bready(bready),
-    .s_axil_araddr(araddr),
-    .s_axil_arvalid(arvalid),
-    .s_axil_arready(arready),
-    .s_axil_rdata(rdata),
-    .s_axil_rresp(rresp),
-    .s_axil_rvalid(rvalid),
-    .s_axil_rready(rready),
-    .reg_wr,
-    .reg_waddr,
-    .reg_wdata,
-    .reg_wstrb,
-    .reg_rd,
-    .reg_raddr,
-    .reg_rdata
+    .s_axil(s_axil),
+    .bus(reg_bus)
   );
 
   // AXI4-Lite protocol checker + coverage on the DUT port
   axil_checker #(
     .ADDR_W(ADDR_W),
-    .NAME("s_axil")
+    .NAME("s_axil"),
+    .EXPECT_OKAY(0)                         // ERR_WORD answers SLVERR (checked by the tests)
   ) u_axil_chk (
     .clk,
     .rst_n,
-    .awaddr,
-    .awvalid,
-    .awready,
-    .wdata,
-    .wstrb,
-    .wvalid,
-    .wready,
-    .bresp,
-    .bvalid,
-    .bready,
-    .araddr,
-    .arvalid,
-    .arready,
-    .rdata,
-    .rresp,
-    .rvalid,
-    .rready
+    .awaddr(s_axil.awaddr),
+    .awvalid(s_axil.awvalid),
+    .awready(s_axil.awready),
+    .wdata(s_axil.wdata),
+    .wstrb(s_axil.wstrb),
+    .wvalid(s_axil.wvalid),
+    .wready(s_axil.wready),
+    .bresp(s_axil.bresp),
+    .bvalid(s_axil.bvalid),
+    .bready(s_axil.bready),
+    .araddr(s_axil.araddr),
+    .arvalid(s_axil.arvalid),
+    .arready(s_axil.arready),
+    .rdata(s_axil.rdata),
+    .rresp(s_axil.rresp),
+    .rvalid(s_axil.rvalid),
+    .rready(s_axil.rready)
   );
 
-  // register file on the simple bus (registered read, as required)
+  // register file on the simple bus (registered read, as required); word
+  // ERR_WORD is an error word: writes are refused (SLVERR) and reads answer
+  // SLVERR, so both error inputs are exercised
+  localparam int ERR_WORD = 63;
   logic [31:0] rf [64];
   int n_wr = 0, n_rd = 0;
   always_ff @(posedge clk) begin
-    if (reg_wr) begin
+    reg_bus.wr_err <= reg_bus.wr && (reg_bus.waddr[7:2] == 6'(ERR_WORD));
+    if (reg_bus.wr) begin
       n_wr++;
-      for (int b = 0; b < 4; b++)
-        if (reg_wstrb[b]) rf[reg_waddr[7:2]][b*8 +: 8] <= reg_wdata[b*8 +: 8];
+      if (reg_bus.waddr[7:2] != 6'(ERR_WORD))
+        for (int b = 0; b < 4; b++)
+          if (reg_bus.wstrb[b]) rf[reg_bus.waddr[7:2]][b*8 +: 8] <= reg_bus.wdata[b*8 +: 8];
     end
-    if (reg_rd) begin
+    if (reg_bus.rd) begin
       n_rd++;
-      reg_rdata <= rf[reg_raddr[7:2]];
+      reg_bus.rdata <= rf[reg_bus.raddr[7:2]];
+      reg_bus.rd_err <= (reg_bus.raddr[7:2] == 6'(ERR_WORD));
     end
   end
 

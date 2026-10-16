@@ -24,27 +24,12 @@ module ip_axil_regs #(
   input  logic                 aclk,
   input  logic                 aresetn,
   // Write address channel
-  input  logic [ADDR_W-1:0]    s_axil_awaddr,
-  input  logic                 s_axil_awvalid,
-  output logic                 s_axil_awready,
+  // s_axil: axil_if.slave (ip/shared/src/interfaces/axil_if.sv), ADDR_W = ADDR_W
+  axil_if.slave s_axil,
   // Write data channel
-  input  logic [31:0]          s_axil_wdata,
-  input  logic [3:0]           s_axil_wstrb,
-  input  logic                 s_axil_wvalid,
-  output logic                 s_axil_wready,
   // Write response channel
-  output logic [1:0]           s_axil_bresp,
-  output logic                 s_axil_bvalid,
-  input  logic                 s_axil_bready,
   // Read address channel
-  input  logic [ADDR_W-1:0]    s_axil_araddr,
-  input  logic                 s_axil_arvalid,
-  output logic                 s_axil_arready,
   // Read data channel
-  output logic [31:0]          s_axil_rdata,
-  output logic [1:0]           s_axil_rresp,
-  output logic                 s_axil_rvalid,
-  input  logic                 s_axil_rready,
   // Register interface to the IP core
   output logic [NREG*32-1:0]   reg_o,       // stored register values
   output logic [NREG-1:0]      wr_pulse_o,  // one-cycle pulse per write
@@ -63,12 +48,12 @@ module ip_axil_regs #(
   logic ip_chk_b_q, ip_chk_r_q;
   always @(posedge aclk) begin
     if (aresetn) begin
-      ip_chk_b_q <= s_axil_bvalid & ~s_axil_bready;
-      ip_chk_r_q <= s_axil_rvalid & ~s_axil_rready;
-      assert (s_axil_bresp == 2'b00 || s_axil_bresp == 2'b10) else $error("%m: reserved BRESP value");
-      assert (s_axil_rresp == 2'b00 || s_axil_rresp == 2'b10) else $error("%m: reserved RRESP value");
-      if (ip_chk_b_q) assert (s_axil_bvalid) else $error("%m: BVALID dropped before BREADY");
-      if (ip_chk_r_q) assert (s_axil_rvalid) else $error("%m: RVALID dropped before RREADY");
+      ip_chk_b_q <= s_axil.bvalid & ~s_axil.bready;
+      ip_chk_r_q <= s_axil.rvalid & ~s_axil.rready;
+      assert (s_axil.bresp == 2'b00 || s_axil.bresp == 2'b10) else $error("%m: reserved BRESP value");
+      assert (s_axil.rresp == 2'b00 || s_axil.rresp == 2'b10) else $error("%m: reserved RRESP value");
+      if (ip_chk_b_q) assert (s_axil.bvalid) else $error("%m: BVALID dropped before BREADY");
+      if (ip_chk_r_q) assert (s_axil.rvalid) else $error("%m: RVALID dropped before RREADY");
     end else begin
       ip_chk_b_q <= 1'b0;
       ip_chk_r_q <= 1'b0;
@@ -85,18 +70,18 @@ module ip_axil_regs #(
   // Word index of the captured write address
   wire [ADDR_W-3:0] widx  = awaddr_q[ADDR_W-1:2];
   wire              wrng  = (32'(widx) < NREG);
-  wire              do_wr = aw_seen & w_seen & ~s_axil_bvalid;
+  wire              do_wr = aw_seen & w_seen & ~s_axil.bvalid;
 
   // Accept each write channel independently, one outstanding write
-  assign s_axil_awready = ~aw_seen & ~s_axil_bvalid;
-  assign s_axil_wready  = ~w_seen  & ~s_axil_bvalid;
+  assign s_axil.awready = ~aw_seen & ~s_axil.bvalid;
+  assign s_axil.wready  = ~w_seen  & ~s_axil.bvalid;
 
   always_ff @(posedge aclk) begin
     if (!aresetn) begin
       aw_seen       <= 1'b0;
       w_seen        <= 1'b0;
-      s_axil_bvalid <= 1'b0;
-      s_axil_bresp  <= 2'b00;
+      s_axil.bvalid <= 1'b0;
+      s_axil.bresp  <= 2'b00;
       reg_o         <= RESET_VALS;
       wr_pulse_o    <= '0;
       wr_data_o     <= '0;
@@ -105,20 +90,20 @@ module ip_axil_regs #(
       wstrb_q       <= '0;
     end else begin
       wr_pulse_o <= '0;                       // default: no write pulse
-      if (s_axil_awvalid & s_axil_awready) begin
+      if (s_axil.awvalid & s_axil.awready) begin
         aw_seen  <= 1'b1;
-        awaddr_q <= s_axil_awaddr;
+        awaddr_q <= s_axil.awaddr;
       end
-      if (s_axil_wvalid & s_axil_wready) begin
+      if (s_axil.wvalid & s_axil.wready) begin
         w_seen  <= 1'b1;
-        wdata_q <= s_axil_wdata;
-        wstrb_q <= s_axil_wstrb;
+        wdata_q <= s_axil.wdata;
+        wstrb_q <= s_axil.wstrb;
       end
       if (do_wr) begin                        // both channels present
         aw_seen       <= 1'b0;
         w_seen        <= 1'b0;
-        s_axil_bvalid <= 1'b1;
-        s_axil_bresp  <= wrng ? 2'b00 : 2'b10;
+        s_axil.bvalid <= 1'b1;
+        s_axil.bresp  <= wrng ? 2'b00 : 2'b10;
         wr_data_o     <= wdata_q;
         // Constant-index loop keeps the decode shallow (no barrel shifter)
         for (int r = 0; r < NREG; r++) begin
@@ -129,33 +114,33 @@ module ip_axil_regs #(
           end
         end
       end
-      if (s_axil_bvalid & s_axil_bready) s_axil_bvalid <= 1'b0;
+      if (s_axil.bvalid & s_axil.bready) s_axil.bvalid <= 1'b0;
     end
   end
 
   // Read channel: register the selected word (one cycle of pipeline)
-  wire [ADDR_W-3:0] ridx = s_axil_araddr[ADDR_W-1:2];
+  wire [ADDR_W-3:0] ridx = s_axil.araddr[ADDR_W-1:2];
   wire              rrng = (32'(ridx) < NREG);
-  assign s_axil_arready = ~s_axil_rvalid;
+  assign s_axil.arready = ~s_axil.rvalid;
 
   always_ff @(posedge aclk) begin
     if (!aresetn) begin
-      s_axil_rvalid <= 1'b0;
-      s_axil_rdata  <= '0;
-      s_axil_rresp  <= 2'b00;
+      s_axil.rvalid <= 1'b0;
+      s_axil.rdata  <= '0;
+      s_axil.rresp  <= 2'b00;
     end else begin
-      if (s_axil_arvalid & s_axil_arready) begin
-        s_axil_rvalid <= 1'b1;
-        s_axil_rdata  <= 32'hDEAD_BEEF;       // default: out of range
-        s_axil_rresp  <= 2'b10;
+      if (s_axil.arvalid & s_axil.arready) begin
+        s_axil.rvalid <= 1'b1;
+        s_axil.rdata  <= 32'hDEAD_BEEF;       // default: out of range
+        s_axil.rresp  <= 2'b10;
         for (int r = 0; r < NREG; r++) begin
           if (ridx == (ADDR_W-2)'(r)) begin
-            s_axil_rdata <= rd_i[r*32 +: 32];
-            s_axil_rresp <= 2'b00;
+            s_axil.rdata <= rd_i[r*32 +: 32];
+            s_axil.rresp <= 2'b00;
           end
         end
-      end else if (s_axil_rvalid & s_axil_rready) begin
-        s_axil_rvalid <= 1'b0;
+      end else if (s_axil.rvalid & s_axil.rready) begin
+        s_axil.rvalid <= 1'b0;
       end
     end
   end

@@ -30,30 +30,22 @@ module csi2_rx_tb;
 
   for (genvar g = 0; g < NCFG; g++) begin : g_rx
     localparam int NL = (g == 0) ? 1 : (g == 1) ? 2 : 4;
-    logic [NL*8-1:0] ld;
-    logic [NL-1:0] lv;
-    logic [NL*8-1:0] td;
-    logic [NL-1:0] tk;
-    logic tl, tu, tv;
+    ppi_rx_if #(.NLANES(NL)) ppi ();
+    axis_if #(.DATA_W(NL*8), .USER_W(1), .KEEP_W(NL)) m_axis ();
+    assign m_axis.tready = 1'b1;
     logic fs, fe, ln, ec, ee, ce, ov;
     csi2_bfm #(.NL(NL)) drv (
       .clk,
-      .lane_data(ld),
-      .lane_valid(lv)
+      .lane_data(ppi.lane_data),
+      .lane_valid(ppi.lane_valid)
     );
     csi2_rx #(.NLANES(NL)) dut (
       .clk,
       .rst_n,
-      .lane_data_i(ld),
-      .lane_valid_i(lv),
+      .ppi(ppi),
       .vc_i(2'd0),
       .dt_i(6'h2B),
-      .m_axis_tdata(td),
-      .m_axis_tkeep(tk),
-      .m_axis_tlast(tl),
-      .m_axis_tuser(tu),
-      .m_axis_tvalid(tv),
-      .m_axis_tready(1'b1),
+      .m_axis(m_axis),
       .frame_start_o(fs),
       .frame_end_o(fe),
       .line_o(ln),
@@ -73,20 +65,20 @@ module csi2_rx_tb;
       cnt_err[g] += ee;
       cnt_crc[g] += ce;
       cnt_ovf[g] += ov;
-      if (tv) begin
+      if (m_axis.tvalid) begin
         if (first_word) begin
-          cur_sof = tu;
+          cur_sof = m_axis.tuser;
           first_word = 0;
         end
-        else check(!tu, $sformatf("%0d lanes: tuser after the first word of a line", NL));
+        else check(!m_axis.tuser, $sformatf("%0d lanes: tuser after the first word of a line", NL));
         for (int i = 0; i < NL; i++) begin
-          if (tk[i]) begin
-            cur[ncur] = td[8*i +: 8];
+          if (m_axis.tkeep[i]) begin
+            cur[ncur] = m_axis.tdata[8*i +: 8];
             ncur++;
           end
-          if (i > 0) check(!(tk[i] && !tk[i-1]), $sformatf("%0d lanes: tkeep not contiguous", NL));
+          if (i > 0) check(!(m_axis.tkeep[i] && !m_axis.tkeep[i-1]), $sformatf("%0d lanes: tkeep not contiguous", NL));
         end
-        if (tl) begin
+        if (m_axis.tlast) begin
           if (exp_rd[g] == exp_wr[g]) check(0, $sformatf("%0d lanes: unexpected line", NL));
           else begin
             int e;

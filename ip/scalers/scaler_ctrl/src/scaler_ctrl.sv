@@ -49,8 +49,14 @@
 //                     offsets its own decoder uses), so the ID block
 //                     does not move its registers internally
 //     0x100+          forwarded to the IP unchanged (coefficient tables)
-//   Writes to the ID block are ignored (the bus always answers OKAY).
-// Date: 2026-10-12
+//   Responses: SLVERR for writes to the ID block (0x000-0x00F) and to the
+//   read-only words 0x030-0x03F, and for any access to the unmapped words
+//   0x040-0x04F (0x00C reads 0, OKAY); the access has no effect. With
+//   EXT_WORDS >= 0 the IP has EXT_WORDS registers at 0x050 and up: accesses
+//   beyond them (0x050 + 4 * EXT_WORDS and up, including 0x100+) answer
+//   SLVERR and are not forwarded. EXT_WORDS = -1 (default) forwards the
+//   whole range and always answers OKAY there (the IP decodes it).
+// Date: 2026-10-16
 
 module scaler_ctrl #(
   parameter int          PIX_W   = 24,     // pixel width in bits
@@ -65,40 +71,20 @@ module scaler_ctrl #(
   parameter int          LB_ROWS = 0,      // > 0: line-buffer mode, ring size
   parameter int          LB_TAPS = 1,      // line-buffer mode: vertical taps
   parameter int          LB_CTR  = 0,      //   window top = int(y) - LB_CTR
-  parameter int          LB_RND  = 0       //   rounding added to y (16.16)
+  parameter int          LB_RND  = 0,      //   rounding added to y (16.16)
+  parameter int          EXT_WORDS = -1    // IP registers at 0x050+ (-1: the IP decodes its own range)
 )(
   input  logic               clk,         // clock
-  input  logic               rst_n,       // async reset, active low
+  input  logic               rst_n,       // synchronous reset, active low
   // AXI4-Lite slave
-  input  logic [ADDR_W-1:0]  s_axil_awaddr,
-  input  logic               s_axil_awvalid,
-  output logic               s_axil_awready,
-  input  logic [31:0]        s_axil_wdata,
-  input  logic [3:0]         s_axil_wstrb,
-  input  logic               s_axil_wvalid,
-  output logic               s_axil_wready,
-  output logic [1:0]         s_axil_bresp,
-  output logic               s_axil_bvalid,
-  input  logic               s_axil_bready,
-  input  logic [ADDR_W-1:0]  s_axil_araddr,
-  input  logic               s_axil_arvalid,
-  output logic               s_axil_arready,
-  output logic [31:0]        s_axil_rdata,
-  output logic [1:0]         s_axil_rresp,
-  output logic               s_axil_rvalid,
-  input  logic               s_axil_rready,
+  // s_axil: axil_if.slave (ip/shared/src/interfaces/axil_if.sv), ADDR_W = ADDR_W
+  axil_if.slave s_axil,
   // AXI4-Stream video input
-  input  logic [PIX_W-1:0]   s_axis_tdata,   // pixel
-  input  logic               s_axis_tvalid,
-  output logic               s_axis_tready,  // high only while capturing
-  input  logic               s_axis_tuser,   // start of frame
-  input  logic               s_axis_tlast,   // end of line
+  // s_axis: axis_if.slave (ip/shared/src/interfaces/axis_if.sv), DATA_W = PIX_W
+  axis_if.slave s_axis,
   // Frame buffer write port
-  output logic               fb_we,          // write strobe
-  output logic [15:0]        fb_wx,          // pixel column
-  output logic [15:0]        fb_wy,          // pixel row
-  output logic [PIX_W-1:0]   fb_wdata,       // pixel data
-  output logic               fb_wbuf,        // buffer written (NBUF = 2)
+  // fb: fb_wr_if.source (ip/shared/src/interfaces/fb_wr_if.sv), PIX_W = PIX_W {fb_we=en fb_wx=x fb_wy=y fb_wdata=data fb_wbuf=buf_sel}
+  fb_wr_if.source fb,
   output logic               gen_buf,        // buffer to generate from
   // Generation handshake
   output logic               gen_start,   // 1-cycle pulse, frame captured
@@ -121,21 +107,18 @@ module scaler_ctrl #(
   output logic signed [31:0] cfg_offs_x,
   output logic signed [31:0] cfg_offs_y,
   // IP-specific register bus (addresses >= 0x040)
-  output logic               ext_wr,
-  output logic [ADDR_W-1:0]  ext_waddr,
-  output logic [31:0]        ext_wdata,
-  output logic               ext_rd,
-  output logic [ADDR_W-1:0]  ext_raddr,
-  input  logic [31:0]        ext_rdata    // valid the cycle after ext_rd
+  // ext: regbus_if.host (ip/shared/src/interfaces/regbus_if.sv), ADDR_W = ADDR_W {ext_wr=wr ext_waddr=waddr ext_wdata=wdata ext_rd=rd ext_raddr=raddr ext_rdata=rdata}
+  regbus_if.host ext
 );
+  assign ext.wstrb = '1;      // not used by this block
 
   // ---------------------------------------------------------------------------
   // AXI-Lite bridge
   // ---------------------------------------------------------------------------
-  logic              bus_wr, bus_rd, reg_wr, reg_rd;
-  logic [ADDR_W-1:0] bus_waddr, bus_raddr, reg_waddr, reg_raddr;
-  logic [31:0]       reg_wdata, reg_rdata, bus_rdata;
-  logic [3:0]        reg_wstrb;
+  regbus_if #(.ADDR_W(ADDR_W), .DATA_W(32)) bus ();
+  logic              reg_wr, reg_rd;
+  logic [ADDR_W-1:0] reg_waddr, reg_raddr;
+  logic [31:0]       reg_rdata;
 
   axil_regbus #(
     .ADDR_W(ADDR_W),
@@ -143,30 +126,8 @@ module scaler_ctrl #(
   ) u_axil (
     .clk,
     .rst_n,
-    .s_axil_awaddr,
-    .s_axil_awvalid,
-    .s_axil_awready,
-    .s_axil_wdata,
-    .s_axil_wstrb,
-    .s_axil_wvalid,
-    .s_axil_wready,
-    .s_axil_bresp,
-    .s_axil_bvalid,
-    .s_axil_bready,
-    .s_axil_araddr,
-    .s_axil_arvalid,
-    .s_axil_arready,
-    .s_axil_rdata,
-    .s_axil_rresp,
-    .s_axil_rvalid,
-    .s_axil_rready,
-    .reg_wr(bus_wr),
-    .reg_waddr(bus_waddr),
-    .reg_wdata,
-    .reg_wstrb,
-    .reg_rd(bus_rd),
-    .reg_raddr(bus_raddr),
-    .reg_rdata(bus_rdata)
+    .s_axil(s_axil),
+    .bus(bus)
   );
 
   // ID block at 0x00-0x0F; the rest of the 0x000-0x0FF window is the old map moved up by 0x10:
@@ -175,19 +136,37 @@ module scaler_ctrl #(
   function automatic logic [ADDR_W-1:0] remap(input logic [ADDR_W-1:0] a);
     return (a < WIN_END) ? a - ID_END : a;
   endfunction
-  assign reg_wr    = bus_wr && (bus_waddr >= ID_END);   // the ID block is read only
-  assign reg_rd    = bus_rd && (bus_raddr >= ID_END);
-  assign reg_waddr = remap(bus_waddr);
-  assign reg_raddr = remap(bus_raddr);
+  // Address classes (internal addresses): 0x20-0x2F read only, 0x30-0x3F unmapped, 0x40+ the IP
+  localparam logic [ADDR_W-1:0] RO_BASE = ADDR_W'('h20), UNM_BASE = ADDR_W'('h30);
+  localparam logic [ADDR_W-1:0] EXT_BASE = ADDR_W'('h40);
+  function automatic logic ext_bad(input logic [ADDR_W-1:0] a);   // beyond the IP's EXT_WORDS
+    return (EXT_WORDS >= 0) && (a >= EXT_BASE) && (32'(a - EXT_BASE) >= 32'(EXT_WORDS) * 32'd4);
+  endfunction
+  wire [ADDR_W-1:0] bus_wi = remap(bus.waddr), bus_ri = remap(bus.raddr);
+  wire wr_bad = (bus.waddr < ID_END) || ((bus_wi >= RO_BASE) && (bus_wi < EXT_BASE)) || ext_bad(bus_wi);
+  wire rd_bad = (bus.raddr >= ID_END) && (((bus_ri >= UNM_BASE) && (bus_ri < EXT_BASE)) || ext_bad(bus_ri));
+  assign reg_wr    = bus.wr && !wr_bad;          // refused writes have no effect
+  assign reg_rd    = bus.rd && (bus.raddr >= ID_END);
+  assign reg_waddr = bus_wi;
+  assign reg_raddr = bus_ri;
+  always_ff @(posedge clk) begin
+    if (!rst_n) begin
+      bus.wr_err <= 1'b0;
+      bus.rd_err <= 1'b0;
+    end else begin
+      bus.wr_err <= bus.wr && wr_bad;
+      if (bus.rd) bus.rd_err <= rd_bad;
+    end
+  end
   logic        id_q;
   logic [31:0] id_rdata;
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk) begin
     if (!rst_n) begin
       id_q     <= 1'b0;
       id_rdata <= '0;
-    end else if (bus_rd) begin
-      id_q <= (bus_raddr < ID_END);
-      case (bus_raddr[3:2])
+    end else if (bus.rd) begin
+      id_q <= (bus.raddr < ID_END);
+      case (bus.raddr[3:2])
         2'd0:    id_rdata <= IP_ID;
         2'd1:    id_rdata <= IP_VERSION;
         2'd2:    id_rdata <= IP_DATE;
@@ -195,10 +174,7 @@ module scaler_ctrl #(
       endcase
     end
   end
-  assign bus_rdata = id_q ? id_rdata : reg_rdata;
-
-  // Addresses at or above EXT_BASE belong to the IP-specific registers
-  localparam logic [ADDR_W-1:0] EXT_BASE = ADDR_W'('h40);
+  assign bus.rdata = id_q ? id_rdata : reg_rdata;
 
   // ---------------------------------------------------------------------------
   // Registers
@@ -229,7 +205,7 @@ module scaler_ctrl #(
 
   // Common register writes (reset values give a 1x1 identity setup)
 
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk) begin
     if (!rst_n) begin
       enable     <= 1'b0;
       cfg_in_w   <= 16'd1;
@@ -246,25 +222,25 @@ module scaler_ctrl #(
     end else begin
       if (wr_common) begin
         case (widx)
-          6'h00: enable <= reg_wdata[0];           // CTRL
+          6'h00: enable <= bus.wdata[0];           // CTRL
           6'h01: begin                             // STATUS: W1C bits
-            if (reg_wdata[1]) st_done    <= 1'b0;
-            if (reg_wdata[2]) st_sof_err <= 1'b0;
-            if (reg_wdata[3]) st_eol_err <= 1'b0;
+            if (bus.wdata[1]) st_done    <= 1'b0;
+            if (bus.wdata[2]) st_sof_err <= 1'b0;
+            if (bus.wdata[3]) st_eol_err <= 1'b0;
           end
           // IN_SIZE / OUT_SIZE / STEP / OFFS
           6'h02: begin
-            cfg_in_w  <= reg_wdata[15:0];
-            cfg_in_h  <= reg_wdata[31:16];
+            cfg_in_w  <= bus.wdata[15:0];
+            cfg_in_h  <= bus.wdata[31:16];
           end
           6'h03: begin
-            cfg_out_w <= reg_wdata[15:0];
-            cfg_out_h <= reg_wdata[31:16];
+            cfg_out_w <= bus.wdata[15:0];
+            cfg_out_h <= bus.wdata[31:16];
           end
-          6'h04: cfg_step_x <= reg_wdata;
-          6'h05: cfg_step_y <= reg_wdata;
-          6'h06: cfg_offs_x <= reg_wdata;
-          6'h07: cfg_offs_y <= reg_wdata;
+          6'h04: cfg_step_x <= bus.wdata;
+          6'h05: cfg_step_y <= bus.wdata;
+          6'h06: cfg_offs_x <= bus.wdata;
+          6'h07: cfg_offs_y <= bus.wdata;
           default: ;
         endcase
       end
@@ -276,18 +252,18 @@ module scaler_ctrl #(
   end
 
   // External (IP-specific) register bus: pass through addresses >= 0x40
-  assign ext_wr    = reg_wr && (reg_waddr >= EXT_BASE);
-  assign ext_waddr = reg_waddr;
-  assign ext_raddr = reg_raddr;
-  assign ext_wdata = reg_wdata;
-  assign ext_rd    = reg_rd && (reg_raddr >= EXT_BASE);
+  assign ext.wr    = reg_wr && (reg_waddr >= EXT_BASE);
+  assign ext.waddr = reg_waddr;
+  assign ext.raddr = reg_raddr;
+  assign ext.wdata = bus.wdata;
+  assign ext.rd    = reg_rd && (reg_raddr >= EXT_BASE) && !ext_bad(reg_raddr);   // refused reads are not forwarded
 
   // Read mux (registered, 1-cycle latency as axil_regbus expects).
   // rd_ext_q remembers whether the read targeted the IP registers, in
   // which case the IP's own registered ext_rdata is returned instead.
   logic [31:0] common_rdata;
   logic        rd_ext_q;
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk) begin
     if (!rst_n) begin
       common_rdata <= '0;
       rd_ext_q     <= 1'b0;
@@ -312,7 +288,7 @@ module scaler_ctrl #(
       endcase
     end
   end
-  assign reg_rdata = rd_ext_q ? ext_rdata : common_rdata;
+  assign reg_rdata = rd_ext_q ? ext.rdata : common_rdata;
 
   // ---------------------------------------------------------------------------
   // Capture / sequencing FSM
@@ -346,22 +322,22 @@ module scaler_ctrl #(
 
   // Input is accepted while capturing (line-buffer mode: while the ring has
   // room); otherwise it is back-pressured.
-  assign s_axis_tready = (state == S_CAPTURE) && lb_row_ok;
+  assign s_axis.tready = (state == S_CAPTURE) && lb_row_ok;
 
   // A beat carrying tuser starts a new frame at (0,0) (line-buffer mode: only
   // the first SOF; a mid-frame SOF is flagged and otherwise ignored because
   // the generator is already consuming the frame). Beats before the first SOF
   // are dropped (accept = 0).
-  wire         restart = s_axis_tuser && (!LB || !started);
-  wire         beat    = s_axis_tvalid && s_axis_tready;
+  wire         restart = s_axis.tuser && (!LB || !started);
+  wire         beat    = s_axis.tvalid && s_axis.tready;
   wire  [15:0] px      = restart ? 16'd0 : cx;
   wire  [15:0] py      = restart ? 16'd0 : cy;
-  wire         accept  = s_axis_tuser || started;
+  wire         accept  = s_axis.tuser || started;
   wire         last_x  = (px == cfg_in_w - 16'd1);
   wire         last_px = last_x && (py == cfg_in_h - 16'd1);
   wire         gen_free = !gen_busy || gen_done;   // generator idle this cycle
 
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk) begin
     if (!rst_n) begin
       state       <= S_IDLE;
       cx          <= '0;
@@ -372,11 +348,11 @@ module scaler_ctrl #(
       gen_busy    <= 1'b0;
       rows_rcvd   <= '0;
       lb_run      <= 1'b0;
-      fb_we       <= 1'b0;
-      fb_wx       <= '0;
-      fb_wy       <= '0;
-      fb_wdata    <= '0;
-      fb_wbuf     <= 1'b0;
+      fb.en       <= 1'b0;
+      fb.x       <= '0;
+      fb.y       <= '0;
+      fb.data    <= '0;
+      fb.buf_sel     <= 1'b0;
       gen_start   <= 1'b0;
       set_sof_err <= 1'b0;
       set_eol_err <= 1'b0;
@@ -384,7 +360,7 @@ module scaler_ctrl #(
       frame_cnt   <= '0;
     end else begin
       // default: all strobes are single-cycle pulses
-      fb_we       <= 1'b0;
+      fb.en       <= 1'b0;
       gen_start   <= 1'b0;
       set_sof_err <= 1'b0;
       set_eol_err <= 1'b0;
@@ -410,19 +386,19 @@ module scaler_ctrl #(
         // store pixels until the last pixel of the frame arrives
         S_CAPTURE: begin
           if (beat) begin
-            if (s_axis_tuser && started && (cx != 0 || cy != 0))
+            if (s_axis.tuser && started && (cx != 0 || cy != 0))
               set_sof_err <= 1'b1;              // SOF in the middle of a frame
             if (!accept) begin
               set_sof_err <= 1'b1;              // data before SOF: dropped
             end else begin
               // write the pixel into the frame store
-              fb_we    <= 1'b1;
-              fb_wx    <= px;
-              fb_wy    <= py;
-              fb_wdata <= s_axis_tdata;
-              fb_wbuf  <= cap_buf;
+              fb.en    <= 1'b1;
+              fb.x    <= px;
+              fb.y    <= py;
+              fb.data <= s_axis.tdata;
+              fb.buf_sel  <= cap_buf;
               // tlast must coincide with the last column of IN_SIZE
-              if (s_axis_tlast != last_x) set_eol_err <= 1'b1;
+              if (s_axis.tlast != last_x) set_eol_err <= 1'b1;
               // line-buffer mode: generation starts with the frame
               if (LB && !started) begin
                 rows_rcvd <= '0;

@@ -21,8 +21,8 @@ module isp_dpc_tb;
   logic by;
   logic [PW-1:0] thr;
   logic corr;
-  logic [PW-1:0] sd, md;
-  logic sl, su, sv, sr, ml, mu, mv, mr;
+  axis_if #(.DATA_W(PW), .USER_W(1)) m_axis ();
+  axis_if #(.DATA_W(PW), .USER_W(1)) s_axis ();
   isp_dpc #(
     .PW(PW),
     .MAX_W(64)
@@ -34,26 +34,18 @@ module isp_dpc_tb;
     .bypass_i(by),
     .thr_i(thr),
     .corrected_o(corr),
-    .s_axis_tdata(sd),
-    .s_axis_tlast(sl),
-    .s_axis_tuser(su),
-    .s_axis_tvalid(sv),
-    .s_axis_tready(sr),
-    .m_axis_tdata(md),
-    .m_axis_tlast(ml),
-    .m_axis_tuser(mu),
-    .m_axis_tvalid(mv),
-    .m_axis_tready(mr)
+    .s_axis(s_axis),
+    .m_axis(m_axis)
   );
 
   int gap_pct, bp_pct, nout, ncorr;
   logic [PW-1:0] img [MAXP], exp_px [MAXP];
-  always @(posedge clk) mr <= ($urandom_range(99) >= bp_pct);
+  always @(posedge clk) m_axis.tready <= ($urandom_range(99) >= bp_pct);
   always @(posedge clk) if (rst_n) begin
     ncorr += corr;
-    if (mv && mr) begin
-      check(md == exp_px[nout], $sformatf("pixel (%0d,%0d) = %0d exp %0d", nout % W, nout / W, md, exp_px[nout]));
-      check(mu == (nout == 0) && ml == (nout % W == W - 1), $sformatf("tuser/tlast at pixel %0d", nout));
+    if (m_axis.tvalid && m_axis.tready) begin
+      check(m_axis.tdata == exp_px[nout], $sformatf("pixel (%0d,%0d) = %0d exp %0d", nout % W, nout / W, m_axis.tdata, exp_px[nout]));
+      check(m_axis.tuser == (nout == 0) && m_axis.tlast == (nout % W == W - 1), $sformatf("tuser/tlast at pixel %0d", nout));
       nout++;
     end
   end
@@ -74,10 +66,10 @@ module isp_dpc_tb;
       $dumpfile("isp_dpc_tb.vcd");
       $dumpvars(0, isp_dpc_tb);
     end
-    sv = 0;
-    su = 0;
-    sl = 0;
-    sd = 0;
+    s_axis.tvalid = 0;
+    s_axis.tuser = 0;
+    s_axis.tlast = 0;
+    s_axis.tdata = 0;
     W = 16;
     H = 8;
     thr = 0;

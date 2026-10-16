@@ -22,8 +22,9 @@
 //   frame (no combinational path from s_axis_tready).
 //   Resources - N*N*C multipliers (CW+1 x COEF_W bits). Clock - clk.
 //   Reset - synchronous rst_n (active low). Latency - isp_window (R lines
-//   + R + 1 clocks) + 4 clocks.
-// Date: 2026-10-08
+//   + R + 4 clocks) + 7 clocks. The output goes through a 2-entry ip_axis_fifo, so s_axis_tready does
+//   not depend combinationally on m_axis_tready (+3 clocks).
+// Date: 2026-10-16
 module conv2d_core #(
   parameter int N      = 5,                     // kernel size: 3 or 5
   parameter int C      = 3,                     // components per pixel
@@ -38,27 +39,23 @@ module conv2d_core #(
   input  logic [15:0]             height_i,
   input  logic [N*N*COEF_W-1:0]   coef_i,
   input  logic [4:0]              shift_i,
-  input  logic [C*CW-1:0]         s_axis_tdata,
-  input  logic                    s_axis_tlast,
-  input  logic                    s_axis_tuser,
-  input  logic                    s_axis_tvalid,
-  output logic                    s_axis_tready,
-  output logic [C*CW-1:0]         m_axis_tdata,
-  output logic                    m_axis_tlast,
-  output logic                    m_axis_tuser,
-  output logic                    m_axis_tvalid,
-  input  logic                    m_axis_tready,
+  // s_axis: axis_if.slave (ip/shared/src/interfaces/axis_if.sv), DATA_W = C*CW
+  axis_if.slave s_axis,
+  // m_axis: axis_if.master (ip/shared/src/interfaces/axis_if.sv), DATA_W = C*CW
+  axis_if.master m_axis,
   output logic                    frame_o,          // pulse: a frame's kernel was taken
   output logic                    sof_wait_o        // between frames (isp_window), see below
 );
+  // output stage: the last pipeline register (q_*) feeds a 2-entry FIFO whose ready is registered,
+  // so s_axis_tready does not depend combinationally on m_axis_tready
+  axis_if #(.DATA_W(C*CW), .USER_W(1)) q ();
   localparam int NN = N * N, PW = C * CW;
   localparam int PROD_W = CW + 1 + COEF_W;
   localparam int ACC_W  = PROD_W + $clog2(NN) + 1;
   if (N != 3 && N != 5) begin : g_bad_n $error("conv2d_core: N must be 3 or 5"); end
 
   // ---------------- window ----------------
-  logic [NN*PW-1:0] w_d;
-  logic w_l, w_u, w_v, w_r;
+  axis_if #(.DATA_W(NN*PW), .USER_W(1)) w ();
   isp_window #(
     .N(N),
     .PW(PW),
@@ -69,27 +66,19 @@ module conv2d_core #(
     .rst_n,
     .width_i,
     .height_i,
-    .s_axis_tdata,
-    .s_axis_tlast,
-    .s_axis_tuser,
-    .s_axis_tvalid,
-    .s_axis_tready,
-    .m_axis_tdata(w_d),
+    .s_axis(s_axis),
+    .m_axis(w),
     .m_x(),
     .m_y(),
-    .m_axis_tlast(w_l),
-    .m_axis_tuser(w_u),
-    .m_axis_tvalid(w_v),
-    .m_axis_tready(w_r),
     .sof_wait_o
   );
 
   // ---------------- kernel, held per frame ----------------
   logic [NN*COEF_W-1:0] coef_q;
   logic [4:0] shift_q;
-  wire                  take = w_v && w_r && w_u;
-  wire [NN*COEF_W-1:0]  k    = w_u ? coef_i  : coef_q;   // the first window of a frame uses the new kernel
-  wire [4:0]            ks   = w_u ? shift_i : shift_q;
+  wire                  take = w.tvalid && w.tready && w.tuser;
+  wire [NN*COEF_W-1:0]  k    = w.tuser ? coef_i  : coef_q;   // the first window of a frame uses the new kernel
+  wire [4:0]            ks   = w.tuser ? shift_i : shift_q;
   always_ff @(posedge clk) begin
     if (!rst_n) begin
       coef_q <= '0;
@@ -105,8 +94,8 @@ module conv2d_core #(
   // ---------------- MAC pipeline (all stages advance together) ----------------
   logic v1, v2, v3, v4, l1, l2, l3, l4, u1, u2, u3, u4;
   logic [4:0] s1, s2, s3;
-  wire adv = !v4 || m_axis_tready;
-  assign w_r = adv;
+  wire adv = !v4 || q.tready;
+  assign w.tready = adv;
 
   logic signed [PROD_W-1:0] p1 [C*NN];             // products
   logic signed [ACC_W-1:0]  rs [C*N];              // row sums (combinational)
@@ -137,7 +126,7 @@ module conv2d_core #(
     if (!rst_n) begin
       {v1, v2, v3, v4} <= '0;
     end else if (adv) begin
-      v1 <= w_v;
+      v1 <= w.tvalid;
       v2 <= v1;
       v3 <= v2;
       v4 <= v3;
@@ -146,12 +135,12 @@ module conv2d_core #(
 
   always_ff @(posedge clk) begin
     if (adv) begin
-      l1 <= w_l;
-      u1 <= w_u;
+      l1 <= w.tlast;
+      u1 <= w.tuser;
       s1 <= ks;
       for (int c = 0; c < C; c++)
         for (int i = 0; i < NN; i++)
-          p1[c*NN + i] <= $signed({1'b0, w_d[i*PW + c*CW +: CW]}) * $signed(k[i*COEF_W +: COEF_W]);
+          p1[c*NN + i] <= $signed({1'b0, w.tdata[i*PW + c*CW +: CW]}) * $signed(k[i*COEF_W +: COEF_W]);
       l2 <= l1;
       u2 <= u1;
       s2 <= s1;
@@ -166,8 +155,18 @@ module conv2d_core #(
     end
   end
 
-  assign m_axis_tdata  = d4;
-  assign m_axis_tlast  = l4;
-  assign m_axis_tuser  = u4;
-  assign m_axis_tvalid = v4;
+  assign q.tdata  = d4;
+  assign q.tlast  = l4;
+  assign q.tuser  = u4;
+  assign q.tvalid = v4;
+  ip_axis_fifo #(
+    .DATA_W(C*CW),
+    .DEPTH(2)
+  ) u_out_fifo (
+    .clk,
+    .rst_n,
+    .s(q),
+    .m(m_axis),
+    .level_o()
+  );
 endmodule

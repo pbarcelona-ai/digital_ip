@@ -6,14 +6,16 @@
 //   programmable SCLK half period. A word is loaded, chip select is asserted,
 //   the word is clocked out while MISO is captured, and chip select is kept
 //   low for back-to-back words or released after the last word of a burst.
-//   MISO is double registered. Version 1.0.0. Helper block of its IP; see the
+//   MISO is double registered, so the SCLK half period (div_i + 1 clocks)
+//   must be at least 3 clocks (div_i >= 2) plus the external round trip;
+//   spi_master clamps DIV to 2. Version 1.0.0. Helper block of its IP; see the
 //   top level description for clock, reset, latency and error behavior. Clock
 //   - the clock of the parent block, all signals are synchronous to it. Reset
 //   - synchronous, driven by the parent block. Latency - as documented in the
 //   parent block, fixed and independent of data. Errors - none reported here,
 //   out-of-range parameters stop elaboration or are handled by the parent
 //   block.
-// Date: 2026-09-29
+// Date: 2026-10-16
 module spi_engine #(
   parameter int DATA_W = 32,
   parameter int NUM_CS = 4
@@ -26,7 +28,7 @@ module spi_engine #(
   input  logic                      lsb_first_i,
   input  logic [5:0]                word_len_i,   // bits per word, 1..DATA_W
   input  logic [15:0]               div_i,        // half period = div_i+1 clocks
-  input  logic [$clog2(NUM_CS)-1:0] cs_sel_i,
+  input  logic [((NUM_CS > 1) ? $clog2(NUM_CS) : 1)-1:0] cs_sel_i,
   // Word to transmit
   input  logic [DATA_W-1:0]         tx_data,
   input  logic                      tx_last,      // release CS after this word
@@ -37,13 +39,12 @@ module spi_engine #(
   output logic                      rx_last,
   output logic                      rx_valid,     // one clock strobe
   // Pins
-  output logic                      sclk_o,
-  output logic                      mosi_o,
-  input  logic                      miso_i,
-  output logic [NUM_CS-1:0]         cs_n_o,
+  // spi: spi_if.master (ip/shared/src/interfaces/spi_if.sv), NUM_CS = NUM_CS {sclk_o=sclk mosi_o=mosi miso_i=miso cs_n_o=cs_n}
+  spi_if.master spi,
   output logic                      busy_o
 );
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
+  localparam int CSW = (NUM_CS > 1) ? $clog2(NUM_CS) : 1;   // chip-select index width
 
   typedef enum logic [2:0] {
     S_IDLE, S_CS_SETUP, S_SHIFT, S_CS_HOLD, S_DONE
@@ -71,16 +72,16 @@ module spi_engine #(
 
   // Chip select decode: one glitch-free registered assignment per line
   always_ff @(posedge clk) begin
-    if (!rst_n) cs_n_o <= '1;
+    if (!rst_n) spi.cs_n <= '1;
     else begin
       for (int i = 0; i < NUM_CS; i++)
-        cs_n_o[i] <= ~(cs_active && (cs_sel_i == i[$clog2(NUM_CS)-1:0]));
+        spi.cs_n[i] <= ~(cs_active && (cs_sel_i == CSW'(i)));
     end
   end
 
   always_ff @(posedge clk) begin
     if (!rst_n) miso_sq <= '0;
-    else        miso_sq <= {miso_sq[0], miso_i};
+    else        miso_sq <= {miso_sq[0], spi.miso};
   end
 
   always_ff @(posedge clk) begin
@@ -94,8 +95,8 @@ module spi_engine #(
       rx_word <= '0;
       last_q <= 1'b0;
       cs_active <= 1'b0;
-      sclk_o <= 1'b0;
-      mosi_o <= 1'b0;
+      spi.sclk <= 1'b0;
+      spi.mosi <= 1'b0;
       rx_data <= '0;
       rx_last <= 1'b0;
       rx_valid <= 1'b0;
@@ -104,7 +105,7 @@ module spi_engine #(
       if (tmr != 16'd0) tmr <= tmr - 16'd1;
       case (state)
         S_IDLE: begin
-          sclk_o <= cpol_i;
+          spi.sclk <= cpol_i;
           if (tx_valid & enable_i) begin              // load word
             tx_word <= tx_data;
             last_q <= tx_last;
@@ -116,8 +117,8 @@ module spi_engine #(
             tmr <= div_i;
             cs_active <= 1'b1;
             // CPHA=0: first bit must be valid before the first edge
-            if (!cpha_i) mosi_o <= tx_data[first_idx];
-          end else if (!cs_active) mosi_o <= 1'b0;
+            if (!cpha_i) spi.mosi <= tx_data[first_idx];
+          end else if (!cs_active) spi.mosi <= 1'b0;
         end
         S_CS_SETUP: if (tmr_zero) begin
           state <= S_SHIFT;
@@ -125,7 +126,7 @@ module spi_engine #(
         end
         S_SHIFT: if (tmr_zero) begin
           tmr    <= div_i;
-          sclk_o <= ~sclk_o;                          // toggle every half period
+          spi.sclk <= ~spi.sclk;                          // toggle every half period
           edge_cnt <= edge_cnt + 7'd1;
           // Sample edge: even edges for CPHA=0, odd edges for CPHA=1
           if (edge_cnt[0] == cpha_i) begin
@@ -134,9 +135,9 @@ module spi_engine #(
           end else begin
             // Shift edge: present the next bit (CPHA=1 first bit at edge 0)
             if (cpha_i && edge_cnt == 7'd0) begin
-              mosi_o <= tx_word[tx_idx];
+              spi.mosi <= tx_word[tx_idx];
             end else if (edge_cnt != last_edge) begin
-              mosi_o <= tx_word[tx_idx_nxt];          // next bit of the word
+              spi.mosi <= tx_word[tx_idx_nxt];          // next bit of the word
               tx_idx <= tx_idx_nxt;
             end
           end

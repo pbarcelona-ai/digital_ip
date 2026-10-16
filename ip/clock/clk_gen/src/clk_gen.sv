@@ -17,14 +17,18 @@
 //   Synthesis: each dpll's oscillator (dpll_dco) is a black box; the loop
 //   logic (dpll_ctrl) and the reset / lock logic here are synthesizable.
 //   On an FPGA, replace u_pll_cpu / u_pll_clk with the device PLL / MMCM
-//   and BUFGCE outputs (same ports, same ratios).
+//   and BUFGCE outputs (same ports, same ratios). clk_en_i[n] comes from the
+//   cpu_clk_o domain: use BUFGCE with CE_TYPE = ASYNC (or the vendor
+//   equivalent), or synchronise each enable into its output clock domain
+//   with a two-flop synchroniser clocked by the ungated output, before the
+//   clock buffer.
 //   Clocks - ref_clk in; cpu_clk_o, clk_o out. Reset - arst_n,
 //   asynchronous, active low (both loops restart; the oscillators keep
 //   running). Status - cpu_locked_o (cpu_clk_o domain, asserts low at
 //   once on loss of lock, released two cpu_clk_o edges after lock: use it
 //   as the CPU reset), clk_locked_o (cpu_clk_o domain, both loops locked).
 //   clk_en_i is in the cpu_clk_o domain.
-// Date: 2026-10-09
+// Date: 2026-10-16
 module clk_gen #(
   // Defaults (video_processor): 33.333 MHz reference -> CPU 200 MHz -> 7 GHz video oscillator ->
   // core / pixel 100 MHz, TMDS 1 GHz (10x), LVDS 700 MHz (7x), MIPI byte 125 MHz

@@ -39,18 +39,18 @@
     end
     for (int n = 0; n < w * h; n++) begin
       while ($urandom_range(99) < gap_pct) begin
-        sv <= 0;
+        s_axis.tvalid <= 0;
         @(posedge clk);
       end
-      sd <= img[n];
-      su <= (n == 0);
-      sl <= (n % w == w - 1);
-      sv <= 1;
+      s_axis.tdata <= img[n];
+      s_axis.tuser <= (n == 0);
+      s_axis.tlast <= (n % w == w - 1);
+      s_axis.tvalid <= 1;
       @(posedge clk);
-      while (!sr) @(posedge clk);
+      while (!s_axis.tready) @(posedge clk);
       if (n == w * h / 2) by <= ~bypass;
     end
-    sv <= 0;
+    s_axis.tvalid <= 0;
     repeat (20) @(posedge clk);
     check(nout == w * h, $sformatf("%0d pixels out of %0d", nout, w * h));
   endtask

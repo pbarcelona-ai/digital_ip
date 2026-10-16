@@ -6,12 +6,13 @@
 //   domain through a gray pointer dual clock FIFO. Each side has an
 //   independent active-low reset that is synchronized locally (async assert,
 //   sync release). Optional depth for rate matching. Both resets should be
-//   asserted together. Version 1.0.0. Clocks - s_clk and m_clk unrelated,
+//   asserted together and held for at least 3 clocks of each domain. DATA_W
+//   must be a multiple of 8 (tkeep has DATA_W / 8 bits). Version 1.0.0. Clocks - s_clk and m_clk unrelated,
 //   built on async_fifo with the same crossing rules and latency (3 to 5
 //   destination clocks). Reset - synchronous active low per domain. Timing -
 //   see async_fifo. Errors - none at run time (full FIFO deasserts s_tready,
 //   nothing is dropped); illegal parameters stop elaboration.
-// Date: 2026-09-29
+// Date: 2026-10-16
 module axis_async_bridge #(
   parameter int DATA_W = 32,
   parameter int DEPTH  = 512,
@@ -20,25 +21,18 @@ module axis_async_bridge #(
   // Slave side
   input  logic                s_clk,
   input  logic                s_rst_n,
-  input  logic [DATA_W-1:0]   s_axis_tdata,
-  input  logic [DATA_W/8-1:0] s_axis_tkeep,
-  input  logic                s_axis_tlast,
-  input  logic [USER_W-1:0]   s_axis_tuser,
-  input  logic                s_axis_tvalid,
-  output logic                s_axis_tready,
+  // s_axis: axis_if.slave (ip/shared/src/interfaces/axis_if.sv), DATA_W = DATA_W, USER_W = USER_W
+  axis_if.slave s_axis,
   // Master side
   input  logic                m_clk,
   input  logic                m_rst_n,
-  output logic [DATA_W-1:0]   m_axis_tdata,
-  output logic [DATA_W/8-1:0] m_axis_tkeep,
-  output logic                m_axis_tlast,
-  output logic [USER_W-1:0]   m_axis_tuser,
-  output logic                m_axis_tvalid,
-  input  logic                m_axis_tready
+  // m_axis: axis_if.master (ip/shared/src/interfaces/axis_if.sv), DATA_W = DATA_W, USER_W = USER_W
+  axis_if.master m_axis
 );
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
   if (DEPTH < 4 || (DEPTH & (DEPTH - 1)) != 0) begin : g_chk_d $error("%m: DEPTH must be a power of two >= 4"); end
   if (DATA_W < 1) begin : g_chk_w $error("%m: DATA_W must be >= 1"); end
+  if (DATA_W % 8 != 0) begin : g_chk_w8 $error("%m: DATA_W must be a multiple of 8 (tkeep)"); end
 
   localparam int W = DATA_W + DATA_W/8 + 1 + USER_W;
 
@@ -54,8 +48,8 @@ module axis_async_bridge #(
   logic [W-1:0] wd, rd;
   logic wready, rvalid;
   logic [$clog2(DEPTH):0] wl;
-  assign wd = {s_axis_tuser, s_axis_tlast, s_axis_tkeep, s_axis_tdata};
-  assign s_axis_tready = wready & s_rs[1];
+  assign wd = {s_axis.tuser, s_axis.tlast, s_axis.tkeep, s_axis.tdata};
+  assign s_axis.tready = wready & s_rs[1];
 
   async_fifo #(
     .DATA_W(W),
@@ -64,16 +58,16 @@ module axis_async_bridge #(
     .wclk(s_clk),
     .wrst_n(s_rs[1]),
     .wdata(wd),
-    .wvalid(s_axis_tvalid & s_rs[1]),
+    .wvalid(s_axis.tvalid & s_rs[1]),
     .wready(wready),
     .wlevel_o(wl),
     .rclk(m_clk),
     .rrst_n(m_rs[1]),
     .rdata(rd),
     .rvalid(rvalid),
-    .rready(m_axis_tready)
+    .rready(m_axis.tready)
   );
 
-  assign {m_axis_tuser, m_axis_tlast, m_axis_tkeep, m_axis_tdata} = rd;
-  assign m_axis_tvalid = rvalid;
+  assign {m_axis.tuser, m_axis.tlast, m_axis.tkeep, m_axis.tdata} = rd;
+  assign m_axis.tvalid = rvalid;
 endmodule

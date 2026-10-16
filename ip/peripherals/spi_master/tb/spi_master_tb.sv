@@ -18,20 +18,14 @@ module spi_master_tb;
   always #(CLK_PERIOD/2) aclk = ~aclk;
 
   // AXI-Lite wires (names match DUT ports for .* connections)
-  logic [7:0] s_axil_awaddr, s_axil_araddr;
-  logic s_axil_awvalid, s_axil_awready;
-  logic [31:0] s_axil_wdata, s_axil_rdata;
-  logic [3:0] s_axil_wstrb;
-  logic s_axil_wvalid, s_axil_wready, s_axil_bvalid, s_axil_bready;
-  logic [1:0] s_axil_bresp, s_axil_rresp;
-  logic s_axil_arvalid, s_axil_arready, s_axil_rvalid, s_axil_rready;
-  axil_bfm #(.ADDR_W(8)) bfm (.*);
+  axil_if #(.ADDR_W(8), .DATA_W(32)) s_axil ();
+  axil_bfm #(.ADDR_W(8)) bfm (
+    .*
+  );
 
-  logic [31:0] s_axis_tdata, m_axis_tdata;
-  logic s_axis_tvalid, s_axis_tready, s_axis_tlast;
-  logic m_axis_tvalid, m_axis_tready, m_axis_tlast;
-  logic sclk, mosi, miso;
-  logic [NUM_CS-1:0] cs_n;
+  axis_if #(.DATA_W(32)) m_axis ();
+  axis_if #(.DATA_W(32)) s_axis ();
+  spi_if #(.NUM_CS(NUM_CS)) spi ();
 
   spi_top #(
     .FIFO_DEPTH(16),
@@ -39,35 +33,10 @@ module spi_master_tb;
   ) dut (
     .aclk,
     .aresetn,
-    .s_axil_awaddr,
-    .s_axil_awvalid,
-    .s_axil_awready,
-    .s_axil_wdata,
-    .s_axil_wstrb,
-    .s_axil_wvalid,
-    .s_axil_wready,
-    .s_axil_bresp,
-    .s_axil_bvalid,
-    .s_axil_bready,
-    .s_axil_araddr,
-    .s_axil_arvalid,
-    .s_axil_arready,
-    .s_axil_rdata,
-    .s_axil_rresp,
-    .s_axil_rvalid,
-    .s_axil_rready,
-    .s_axis_tdata,
-    .s_axis_tvalid,
-    .s_axis_tready,
-    .s_axis_tlast,
-    .m_axis_tdata,
-    .m_axis_tvalid,
-    .m_axis_tready,
-    .m_axis_tlast,
-    .spi_sclk_o(sclk),
-    .spi_mosi_o(mosi),
-    .spi_miso_i(miso),
-    .spi_cs_n_o(cs_n)
+    .s_axil(s_axil),
+    .s_axis(s_axis),
+    .m_axis(m_axis),
+    .spi(spi)
   );
 
   logic cpol, cpha, lsb;
@@ -75,10 +44,10 @@ module spi_master_tb;
   logic [31:0] slv_tx, slv_rx;
   int slv_words;
   spi_bfm slave (
-    .sclk,
-    .cs_n(cs_n[1]),
-    .mosi,
-    .miso,
+    .sclk(spi.sclk),
+    .cs_n(spi.cs_n[1]),
+    .mosi(spi.mosi),
+    .miso(spi.miso),
     .cpol,
     .cpha,
     .lsb_first(lsb),
@@ -93,9 +62,9 @@ module spi_master_tb;
   // Received words
   logic [31:0] rxq[$];
   bit rxlast[$];
-  always @(posedge aclk) if (m_axis_tvalid && m_axis_tready) begin
-    rxq.push_back(m_axis_tdata);
-    rxlast.push_back(m_axis_tlast);
+  always @(posedge aclk) if (m_axis.tvalid && m_axis.tready) begin
+    rxq.push_back(m_axis.tdata);
+    rxlast.push_back(m_axis.tlast);
   end
 
   logic [31:0] rd;
@@ -108,10 +77,10 @@ module spi_master_tb;
       $dumpfile("spi_master_tb.vcd");
       $dumpvars(0, spi_master_tb);
     end
-    s_axis_tdata = 0;
-    s_axis_tvalid = 0;
-    s_axis_tlast = 0;
-    m_axis_tready = 1;
+    s_axis.tdata = 0;
+    s_axis.tvalid = 0;
+    s_axis.tlast = 0;
+    m_axis.tready = 1;
     cpol = 0;
     cpha = 0;
     lsb = 0;

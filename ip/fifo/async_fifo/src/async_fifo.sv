@@ -6,7 +6,8 @@
 //   in the write domain and empty in the read domain. Storage is a dual clock
 //   RAM (block RAM capable) with a registered read and a
 //   first-word-fall-through output register. DEPTH must be a power of two >=
-//   4. Assert both resets together. Version 1.0.0. Clocks - wclk and rclk are
+//   4. Assert both resets together and hold each for at least 3 clocks of
+//   its own domain. Version 1.0.0. Clocks - wclk and rclk are
 //   unrelated (Gray-coded pointers, two-flop synchronizers), each with its
 //   own synchronous active low reset (reset both together). Latency - a
 //   written word is visible on the read side 3 to 5 read clocks later;
@@ -15,7 +16,7 @@
 //   with skew control); the memory read path is registered. Errors - writing
 //   when full or reading when empty is ignored (and asserted in simulation);
 //   illegal parameters stop elaboration.
-// Date: 2026-09-29
+// Date: 2026-10-16
 module async_fifo #(
   parameter int DATA_W = 32,
   parameter int DEPTH  = 512
@@ -74,6 +75,10 @@ module async_fifo #(
     end
   end
   assign wready = ~wfull;
+`ifndef SYNTHESIS
+  always_ff @(posedge wclk)
+    if (wrst_n && wvalid && wfull) $warning("%m: write while full ignored");
+`endif
 
   // ---------------- read domain ----------------
   (* async_reg = "true" *) logic [AW:0] wgray_s1, wgray_s2;   // write gray in rclk

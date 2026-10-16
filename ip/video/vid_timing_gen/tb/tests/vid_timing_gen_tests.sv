@@ -35,11 +35,11 @@
     hs_q = 0;
     vs_q = 0;
     for (int i = 0; i < htot * vtot; i++) begin
-      hs_a = (hso == hp);
-      vs_a = (vso == vp);
+      hs_a = (tim.hs == hp);
+      vs_a = (tim.vs == vp);
       // horizontal: active 0..ha-1, sync ha+hf .. ha+hf+hs-1
-      check(de == (h < ha && line < va), $sformatf("de at h %0d line %0d", h, line));
-      if (de) begin
+      check(tim.de == (h < ha && line < va), $sformatf("de at h %0d line %0d", h, line));
+      if (tim.de) begin
         check(x == h && y == line, $sformatf("x/y %0d/%0d at %0d/%0d", x, y, h, line));
         n_de++;
       end

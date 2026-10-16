@@ -24,15 +24,13 @@ module tmds_serializer_tb;
     #0.5 ser_clk = ~ser_clk;
   end
 
-  logic [9:0] s0, s1, s2;
+  tmds_if tmds ();
+  assign tmds.clk = 10'b0000011111;
   logic [3:0] ser;
   tmds_serializer dut (
     .pix_clk,
     .pix_rst_n(prst_n),
-    .tmds0_i(s0),
-    .tmds1_i(s1),
-    .tmds2_i(s2),
-    .tmds_clk_i(10'b0000011111),
+    .tmds(tmds),
     .ser_clk,
     .ser_rst_n(srst_n),
     .serial_o(ser)
@@ -45,9 +43,9 @@ module tmds_serializer_tb;
   always @(posedge pix_clk) if (prst_n) begin
     logic [29:0] v;
     v = {10'($urandom), 10'($urandom), 10'($urandom)};
-    s0 <= v[9:0];
-    s1 <= v[19:10];
-    s2 <= v[29:20];
+    tmds.ch0 <= v[9:0];
+    tmds.ch1 <= v[19:10];
+    tmds.ch2 <= v[29:20];
     if (nsent < NS) sent[nsent] = v;
     nsent++;
   end

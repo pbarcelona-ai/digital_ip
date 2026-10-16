@@ -31,19 +31,13 @@ module csi2_raw_unpack #(
   input  logic                    rst_n,
   input  logic [5:0]              fmt_i,       // CSI-2 data type (change between frames)
   // Packed payload
-  input  logic [IN_BYTES*8-1:0]   s_axis_tdata,
-  input  logic [IN_BYTES-1:0]     s_axis_tkeep,
-  input  logic                    s_axis_tlast,
-  input  logic                    s_axis_tuser,
-  input  logic                    s_axis_tvalid,
-  output logic                    s_axis_tready,
+  // s_axis: axis_if.slave (ip/shared/src/interfaces/axis_if.sv), DATA_W = IN_BYTES*8
+  axis_if.slave s_axis,
   // Pixels
-  output logic [OUT_W-1:0]        m_axis_tdata,
-  output logic                    m_axis_tlast,
-  output logic                    m_axis_tuser,
-  output logic                    m_axis_tvalid,
-  input  logic                    m_axis_tready
+  // m_axis: axis_if.master (ip/shared/src/interfaces/axis_if.sv), DATA_W = OUT_W
+  axis_if.master m_axis
 );
+  assign m_axis.tkeep = '1;      // not used by this block
   localparam int BUF = IN_BYTES + 8;             // bytes held (largest group is 5)
   localparam int CW  = $clog2(BUF + 1);
 
@@ -97,13 +91,13 @@ module csi2_raw_unpack #(
   end
 
   wire have_group = (cnt >= CW'(gsize));
-  wire out_free   = !m_axis_tvalid || m_axis_tready;
+  wire out_free   = !m_axis.tvalid || m_axis.tready;
   wire emit       = have_group && out_free && !mis;
   wire pop        = emit && (pi == plast);
   wire [2:0] popn = mis ? dropn : (pop ? gsize : 3'd0);   // bytes removed this clock
   wire [CW-1:0] cnt_pop = cnt - CW'(popn);
-  assign s_axis_tready = (cnt <= CW'(BUF - IN_BYTES));
-  wire push = s_axis_tvalid && s_axis_tready;
+  assign s_axis.tready = (cnt <= CW'(BUF - IN_BYTES));
+  wire push = s_axis.tvalid && s_axis.tready;
 
   always_ff @(posedge clk) begin
     if (!rst_n) begin
@@ -111,19 +105,19 @@ module csi2_raw_unpack #(
       pi <= '0;
       bfirst <= '0;
       blast <= '0;
-      m_axis_tvalid <= 1'b0;
-      m_axis_tdata <= '0;
-      m_axis_tlast <= 1'b0;
-      m_axis_tuser <= 1'b0;
+      m_axis.tvalid <= 1'b0;
+      m_axis.tdata <= '0;
+      m_axis.tlast <= 1'b0;
+      m_axis.tuser <= 1'b0;
     end else begin
       // Output stage
       if (emit) begin
-        m_axis_tvalid <= 1'b1;
-        m_axis_tdata <= px;
-        m_axis_tuser  <= (pi == 0) && bfirst[0];
-        m_axis_tlast  <= (pi == plast) && glast;
+        m_axis.tvalid <= 1'b1;
+        m_axis.tdata <= px;
+        m_axis.tuser  <= (pi == 0) && bfirst[0];
+        m_axis.tlast  <= (pi == plast) && glast;
         pi <= (pi == plast) ? 2'd0 : pi + 1'b1;
-      end else if (m_axis_tready) m_axis_tvalid <= 1'b0;
+      end else if (m_axis.tready) m_axis.tvalid <= 1'b0;
 
       // Byte buffer: drop a consumed group, then append the new word
       begin : buf_update
@@ -137,17 +131,17 @@ module csi2_raw_unpack #(
         end
         if (push) begin
           last_k = 0;
-          for (int k = 0; k < IN_BYTES; k++) if (s_axis_tkeep[k]) last_k = k;
-          for (int k = 0; k < IN_BYTES; k++) if (s_axis_tkeep[k]) begin
-            nb[cnt_pop + k] = s_axis_tdata[8*k +: 8];
-            nf[cnt_pop + k] = s_axis_tuser && (k == 0);
-            nl[cnt_pop + k] = s_axis_tlast && (k == last_k);
+          for (int k = 0; k < IN_BYTES; k++) if (s_axis.tkeep[k]) last_k = k;
+          for (int k = 0; k < IN_BYTES; k++) if (s_axis.tkeep[k]) begin
+            nb[cnt_pop + k] = s_axis.tdata[8*k +: 8];
+            nf[cnt_pop + k] = s_axis.tuser && (k == 0);
+            nl[cnt_pop + k] = s_axis.tlast && (k == last_k);
           end
         end
         for (int k = 0; k < BUF; k++) bq[k] <= nb[k];
         bfirst <= nf;
         blast <= nl;
-        cnt <= cnt_pop + (push ? CW'($countones(s_axis_tkeep)) : '0);
+        cnt <= cnt_pop + (push ? CW'($countones(s_axis.tkeep)) : '0);
       end
     end
   end

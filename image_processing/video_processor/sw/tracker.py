@@ -324,7 +324,14 @@ def smooth_size(size, measured, st):
 
 def track_step(t, b, i):
     """One frame of the track at SCRATCH word b of detector t (i: the blob of its target, -1 when
-    missed): the new state, read from and saved to the SCRATCH words."""
+    missed): the new state, read from and saved to the SCRATCH words.
+
+    An alpha-beta tracker (Kalata, IEEE Trans. AES 1984) with alpha = 1 and beta = 1/2: the centre
+    takes the measured blob centre (no position smoothing: the blob box is already a clean
+    measurement), the velocity moves half way to the measured displacement, v = (v + (z - x)) / 2;
+    a missed target coasts with its velocity until TRK_LOST misses. Association (nearest_blob) is
+    gated greedy nearest neighbour in track order, a cheap stand-in for global nearest neighbour
+    (Bar-Shalom & Fortmann 1988) that is enough for the few, mostly separated targets per class."""
     ok = i >= 0
     if ok:
         x0 = mem32[t + TRK_BLOB_X + (i << 2)]

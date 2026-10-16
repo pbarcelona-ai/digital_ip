@@ -40,11 +40,8 @@ module csi2_raw_unpack_tb;
   for (genvar g = 0; g < NI; g++) begin : g_u
     localparam int IB = (g == 0) ? 1 : (g == 1) ? 2 : (g == 2) ? 4 : 2;
     localparam int OW = (g == 3) ? 12 : 10;
-    logic [IB*8-1:0] sd;
-    logic [IB-1:0] sk;
-    logic sl, su, sv, sr;
-    logic [OW-1:0] md;
-    logic ml, mu, mv, mr;
+    axis_if #(.DATA_W(IB*8), .USER_W(1), .KEEP_W(IB)) s_axis ();
+    axis_if #(.DATA_W(OW), .USER_W(1)) m_axis ();
     int nout;
     csi2_raw_unpack #(
       .IN_BYTES(IB),
@@ -53,57 +50,48 @@ module csi2_raw_unpack_tb;
       .clk,
       .rst_n,
       .fmt_i(fmt),
-      .s_axis_tdata(sd),
-      .s_axis_tkeep(sk),
-      .s_axis_tlast(sl),
-      .s_axis_tuser(su),
-      .s_axis_tvalid(sv),
-      .s_axis_tready(sr),
-      .m_axis_tdata(md),
-      .m_axis_tlast(ml),
-      .m_axis_tuser(mu),
-      .m_axis_tvalid(mv),
-      .m_axis_tready(mr)
+      .s_axis(s_axis),
+      .m_axis(m_axis)
     );
-    always @(posedge clk) mr <= ($urandom_range(99) >= bp_pct);
+    always @(posedge clk) m_axis.tready <= ($urandom_range(99) >= bp_pct);
     int nsof = 0;
-    always @(posedge clk) if (rst_n && mv && mr) begin
+    always @(posedge clk) if (rst_n && m_axis.tvalid && m_axis.tready) begin
       logic [11:0] e;
-      if (mu) begin // re-anchor on every frame start
+      if (m_axis.tuser) begin // re-anchor on every frame start
         nout = 0;
         nsof++;
       end
       e = expect_px(nout, OW);
       if (check_on || nsof >= 2) begin
-        check(md == e[OW-1:0], $sformatf("in%0dB out%0d: pixel %0d = %h exp %h", IB, OW, nout, md, e));
-        check(mu == (nout == 0), $sformatf("in%0dB: tuser at pixel %0d", IB, nout));
-        check(ml == ((nout % line_w) == line_w - 1), $sformatf("in%0dB: tlast at pixel %0d", IB, nout));
+        check(m_axis.tdata == e[OW-1:0], $sformatf("in%0dB out%0d: pixel %0d = %h exp %h", IB, OW, nout, m_axis.tdata, e));
+        check(m_axis.tuser == (nout == 0), $sformatf("in%0dB: tuser at pixel %0d", IB, nout));
+        check(m_axis.tlast == ((nout % line_w) == line_w - 1), $sformatf("in%0dB: tlast at pixel %0d", IB, nout));
       end
       nout++;
     end
     task automatic drive(input int frames = 1);
       nout = 0;
       nsof = 0;
-      sv <= 0;
+      s_axis.tvalid <= 0;
       for (int f = 0; f < frames; f++)
       for (int y = 0; y < nlines; y++)
         for (int b = 0; b < line_bytes; b += IB) begin
           if (lose && f == 0 && y == 1 && b == (line_bytes / 2 / IB) * IB) continue;   // lost upstream
           while ($urandom_range(99) < gap_pct) begin
-            sv <= 0;
+            s_axis.tvalid <= 0;
             @(posedge clk);
           end
           for (int k = 0; k < IB; k++) begin
-            sd[8*k +: 8] <= (b + k < line_bytes) ? fb[y*line_bytes + b + k] : 8'hEE;
-            sk[k]        <= (b + k < line_bytes);
+            s_axis.tdata[8*k +: 8] <= (b + k < line_bytes) ? fb[y*line_bytes + b + k] : 8'hEE;
+            s_axis.tkeep[k]        <= (b + k < line_bytes);
           end
-          su <= (y == 0 && b == 0);
-          sl <= (b + IB >= line_bytes);
-          sv <= 1;
+          s_axis.tuser <= (y == 0 && b == 0);
+          s_axis.tlast <= (b + IB >= line_bytes);
+          s_axis.tvalid <= 1;
           @(posedge clk);
-          while (!sr) @(posedge clk);
+          while (!s_axis.tready) @(posedge clk);
         end
-      sv <= 0;   // only here and in gaps: no sv <= 0 / sv <= 1 pair in one time step (NBA order)
+      s_axis.tvalid <= 0;   // only here and in gaps: no sv <= 0 / sv <= 1 pair in one time step (NBA order)
     endtask
   end
 

@@ -1,3 +1,8 @@
+../../shared/src/interfaces/axil_if.sv
+../../shared/src/interfaces/axis_if.sv
+src/include/blur_sharpen_regs_if.sv
+../../shared/src/interfaces/regbus_if.sv
+../../shared/src/fifo/ip_axis_fifo.sv
 ../conv2d_core/src/conv2d_pkg.sv
 ../../bus/axi4_lite_slave/src/axi4_lite_slave.sv
 ../isp_window/src/isp_window.sv

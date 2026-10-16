@@ -6,12 +6,13 @@
 //   tasks axil_write, axil_read, axil_check (register offsets: 0x000-0x0FF
 //   of every 16 KB window move up by 0x10 past the ID block while
 //   axil_id_block = 1, the default), axil_write_abs / axil_read_abs /
-//   axil_check_abs (addresses as given), check_id_block and reset_dut, plus error /
+//   axil_check_abs (addresses as given), axil_write_err / axil_read_err
+//   (SLVERR expected), check_id_block and reset_dut, plus error /
 //   check / test counters, a watchdog (+TIMEOUT_MS=<n>) and
 //   finish_report, which prints TB_RESULT: PASS or FAIL. Include inside a
 //   testbench module after defining localparam int ADDR_W. Included by
 //   scaler_tb_lib.svh; module testbenches include it directly.
-// Date: 2026-10-12
+// Date: 2026-10-16
 
 // Default watchdog time in ns (can be overridden with a define)
 `ifndef TB_TIMEOUT_NS
@@ -37,7 +38,8 @@ wire [31:0]        rdata;
 // AXI4-Lite protocol checker + coverage on the testbench/DUT control link
 axil_checker #(
   .ADDR_W(ADDR_W),
-  .NAME("s_axil")
+  .NAME("s_axil"),
+  .EXPECT_OKAY(0)              // responses are checked by the tasks (axil_resp_exp)
 ) u_axil_chk (
   .clk,
   .rst_n,
@@ -87,6 +89,7 @@ int axil_max_delay = 2;   // set to 0 for fastest register access
 // the offsets 0x000-0x0FF of each 16 KB window (the old register maps) are 0x10 higher. Tables at
 // 0x1000 and up do not move. 0 for a DUT without ID blocks (axil_split).
 bit axil_id_block = 1;
+logic [1:0] axil_resp_exp = 2'b00;   // response the next accesses must get (OKAY; SLVERR in *_err)
 function automatic int axil_map(input int addr);
   return (axil_id_block && (addr & 'h3F00) == 0) ? addr + 'h10 : addr;
 endfunction
@@ -129,8 +132,8 @@ task automatic axil_write_abs(input int addr, input logic [31:0] data);
   bready = 1'b1;
   do @(posedge clk);
   while (!bvalid);
-  if (bresp != 2'b00) begin
-    $display("ERROR: bresp=%0d at addr 0x%0h", bresp, addr);
+  if (bresp != axil_resp_exp) begin
+    $display("ERROR: bresp=%0d (expected %0d) at addr 0x%0h", bresp, axil_resp_exp, addr);
     errors++;
   end
   @(negedge clk);
@@ -151,8 +154,8 @@ task automatic axil_read_abs(input int addr, output logic [31:0] data);
   do @(posedge clk);
   while (!rvalid);
   data = rdata;
-  if (rresp != 2'b00) begin
-    $display("ERROR: rresp=%0d at addr 0x%0h", rresp, addr);
+  if (rresp != axil_resp_exp) begin
+    $display("ERROR: rresp=%0d (expected %0d) at addr 0x%0h", rresp, axil_resp_exp, addr);
     errors++;
   end
   @(negedge clk);
@@ -177,8 +180,24 @@ task automatic axil_check_abs(input int addr, input logic [31:0] exp,
   end
 endtask
 
+// Accesses that must be refused with SLVERR (addresses as given)
+task automatic axil_write_err(input int addr, input logic [31:0] data);
+  checks++;
+  axil_resp_exp = 2'b10;
+  axil_write_abs(addr, data);
+  axil_resp_exp = 2'b00;
+endtask
+
+task automatic axil_read_err(input int addr);
+  logic [31:0] r;
+  checks++;
+  axil_resp_exp = 2'b10;
+  axil_read_abs(addr, r);
+  axil_resp_exp = 2'b00;
+endtask
+
 // ID block of the register window at base: ID (exp_id), VERSION ASCII "d.dd", DATE BCD mm/dd/yyyy,
-// 0x0C reads 0; writes to the block change nothing
+// 0x0C reads 0; writes to the block are refused (SLVERR) and change nothing
 task automatic check_id_block(input int base, input logic [31:0] exp_id);
   logic [31:0] id, ver, date, rsv, v;
   axil_read_abs(base, id);
@@ -204,7 +223,7 @@ task automatic check_id_block(input int base, input logic [31:0] exp_id);
     errors++;
     $display("ERROR: 0x%0h (reserved) reads 0x%08h", base + 'hC, rsv);
   end
-  axil_write_abs(base, 32'hA5A5_5A5A);
+  axil_write_err(base, 32'hA5A5_5A5A);
   axil_read_abs(base, v);
   checks++;
   if (v !== id) begin

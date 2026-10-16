@@ -6,11 +6,13 @@
 //   together. Output is the synchronized level. Version 1.0.0. Helper block
 //   of its IP; see the top level description for clock, reset, latency and
 //   error behavior. Clock - the clock of the parent block, all signals are
-//   synchronous to it. Reset - none, the registers are cleared by the parent
-//   block's control flow. Latency - as documented in the parent block, fixed
+//   synchronous to it. Reset - none: the flops start at 0 (FPGA power-up
+//   value) and otherwise hold the last sampled value, so a parent that
+//   resets must hold its reset for at least STAGES clocks of this domain
+//   with the source bit already at its reset value. Latency - as documented in the parent block, fixed
 //   and independent of data. Errors - none reported here, out-of-range
 //   parameters stop elaboration or are handled by the parent block.
-// Date: 2026-09-29
+// Date: 2026-10-16
 module cdc_sync_bit #(
   parameter int STAGES = 2
 ) (

@@ -18,7 +18,8 @@ module lvds_tx_tb;
   int errors = 0;
 
   localparam int HA = 40, VA = 6;
-  logic de, hs, vs, sof, eol, vbl, wt;
+  vid_if tim ();
+  logic sof, eol, vbl, wt;
   logic [15:0] x, y;
   vid_timing_gen u_vtg (
     .clk,
@@ -37,9 +38,7 @@ module lvds_tx_tb;
     .lock_en_i(1'b0),
     .src_ready_i(1'b1),
     .lock_max_i(16'd0),
-    .de_o(de),
-    .hs_o(hs),
-    .vs_o(vs),
+    .tim(tim),
     .x_o(x),
     .y_o(y),
     .sof_o(sof),
@@ -50,29 +49,31 @@ module lvds_tx_tb;
   int fcount = 0;
   logic vs_q = 0;
   always @(posedge clk) begin
-    vs_q <= vs;
-    if (vs && !vs_q) fcount <= fcount + 1;
+    vs_q <= tim.vs;
+    if (tim.vs && !vs_q) fcount <= fcount + 1;
   end
   function automatic logic [23:0] pix(input int px, input int py, input int f);
     // every bit of B, R and G[1:0] toggles over a frame; G[7:2] = frame (survives 18 bpp)
     return {8'(px * 53 + py * 29 + 7), {6'(f), 2'(px + py)}, 8'((px * 37) ^ (py * 91) ^ 8'hC3)};
   endfunction
-  wire [23:0] rgb = de ? pix(x, y, fcount) : 24'h0;
+  wire [23:0] rgb = tim.de ? pix(x, y, fcount) : 24'h0;
 
   logic dual, b18, jei;
   logic [27:0] la, lb;
   logic [6:0] cw;
   logic stb;
+  vid_if #(.DATA_W(24)) dut_vid ();
+  assign dut_vid.data = rgb;
+  assign dut_vid.de = tim.de;
+  assign dut_vid.hs = tim.hs;
+  assign dut_vid.vs = tim.vs;
   lvds_tx dut (
     .clk,
     .rst_n,
     .dual_i(dual),
     .bpp18_i(b18),
     .jeida_i(jei),
-    .rgb_i(rgb),
-    .de_i(de),
-    .hs_i(hs),
-    .vs_i(vs),
+    .vid(dut_vid),
     .link_a_o(la),
     .link_b_o(lb),
     .clk_word_o(cw),
