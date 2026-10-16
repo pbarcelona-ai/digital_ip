@@ -22,8 +22,26 @@ module py_axil_xbar #(
   // s_axil: axil_if.slave (ip/shared/src/interfaces/axil_if.sv), ADDR_W = 32
   axil_if.slave s_axil,
   // Slave ports (broadcast address/data, per-slave handshakes)
-  // m_axil: axil_if.master (ip/shared/src/interfaces/axil_if.sv), ADDR_W = 32
-  axil_if.master m_axil
+  // m_axil: NSLAVE x axil_if.master (ip/shared/src/interfaces/axil_if.sv), packed: slave k in [k],
+  // [k*2 +: 2], [k*32 +: 32]; address / write data broadcast. Kept discrete: an array of
+  // interfaces cannot be driven member-wise in Icarus 14 (the parent builds one axil_if per slave)
+  output logic [31:0]          m_axil_awaddr,
+  output logic [NSLAVE-1:0]    m_axil_awvalid,
+  input  logic [NSLAVE-1:0]    m_axil_awready,
+  output logic [31:0]          m_axil_wdata,
+  output logic [3:0]           m_axil_wstrb,
+  output logic [NSLAVE-1:0]    m_axil_wvalid,
+  input  logic [NSLAVE-1:0]    m_axil_wready,
+  input  logic [NSLAVE*2-1:0]  m_axil_bresp,
+  input  logic [NSLAVE-1:0]    m_axil_bvalid,
+  output logic [NSLAVE-1:0]    m_axil_bready,
+  output logic [31:0]          m_axil_araddr,
+  output logic [NSLAVE-1:0]    m_axil_arvalid,
+  input  logic [NSLAVE-1:0]    m_axil_arready,
+  input  logic [NSLAVE*32-1:0] m_axil_rdata,
+  input  logic [NSLAVE*2-1:0]  m_axil_rresp,
+  input  logic [NSLAVE-1:0]    m_axil_rvalid,
+  output logic [NSLAVE-1:0]    m_axil_rready
 );
   logic [NSLAVE-1:0] aw_hit, ar_hit;
   logic aw_miss, ar_miss, aw_multi, ar_multi;
@@ -50,10 +68,10 @@ module py_axil_xbar #(
     .multi_o(ar_multi)
   );
 
-  assign m_axil.awaddr = s_axil.awaddr;
-  assign m_axil.wdata = s_axil.wdata;
-  assign m_axil.wstrb = s_axil.wstrb;
-  assign m_axil.araddr = s_axil.araddr;
+  assign m_axil_awaddr = s_axil.awaddr;
+  assign m_axil_wdata = s_axil.wdata;
+  assign m_axil_wstrb = s_axil.wstrb;
+  assign m_axil_araddr = s_axil.araddr;
 
   // ---------------- write ----------------
   typedef enum logic [1:0] {W_IDLE, W_FWD, W_ERR, W_ERR_B} wst_e;
@@ -86,19 +104,19 @@ module py_axil_xbar #(
     endcase
   end
   wire w_fwd = (wst == W_FWD);
-  assign m_axil.awvalid = w_fwd ? wsel & {NSLAVE{s_axil.awvalid}} : '0;
-  assign m_axil.wvalid  = w_fwd ? wsel & {NSLAVE{s_axil.wvalid}}  : '0;
-  assign m_axil.bready  = w_fwd ? wsel & {NSLAVE{s_axil.bready}}  : '0;
+  assign m_axil_awvalid = w_fwd ? wsel & {NSLAVE{s_axil.awvalid}} : '0;
+  assign m_axil_wvalid  = w_fwd ? wsel & {NSLAVE{s_axil.wvalid}}  : '0;
+  assign m_axil_bready  = w_fwd ? wsel & {NSLAVE{s_axil.bready}}  : '0;
   always_comb begin
     s_axil.awready = (wst == W_ERR) && !err_aw;
     s_axil.wready  = (wst == W_ERR) && !err_w;
     s_axil.bvalid  = (wst == W_ERR_B);
     s_axil.bresp   = (wst == W_ERR_B) ? 2'b11 : 2'b00;
     for (int i = 0; i < NSLAVE; i++) if (w_fwd && wsel[i]) begin
-      s_axil.awready = m_axil.awready[i];
-      s_axil.wready = m_axil.wready[i];
-      s_axil.bvalid  = m_axil.bvalid[i];
-      s_axil.bresp  = m_axil.bresp[i*2 +: 2];
+      s_axil.awready = m_axil_awready[i];
+      s_axil.wready = m_axil_wready[i];
+      s_axil.bvalid  = m_axil_bvalid[i];
+      s_axil.bresp  = m_axil_bresp[i*2 +: 2];
     end
   end
 
@@ -129,18 +147,18 @@ module py_axil_xbar #(
     else if (s_axil.arvalid) r_err_ar <= 1'b1;
   end
   wire r_fwd = (rst == R_FWD);
-  assign m_axil.arvalid = r_fwd ? rsel & {NSLAVE{s_axil.arvalid}} : '0;
-  assign m_axil.rready  = r_fwd ? rsel & {NSLAVE{s_axil.rready}}  : '0;
+  assign m_axil_arvalid = r_fwd ? rsel & {NSLAVE{s_axil.arvalid}} : '0;
+  assign m_axil_rready  = r_fwd ? rsel & {NSLAVE{s_axil.rready}}  : '0;
   always_comb begin
     s_axil.arready = (rst == R_ERR) && !r_err_ar;
     s_axil.rvalid  = (rst == R_ERR) && r_err_ar;
     s_axil.rresp   = s_axil.rvalid ? 2'b11 : 2'b00;
     s_axil.rdata   = '0;
     for (int i = 0; i < NSLAVE; i++) if (r_fwd && rsel[i]) begin
-      s_axil.arready = m_axil.arready[i];
-      s_axil.rvalid = m_axil.rvalid[i];
-      s_axil.rresp   = m_axil.rresp[i*2 +: 2];
-      s_axil.rdata = m_axil.rdata[i*32 +: 32];
+      s_axil.arready = m_axil_arready[i];
+      s_axil.rvalid = m_axil_rvalid[i];
+      s_axil.rresp   = m_axil_rresp[i*2 +: 2];
+      s_axil.rdata = m_axil_rdata[i*32 +: 32];
     end
   end
 endmodule

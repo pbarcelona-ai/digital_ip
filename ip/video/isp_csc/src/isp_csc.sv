@@ -30,8 +30,9 @@ module isp_csc (
 );
   // output stage: the last pipeline register (q_*) feeds a 2-entry FIFO whose ready is registered,
   // so s_axis_tready does not depend combinationally on m_axis_tready
-  axis_if #(.DATA_W(24), .USER_W(1)) q ();
-  wire en = !q.tvalid || q.tready;
+  logic [24-1:0] q_d;
+  logic q_l, q_u, q_v, q_r;
+  wire en = !q_v || q_r;
   assign s_axis.tready = en;
   wire acc = s_axis.tvalid && en;
 
@@ -60,10 +61,10 @@ module isp_csc (
       sy <= '0;
       scb <= '0;
       scr <= '0;
-      q.tvalid <= 1'b0;
-      q.tdata <= '0;
-      q.tlast <= 1'b0;
-      q.tuser <= 1'b0;
+      q_v <= 1'b0;
+      q_d <= '0;
+      q_l <= 1'b0;
+      q_u <= 1'b0;
     end else if (en) begin
       if (acc && s_axis.tuser) begin
         by_f <= bypass_i;
@@ -83,19 +84,25 @@ module isp_csc (
       l1 <= s_axis.tlast;
       u1 <= s_axis.tuser;
       b1 <= by;
-      q.tvalid <= v1;
-      q.tlast <= l1;
-      q.tuser <= u1;
-      q.tdata  <= b1 ? d1 : {clamp(128 + (scb >>> 8)), clamp(16 + (sy >>> 8)), clamp(128 + (scr >>> 8))};
+      q_v <= v1;
+      q_l <= l1;
+      q_u <= u1;
+      q_d  <= b1 ? d1 : {clamp(128 + (scb >>> 8)), clamp(16 + (sy >>> 8)), clamp(128 + (scr >>> 8))};
     end
   end
+  axis_if #(.DATA_W(24)) u_out_fifo_s ();
+  assign u_out_fifo_s.tdata = q_d;
+  assign u_out_fifo_s.tlast = q_l;
+  assign u_out_fifo_s.tuser = q_u;
+  assign u_out_fifo_s.tvalid = q_v;
+  assign q_r = u_out_fifo_s.tready;
   ip_axis_fifo #(
     .DATA_W(24),
     .DEPTH(2)
   ) u_out_fifo (
     .clk,
     .rst_n,
-    .s(q),
+    .s(u_out_fifo_s),
     .m(m_axis),
     .level_o()
   );

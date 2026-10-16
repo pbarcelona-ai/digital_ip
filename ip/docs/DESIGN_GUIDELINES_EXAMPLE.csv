@@ -1,0 +1,12 @@
+Guideline,Mandatory,Optional,Notes
+"Synthesizable, technology-independent SystemVerilog-2012 (no vendor primitives outside wrappers)",x,,"Infer RAM, ROM and DSP from behavioural code"
+One statement per line; one parameter and one port per line in instantiations,x,,Checked by ip/scripts/sv_format.py --check
+"File header from ip/docs/HEADER_TEMPLATE.txt (Filename, Author, Description, Date)",x,,
+Every clock-domain crossing through a CDC technique (bit_sync / pulse_sync / async FIFO / handshake),x,,Name the technique in a comment at the crossing
+"Self-checking testbench with test_<what> tasks in tb/tests/<name>_tests.sv, prints TEST PASSED",x,,Run with make test; +vcd dumps a VCD
+100 % line / branch / toggle code coverage,x,,"Lower a metric only with a stated reason, e.g. tied-off bits"
+AXI4-Lite register map with ID and VERSION registers,x,,Out-of-range accesses return SLVERR
+SystemVerilog assertions (SVA) for every interface protocol rule,,x,Simulation only; excluded from coverage
+Python (cocotb) testbench in addition to the SystemVerilog one,,x,make python-test
+"Diagrams: no crossing lines, every clock and reset domain labelled",x,,"Split into several diagrams rather than cross lines"
+Resource estimate (LUT / FF / DSP / BRAM) in the file header,,x,From make synth

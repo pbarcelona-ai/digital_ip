@@ -8,6 +8,10 @@
 # ***************
 ../include/barrel_pkg.sv
 ../include/distortion_model_pkg.sv
+../../../ip/shared/src/interfaces/axil_if.sv
+../../../ip/shared/src/interfaces/axis_if.sv
+../../../ip/shared/src/interfaces/regbus_if.sv
+include/vision_system_regs_if.sv
 ../ip/fixed_recip/src/fixed_recip.sv
 ../ip/mulq/src/mulq_s.sv
 ../ip/coord_gen/src/coord_gen.sv

@@ -1,0 +1,104 @@
+{
+  "name": "sharpen_filter_regs",
+  "ip": "sharpen_filter",
+  "id": "SHRF",
+  "version": "1.00",
+  "desc": "Sharpening filter: unsharp-mask reset kernel. The settings are copied at each frame start.",
+  "addr_width": 8,
+  "params": [
+    {
+      "name": "N",
+      "default": 5,
+      "desc": "kernel size: 3 or 5"
+    },
+    {
+      "name": "COEF_W",
+      "default": 12,
+      "desc": "coefficient width"
+    },
+    {
+      "name": "RESET_W",
+      "type": "logic [15:0]",
+      "default": "16'd1920",
+      "desc": "FRAME_SIZE width at reset"
+    },
+    {
+      "name": "RESET_H",
+      "type": "logic [15:0]",
+      "default": "16'd1080",
+      "desc": "FRAME_SIZE height at reset"
+    },
+    {
+      "name": "KERNEL",
+      "type": "logic [conv2d_pkg::KMAX*32-1:0]",
+      "default": "'0",
+      "desc": "kernel at reset"
+    },
+    {
+      "name": "SHIFT",
+      "default": 0,
+      "desc": "SHIFT at reset"
+    }
+  ],
+  "registers": [
+    {
+      "name": "FRAME_SIZE",
+      "offset": "0x14",
+      "access": "RW",
+      "reset": "{RESET_H, RESET_W}",
+      "desc": "[15:0] width [31:16] height (>= (N+1)/2 each)"
+    },
+    {
+      "name": "SHIFT",
+      "offset": "0x18",
+      "access": "RW",
+      "width": 5,
+      "reset": "SHIFT",
+      "desc": "result right shift (normalisation)"
+    },
+    {
+      "name": "STATUS",
+      "offset": "0x1C",
+      "access": "RO",
+      "desc": "[15:0] frames filtered"
+    },
+    {
+      "name": "INFO",
+      "offset": "0x20",
+      "access": "RO",
+      "desc": "[3:0] N [11:8] COEF_W [23:16] C [31:24] CW"
+    },
+    {
+      "name": "K",
+      "offset": "0x50",
+      "access": "RW",
+      "count": "N * N",
+      "max_count": 25,
+      "width": "COEF_W",
+      "reset": "KERNEL[i*32 +: 32]",
+      "desc": "signed coefficient i = r*N + c"
+    }
+  ],
+  "core": "conv2d_filter",
+  "core_file": "../../../conv2d_filter/src/conv2d_filter.sv",
+  "top_params": [
+    {
+      "name": "AMOUNT",
+      "default": 1
+    },
+    {
+      "type": "logic [15:0]",
+      "name": "RESET_W",
+      "default": "16'd1920"
+    },
+    {
+      "type": "logic [15:0]",
+      "name": "RESET_H",
+      "default": "16'd1080"
+    }
+  ],
+  "regs_params": {
+    "KERNEL": "conv2d_pkg::sharpen_kernel(N, AMOUNT)",
+    "SHIFT": "conv2d_pkg::blur_shift(N)"
+  }
+}

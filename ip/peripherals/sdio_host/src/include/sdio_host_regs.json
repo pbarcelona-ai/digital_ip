@@ -1,0 +1,28 @@
+{
+  "name": "sdio_host_regs",
+  "ip": "sdio_host",
+  "id": "SDIO",
+  "version": "1.10",
+  "desc": "SD / SDIO host: command, argument, responses, status, clock and bus control, block size, timeout, interrupt enables.",
+  "addr_width": 8,
+  "clk": "aclk",
+  "rst_n": "aresetn",
+  "registers": [
+    {"name": "CMD", "offset": "0x10", "access": "RW", "width": 11, "desc": "a write starts the command; reads back the last one",
+     "fields": [{"name": "INDEX", "bit": "5:0", "desc": "command index"}, {"name": "RESP", "bit": "7:6", "desc": "response: 0 none, 1 short 48 bit, 2 long 136 bit"},
+                {"name": "DIR", "bit": "9:8", "desc": "data: 0 none, 1 read block, 2 write block"}, {"name": "NO_CRC", "bit": 10, "desc": "1: no CRC7 check of the response (R3 / R7)"}]},
+    {"name": "ARG", "offset": "0x14", "access": "RW", "desc": "command argument"},
+    {"name": "RESP", "offset": "0x18", "access": "RO", "count": 4, "desc": "response: short in RESP[0], long 127..0 in RESP[3]..RESP[0]"},
+    {"name": "STATUS", "offset": "0x28", "access": "CMD", "width": 8, "desc": "status; write 1 to clear bits 1-7",
+     "fields": [{"name": "BUSY", "bit": 0, "desc": "command or data in progress"}, {"name": "CMD_DONE", "bit": 1, "desc": "command finished"},
+                {"name": "DAT_DONE", "bit": 2, "desc": "data block finished"}, {"name": "CMD_TIMEOUT", "bit": 3, "desc": "no response"},
+                {"name": "CMD_CRC_ERR", "bit": 4, "desc": "response CRC7 error"}, {"name": "DAT_CRC_ERR", "bit": 5, "desc": "data CRC16, end bit or CRC status error"},
+                {"name": "DAT_TIMEOUT", "bit": 6, "desc": "data or busy timeout"}, {"name": "BUF_ERR", "bit": 7, "desc": "bad BLKSIZE, write without a full buffer, or command while busy"}]},
+    {"name": "CTRL", "offset": "0x2C", "access": "RW", "width": 18, "reset": "2", "desc": "SD clock and bus",
+     "fields": [{"name": "HALF_PERIOD", "bit": "15:0", "desc": "SD clock half period in system clocks (minimum 1)"}, {"name": "BUS4", "bit": 16, "desc": "1: 4-bit data bus"},
+                {"name": "CLK_EN", "bit": 17, "desc": "1: SD clock running"}]},
+    {"name": "BLKSIZE", "offset": "0x30", "access": "RW", "width": 11, "reset": "512", "desc": "block size in bytes (1..BUF_BYTES)"},
+    {"name": "TIMEOUT", "offset": "0x34", "access": "RW", "reset": "100000", "desc": "data / busy timeout in SD clocks"},
+    {"name": "IRQ_EN", "offset": "0x38", "access": "RW", "width": 7, "desc": "bit n enables STATUS bit n + 1 for irq_o"}
+  ]
+}

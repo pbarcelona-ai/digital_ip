@@ -1,0 +1,21 @@
+{
+  "name": "intc_regs",
+  "ip": "intc",
+  "id": "INTC",
+  "version": "1.10",
+  "desc": "Interrupt controller: enable, edge / level type, polarity, pending, software set, vector.",
+  "addr_width": 8,
+  "clk": "aclk",
+  "rst_n": "aresetn",
+  "params": [{"name": "NUM_IRQ", "default": 16, "desc": "number of sources (1..32)"}],
+  "registers": [
+    {"name": "ENABLE", "offset": "0x10", "access": "RW", "width": "NUM_IRQ", "desc": "interrupt enable per source"},
+    {"name": "EDGE_TYPE", "offset": "0x14", "access": "RW", "width": "NUM_IRQ", "desc": "1 = edge source (latched in PENDING), 0 = level"},
+    {"name": "ACTIVE_LOW", "offset": "0x18", "access": "RW", "width": "NUM_IRQ", "desc": "1 = active-low source"},
+    {"name": "PENDING", "offset": "0x1C", "access": "CMD", "width": "NUM_IRQ", "desc": "pending sources; write 1 to clear latched (edge) bits"},
+    {"name": "SOFT_SET", "offset": "0x20", "access": "WO", "width": "NUM_IRQ", "desc": "write 1s: set those sources pending (software interrupt)"},
+    {"name": "VECTOR", "offset": "0x24", "access": "RO", "desc": "highest-priority (lowest index) pending enabled source",
+     "fields": [{"name": "ID", "bit": "4:0", "desc": "source number"}, {"name": "VALID", "bit": 31, "desc": "a source is pending and enabled"}]},
+    {"name": "MASKED", "offset": "0x28", "access": "RO", "width": "NUM_IRQ", "desc": "PENDING AND ENABLE"}
+  ]
+}

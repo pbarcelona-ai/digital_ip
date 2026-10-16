@@ -1,0 +1,107 @@
+{
+  "name": "i2c_master_regs",
+  "ip": "i2c_master",
+  "id": "I2CM",
+  "version": "1.10",
+  "desc": "I2C master: transaction control, target address, length, SCL divider and status.",
+  "addr_width": 8,
+  "clk": "aclk",
+  "rst_n": "aresetn",
+  "top": "i2c_top",
+  "params": [
+    {
+      "name": "DIV_RST",
+      "default": 249,
+      "desc": "DIV at reset (CLK_HZ / (4 * SCL_HZ) - 1)"
+    }
+  ],
+  "regs_params": {
+    "DIV_RST": "(CLK_HZ / (4 * SCL_HZ)) - 1"
+  },
+  "registers": [
+    {
+      "name": "CTRL",
+      "offset": "0x10",
+      "access": "CMD",
+      "width": 4,
+      "desc": "transaction control; reads EN / READ / NO_STOP as stored, START reads 0",
+      "fields": [
+        {
+          "name": "EN",
+          "bit": 0,
+          "desc": "1: master enabled"
+        },
+        {
+          "name": "START",
+          "bit": 1,
+          "desc": "write 1: start the transaction (a command, reads 0)"
+        },
+        {
+          "name": "READ",
+          "bit": 2,
+          "desc": "1: read, 0: write (bytes from the AXI-Stream slave)"
+        },
+        {
+          "name": "NO_STOP",
+          "bit": 3,
+          "desc": "1: no STOP at the end (repeated START next)"
+        }
+      ]
+    },
+    {
+      "name": "ADDR",
+      "offset": "0x14",
+      "access": "RW",
+      "width": 7,
+      "desc": "7-bit target address"
+    },
+    {
+      "name": "LEN",
+      "offset": "0x18",
+      "access": "RW",
+      "width": 16,
+      "desc": "bytes to transfer"
+    },
+    {
+      "name": "DIV",
+      "offset": "0x1C",
+      "access": "RW",
+      "width": 16,
+      "reset": "DIV_RST",
+      "desc": "phase clocks - 1: f_scl = f_clk / (4 * (DIV + 1))"
+    },
+    {
+      "name": "STATUS",
+      "offset": "0x20",
+      "access": "CMD",
+      "desc": "status; write 1s to [3:1] to clear those flags",
+      "fields": [
+        {
+          "name": "BUSY",
+          "bit": 0,
+          "desc": "transaction in progress"
+        },
+        {
+          "name": "DONE",
+          "bit": 1,
+          "desc": "transaction finished (W1C; also cleared by START)"
+        },
+        {
+          "name": "NACK",
+          "bit": 2,
+          "desc": "target did not acknowledge (W1C)"
+        },
+        {
+          "name": "ARB_LOST",
+          "bit": 3,
+          "desc": "arbitration lost (W1C)"
+        },
+        {
+          "name": "RX_LEVEL",
+          "bit": "31:16",
+          "desc": "bytes in the receive FIFO"
+        }
+      ]
+    }
+  ]
+}

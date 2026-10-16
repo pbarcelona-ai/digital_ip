@@ -1,0 +1,127 @@
+{
+ "name": "uart_regs",
+ "ip": "uart",
+ "id": "UART",
+ "desc": "UART control, baud rate (fractional), status and error count.",
+ "addr_width": 8,
+ "clk": "aclk",
+ "rst_n": "aresetn",
+ "params": [
+  {
+   "name": "FCW_RST",
+   "type": "logic [31:0]",
+   "default": "32'd0",
+   "desc": "FCW at reset (the BAUD parameter)"
+  }
+ ],
+ "registers": [
+  {
+   "name": "CTRL",
+   "offset": "0x10",
+   "access": "RW",
+   "reset": "0x3",
+   "desc": "line settings",
+   "fields": [
+    {
+     "name": "TX_EN",
+     "bit": 0,
+     "desc": "transmitter on"
+    },
+    {
+     "name": "RX_EN",
+     "bit": 1,
+     "desc": "receiver on"
+    },
+    {
+     "name": "PAR_EN",
+     "bit": 2,
+     "desc": "parity on"
+    },
+    {
+     "name": "PAR_ODD",
+     "bit": 3,
+     "desc": "odd parity"
+    },
+    {
+     "name": "STOP2",
+     "bit": 4,
+     "desc": "two stop bits"
+    },
+    {
+     "name": "LOOPBACK",
+     "bit": 5,
+     "desc": "internal loopback"
+    },
+    {
+     "name": "BITS",
+     "bit": "7:6",
+     "desc": "data bits: 0 = 8, 1 = 7, 2 = 6, 3 = 5"
+    }
+   ]
+  },
+  {
+   "name": "FCW",
+   "offset": "0x14",
+   "access": "RW",
+   "reset": "FCW_RST",
+   "desc": "baud generator frequency control word (16 x baud / clock x 2^32)"
+  },
+  {
+   "name": "STATUS",
+   "offset": "0x18",
+   "access": "CMD",
+   "desc": "state and sticky errors (write 1 to clear the errors)",
+   "fields": [
+    {
+     "name": "TX_BUSY",
+     "bit": 0,
+     "desc": "transmitting"
+    },
+    {
+     "name": "RX_BUSY",
+     "bit": 1,
+     "desc": "receiving"
+    },
+    {
+     "name": "RX_AVAIL",
+     "bit": 2,
+     "desc": "received data available"
+    },
+    {
+     "name": "FRAME_ERR",
+     "bit": 8,
+     "desc": "framing error (W1C)"
+    },
+    {
+     "name": "PARITY_ERR",
+     "bit": 9,
+     "desc": "parity error (W1C)"
+    },
+    {
+     "name": "OVERRUN",
+     "bit": 10,
+     "desc": "receive FIFO overrun (W1C)"
+    },
+    {
+     "name": "RX_LEVEL",
+     "bit": "30:16",
+     "desc": "receive FIFO level"
+    }
+   ]
+  },
+  {
+   "name": "ERR_CNT",
+   "offset": "0x1C",
+   "access": "RO",
+   "desc": "frames received with an error"
+  }
+ ],
+ "top": "uart_top",
+ "top_localparams": [
+  "localparam logic [63:0] FCW64 = ((64'(BAUD) * 64'd16 << 32) + (64'(CLK_HZ) >> 1)) / 64'(CLK_HZ);"
+ ],
+ "regs_params": {
+  "FCW_RST": "FCW64[31:0]"
+ },
+ "version": "1.10"
+}

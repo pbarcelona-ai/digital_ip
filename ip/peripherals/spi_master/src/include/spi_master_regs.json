@@ -1,0 +1,24 @@
+{
+  "name": "spi_master_regs",
+  "ip": "spi_master",
+  "id": "SPIM",
+  "version": "1.10",
+  "desc": "SPI master: mode and chip select, SCLK divider, word length and status.",
+  "addr_width": 8,
+  "clk": "aclk",
+  "rst_n": "aresetn",
+  "top": "spi_top",
+  "params": [{"name": "DIV_RST", "default": 49, "desc": "DIV at reset (CLK_HZ / (2 * SCLK_HZ) - 1)"}],
+  "regs_params": {"DIV_RST": "(CLK_HZ / (2 * SCLK_HZ)) - 1"},
+  "registers": [
+    {"name": "CTRL", "offset": "0x10", "access": "RW", "width": 16, "desc": "mode and chip select",
+     "fields": [{"name": "EN", "bit": 0, "desc": "1: master enabled"}, {"name": "CPOL", "bit": 1, "desc": "SCLK idle level"},
+                {"name": "CPHA", "bit": 2, "desc": "1: sample on the second edge"}, {"name": "LSB_FIRST", "bit": 3, "desc": "1: least significant bit first"},
+                {"name": "CS_SELECT", "bit": "15:8", "desc": "chip select driven low for the bursts"}]},
+    {"name": "DIV", "offset": "0x14", "access": "RW", "width": 16, "reset": "DIV_RST", "desc": "SCLK half period = DIV + 1 clocks"},
+    {"name": "WORD_LEN", "offset": "0x18", "access": "RW", "width": 6, "reset": "8", "desc": "bits per word (1..DATA_W)"},
+    {"name": "STATUS", "offset": "0x1C", "access": "CMD", "desc": "status; write 1 to [1] to clear the overrun flag",
+     "fields": [{"name": "BUSY", "bit": 0, "desc": "transfer in progress"}, {"name": "RX_OVERRUN", "bit": 1, "desc": "a received word was dropped, receive FIFO full (W1C)"},
+                {"name": "RX_LEVEL", "bit": "31:16", "desc": "words in the receive FIFO"}]}
+  ]
+}

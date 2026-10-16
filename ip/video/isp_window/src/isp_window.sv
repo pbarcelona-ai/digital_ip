@@ -171,13 +171,13 @@ module isp_window #(
       end else if (q_r) q_v <= 1'b0;
     end
   end
-  axis_if #(.DATA_W(N*N*PW + 32)) u_out_fifo_s ();
+  axis_if #(.DATA_W((N*N*PW + 32))) u_out_fifo_s ();
   assign u_out_fifo_s.tdata = {q_m_x, q_m_y, q_d};
   assign u_out_fifo_s.tlast = q_l;
   assign u_out_fifo_s.tuser = q_u;
   assign u_out_fifo_s.tvalid = q_v;
   assign q_r = u_out_fifo_s.tready;
-  axis_if #(.DATA_W(N*N*PW + 32)) u_out_fifo_m ();
+  axis_if #(.DATA_W((N*N*PW + 32))) u_out_fifo_m ();
   assign {m_x, m_y, m_axis.tdata} = u_out_fifo_m.tdata;
   assign m_axis.tlast = u_out_fifo_m.tlast;
   assign m_axis.tuser = u_out_fifo_m.tuser;

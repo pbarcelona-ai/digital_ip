@@ -33,9 +33,10 @@ module isp_gamma #(
 );
   // output stage: the last pipeline register (q_*) feeds a 2-entry FIFO whose ready is registered,
   // so s_axis_tready does not depend combinationally on m_axis_tready
-  axis_if #(.DATA_W(3*OUT_W), .USER_W(1)) q ();
+  logic [3*OUT_W-1:0] q_d;
+  logic q_l, q_u, q_v, q_r;
   if (OUT_W > IN_W) begin : g_bad $error("isp_gamma: OUT_W must be <= IN_W"); end
-  wire en = !q.tvalid || q.tready;
+  wire en = !q_v || q_r;
   assign s_axis.tready = en;
   wire acc = s_axis.tvalid && en;
 
@@ -60,26 +61,32 @@ module isp_gamma #(
       by_f <= 1'b0;
       by_q <= 1'b0;
       lin_q <= '0;
-      q.tvalid <= 1'b0;
-      q.tlast <= 1'b0;
-      q.tuser <= 1'b0;
+      q_v <= 1'b0;
+      q_l <= 1'b0;
+      q_u <= 1'b0;
     end else if (en) begin
       if (acc && s_axis.tuser) by_f <= bypass_i;
       by_q <= by;
       for (int k = 0; k < 3; k++) lin_q[k*OUT_W +: OUT_W] <= s_axis.tdata[k*IN_W + IN_W - OUT_W +: OUT_W];
-      q.tvalid <= acc;
-      q.tlast <= s_axis.tlast;
-      q.tuser <= s_axis.tuser;
+      q_v <= acc;
+      q_l <= s_axis.tlast;
+      q_u <= s_axis.tuser;
     end
   end
-  assign q.tdata = by_q ? lin_q : lut_q;
+  assign q_d = by_q ? lin_q : lut_q;
+  axis_if #(.DATA_W((3*OUT_W))) u_out_fifo_s ();
+  assign u_out_fifo_s.tdata = q_d;
+  assign u_out_fifo_s.tlast = q_l;
+  assign u_out_fifo_s.tuser = q_u;
+  assign u_out_fifo_s.tvalid = q_v;
+  assign q_r = u_out_fifo_s.tready;
   ip_axis_fifo #(
     .DATA_W(3*OUT_W),
     .DEPTH(2)
   ) u_out_fifo (
     .clk,
     .rst_n,
-    .s(q),
+    .s(u_out_fifo_s),
     .m(m_axis),
     .level_o()
   );

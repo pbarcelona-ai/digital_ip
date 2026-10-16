@@ -162,7 +162,9 @@ module video_pipeline #(
   output logic                eof_out_o,
   output logic                stats_done_o       // pulse: new statistics available
 );
+`ifdef VP_INSERT
   assign ins_m_axis.tkeep = '1;      // not used by this block
+`endif
 `ifndef VP_CONFIGURATION_SV
   if (1) begin : g_no_config $error("video_pipeline: compile src/configuration.sv first (see scripts/build.f)"); end
 `endif
@@ -542,16 +544,8 @@ module video_pipeline #(
     .bypass_i(byp[4]),
     .coef_i(coef),
     .off_i(offs),
-    .s_axis_tdata(d.tdata),
-    .s_axis_tlast(d.tlast),
-    .s_axis_tuser(d.tuser),
-    .s_axis_tvalid(d.tvalid),
-    .s_axis_tready(d.tready),
-    .m_axis_tdata(m.tdata),
-    .m_axis_tlast(m.tlast),
-    .m_axis_tuser(m.tuser),
-    .m_axis_tvalid(m.tvalid),
-    .m_axis_tready(m.tready)
+    .s_axis(d),
+    .m_axis(m)
   );
 
   // Statistics on linear RGB (after the CCM)
@@ -612,14 +606,21 @@ module video_pipeline #(
     .m_axis(gm)
   );
 
-  axis_if #(.DATA_W(24), .USER_W(1)) cq ();
+  logic [23:0] cq_d;
+  logic cq_l, cq_u, cq_v, cq_r;
+  axis_if #(.DATA_W(24)) u_csc_m_axis ();
+  assign cq_d = u_csc_m_axis.tdata;
+  assign cq_l = u_csc_m_axis.tlast;
+  assign cq_u = u_csc_m_axis.tuser;
+  assign cq_v = u_csc_m_axis.tvalid;
+  assign u_csc_m_axis.tready = cq_r;
   isp_csc u_csc (
     .clk,
     .rst_n,
     .bypass_i(byp[6]),
     .bt709_i(bt709),
     .s_axis(gm),
-    .m_axis(cq)
+    .m_axis(u_csc_m_axis)
   );
 
   // ================================================================ insert point (`VP_INSERT)
@@ -635,9 +636,9 @@ module video_pipeline #(
   logic ir_l, ir_u, ir_v, ir_r, im_r;
   logic ins_en_s, ins_mode;
 `ifdef VP_INSERT
-  assign ins_m_axis.tdata = cq.tdata;
-  assign ins_m_axis.tlast = cq.tlast;
-  assign ins_m_axis.tuser = cq.tuser;
+  assign ins_m_axis.tdata = cq_d;
+  assign ins_m_axis.tlast = cq_l;
+  assign ins_m_axis.tuser = cq_u;
   assign im_r = ins_m_axis.tready;
   assign ir_d = ins_s_axis.tdata;
   assign ir_l = ins_s_axis.tlast;
@@ -653,17 +654,17 @@ module video_pipeline #(
   assign ir_v = 1'b0;
   wire ins_en = 1'b0;
 `endif
-  wire cq_sof     = cq.tvalid && cq.tuser;
+  wire cq_sof     = cq_v && cq_u;
   wire ins_sel    = cq_sof ? ins_en_s : ins_mode;          // route of the beat presented by isp_csc
   wire ret_direct = !ins_mode || (cq_sof && !ins_sel);     // the stream on comes from isp_csc
 `ifdef VP_INSERT
-  assign ins_m_axis.tvalid = cq.tvalid && ins_sel;
+  assign ins_m_axis.tvalid = cq_v && ins_sel;
 `endif
-  assign cs_v = ret_direct ? (cq.tvalid && !ins_sel) : ir_v;
-  assign cs_d = ret_direct ? cq.tdata : ir_d;
-  assign cs_l = ret_direct ? cq.tlast : ir_l;
-  assign cs_u = ret_direct ? cq.tuser : ir_u;
-  assign cq.tready = ins_sel ? im_r : (ret_direct && cs_r);
+  assign cs_v = ret_direct ? (cq_v && !ins_sel) : ir_v;
+  assign cs_d = ret_direct ? cq_d : ir_d;
+  assign cs_l = ret_direct ? cq_l : ir_l;
+  assign cs_u = ret_direct ? cq_u : ir_u;
+  assign cq_r = ins_sel ? im_r : (ret_direct && cs_r);
   assign ir_r = ret_direct ? 1'b1 : cs_r;                  // drain returns that are no longer wanted
   always_ff @(posedge clk) begin
     if (!rst_n) begin
@@ -672,7 +673,7 @@ module video_pipeline #(
     end
     else begin
       if (!cq_sof) ins_en_s <= ins_en;
-      if (cq_sof && cq.tready) ins_mode <= ins_sel;
+      if (cq_sof && cq_r) ins_mode <= ins_sel;
     end
   end
 
@@ -687,7 +688,8 @@ module video_pipeline #(
   //            (a frame the scaler can no longer finish).
   // Scaler output that belongs to no queued frame is drained, so switching
   // the scaler in or out of the path (BYPASS[7]) recovers by itself.
-  axis_if #(.DATA_W(24), .USER_W(1)) o ();
+  logic [23:0] o_d;
+  logic o_l, o_u, o_v, o_r;
   logic [3:0] rq; // route queue, entry 0 first: 1 = scaler
   logic [2:0] rq_n;
   logic sof_pushed, sof_route, in_route;
@@ -715,16 +717,16 @@ module video_pipeline #(
   // The next frame's SOF waits until the bypassed frame in progress is closed
   wire  by_cur     = out_sel && !cur_route;
   wire  by_hold    = out_busy && !out_route && by_started && at_sof;
-  assign by_r = by_cur && o.tready && !by_hold;
-  assign sc.tready = (out_sel && cur_route) ? (o.tready && !sc_restart) : !sc_pending;   // drain orphan output
-  assign o.tvalid  = out_sel && (cur_route ? (sc.tvalid && !sc_restart) : (cs_v && !route_now && !in_block && !by_hold));
-  assign o.tdata  = cur_route ? sc.tdata : cs_d;
-  assign o.tlast  = cur_route ? sc.tlast : cs_l;
-  assign o.tuser  = cur_route ? sc.tuser : cs_u;
-  wire  out_beat = o.tvalid && o.tready;
+  assign by_r = by_cur && o_r && !by_hold;
+  assign sc.tready = (out_sel && cur_route) ? (o_r && !sc_restart) : !sc_pending;   // drain orphan output
+  assign o_v  = out_sel && (cur_route ? (sc.tvalid && !sc_restart) : (cs_v && !route_now && !in_block && !by_hold));
+  assign o_d  = cur_route ? sc.tdata : cs_d;
+  assign o_l  = cur_route ? sc.tlast : cs_l;
+  assign o_u  = cur_route ? sc.tuser : cs_u;
+  wire  out_beat = o_v && o_r;
   wire  by_end   = by_hold && sof_pushed;
   wire  sc_end   = out_busy && out_route &&
-                   ((out_beat && o.tlast && out_lines + 1'b1 >= v_act) ||            // full frame
+                   ((out_beat && o_l && out_lines + 1'b1 >= v_act) ||            // full frame
                     sc_restart ||                                                // scaler restarted
                     (idle == 16'hFFFF));                                         // scaler stalled
   wire  out_end  = by_end || sc_end;
@@ -758,7 +760,7 @@ module video_pipeline #(
         by_started <= 1'b0;
       end
       if (by_cur && in_beat && cs_u) by_started <= 1'b1;            // also in the pick clock
-      if (out_beat && o.tlast) out_lines <= out_lines + 1'b1;
+      if (out_beat && o_l) out_lines <= out_lines + 1'b1;
       if (out_busy) idle <= out_beat ? 16'd0 : (idle == 16'hFFFF ? idle : idle + 1'b1);
       if (out_end) out_busy <= 1'b0;
       case ({push, pop})
@@ -798,12 +800,19 @@ module video_pipeline #(
     assign sp_rresp[3:2] = u_scaler_s_axil.rresp;
     assign sp_rvalid[1] = u_scaler_s_axil.rvalid;
     assign u_scaler_s_axil.rready = sp_rready[1];
-    axis_if #(.DATA_W(CHANNELS * COMP_W)) u_scaler_s_axis ();
+    axis_if #(.DATA_W((3 * 8))) u_scaler_s_axis ();
     assign u_scaler_s_axis.tdata = cs_d;
     assign u_scaler_s_axis.tvalid = cs_v && route_now && !in_block;
     assign sc_in_r = u_scaler_s_axis.tready;
     assign u_scaler_s_axis.tuser = cs_u;
     assign u_scaler_s_axis.tlast = cs_l;
+    axis_if #(.DATA_W((3 * 8))) u_scaler_m_axis ();   // bridge (generate scope)
+    assign sc.tdata = u_scaler_m_axis.tdata;
+    assign sc.tkeep = u_scaler_m_axis.tkeep;
+    assign sc.tlast = u_scaler_m_axis.tlast;
+    assign sc.tuser = u_scaler_m_axis.tuser;
+    assign sc.tvalid = u_scaler_m_axis.tvalid;
+    assign u_scaler_m_axis.tready = sc.tready;
     scaler_bilinear #(
       .CHANNELS(3),
       .COMP_W(8),
@@ -816,7 +825,7 @@ module video_pipeline #(
       .rst_n,
       .s_axil(u_scaler_s_axil),
       .s_axis(u_scaler_s_axis),
-      .m_axis(sc)
+      .m_axis(u_scaler_m_axis)
     );
   end else begin : g_no_scaler
     assign sc_in_r = 1'b0;
@@ -883,7 +892,7 @@ module video_pipeline #(
   // Line count from the SOF beat (tuser); the tlast of line height - 1 ends the frame.
   logic [15:0] ln_in, ln_out;
   wire  [15:0] ln_in_c  = u.tuser ? 16'd0 : ln_in;
-  wire  [15:0] ln_out_c = o.tuser ? 16'd0 : ln_out;
+  wire  [15:0] ln_out_c = o_u ? 16'd0 : ln_out;
   always_ff @(posedge clk) begin
     if (!rst_n) begin
       ln_in <= '0;
@@ -902,8 +911,8 @@ module video_pipeline #(
         end
         else                     ln_in <= ln_in_c + 16'd1;
       end
-      if (o.tvalid && o.tready) begin
-        if (!o.tlast)                ln_out <= ln_out_c;
+      if (o_v && o_r) begin
+        if (!o_l)                ln_out <= ln_out_c;
         else if (ln_out_c == v_act - 16'd1) begin
           ln_out <= '0;
           eof_out_o <= 1'b1;
@@ -915,6 +924,12 @@ module video_pipeline #(
 
   vid_if #(.DATA_W(24)) v ();
   logic locked, underflow;
+  axis_if #(.DATA_W(24)) u_out_s_axis ();
+  assign u_out_s_axis.tdata = o_d;
+  assign u_out_s_axis.tlast = o_l;
+  assign u_out_s_axis.tuser = o_u;
+  assign u_out_s_axis.tvalid = o_v;
+  assign o_r = u_out_s_axis.tready;
   axis_to_video #(
     .PIX_W(24),
     .FIFO_DEPTH(OUT_FIFO)
@@ -924,7 +939,7 @@ module video_pipeline #(
     .tpg_en_i(tpg),
     .start_level_i(regs[45*32 +: 16]),
     .h_active_i(regs[35*32 +: 16]),
-    .s_axis(o),
+    .s_axis(u_out_s_axis),
     .tim(tim),
     .sof_i(sof),
     .vblank_i(vbl),

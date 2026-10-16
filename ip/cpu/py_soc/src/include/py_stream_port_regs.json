@@ -1,0 +1,24 @@
+{
+  "name": "py_stream_port_regs",
+  "ip": "py_stream_port",
+  "id": "PORT",
+  "version": "1.10",
+  "desc": "AXI4-Lite to AXI-Stream data port: TX FIFO writes, RX FIFO reads, FIFO status, interrupt enables.",
+  "addr_width": 8,
+  "clk": "aclk",
+  "rst_n": "aresetn",
+  "registers": [
+    {"name": "TXDATA", "offset": "0x10", "access": "WO", "width": 25, "desc": "pushed into the TX FIFO, or dropped with STATUS.TX_OVF set when it is full",
+     "fields": [{"name": "DATA", "bit": "23:0", "desc": "data"}, {"name": "LAST", "bit": 24, "desc": "tlast"}]},
+    {"name": "RXDATA", "offset": "0x14", "access": "RC", "desc": "oldest received word; a read with VALID = 1 removes it from the RX FIFO",
+     "fields": [{"name": "DATA", "bit": "23:0", "desc": "data"}, {"name": "LAST", "bit": 24, "desc": "tlast"},
+                {"name": "VALID", "bit": 31, "desc": "1: a word was read (0: the RX FIFO was empty)"}]},
+    {"name": "STATUS", "offset": "0x18", "access": "CMD", "desc": "FIFO status; write 1 to [2] to clear TX_OVF",
+     "fields": [{"name": "RX_VALID", "bit": 0, "desc": "RX FIFO not empty"}, {"name": "TX_READY", "bit": 1, "desc": "TX FIFO not full"},
+                {"name": "TX_OVF", "bit": 2, "desc": "a TXDATA write was dropped (W1C)"}, {"name": "TX_EMPTY", "bit": 3, "desc": "TX FIFO empty"},
+                {"name": "RX_LEVEL", "bit": "19:8", "desc": "words in the RX FIFO"}, {"name": "TX_LEVEL", "bit": "31:20", "desc": "words in the TX FIFO"}]},
+    {"name": "IRQ_EN", "offset": "0x1C", "access": "RW", "width": 3, "desc": "irq_o while an enabled condition holds",
+     "fields": [{"name": "RX_VALID", "bit": 0, "desc": "RX FIFO not empty"}, {"name": "TX_READY", "bit": 1, "desc": "TX FIFO not full"},
+                {"name": "TX_EMPTY", "bit": 2, "desc": "TX FIFO empty"}]}
+  ]
+}

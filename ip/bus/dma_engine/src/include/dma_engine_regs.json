@@ -1,0 +1,20 @@
+{
+  "name": "dma_engine_regs",
+  "ip": "dma_engine",
+  "id": "DMAE",
+  "version": "1.10",
+  "desc": "Memory to memory DMA: start control, source, destination, length, status.",
+  "addr_width": 8,
+  "clk": "aclk",
+  "rst_n": "aresetn",
+  "registers": [
+    {"name": "CTRL", "offset": "0x10", "access": "RW", "width": 2, "desc": "control",
+     "fields": [{"name": "START", "bit": 0, "desc": "write 1: start the copy"}, {"name": "IRQ_EN", "bit": 1, "desc": "irq_o follows DONE"}]},
+    {"name": "SRC", "offset": "0x14", "access": "RW", "desc": "source address (4-byte aligned)"},
+    {"name": "DST", "offset": "0x18", "access": "RW", "desc": "destination address (4-byte aligned)"},
+    {"name": "LEN", "offset": "0x1C", "access": "RW", "desc": "bytes to copy (multiple of 4, not 0)"},
+    {"name": "STATUS", "offset": "0x20", "access": "CMD", "width": 10, "desc": "status; done and error write 1 to clear",
+     "fields": [{"name": "BUSY", "bit": 0, "desc": "copy running"}, {"name": "DONE", "bit": 8, "desc": "copy finished (W1C)"},
+                {"name": "ERROR", "bit": 9, "desc": "bad length or bus error (W1C)"}]}
+  ]
+}

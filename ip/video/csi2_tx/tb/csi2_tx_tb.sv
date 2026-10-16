@@ -101,13 +101,17 @@ module csi2_tx_tb;
       if (!ppi.hs_req) ppi.tx_ready <= 1'b0;
       else if (!ppi.tx_ready && $urandom_range(5) == 0) ppi.tx_ready <= 1'b1;
     end
+    // the receiver sees the transmitted lane bytes (D-PHY loop-back: PHY side of the receiver)
+    ppi_rx_if #(.NLANES(NL)) rx_ppi ();
+    assign rx_ppi.lane_data = ppi.lane_data;
+    assign rx_ppi.lane_valid = ppi.lane_valid;
     axis_if #(.DATA_W(NL*8), .USER_W(1), .KEEP_W(NL)) m_axis ();
     assign m_axis.tready = 1'b1;
     logic fs, fe, ln, ec, ee, ce, ov;
     csi2_rx #(.NLANES(NL)) rx (
       .clk(bclk),
       .rst_n(brst_n),
-      .ppi(ppi),
+      .ppi(rx_ppi),
       .vc_i(2'd1),
       .dt_i(yuv ? 6'h1E : 6'h24),
       .m_axis(m_axis),

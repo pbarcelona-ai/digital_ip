@@ -1,0 +1,25 @@
+{
+  "name": "quad_dec_regs",
+  "ip": "quad_dec",
+  "id": "QDEC",
+  "version": "1.10",
+  "desc": "Quadrature decoder: control and filter, position, velocity, window, status, error count, index position.",
+  "addr_width": 8,
+  "clk": "aclk",
+  "rst_n": "aresetn",
+  "registers": [
+    {"name": "CTRL", "offset": "0x10", "access": "RW", "width": 16, "reset": "1", "desc": "control",
+     "fields": [{"name": "EN", "bit": 0, "desc": "1: decoding"}, {"name": "CLR_POS", "bit": 1, "desc": "write 1: position to 0"},
+                {"name": "INDEX_CLR", "bit": 2, "desc": "1: the index edge clears the position"}, {"name": "SWAP", "bit": 3, "desc": "1: swap A and B"},
+                {"name": "FILTER", "bit": "15:8", "desc": "input stability filter, clocks"}]},
+    {"name": "POSITION", "offset": "0x14", "access": "CMD", "desc": "signed position (x4 counts); a write loads it"},
+    {"name": "VELOCITY", "offset": "0x18", "access": "RO", "desc": "signed counts in the last window"},
+    {"name": "WINDOW", "offset": "0x1C", "access": "RW", "reset": "100000", "desc": "velocity window, clocks"},
+    {"name": "STATUS", "offset": "0x20", "access": "CMD", "width": 3, "desc": "status; write 1 to [2:1] to clear those flags",
+     "fields": [{"name": "DIR", "bit": 0, "desc": "direction of the last step (1 = up)"}, {"name": "ERROR", "bit": 1, "desc": "illegal transition seen (W1C)"},
+                {"name": "INDEX", "bit": 2, "desc": "index edge seen (W1C)"}]},
+    {"name": "ERR_COUNT", "offset": "0x24", "access": "RO", "desc": "illegal transitions counted"},
+    {"name": "INDEX_POS", "offset": "0x28", "access": "RO", "desc": "position at the last index edge"}
+  ],
+  "top": "quad_dec_top"
+}

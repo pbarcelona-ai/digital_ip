@@ -1,0 +1,28 @@
+{
+  "name": "baud_nco_regs",
+  "ip": "baud_nco",
+  "id": "BNCO",
+  "version": "1.10",
+  "desc": "Baud-rate / sine NCO: control, frequency control word, phase offset, gain, status, tick counter.",
+  "addr_width": 8,
+  "clk": "aclk",
+  "rst_n": "aresetn",
+  "params": [{"name": "FCW_RST", "type": "logic [31:0]", "default": "32'd0", "desc": "FCW at reset (BAUD * OSR * 2^PHASE_W / CLK_HZ)"}],
+  "top_localparams": [
+    "// Default FCW = round(BAUD * OSR * 2^PHASE_W / CLK_HZ), 64 bit math",
+    "localparam logic [63:0] FCW64 = ((64'(BAUD) * 64'(OSR) << PHASE_W) + (64'(CLK_HZ) >> 1)) / 64'(CLK_HZ);",
+    "localparam logic [31:0] FCW_DEF = FCW64[31:0];"
+  ],
+  "regs_params": {"FCW_RST": "FCW_DEF"},
+  "registers": [
+    {"name": "CTRL", "offset": "0x10", "access": "CMD", "width": 3, "desc": "control (reads [2] as 0)",
+     "fields": [{"name": "EN", "bit": 0, "desc": "1: NCO running (reset 1)"}, {"name": "STREAM_EN", "bit": 1, "desc": "1: samples on the AXI-Stream master"},
+                {"name": "PHASE_RST", "bit": 2, "desc": "write 1: phase back to 0 (self clearing)"}]},
+    {"name": "FCW", "offset": "0x14", "access": "RW", "reset": "FCW_RST", "desc": "frequency control word: phase step per clock (2^PHASE_W = one turn)"},
+    {"name": "PHASE_OFF", "offset": "0x18", "access": "RW", "width": 16, "desc": "phase offset of the sine output"},
+    {"name": "GAIN", "offset": "0x1C", "access": "RW", "width": 15, "reset": "32767", "desc": "sine amplitude"},
+    {"name": "STATUS", "offset": "0x20", "access": "RO", "width": 2, "desc": "status",
+     "fields": [{"name": "EN", "bit": 0, "desc": "NCO running"}, {"name": "TVALID", "bit": 1, "desc": "a sample is offered on the stream"}]},
+    {"name": "TICK_COUNT", "offset": "0x24", "access": "CMD", "desc": "baud ticks counted; a write clears it"}
+  ]
+}

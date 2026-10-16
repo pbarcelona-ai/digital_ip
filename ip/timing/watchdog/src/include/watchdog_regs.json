@@ -1,0 +1,24 @@
+{
+  "name": "watchdog_regs",
+  "ip": "watchdog",
+  "id": "WDOG",
+  "version": "1.10",
+  "desc": "Watchdog timer: prescaler, timeout, pre-timeout interrupt, window, keyed kick, lock.",
+  "addr_width": 8,
+  "clk": "aclk",
+  "rst_n": "aresetn",
+  "registers": [
+    {"name": "CTRL", "offset": "0x10", "access": "CMD", "width": 3, "desc": "control (EN and LOCK are ignored once LOCK is set)",
+     "fields": [{"name": "EN", "bit": 0, "desc": "1: watchdog running"}, {"name": "WINDOW_EN", "bit": 1, "desc": "1: a kick before WINDOW_OPEN is early (reset)"},
+                {"name": "LOCK", "bit": 2, "desc": "1: EN can no longer be changed (until reset)"}]},
+    {"name": "TIMEOUT", "offset": "0x14", "access": "RW", "reset": "1000", "desc": "reset after this many ticks without a kick"},
+    {"name": "PRESCALE", "offset": "0x18", "access": "RW", "desc": "clock cycles per tick - 1"},
+    {"name": "PRETIMEOUT", "offset": "0x1C", "access": "RW", "desc": "pre-timeout interrupt after this many ticks (0: off)"},
+    {"name": "WINDOW_OPEN", "offset": "0x20", "access": "RW", "desc": "earliest legal kick, ticks (window mode)"},
+    {"name": "KICK", "offset": "0x24", "access": "WO", "desc": "write 0x5AFEC0DE to restart the count (other values: bad key)"},
+    {"name": "STATUS", "offset": "0x28", "access": "CMD", "width": 4, "desc": "flags, write 1 to clear",
+     "fields": [{"name": "PRETIMEOUT", "bit": 0, "desc": "pre-timeout reached (interrupt)"}, {"name": "EXPIRED", "bit": 1, "desc": "timeout reached (reset)"},
+                {"name": "EARLY", "bit": 2, "desc": "kick before WINDOW_OPEN"}, {"name": "BAD_KEY", "bit": 3, "desc": "kick with a wrong key"}]},
+    {"name": "COUNT", "offset": "0x2C", "access": "RO", "desc": "current tick count"}
+  ]
+}

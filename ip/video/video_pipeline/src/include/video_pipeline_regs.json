@@ -1,0 +1,407 @@
+{
+  "interface": true,
+ "name": "video_pipeline_regs",
+ "ip": "video_pipeline",
+ "id": "VPIP",
+ "version": "1.10",
+ "desc": "Camera to display pipeline registers: control, ISP stages, statistics, display timing, MIPI / LVDS outputs, counters.",
+ "addr_width": 9,
+ "clk": "clk",
+ "rst_n": "rst_n",
+ "top": false,
+ "registers": [
+  {
+   "name": "CTRL",
+   "offset": "0x014",
+   "access": "RW",
+   "desc": "[0] output enable [1] HDMI (0 = DVI) [2] TPG [3] genlock [5:4] CFA [6] CSC BT.709 [7] insert point"
+  },
+  {
+   "name": "BYPASS",
+   "offset": "0x018",
+   "access": "RW",
+   "desc": "stage bypass: [0] BLC [1] WB [2] DPC [3] demosaic [4] CCM [5] gamma [6] CSC [7] scaler",
+   "reset": "0xC0"
+  },
+  {
+   "name": "STATUS",
+   "offset": "0x01C",
+   "access": "RO",
+   "desc": "[0] output locked to the camera"
+  },
+  {
+   "name": "CSI",
+   "offset": "0x020",
+   "access": "RW",
+   "desc": "[5:0] data type (RAW10) [7:6] virtual channel",
+   "reset": "0x2B"
+  },
+  {
+   "name": "FRAME_SIZE",
+   "offset": "0x024",
+   "access": "RW",
+   "desc": "[15:0] camera width [31:16] height"
+  },
+  {
+   "name": "BLC_R",
+   "offset": "0x028",
+   "access": "RW",
+   "desc": "black level R"
+  },
+  {
+   "name": "BLC_GR",
+   "offset": "0x02C",
+   "access": "RW",
+   "desc": "black level Gr"
+  },
+  {
+   "name": "BLC_GB",
+   "offset": "0x030",
+   "access": "RW",
+   "desc": "black level Gb"
+  },
+  {
+   "name": "BLC_B",
+   "offset": "0x034",
+   "access": "RW",
+   "desc": "black level B"
+  },
+  {
+   "name": "WB_R",
+   "offset": "0x038",
+   "access": "RW",
+   "desc": "white balance gain R, Q4.8",
+   "reset": "0x100"
+  },
+  {
+   "name": "WB_G",
+   "offset": "0x03C",
+   "access": "RW",
+   "desc": "white balance gain G, Q4.8",
+   "reset": "0x100"
+  },
+  {
+   "name": "WB_B",
+   "offset": "0x040",
+   "access": "RW",
+   "desc": "white balance gain B, Q4.8",
+   "reset": "0x100"
+  },
+  {
+   "name": "DPC_THR",
+   "offset": "0x044",
+   "access": "RW",
+   "desc": "defect pixel threshold",
+   "reset": "0x40"
+  },
+  {
+   "name": "CCM_C00",
+   "offset": "0x048",
+   "access": "RW",
+   "desc": "colour matrix coefficient, signed Q5.10",
+   "reset": "0x400"
+  },
+  {
+   "name": "CCM_C01",
+   "offset": "0x04C",
+   "access": "RW",
+   "desc": "colour matrix coefficient, signed Q5.10"
+  },
+  {
+   "name": "CCM_C02",
+   "offset": "0x050",
+   "access": "RW",
+   "desc": "colour matrix coefficient, signed Q5.10"
+  },
+  {
+   "name": "CCM_C10",
+   "offset": "0x054",
+   "access": "RW",
+   "desc": "colour matrix coefficient, signed Q5.10"
+  },
+  {
+   "name": "CCM_C11",
+   "offset": "0x058",
+   "access": "RW",
+   "desc": "colour matrix coefficient, signed Q5.10",
+   "reset": "0x400"
+  },
+  {
+   "name": "CCM_C12",
+   "offset": "0x05C",
+   "access": "RW",
+   "desc": "colour matrix coefficient, signed Q5.10"
+  },
+  {
+   "name": "CCM_C20",
+   "offset": "0x060",
+   "access": "RW",
+   "desc": "colour matrix coefficient, signed Q5.10"
+  },
+  {
+   "name": "CCM_C21",
+   "offset": "0x064",
+   "access": "RW",
+   "desc": "colour matrix coefficient, signed Q5.10"
+  },
+  {
+   "name": "CCM_C22",
+   "offset": "0x068",
+   "access": "RW",
+   "desc": "colour matrix coefficient, signed Q5.10",
+   "reset": "0x400"
+  },
+  {
+   "name": "CCM_OFF_R",
+   "offset": "0x06C",
+   "access": "RW",
+   "desc": "colour matrix offset R (signed)"
+  },
+  {
+   "name": "CCM_OFF_G",
+   "offset": "0x070",
+   "access": "RW",
+   "desc": "colour matrix offset G (signed)"
+  },
+  {
+   "name": "CCM_OFF_B",
+   "offset": "0x074",
+   "access": "RW",
+   "desc": "colour matrix offset B (signed)"
+  },
+  {
+   "name": "GAMMA_ADDR",
+   "offset": "0x078",
+   "access": "RW",
+   "desc": "gamma table index for the next GAMMA_DATA write"
+  },
+  {
+   "name": "GAMMA_DATA",
+   "offset": "0x07C",
+   "access": "WO",
+   "desc": "[7:0] writes table[index], the index auto-increments"
+  },
+  {
+   "name": "STAT_THR",
+   "offset": "0x080",
+   "access": "RW",
+   "desc": "statistics clip threshold (10 bit)",
+   "reset": "0x3E8"
+  },
+  {
+   "name": "STAT_SUM_R",
+   "offset": "0x084",
+   "access": "RO",
+   "desc": "sum of R, last frame (low 32 bits)"
+  },
+  {
+   "name": "STAT_SUM_G",
+   "offset": "0x088",
+   "access": "RO",
+   "desc": "sum of G, last frame (low 32 bits)"
+  },
+  {
+   "name": "STAT_SUM_B",
+   "offset": "0x08C",
+   "access": "RO",
+   "desc": "sum of B, last frame (low 32 bits)"
+  },
+  {
+   "name": "STAT_PIX",
+   "offset": "0x090",
+   "access": "RO",
+   "desc": "pixels, last frame"
+  },
+  {
+   "name": "STAT_CLIP",
+   "offset": "0x094",
+   "access": "RO",
+   "desc": "clipped pixels, last frame"
+  },
+  {
+   "name": "STAT_FRAMES",
+   "offset": "0x098",
+   "access": "RO",
+   "desc": "frames measured"
+  },
+  {
+   "name": "H_ACTIVE",
+   "offset": "0x09C",
+   "access": "RW",
+   "desc": "display: active pixels per line"
+  },
+  {
+   "name": "H_FP",
+   "offset": "0x0A0",
+   "access": "RW",
+   "desc": "display: horizontal front porch"
+  },
+  {
+   "name": "H_SYNC",
+   "offset": "0x0A4",
+   "access": "RW",
+   "desc": "display: horizontal sync width"
+  },
+  {
+   "name": "H_BP",
+   "offset": "0x0A8",
+   "access": "RW",
+   "desc": "display: horizontal back porch"
+  },
+  {
+   "name": "V_ACTIVE",
+   "offset": "0x0AC",
+   "access": "RW",
+   "desc": "display: active lines"
+  },
+  {
+   "name": "V_FP",
+   "offset": "0x0B0",
+   "access": "RW",
+   "desc": "display: vertical front porch"
+  },
+  {
+   "name": "V_SYNC",
+   "offset": "0x0B4",
+   "access": "RW",
+   "desc": "display: vertical sync width"
+  },
+  {
+   "name": "V_BP",
+   "offset": "0x0B8",
+   "access": "RW",
+   "desc": "display: vertical back porch"
+  },
+  {
+   "name": "SYNC_POL",
+   "offset": "0x0BC",
+   "access": "RW",
+   "desc": "[0] hsync [1] vsync active high"
+  },
+  {
+   "name": "LOCK_MAX",
+   "offset": "0x0C0",
+   "access": "RW",
+   "desc": "genlock: max extra blanking lines",
+   "reset": "0x3FF"
+  },
+  {
+   "name": "START_LEVEL",
+   "offset": "0x0C4",
+   "access": "RW",
+   "desc": "pixels buffered before a frame starts",
+   "reset": "0x10"
+  },
+  {
+   "name": "AVI",
+   "offset": "0x0C8",
+   "access": "RW",
+   "desc": "HDMI AVI: [6:0] VIC [9:8] picture aspect [11:10] RGB range",
+   "reset": "0x200"
+  },
+  {
+   "name": "CSI_FRAMES",
+   "offset": "0x0CC",
+   "access": "RO",
+   "desc": "camera frames received"
+  },
+  {
+   "name": "ECC_CORR",
+   "offset": "0x0D0",
+   "access": "RO",
+   "desc": "CSI-2 header ECC corrections"
+  },
+  {
+   "name": "ECC_ERR",
+   "offset": "0x0D4",
+   "access": "RO",
+   "desc": "CSI-2 header ECC errors"
+  },
+  {
+   "name": "CRC_ERR",
+   "offset": "0x0D8",
+   "access": "RO",
+   "desc": "CSI-2 payload CRC errors"
+  },
+  {
+   "name": "UNDERFLOWS",
+   "offset": "0x0DC",
+   "access": "RO",
+   "desc": "display underflows"
+  },
+  {
+   "name": "DPC_CORR",
+   "offset": "0x0E0",
+   "access": "RO",
+   "desc": "defective pixels corrected"
+  },
+  {
+   "name": "CSI_OVERFLOW",
+   "offset": "0x0E4",
+   "access": "RO",
+   "desc": "CSI words lost (bridge FIFO full)"
+  },
+  {
+   "name": "OUT_CTRL",
+   "offset": "0x0E8",
+   "access": "RW",
+   "desc": "[0] LVDS dual [1] LVDS 18 bpp [2] JEIDA [4] DSI video [5] DSI EoTp [7:6] DSI VC [8] CSI-2 TX [9] YUV422 [11:10] VC"
+  },
+  {
+   "name": "DSI_GAPS",
+   "offset": "0x0EC",
+   "access": "RW",
+   "desc": "[15:0] LP clocks after a sync packet, [31:16] after pixels",
+   "reset": "0x6000A"
+  },
+  {
+   "name": "CSITX_GAP",
+   "offset": "0x0F0",
+   "access": "RW",
+   "desc": "LP clocks between CSI-2 TX packets",
+   "reset": "0x8"
+  },
+  {
+   "name": "DSI_CMD",
+   "offset": "0x0F4",
+   "access": "WO",
+   "desc": "queue a DSI command {[24] long, [23:16] data type, [15:0] data / word count}"
+  },
+  {
+   "name": "DSI_CMD_BYTE",
+   "offset": "0x0F8",
+   "access": "WO",
+   "desc": "[7:0] next payload byte of a long command"
+  },
+  {
+   "name": "TX_STATUS",
+   "offset": "0x0FC",
+   "access": "RO",
+   "desc": "[0] DSI command queue busy"
+  },
+  {
+   "name": "DSI_DROPS",
+   "offset": "0x100",
+   "access": "RO",
+   "desc": "lines DSI could not send in time"
+  },
+  {
+   "name": "CSITX_DROPS",
+   "offset": "0x104",
+   "access": "RO",
+   "desc": "lines CSI-2 TX could not send in time"
+  },
+  {
+   "name": "CSITX_FRAMES",
+   "offset": "0x108",
+   "access": "RO",
+   "desc": "frames sent by CSI-2 TX"
+  },
+  {
+   "name": "BUILD_CFG",
+   "offset": "0x10C",
+   "access": "RO",
+   "desc": "interfaces built: [0] CSI-2 RX [1] HDMI [2] LVDS [3] DSI [4] CSI-2 TX [5] scaler [6] insert point"
+  }
+ ]
+}

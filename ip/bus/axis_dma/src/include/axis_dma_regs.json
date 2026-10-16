@@ -1,0 +1,23 @@
+{
+  "name": "axis_dma_regs",
+  "ip": "axis_dma",
+  "id": "ADMA",
+  "version": "1.10",
+  "desc": "AXI-Stream DMA: start control, MM2S / S2MM address and length, status.",
+  "addr_width": 8,
+  "clk": "aclk",
+  "rst_n": "aresetn",
+  "registers": [
+    {"name": "CTRL", "offset": "0x10", "access": "RW", "width": 3, "desc": "control",
+     "fields": [{"name": "MM2S_START", "bit": 0, "desc": "write 1: start a memory to stream transfer"}, {"name": "S2MM_START", "bit": 1, "desc": "write 1: start a stream to memory transfer"},
+                {"name": "IRQ_EN", "bit": 2, "desc": "irq_o on a done flag"}]},
+    {"name": "MM2S_ADDR", "offset": "0x14", "access": "RW", "desc": "MM2S source address (bytes)"},
+    {"name": "MM2S_LEN", "offset": "0x18", "access": "RW", "desc": "MM2S length in bytes (multiple of 4, not 0)"},
+    {"name": "S2MM_ADDR", "offset": "0x1C", "access": "RW", "desc": "S2MM destination address (bytes)"},
+    {"name": "S2MM_LEN", "offset": "0x20", "access": "RW", "desc": "S2MM length in bytes (multiple of 4, not 0)"},
+    {"name": "STATUS", "offset": "0x24", "access": "CMD", "width": 12, "desc": "status; done and error bits write 1 to clear",
+     "fields": [{"name": "MM2S_BUSY", "bit": 0, "desc": "MM2S running"}, {"name": "S2MM_BUSY", "bit": 1, "desc": "S2MM running"},
+                {"name": "MM2S_DONE", "bit": 8, "desc": "MM2S finished (W1C)"}, {"name": "S2MM_DONE", "bit": 9, "desc": "S2MM finished (W1C)"},
+                {"name": "MM2S_ERR", "bit": 10, "desc": "MM2S bad length or bus error (W1C)"}, {"name": "S2MM_ERR", "bit": 11, "desc": "S2MM bad length or bus error (W1C)"}]}
+  ]
+}

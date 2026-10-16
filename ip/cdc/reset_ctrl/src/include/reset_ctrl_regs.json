@@ -1,0 +1,19 @@
+{
+  "name": "reset_ctrl_regs",
+  "ip": "reset_ctrl",
+  "id": "RSTC",
+  "version": "1.10",
+  "desc": "Reset controller: software reset, hold time, status, reset event count.",
+  "addr_width": 8,
+  "clk": "aclk",
+  "rst_n": "aresetn",
+  "top": false,
+  "params": [{"name": "HOLD_RST", "default": 16, "desc": "HOLD at reset (HOLD_DEFAULT)"}],
+  "registers": [
+    {"name": "CTRL", "offset": "0x10", "access": "WO", "width": 1, "desc": "write 1: software reset of the reset outputs (self clearing)"},
+    {"name": "HOLD", "offset": "0x14", "access": "RW", "width": 16, "reset": "HOLD_RST", "desc": "clocks the reset outputs stay asserted after a request"},
+    {"name": "STATUS", "offset": "0x18", "access": "CMD", "width": 2, "desc": "status; write 1 to [1] to clear EVENT",
+     "fields": [{"name": "ACTIVE", "bit": 0, "desc": "reset output 0 asserted"}, {"name": "EVENT", "bit": 1, "desc": "a reset happened (W1C)"}]},
+    {"name": "EVENT_COUNT", "offset": "0x1C", "access": "RO", "desc": "resets counted"}
+  ]
+}

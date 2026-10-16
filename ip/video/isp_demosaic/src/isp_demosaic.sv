@@ -34,8 +34,15 @@ module isp_demosaic #(
   axis_if.master m_axis
 );
   assign m_axis.tkeep = '1;      // not used by this block
-  axis_if #(.DATA_W(9*PW), .USER_W(1)) u_win_m_axis ();
+  logic [9*PW-1:0] win;
   logic [15:0] wx, wy;
+  logic wl, wu, wv, wr;
+  axis_if #(.DATA_W(3*3*PW)) u_win_m_axis ();
+  assign win = u_win_m_axis.tdata;
+  assign wl = u_win_m_axis.tlast;
+  assign wu = u_win_m_axis.tuser;
+  assign wv = u_win_m_axis.tvalid;
+  assign u_win_m_axis.tready = wr;
   isp_window #(
     .N(3),
     .PW(PW),
@@ -52,17 +59,17 @@ module isp_demosaic #(
     .m_y(wy)
   );
 
-  wire [PW-1:0] nw = u_win_m_axis.tdata[0*PW +: PW], n = u_win_m_axis.tdata[1*PW +: PW], ne = u_win_m_axis.tdata[2*PW +: PW];
-  wire [PW-1:0] w  = u_win_m_axis.tdata[3*PW +: PW], c = u_win_m_axis.tdata[4*PW +: PW], e  = u_win_m_axis.tdata[5*PW +: PW];
-  wire [PW-1:0] sw = u_win_m_axis.tdata[6*PW +: PW], s = u_win_m_axis.tdata[7*PW +: PW], se = u_win_m_axis.tdata[8*PW +: PW];
+  wire [PW-1:0] nw = win[0*PW +: PW], n = win[1*PW +: PW], ne = win[2*PW +: PW];
+  wire [PW-1:0] w  = win[3*PW +: PW], c = win[4*PW +: PW], e  = win[5*PW +: PW];
+  wire [PW-1:0] sw = win[6*PW +: PW], s = win[7*PW +: PW], se = win[8*PW +: PW];
   wire [PW+1:0] crs = n + s + e + w + 2, diag = nw + ne + sw + se + 2;
   wire [PW:0]   hor = e + w + 1, ver = n + s + 1;
   wire [PW-1:0] g4 = crs[PW+1:2], d4 = diag[PW+1:2], h2 = hor[PW:1], v2 = ver[PW:1];
 
   logic [1:0] cfa_f;
   logic by_f;
-  wire  [1:0] cfa = u_win_m_axis.tuser ? cfa_i : cfa_f;
-  wire        by  = u_win_m_axis.tuser ? bypass_i : by_f;
+  wire  [1:0] cfa = wu ? cfa_i : cfa_f;
+  wire        by  = wu ? bypass_i : by_f;
   wire  [1:0] color = {wy[0] ^ cfa[1], wx[0] ^ cfa[0]};   // 0 R, 1 Gr, 2 Gb, 3 B
 
   logic [PW-1:0] r, g, b;
@@ -96,7 +103,7 @@ module isp_demosaic #(
     end
   end
 
-  assign u_win_m_axis.tready = !m_axis.tvalid || m_axis.tready;
+  assign wr = !m_axis.tvalid || m_axis.tready;
   always_ff @(posedge clk) begin
     if (!rst_n) begin
       cfa_f <= '0;
@@ -105,15 +112,15 @@ module isp_demosaic #(
       m_axis.tdata <= '0;
       m_axis.tlast <= 1'b0;
       m_axis.tuser <= 1'b0;
-    end else if (u_win_m_axis.tvalid && u_win_m_axis.tready) begin
-      if (u_win_m_axis.tuser) begin
+    end else if (wv && wr) begin
+      if (wu) begin
         cfa_f <= cfa_i;
         by_f <= bypass_i;
       end
       m_axis.tvalid <= 1'b1;
       m_axis.tdata <= {b, g, r};
-      m_axis.tlast <= u_win_m_axis.tlast;
-      m_axis.tuser <= u_win_m_axis.tuser;
+      m_axis.tlast <= wl;
+      m_axis.tuser <= wu;
     end else if (m_axis.tready) m_axis.tvalid <= 1'b0;
   end
 endmodule

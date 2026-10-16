@@ -198,10 +198,7 @@ module csi2_tx #(
     .pl_data_i(8'd0),
     .pl_valid_i(1'b0),
     .pl_ready_o(),
-    .lane_data_o(ppi.lane_data),
-    .lane_valid_o(ppi.lane_valid),
-    .hs_req_o(ppi.hs_req),
-    .tx_ready_i(ppi.tx_ready),
+    .ppi(ppi),
     .busy_o(),
     .underflow_o
   );

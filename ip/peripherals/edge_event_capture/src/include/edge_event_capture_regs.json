@@ -1,0 +1,23 @@
+{
+  "name": "edge_event_capture_regs",
+  "ip": "edge_event_capture",
+  "id": "EDGE",
+  "version": "1.10",
+  "desc": "Edge event capture: enables, debounce, pending edges, counters, timestamp, interrupt enables.",
+  "addr_width": 8,
+  "clk": "aclk",
+  "rst_n": "aresetn",
+  "params": [{"name": "WIDTH", "default": 8, "desc": "inputs (1..32)"}],
+  "registers": [
+    {"name": "CTRL", "offset": "0x10", "access": "RW", "width": 1, "reset": "1", "desc": "[0] capture enabled"},
+    {"name": "RISE_EN", "offset": "0x14", "access": "RW", "width": "WIDTH", "desc": "rising edges captured per input"},
+    {"name": "FALL_EN", "offset": "0x18", "access": "RW", "width": "WIDTH", "desc": "falling edges captured per input"},
+    {"name": "DEBOUNCE", "offset": "0x1C", "access": "RW", "width": 16, "desc": "clocks an input must be stable before its edge counts (0: none)"},
+    {"name": "RISE_PEND", "offset": "0x20", "access": "W1C", "width": "WIDTH", "desc": "rising edges seen per input; write 1 to clear"},
+    {"name": "FALL_PEND", "offset": "0x24", "access": "W1C", "width": "WIDTH", "desc": "falling edges seen per input; write 1 to clear"},
+    {"name": "EVENT_COUNT", "offset": "0x28", "access": "RO", "desc": "clocks with at least one captured edge"},
+    {"name": "TIMESTAMP", "offset": "0x2C", "access": "RO", "desc": "free-running timestamp (TS_W bits)"},
+    {"name": "DROP_COUNT", "offset": "0x30", "access": "RO", "desc": "event records lost (FIFO full)"},
+    {"name": "IRQ_EN", "offset": "0x34", "access": "RW", "width": "WIDTH", "desc": "irq_o while a pending edge of an enabled input is set"}
+  ]
+}

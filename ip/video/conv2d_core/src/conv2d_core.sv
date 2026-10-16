@@ -48,14 +48,22 @@ module conv2d_core #(
 );
   // output stage: the last pipeline register (q_*) feeds a 2-entry FIFO whose ready is registered,
   // so s_axis_tready does not depend combinationally on m_axis_tready
-  axis_if #(.DATA_W(C*CW), .USER_W(1)) q ();
+  logic [C*CW-1:0] q_d;
+  logic q_l, q_u, q_v, q_r;
   localparam int NN = N * N, PW = C * CW;
   localparam int PROD_W = CW + 1 + COEF_W;
   localparam int ACC_W  = PROD_W + $clog2(NN) + 1;
   if (N != 3 && N != 5) begin : g_bad_n $error("conv2d_core: N must be 3 or 5"); end
 
   // ---------------- window ----------------
-  axis_if #(.DATA_W(NN*PW), .USER_W(1)) w ();
+  logic [NN*PW-1:0] w_d;
+  logic w_l, w_u, w_v, w_r;
+  axis_if #(.DATA_W(N*N*PW)) u_win_m_axis ();
+  assign w_d = u_win_m_axis.tdata;
+  assign w_l = u_win_m_axis.tlast;
+  assign w_u = u_win_m_axis.tuser;
+  assign w_v = u_win_m_axis.tvalid;
+  assign u_win_m_axis.tready = w_r;
   isp_window #(
     .N(N),
     .PW(PW),
@@ -67,7 +75,7 @@ module conv2d_core #(
     .width_i,
     .height_i,
     .s_axis(s_axis),
-    .m_axis(w),
+    .m_axis(u_win_m_axis),
     .m_x(),
     .m_y(),
     .sof_wait_o
@@ -76,9 +84,9 @@ module conv2d_core #(
   // ---------------- kernel, held per frame ----------------
   logic [NN*COEF_W-1:0] coef_q;
   logic [4:0] shift_q;
-  wire                  take = w.tvalid && w.tready && w.tuser;
-  wire [NN*COEF_W-1:0]  k    = w.tuser ? coef_i  : coef_q;   // the first window of a frame uses the new kernel
-  wire [4:0]            ks   = w.tuser ? shift_i : shift_q;
+  wire                  take = w_v && w_r && w_u;
+  wire [NN*COEF_W-1:0]  k    = w_u ? coef_i  : coef_q;   // the first window of a frame uses the new kernel
+  wire [4:0]            ks   = w_u ? shift_i : shift_q;
   always_ff @(posedge clk) begin
     if (!rst_n) begin
       coef_q <= '0;
@@ -94,8 +102,8 @@ module conv2d_core #(
   // ---------------- MAC pipeline (all stages advance together) ----------------
   logic v1, v2, v3, v4, l1, l2, l3, l4, u1, u2, u3, u4;
   logic [4:0] s1, s2, s3;
-  wire adv = !v4 || q.tready;
-  assign w.tready = adv;
+  wire adv = !v4 || q_r;
+  assign w_r = adv;
 
   logic signed [PROD_W-1:0] p1 [C*NN];             // products
   logic signed [ACC_W-1:0]  rs [C*N];              // row sums (combinational)
@@ -126,7 +134,7 @@ module conv2d_core #(
     if (!rst_n) begin
       {v1, v2, v3, v4} <= '0;
     end else if (adv) begin
-      v1 <= w.tvalid;
+      v1 <= w_v;
       v2 <= v1;
       v3 <= v2;
       v4 <= v3;
@@ -135,12 +143,12 @@ module conv2d_core #(
 
   always_ff @(posedge clk) begin
     if (adv) begin
-      l1 <= w.tlast;
-      u1 <= w.tuser;
+      l1 <= w_l;
+      u1 <= w_u;
       s1 <= ks;
       for (int c = 0; c < C; c++)
         for (int i = 0; i < NN; i++)
-          p1[c*NN + i] <= $signed({1'b0, w.tdata[i*PW + c*CW +: CW]}) * $signed(k[i*COEF_W +: COEF_W]);
+          p1[c*NN + i] <= $signed({1'b0, w_d[i*PW + c*CW +: CW]}) * $signed(k[i*COEF_W +: COEF_W]);
       l2 <= l1;
       u2 <= u1;
       s2 <= s1;
@@ -155,17 +163,23 @@ module conv2d_core #(
     end
   end
 
-  assign q.tdata  = d4;
-  assign q.tlast  = l4;
-  assign q.tuser  = u4;
-  assign q.tvalid = v4;
+  assign q_d  = d4;
+  assign q_l  = l4;
+  assign q_u  = u4;
+  assign q_v = v4;
+  axis_if #(.DATA_W((C*CW))) u_out_fifo_s ();
+  assign u_out_fifo_s.tdata = q_d;
+  assign u_out_fifo_s.tlast = q_l;
+  assign u_out_fifo_s.tuser = q_u;
+  assign u_out_fifo_s.tvalid = q_v;
+  assign q_r = u_out_fifo_s.tready;
   ip_axis_fifo #(
     .DATA_W(C*CW),
     .DEPTH(2)
   ) u_out_fifo (
     .clk,
     .rst_n,
-    .s(q),
+    .s(u_out_fifo_s),
     .m(m_axis),
     .level_o()
   );

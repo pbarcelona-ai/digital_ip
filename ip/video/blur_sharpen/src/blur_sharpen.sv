@@ -81,12 +81,13 @@ module blur_sharpen #(
   logic [4:0] a_sh1, a_sh2, b_sh2;
   logic [31:0] a_size, b_size;
   logic [2:0] a_mode;
-  axis_if #(.DATA_W(C*CW), .USER_W(1)) x ();
+  logic [C*CW-1:0] x_d;
+  logic x_l, x_u, x_v, x_r;
   wire sof1 = s_axis.tvalid && s_axis.tready && s_axis.tuser;
-  wire sof2 = x.tvalid && x.tready && x.tuser;
+  wire sof2 = x_v && x_r && x_u;
   logic w1, w2;                                   // stage waits between frames (isp_window)
   wire [31:0] size1 = (w1 && s_axis.tvalid && s_axis.tuser) ? frame_size : a_size;
-  wire [31:0] size2 = (w2 && x.tvalid && x.tuser) ? a_size : b_size;
+  wire [31:0] size2 = (w2 && x_v && x_u) ? a_size : b_size;
   always_ff @(posedge clk) begin
     if (!rst_n || sof1) begin
       a_k1 <= k1;
@@ -105,6 +106,12 @@ module blur_sharpen #(
 
   // ---------------- the two stages ----------------
   logic [15:0] frames;
+  axis_if #(.DATA_W(C*CW)) u_stage1_m_axis ();
+  assign x_d = u_stage1_m_axis.tdata;
+  assign x_l = u_stage1_m_axis.tlast;
+  assign x_u = u_stage1_m_axis.tuser;
+  assign x_v = u_stage1_m_axis.tvalid;
+  assign u_stage1_m_axis.tready = x_r;
   conv2d_core #(
     .N(N),
     .C(C),
@@ -120,10 +127,29 @@ module blur_sharpen #(
     .coef_i(a_k1),
     .shift_i(a_sh1),
     .s_axis(s_axis),
-    .m_axis(x),
+    .m_axis(u_stage1_m_axis),
     .frame_o(),
     .sof_wait_o(w1)
   );
+  axis_if #(.DATA_W(C*CW)) u_stage2_s_axis ();
+  assign u_stage2_s_axis.tdata = x_d;
+  assign u_stage2_s_axis.tlast = x_l;
+  assign u_stage2_s_axis.tuser = x_u;
+  assign u_stage2_s_axis.tvalid = x_v;
+  assign x_r = u_stage2_s_axis.tready;
+  wire out_sof = m_axis.tvalid && m_axis.tready && m_axis.tuser;
+  always_ff @(posedge clk)
+    if (!rst_n) frames <= '0;
+    else if (out_sof) frames <= frames + 1'b1;
+  // register ports (the map blur_sharpen_regs is in the wrapper, src/blur_sharpen_top.sv)
+  assign mode = regs.cfg_mode;
+  assign frame_size = regs.cfg_frame_size;
+  assign sh_bl = regs.cfg_blur_shift;
+  assign sh_sh = regs.cfg_sharp_shift;
+  assign regs.sts_status = {frames, 13'd0, a_mode};
+  assign regs.sts_info = {8'(CW), 8'(C), 4'd0, 4'(COEF_W), 4'd0, 4'(N)};
+  assign kb_regs = regs.cfg_blur_k;
+  assign ks_regs = regs.cfg_sharp_k;
   conv2d_core #(
     .N(N),
     .C(C),
@@ -138,22 +164,9 @@ module blur_sharpen #(
     .height_i(size2[31:16]),
     .coef_i(b_k2),
     .shift_i(b_sh2),
-    .s_axis(x),
+    .s_axis(u_stage2_s_axis),
     .m_axis(m_axis),
     .frame_o(),
     .sof_wait_o(w2)
   );
-  wire out_sof = m_axis.tvalid && m_axis.tready && m_axis.tuser;
-  always_ff @(posedge clk)
-    if (!rst_n) frames <= '0;
-    else if (out_sof) frames <= frames + 1'b1;
-  // register ports (the map blur_sharpen_regs is in the wrapper, src/blur_sharpen_top.sv)
-  assign mode = regs.cfg_mode;
-  assign frame_size = regs.cfg_frame_size;
-  assign sh_bl = regs.cfg_blur_shift;
-  assign sh_sh = regs.cfg_sharp_shift;
-  assign regs.sts_status = {frames, 13'd0, a_mode};
-  assign regs.sts_info = {8'(CW), 8'(C), 4'd0, 4'(COEF_W), 4'd0, 4'(N)};
-  assign kb_regs = regs.cfg_blur_k;
-  assign ks_regs = regs.cfg_sharp_k;
 endmodule

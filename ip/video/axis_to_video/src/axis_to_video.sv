@@ -49,9 +49,15 @@ module axis_to_video #(
   output logic             underflow_o
 );
   localparam int LW = $clog2(FIFO_DEPTH) + 2;
-  axis_if #(.DATA_W(PIX_W), .USER_W(1)) f ();
-  logic f_tuser_unused;
+  logic [PIX_W-1:0] f_data;
+  logic f_last, f_user, f_valid, f_ready, f_tuser_unused;
   logic [LW-1:0] level;
+  axis_if #(.DATA_W(PIX_W)) u_fifo_m ();
+  assign f_data = u_fifo_m.tdata;
+  assign f_last = u_fifo_m.tlast;
+  assign f_user = u_fifo_m.tuser;
+  assign f_valid = u_fifo_m.tvalid;
+  assign u_fifo_m.tready = f_ready;
   ip_axis_fifo #(
     .DATA_W(PIX_W),
     .DEPTH(FIFO_DEPTH)
@@ -59,21 +65,21 @@ module axis_to_video #(
     .clk,
     .rst_n,
     .s(s_axis),
-    .m(f),
+    .m(u_fifo_m),
     .level_o(level)
   );
 
-  wire head_sof = f.tvalid && f.tuser;
+  wire head_sof = f_valid && f_user;
   assign src_ready_o = head_sof && (32'(level) >= 32'(start_level_i));
 
   logic synced;
   // What happens to this de cycle
   wire start_ok = tim.de && sof_i && head_sof;                          // frame starts from the input
-  wire take     = !tpg_en_i && tim.de && (sof_i ? head_sof : (synced && f.tvalid && !f.tuser));
-  wire starve   = !tpg_en_i && tim.de && !sof_i && synced && !(f.tvalid && !f.tuser);
+  wire take     = !tpg_en_i && tim.de && (sof_i ? head_sof : (synced && f_valid && !f_user));
+  wire starve   = !tpg_en_i && tim.de && !sof_i && synced && !(f_valid && !f_user);
   // Discard: test pattern on, or resynchronising (drop up to the next SOF)
-  wire discard  = f.tvalid && (tpg_en_i || (!synced && !f.tuser && !(tim.de && sof_i)));
-  assign f.tready = take || discard;
+  wire discard  = f_valid && (tpg_en_i || (!synced && !f_user && !(tim.de && sof_i)));
+  assign f_ready = take || discard;
 
   // Colour bars: bar index advances every h_active/8 pixels of a line (the
   // last bar takes the remainder). bar / bar_cnt describe the previous pixel.
@@ -125,7 +131,7 @@ module axis_to_video #(
       vid.vs <= tim.vs;
       if (!tim.de)         vid.data <= '0;
       else if (tpg_en_i) vid.data <= PIX_W'(bar_rgb);
-      else if (take)     vid.data <= f.tdata;
+      else if (take)     vid.data <= f_data;
       else               vid.data <= '0;                                // black while unsynchronised
     end
   end

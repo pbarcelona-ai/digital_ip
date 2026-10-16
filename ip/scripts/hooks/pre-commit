@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# ***************
+# Filename: pre-commit
+# Author: FPGA Cores 4 U
+# Description: git pre-commit hook: bumps IP_VERSION (+0.01) and sets
+#   IP_DATE (today, BCD mm/dd/yyyy) of every IP whose SystemVerilog sources
+#   are staged with changes, and stages the stamped files
+#   (ip/scripts/stamp_version.py). Install: ip/scripts/stamp_version.py
+#   --install-hook
+# Date: 2026-10-11
+# ***************
+set -e
+ROOT="$(git rev-parse --show-toplevel)"
+exec python3 "$ROOT/ip/scripts/stamp_version.py" --staged

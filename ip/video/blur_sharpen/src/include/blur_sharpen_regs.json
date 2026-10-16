@@ -1,0 +1,112 @@
+{
+ "name": "blur_sharpen_regs",
+ "ip": "blur_sharpen",
+ "id": "BLSH",
+ "version": "1.00",
+ "desc": "Blur / sharpen filter pair: mode, frame size, shifts and both kernel banks (taken at a frame start by the filter).",
+ "addr_width": 9,
+ "params": [
+  {
+   "name": "N",
+   "default": 5,
+   "desc": "kernel size: 3 or 5"
+  },
+  {
+   "name": "COEF_W",
+   "default": 12,
+   "desc": "coefficient width"
+  },
+  {
+   "name": "RESET_W",
+   "type": "logic [15:0]",
+   "default": "16'd1920",
+   "desc": "FRAME_SIZE width at reset"
+  },
+  {
+   "name": "RESET_H",
+   "type": "logic [15:0]",
+   "default": "16'd1080",
+   "desc": "FRAME_SIZE height at reset"
+  },
+  {
+   "name": "K_BLUR",
+   "type": "logic [conv2d_pkg::KMAX*32-1:0]",
+   "default": "'0",
+   "desc": "blur kernel at reset (conv2d_pkg::blur_kernel)"
+  },
+  {
+   "name": "K_SHARP",
+   "type": "logic [conv2d_pkg::KMAX*32-1:0]",
+   "default": "'0",
+   "desc": "sharpen kernel at reset (conv2d_pkg::sharpen_kernel)"
+  }
+ ],
+ "registers": [
+  {
+   "name": "MODE",
+   "offset": "0x14",
+   "access": "RW",
+   "width": 3,
+   "desc": "0 blur, 1 sharpen, 2 sharpen then blur, 3 blur then sharpen, 4-7 pass-through"
+  },
+  {
+   "name": "FRAME_SIZE",
+   "offset": "0x18",
+   "access": "RW",
+   "reset": "{RESET_H, RESET_W}",
+   "desc": "[15:0] width [31:16] height (>= (N+1)/2 each)"
+  },
+  {
+   "name": "BLUR_SHIFT",
+   "offset": "0x1C",
+   "access": "RW",
+   "width": 5,
+   "reset": "conv2d_pkg::blur_shift(N)",
+   "desc": "blur normalisation shift"
+  },
+  {
+   "name": "SHARP_SHIFT",
+   "offset": "0x20",
+   "access": "RW",
+   "width": 5,
+   "reset": "conv2d_pkg::blur_shift(N)",
+   "desc": "sharpen normalisation shift"
+  },
+  {
+   "name": "STATUS",
+   "offset": "0x24",
+   "access": "RO",
+   "desc": "[2:0] mode of the last frame that entered [31:16] frames out"
+  },
+  {
+   "name": "INFO",
+   "offset": "0x28",
+   "access": "RO",
+   "desc": "[3:0] N [11:8] COEF_W [23:16] C [31:24] CW"
+  },
+  {
+   "name": "BLUR_K",
+   "offset": "0x50",
+   "access": "RW",
+   "count": "N * N",
+   "max_count": 25,
+   "width": "COEF_W",
+   "reset": "K_BLUR[i*32 +: 32]",
+   "desc": "blur kernel coefficient i = r*N + c, signed"
+  },
+  {
+   "name": "SHARP_K",
+   "offset": "0xD0",
+   "access": "RW",
+   "count": "N * N",
+   "max_count": 25,
+   "width": "COEF_W",
+   "reset": "K_SHARP[i*32 +: 32]",
+   "desc": "sharpen kernel coefficient i, signed"
+  }
+ ],
+ "regs_params": {
+  "K_BLUR": "conv2d_pkg::blur_kernel(N)",
+  "K_SHARP": "conv2d_pkg::sharpen_kernel(N, AMOUNT)"
+ }
+}

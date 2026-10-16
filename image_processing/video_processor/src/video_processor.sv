@@ -919,39 +919,33 @@ module video_processor #(
       .s_axil(u_track_s_axil)
     );
   end
+  axil_if #(.ADDR_W(10)) u_overlay_s_axil ();
+  assign u_overlay_s_axil.awaddr = b.awaddr[9:0];
+  assign u_overlay_s_axil.awvalid = b.awvalid[S_OVL];
+  assign b.awready[S_OVL] = u_overlay_s_axil.awready;
+  assign u_overlay_s_axil.wdata = b.wdata;
+  assign u_overlay_s_axil.wstrb = b.wstrb;
+  assign u_overlay_s_axil.wvalid = b.wvalid[S_OVL];
+  assign b.wready[S_OVL] = u_overlay_s_axil.wready;
+  assign b.bresp[S_OVL*2 +: 2] = u_overlay_s_axil.bresp;
+  assign b.bvalid[S_OVL] = u_overlay_s_axil.bvalid;
+  assign u_overlay_s_axil.bready = b.bready[S_OVL];
+  assign u_overlay_s_axil.araddr = b.araddr[9:0];
+  assign u_overlay_s_axil.arvalid = b.arvalid[S_OVL];
+  assign b.arready[S_OVL] = u_overlay_s_axil.arready;
+  assign b.rdata[S_OVL*32 +: 32] = u_overlay_s_axil.rdata;
+  assign b.rresp[S_OVL*2 +: 2] = u_overlay_s_axil.rresp;
+  assign b.rvalid[S_OVL] = u_overlay_s_axil.rvalid;
+  assign u_overlay_s_axil.rready = b.rready[S_OVL];
   symbol_overlay_top #(
     .NOBJ(12),                                       // 3 target boxes per class (object 3c + k)
     .NTXT(4)
   ) u_overlay (
     .clk(pix_clk),
     .rst_n(pix_rst_n),
-    .s_axis_tdata(fo.tdata),
-    .s_axis_tlast(fo.tlast),
-    .s_axis_tuser(fo.tuser),
-    .s_axis_tvalid(fo.tvalid),
-    .s_axis_tready(fo.tready),
-    .m_axis_tdata(ir.tdata),
-    .m_axis_tlast(ir.tlast),
-    .m_axis_tuser(ir.tuser),
-    .m_axis_tvalid(ir.tvalid),
-    .m_axis_tready(ir.tready),
-    .s_axil_awaddr(b.awaddr[9:0]),
-    .s_axil_awvalid(b.awvalid[S_OVL]),
-    .s_axil_awready(b.awready[S_OVL]),
-    .s_axil_wdata(b.wdata),
-    .s_axil_wstrb(b.wstrb),
-    .s_axil_wvalid(b.wvalid[S_OVL]),
-    .s_axil_wready(b.wready[S_OVL]),
-    .s_axil_bresp(b.bresp[S_OVL*2 +: 2]),
-    .s_axil_bvalid(b.bvalid[S_OVL]),
-    .s_axil_bready(b.bready[S_OVL]),
-    .s_axil_araddr(b.araddr[9:0]),
-    .s_axil_arvalid(b.arvalid[S_OVL]),
-    .s_axil_arready(b.arready[S_OVL]),
-    .s_axil_rdata(b.rdata[S_OVL*32 +: 32]),
-    .s_axil_rresp(b.rresp[S_OVL*2 +: 2]),
-    .s_axil_rvalid(b.rvalid[S_OVL]),
-    .s_axil_rready(b.rready[S_OVL])
+    .s_axis(fo),
+    .m_axis(ir),
+    .s_axil(u_overlay_s_axil)
   );
 `elsif VP_INSERT
   assign ev_trk = 1'b0;

@@ -1,0 +1,23 @@
+{
+  "name": "frame_counter_regs",
+  "ip": "frame_counter",
+  "id": "FCNT",
+  "version": "1.10",
+  "desc": "Frame counters with interrupts and an event log.",
+  "addr_width": 8,
+  "params": [{"name": "NCH", "default": 2, "desc": "counters (1..8)"}],
+  "registers": [
+    {"name": "IRQ_EN", "offset": "0x18", "access": "RW", "width": "NCH", "desc": "interrupt enable per channel"},
+    {"name": "STATUS", "offset": "0x1C", "access": "W1C", "width": "NCH", "desc": "marker seen per channel (interrupt while enabled); write 1 to clear"},
+    {"name": "CLEAR", "offset": "0x20", "access": "WO", "width": "NCH", "desc": "write 1s: clear COUNT[i]"},
+    {"name": "EVENT", "offset": "0x24", "access": "RO", "desc": "oldest logged event",
+     "fields": [{"name": "VALID", "bit": 31, "desc": "an event is logged"}, {"name": "OVERFLOW", "bit": 30, "desc": "events lost (log was full)"},
+                {"name": "CHANNEL", "bit": "26:24", "desc": "channel of the marker"}, {"name": "COUNT", "bit": "23:0", "desc": "the channel's count after the marker"}]},
+    {"name": "EVENT_TIME", "offset": "0x28", "access": "RO", "desc": "timestamp of that event (TIME ticks)"},
+    {"name": "EVENT_POP", "offset": "0x2C", "access": "WO", "width": 2, "desc": "log control",
+     "fields": [{"name": "POP", "bit": 0, "desc": "1: remove the oldest event"}, {"name": "OVF_CLR", "bit": 1, "desc": "1: clear the overflow flag"}]},
+    {"name": "COUNT", "offset": "0x30", "access": "RO", "count": "NCH", "max_count": 8, "desc": "frames counted by channel i"},
+    {"name": "TIME", "offset": "0x50", "access": "RO", "desc": "timestamp now (ticks of TS_DIV clocks)"},
+    {"name": "EV_EN", "offset": "0x54", "access": "RW", "width": "NCH", "desc": "channels logged in the event log"}
+  ]
+}

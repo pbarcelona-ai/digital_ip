@@ -33,9 +33,16 @@ module isp_window_tb;
   for (genvar g = 0; g < NI; g++) begin : g_w
     localparam int N = (g % 2) ? 5 : 3, R = (N - 1) / 2, BD = g / 2;
     axis_if #(.DATA_W(PW), .USER_W(1)) s_axis ();
-    axis_if #(.DATA_W(N*N*PW), .USER_W(1)) m_axis ();
+    logic [N*N*PW-1:0] w;
     logic [15:0] wx, wy;
+    logic tl, tu, tv, tr;
     int n, total;
+    axis_if #(.DATA_W(N*N*PW)) dut_m_axis ();
+    assign w = dut_m_axis.tdata;
+    assign tl = dut_m_axis.tlast;
+    assign tu = dut_m_axis.tuser;
+    assign tv = dut_m_axis.tvalid;
+    assign dut_m_axis.tready = tr;
     isp_window #(
       .N(N),
       .PW(PW),
@@ -47,7 +54,7 @@ module isp_window_tb;
       .width_i(W),
       .height_i(H),
       .s_axis(s_axis),
-      .m_axis(m_axis),
+      .m_axis(dut_m_axis),
       .m_x(wx),
       .m_y(wy)
     );
@@ -57,16 +64,16 @@ module isp_window_tb;
       s_axis.tlast = 0;
       s_axis.tdata = 0;
     end
-    always @(posedge clk) m_axis.tready <= ($urandom_range(99) >= bp_pct);
-    always @(posedge clk) if (rst_n && m_axis.tvalid && m_axis.tready) begin
+    always @(posedge clk) tr <= ($urandom_range(99) >= bp_pct);
+    always @(posedge clk) if (rst_n && tv && tr) begin
       int cx, cy;
-      if (m_axis.tuser) n = 0;                                 // re-anchor on every start of frame
+      if (tu) n = 0;                                 // re-anchor on every start of frame
       cx = n % W;
       cy = (n / W) % H;
       check(wx === 16'(cx) && wy === 16'(cy), $sformatf("N%0d B%0d: centre %0d,%0d exp %0d,%0d", N, BD, wx, wy, cx, cy));
-      check(m_axis.tuser == (cx == 0 && cy == 0) && m_axis.tlast == (cx == W - 1), $sformatf("N%0d B%0d: tuser/tlast at %0d,%0d", N, BD, cx, cy));
+      check(tu == (cx == 0 && cy == 0) && tl == (cx == W - 1), $sformatf("N%0d B%0d: tuser/tlast at %0d,%0d", N, BD, cx, cy));
       for (int r = 0; r < N; r++) for (int c = 0; c < N; c++)
-        check(m_axis.tdata[(r*N + c)*PW +: PW] === img[bidx(cy - R + r, H, BD)][bidx(cx - R + c, W, BD)],
+        check(w[(r*N + c)*PW +: PW] === img[bidx(cy - R + r, H, BD)][bidx(cx - R + c, W, BD)],
               $sformatf("N%0d B%0d: (%0d,%0d) tap r%0d c%0d", N, BD, cx, cy, r, c));
       n++;
       total++;

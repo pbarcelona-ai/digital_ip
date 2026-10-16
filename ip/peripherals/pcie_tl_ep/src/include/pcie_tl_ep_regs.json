@@ -1,0 +1,28 @@
+{
+  "name": "pcie_tl_ep_regs",
+  "ip": "pcie_tl_ep",
+  "id": "PCIE",
+  "version": "1.10",
+  "desc": "PCIe transaction-layer endpoint: DMA control, address and length, link status, completer ID, BAR0, TLP counters.",
+  "addr_width": 8,
+  "clk": "aclk",
+  "rst_n": "aresetn",
+  "top": "pcie_tl_ep_top",
+  "registers": [
+    {"name": "CTRL", "offset": "0x10", "access": "RW", "width": 1, "desc": "[0] DMA enabled"},
+    {"name": "DMA_ADDR_LO", "offset": "0x14", "access": "RW", "desc": "DMA host address [31:0] (a write reloads the address)"},
+    {"name": "DMA_ADDR_HI", "offset": "0x18", "access": "RW", "desc": "DMA host address [63:32] (a write reloads the address)"},
+    {"name": "DMA_LEN_DW", "offset": "0x1C", "access": "RW", "width": 10, "reset": "8", "desc": "DMA payload per TLP, DWs"},
+    {"name": "STATUS", "offset": "0x20", "access": "RO", "desc": "status",
+     "fields": [{"name": "MEM_EN", "bit": 0, "desc": "memory space enabled by the host"}, {"name": "BUS_MASTER", "bit": 1, "desc": "bus mastering enabled by the host"},
+                {"name": "DMA_BUSY", "bit": 2, "desc": "DMA engine busy"}, {"name": "SF_LEVEL", "bit": "31:16", "desc": "words in the DMA source FIFO"}]},
+    {"name": "CPL_ID", "offset": "0x24", "access": "RO", "width": 16, "desc": "completer ID (bus / device / function)"},
+    {"name": "BAR0", "offset": "0x28", "access": "RO", "desc": "BAR0 as programmed by the host"},
+    {"name": "RX_TLP", "offset": "0x2C", "access": "RO", "desc": "TLPs received"},
+    {"name": "MWR", "offset": "0x30", "access": "RO", "desc": "memory writes received"},
+    {"name": "MRD", "offset": "0x34", "access": "RO", "desc": "memory reads received"},
+    {"name": "CFG", "offset": "0x38", "access": "RO", "desc": "configuration requests received"},
+    {"name": "UR", "offset": "0x3C", "access": "RO", "desc": "unsupported requests"},
+    {"name": "DMA_TLP", "offset": "0x40", "access": "RO", "desc": "DMA TLPs sent"}
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "name": "py_sysctl_regs",
+  "ip": "py_sysctl",
+  "id": "SCTL",
+  "version": "1.10",
+  "desc": "py_soc system control: reset cause, boot status, cycle counter, SoC ID, core logic reset, clock enables.",
+  "addr_width": 8,
+  "clk": "aclk",
+  "rst_n": "aresetn",
+  "params": [{"name": "NCLK", "default": 1, "desc": "clock generator outputs (1..32)"},
+             {"name": "CLK_EN_RST", "type": "logic [31:0]", "default": "32'hFFFF_FFFF", "desc": "CLK_EN reset value"}],
+  "regs_params": {"CLK_EN_RST": "32'(CLK_EN_RST)"},
+  "registers": [
+    {"name": "RESET_CAUSE", "offset": "0x10", "access": "CMD", "width": 2, "desc": "cause of the last reset (sticky across system resets, cleared by the external reset only); write 1 to clear",
+     "fields": [{"name": "EXTERNAL", "bit": 0, "desc": "external reset (rst_n)"}, {"name": "WATCHDOG", "bit": 1, "desc": "watchdog reset"}]},
+    {"name": "BOOT_STATUS", "offset": "0x14", "access": "RO", "desc": "boot loader result",
+     "fields": [{"name": "DONE", "bit": 0, "desc": "boot done"}, {"name": "ERROR", "bit": 1, "desc": "boot error"}, {"name": "CODE", "bit": "6:4", "desc": "boot error code"}]},
+    {"name": "CYCLES", "offset": "0x18", "access": "RO", "desc": "free-running clock counter (wraps at 2**32)"},
+    {"name": "SOC_ID", "offset": "0x1C", "access": "RO", "desc": "SoC ID 0x50590100 (\"PY\", version 1.0)"},
+    {"name": "CORE_RESET", "offset": "0x20", "access": "RW", "width": 1, "desc": "1 = release the reset of the logic outside py_soc (cleared by every system reset)"},
+    {"name": "CLK_EN", "offset": "0x24", "access": "RW", "width": "NCLK", "reset": "CLK_EN_RST[NCLK-1:0]", "desc": "clock generator output enables"},
+    {"name": "CLK_STATUS", "offset": "0x28", "access": "RO", "width": 2, "desc": "clock generator status",
+     "fields": [{"name": "LOCKED", "bit": 0, "desc": "outputs locked (1 without a clock generator)"}, {"name": "PRESENT", "bit": 1, "desc": "clock generator present"}]}
+  ]
+}

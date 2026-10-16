@@ -1,0 +1,23 @@
+{
+  "name": "usb_fs_sie_regs",
+  "ip": "usb_fs_sie",
+  "id": "USBF",
+  "version": "1.10",
+  "desc": "USB full-speed serial interface engine: control, status, packet counters, bit period.",
+  "addr_width": 8,
+  "clk": "aclk",
+  "rst_n": "aresetn",
+  "top": "usb_fs_sie_top",
+  "registers": [
+    {"name": "CTRL", "offset": "0x10", "access": "RW", "width": 2, "reset": "3", "desc": "control",
+     "fields": [{"name": "ENABLE", "bit": 0, "desc": "1: engine enabled"}, {"name": "PULLUP", "bit": 1, "desc": "1: D+ pull-up on (device attached)"}]},
+    {"name": "STATUS", "offset": "0x14", "access": "CMD", "width": 10, "desc": "status; write 1 to [1:0] to clear those flags",
+     "fields": [{"name": "BUS_RESET", "bit": 0, "desc": "bus reset seen (W1C)"}, {"name": "RX_OVERFLOW", "bit": 1, "desc": "received byte dropped (W1C)"},
+                {"name": "TX_BUSY", "bit": 2, "desc": "transmitting"}, {"name": "RX_ACTIVE", "bit": 3, "desc": "receiving"},
+                {"name": "LINE", "bit": "9:8", "desc": "line state D+ / D-"}]},
+    {"name": "RX_GOOD", "offset": "0x18", "access": "RO", "desc": "packets received without errors"},
+    {"name": "RX_BAD", "offset": "0x1C", "access": "RO", "desc": "packets received with errors"},
+    {"name": "TX_PKTS", "offset": "0x20", "access": "RO", "desc": "packets sent"},
+    {"name": "BIT_PERIOD", "offset": "0x24", "access": "RO", "desc": "clocks per bit, 8.8 fixed point (CLK_HZ / 12 MHz)"}
+  ]
+}

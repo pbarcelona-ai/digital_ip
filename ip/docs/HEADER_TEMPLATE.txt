@@ -1,0 +1,50 @@
+# ***************
+# Filename: HEADER_TEMPLATE.txt
+# Author: FPGA Cores 4 U
+# Description: File header template of the FPGA Cores 4 U digital IP library.
+#   The generation prompts (MODULE_PROMPT_TEMPLATE.md, SYSTEM_PROMPT_TEMPLATE.md
+#   and every generated docs/<name>_prompt.md) tell the generator to read
+#   this file and to start every file it creates with the header below,
+#   filled in. Lines starting with '#' here are notes, not part of the header.
+#   Replace <...> fields; keep the field order and the ***** first line.
+#   Comment prefix: "//" for SystemVerilog (.sv / .svh), "#" for Python,
+#   shell, Makefiles, build.f and .ys, and "<!-- -->" is not used (Markdown
+#   files have no header). Wrap description lines at about 78 columns,
+#   continuation lines indented by two spaces after the prefix.
+# Date: 2026-10-10
+# ***************
+#
+# ---------------- SystemVerilog (src/*.sv, tb/*.sv, tb/tests/*.sv) ----------------
+// ***************
+// Filename: <file name, e.g. my_block.sv>
+// Author: FPGA Cores 4 U
+// Description: <one-line purpose>. Version <x.y.z>.
+//   <Behaviour, precise enough to write a reference model: algorithm,
+//   modes, edge cases, error and recovery behaviour.>
+//   <Register map: offset, name, access, reset value, fields.>
+//   <Parameters: name, default, legal range.>
+//   Clocks - <each clock and the logic on it>. Reset - <each reset, polarity,
+//   synchronous / asynchronous>. Clock-domain crossings - <none | each
+//   crossing and the synchroniser used>. Latency - <clocks>. Resources -
+//   <last synthesis result or budget>. Errors - <what is rejected / counted>.
+// Date: <YYYY-MM-DD of the last change>
+#
+# RTL files go straight on to `module` after the Date line; test-task files
+# close the header with a "// ***************" line.
+# Testbench files describe what is checked instead of the register map, and
+# end with "Prints TEST PASSED on success." Test-task files (tb/tests/
+# <name>_tests.sv) list every task, in file order, as
+#   //     <task name>  <one-line description>
+# so scripts/run_sim.sh --list-tests (ip/scripts/list_tests.py) can show the
+# name of each test available to run.
+#
+# ---------------- Python / shell / Makefile / build.f / .ys ----------------
+# ***************
+# Filename: <file name>
+# Author: FPGA Cores 4 U
+# Description: <one-line purpose>.
+#   <What it does, inputs and outputs, side effects.>
+# Date: <YYYY-MM-DD of the last change>
+#
+# Usage: <command line, options, and every test it can run (--list-tests)>
+# ***************

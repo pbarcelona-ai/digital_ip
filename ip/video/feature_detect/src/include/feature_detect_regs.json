@@ -1,0 +1,33 @@
+{
+  "name": "feature_detect_regs",
+  "ip": "feature_detect",
+  "id": "FEAT",
+  "version": "1.00",
+  "desc": "Edge and motion features of a video stream for object detectors: Sobel edges and a background of cells (lowest / highest luma) with the camera shift from luma profiles, two bits per pixel.",
+  "addr_width": 8,
+  "registers": [
+    {"name": "CTRL", "offset": "0x18", "access": "RW", "desc": "control",
+     "fields": [{"name": "EN", "bit": 0, "desc": "enable (follow the stream)"}, {"name": "EDGE_EN", "bit": 1, "desc": "edge bit on"},
+                {"name": "MOTION_EN", "bit": 2, "desc": "motion bit on"}, {"name": "AUTO_SHIFT", "bit": 3, "desc": "use the searched camera shift (else SHIFT)"},
+                {"name": "RESTART", "bit": 4, "desc": "write 1: background, profiles and shift start again (the next frame fills the background)"}]},
+    {"name": "FRAME_SIZE", "offset": "0x1C", "access": "RW", "desc": "frame size",
+     "fields": [{"name": "WIDTH", "bit": "15:0", "desc": "width"}, {"name": "HEIGHT", "bit": "31:16", "desc": "height"}]},
+    {"name": "EDGE", "offset": "0x20", "access": "RW", "reset": "0x00080080", "desc": "edge detector",
+     "fields": [{"name": "THRESH", "bit": "10:0", "desc": "Sobel |Gx| + |Gy| above this: an edge"}, {"name": "SPAN", "bit": "19:16", "desc": "an edge in the last SPAN pixels of the line sets the bit (0 or 1: the pixel only)"}]},
+    {"name": "MOTION", "offset": "0x24", "access": "RW", "reset": "0x00002214", "desc": "motion detector",
+     "fields": [{"name": "THRESH", "bit": "7:0", "desc": "luma beyond the background cell's range by more than this: moving"},
+                {"name": "SPAN", "bit": "11:8", "desc": "fill along the line, as EDGE.SPAN"}, {"name": "RATE", "bit": "14:12", "desc": "background moves 1 / 2^RATE of the way to each frame"}]},
+    {"name": "SHIFT", "offset": "0x28", "access": "RW", "desc": "camera shift used without AUTO_SHIFT (cells, taken at the frame start)",
+     "fields": [{"name": "X", "bit": "7:0", "desc": "columns (signed): content moved right"}, {"name": "Y", "bit": "15:8", "desc": "lines (signed): content moved down"}]},
+    {"name": "SHIFT_EST", "offset": "0x2C", "access": "RO", "desc": "camera shift found by the last search (cells)",
+     "fields": [{"name": "X", "bit": "7:0", "desc": "columns (signed)"}, {"name": "Y", "bit": "15:8", "desc": "lines (signed)"}]},
+    {"name": "STATUS", "offset": "0x30", "access": "RO", "desc": "state",
+     "fields": [{"name": "IN_FRAME", "bit": 0, "desc": "in a frame"}, {"name": "BG_VALID", "bit": 1, "desc": "background valid (motion detected)"},
+                {"name": "BUSY", "bit": 2, "desc": "shift search running"}, {"name": "FRAMES", "bit": "31:16", "desc": "FRAMES[15:0]"}]},
+    {"name": "FRAMES", "offset": "0x34", "access": "RO", "desc": "frames seen"},
+    {"name": "EDGE_COUNT", "offset": "0x38", "access": "RO", "desc": "pixels with the edge bit in the last frame"},
+    {"name": "MOTION_COUNT", "offset": "0x3C", "access": "RO", "desc": "pixels with the motion bit in the last frame"},
+    {"name": "SHIFT_USED", "offset": "0x40", "access": "RO", "desc": "camera shift in effect for the current / last frame (cells)",
+     "fields": [{"name": "X", "bit": "7:0", "desc": "columns (signed)"}, {"name": "Y", "bit": "15:8", "desc": "lines (signed)"}]}
+  ]
+}

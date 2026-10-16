@@ -455,7 +455,7 @@ module video_pipeline_tb;
       lf0 = lv_frames;
       cf0 = ctx_frames;
       outs = "";
-      repeat (5) @(posedge dut.v_vs);                               // display frames (vsync active high)
+      repeat (5) @(posedge dut.v.vs);                               // display frames (vsync active high)
       repeat (20) @(posedge pix_clk);
 `ifdef VP_HDMI
       bad = 0;

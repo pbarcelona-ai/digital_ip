@@ -1,0 +1,21 @@
+{
+  "name": "pwm_regs",
+  "ip": "pwm",
+  "id": "PWMT",
+  "version": "1.10",
+  "desc": "PWM timer: control, period, prescaler, dead time, output inversion, duty per channel.",
+  "addr_width": 8,
+  "clk": "aclk",
+  "rst_n": "aresetn",
+  "params": [{"name": "CHANNELS", "default": 4, "desc": "PWM channels (1..8)"}],
+  "registers": [
+    {"name": "CTRL", "offset": "0x10", "access": "RW", "width": 3, "desc": "control",
+     "fields": [{"name": "EN", "bit": 0, "desc": "1: counting"}, {"name": "CENTER", "bit": 1, "desc": "1: centre aligned (up / down)"},
+                {"name": "COMPLEMENTARY", "bit": 2, "desc": "1: complementary outputs with dead time"}]},
+    {"name": "PERIOD", "offset": "0x14", "access": "RW", "width": 16, "reset": "99", "desc": "counter top"},
+    {"name": "PRESCALE", "offset": "0x18", "access": "RW", "width": 16, "desc": "clock cycles per count - 1"},
+    {"name": "DEADTIME", "offset": "0x1C", "access": "RW", "width": 16, "desc": "dead time in clocks (complementary mode)"},
+    {"name": "INVERT", "offset": "0x20", "access": "RW", "width": "CHANNELS", "desc": "output inversion per channel"},
+    {"name": "DUTY", "offset": "0x24", "access": "RW", "width": 16, "count": "CHANNELS", "max_count": 8, "desc": "duty of channel n (loaded at the period start)"}
+  ]
+}

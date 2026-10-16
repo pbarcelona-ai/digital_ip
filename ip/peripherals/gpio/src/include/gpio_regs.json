@@ -1,0 +1,23 @@
+{
+  "name": "gpio_regs",
+  "ip": "gpio",
+  "id": "GPIO",
+  "version": "1.10",
+  "desc": "General purpose I/O: direction, output with atomic set / clear / toggle, synchronised inputs, edge interrupts.",
+  "addr_width": 8,
+  "clk": "aclk",
+  "rst_n": "aresetn",
+  "params": [{"name": "WIDTH", "default": 16, "desc": "number of pins (1..32)"}],
+  "registers": [
+    {"name": "OUT", "offset": "0x10", "access": "CMD", "width": "WIDTH", "desc": "output register: reads the pin output values, a write sets them all"},
+    {"name": "DIR", "offset": "0x14", "access": "RW", "width": "WIDTH", "desc": "direction per pin, 1 = output (0 = input, pad high-Z)"},
+    {"name": "IN", "offset": "0x18", "access": "RO", "width": "WIDTH", "desc": "pin levels (two-flop synchronised)"},
+    {"name": "SET", "offset": "0x1C", "access": "WO", "width": "WIDTH", "desc": "write 1s: set those OUT bits (atomic)"},
+    {"name": "CLEAR", "offset": "0x20", "access": "WO", "width": "WIDTH", "desc": "write 1s: clear those OUT bits (atomic)"},
+    {"name": "TOGGLE", "offset": "0x24", "access": "WO", "width": "WIDTH", "desc": "write 1s: invert those OUT bits (atomic)"},
+    {"name": "INT_EN", "offset": "0x28", "access": "RW", "width": "WIDTH", "desc": "interrupt enable per pin (INT_STATUS bits that raise irq_o)"},
+    {"name": "RISE_EN", "offset": "0x2C", "access": "RW", "width": "WIDTH", "desc": "a rising edge of the pin sets INT_STATUS"},
+    {"name": "FALL_EN", "offset": "0x30", "access": "RW", "width": "WIDTH", "desc": "a falling edge of the pin sets INT_STATUS"},
+    {"name": "INT_STATUS", "offset": "0x34", "access": "W1C", "width": "WIDTH", "desc": "edges seen per pin; write 1 to clear"}
+  ]
+}
