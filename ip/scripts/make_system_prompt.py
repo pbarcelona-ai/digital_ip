@@ -293,6 +293,10 @@ class Asker:
         return v
 
     def choose(self, key: str, question: str, options: list[tuple[str, str]], default: str) -> str:
+        if key in self.answers and self.answers[key] not in [k for k, _ in options]:
+            print(f"  note: answer {key} = {self.answers[key]!r} is not one of "
+                  f"{', '.join(k for k, _ in options)}; asking instead", file=sys.stderr)
+            self.answers = {k: v for k, v in self.answers.items() if k != key}
         if key in self.answers:
             v = self.answers[key]
         elif self.defaults:

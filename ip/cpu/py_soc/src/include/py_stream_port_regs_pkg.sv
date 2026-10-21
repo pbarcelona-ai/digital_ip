@@ -5,7 +5,7 @@
 //   window) and bit fields (<REG>_<FIELD>_LSB / _MASK), for firmware ("from
 //   py_stream_port_regs_pkg import *" in pyc.py) and testbenches. Generated
 //   by ip/scripts/regmap_gen.py from py_stream_port_regs.json.
-// Date: 2026-10-16
+// Date: 2026-10-20
 package py_stream_port_regs_pkg;
   localparam int PY_STREAM_PORT_ID = 'h0;
   localparam int PY_STREAM_PORT_VERSION = 'h4;

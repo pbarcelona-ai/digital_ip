@@ -8,11 +8,19 @@
 //     out = clamp((sum(k[i] * p[i]) + 2^(shift-1)) >>> shift, 0, 2^CW-1)
 //   with signed COEF_W-bit coefficients k (coef_i[i*COEF_W +: COEF_W],
 //   i = r*N + c, see conv2d_pkg) and shift 0..31 (no rounding term when 0).
+//   This is correlation: k[r*N + c] weights window row r, column c (row 0
+//   top, column 0 left); a convolution kernel is loaded rotated by 180
+//   degrees (no difference for the symmetric blur / sharpen kernels).
 //   The same kernel is applied to all C components. coef_i / shift_i are
 //   sampled when a frame's first window is formed (R = (N-1)/2 lines after
-//   its start-of-frame pixel) and held for the whole frame, so a kernel
-//   change never splits a frame; the latency does not depend on the
-//   kernel (an identity kernel is a pass-through with the same delay).
+//   its start-of-frame pixel; frame_o pulses with it) and held for the
+//   whole frame, so a kernel change never splits a frame; the latency does
+//   not depend on the kernel (an identity kernel is a pass-through with the
+//   same delay). A parent keeps coef_i / shift_i stable from the frame's
+//   start-of-frame pixel until frame_o: up to 5 windows wait in isp_window,
+//   so the first window of a frame of 5 pixels or fewer (2 x 2 with N = 3)
+//   can be taken after the next frame has started. Golden model:
+//   model/conv2d_core_model.py (Conv2dCore, beat exact; tb/python).
 //   Pixels - s_axis_tdata component j in [j*CW +: CW]; tuser = SOF,
 //   tlast = EOL. Frame size from width_i / height_i (>= R + 1, static
 //   during a frame), see isp_window. Throughput - 1 pixel per clock (plus
@@ -24,7 +32,7 @@
 //   Reset - synchronous rst_n (active low). Latency - isp_window (R lines
 //   + R + 4 clocks) + 7 clocks. The output goes through a 2-entry ip_axis_fifo, so s_axis_tready does
 //   not depend combinationally on m_axis_tready (+3 clocks).
-// Date: 2026-10-16
+// Date: 2026-10-21
 module conv2d_core #(
   parameter int N      = 5,                     // kernel size: 3 or 5
   parameter int C      = 3,                     // components per pixel
@@ -58,6 +66,7 @@ module conv2d_core #(
   // ---------------- window ----------------
   logic [NN*PW-1:0] w_d;
   logic w_l, w_u, w_v, w_r;
+  logic [15:0] win_x, win_y;                    // window centre (not used)
   axis_if #(.DATA_W(N*N*PW)) u_win_m_axis ();
   assign w_d = u_win_m_axis.tdata;
   assign w_l = u_win_m_axis.tlast;
@@ -76,8 +85,8 @@ module conv2d_core #(
     .height_i,
     .s_axis(s_axis),
     .m_axis(u_win_m_axis),
-    .m_x(),
-    .m_y(),
+    .m_x(win_x),
+    .m_y(win_y),
     .sof_wait_o
   );
 
@@ -141,6 +150,7 @@ module conv2d_core #(
     end
   end
 
+  // each stage's data, tlast, tuser and shift: not reset (qualified by v1..v4, which are)
   always_ff @(posedge clk) begin
     if (adv) begin
       l1 <= w_l;
@@ -167,6 +177,7 @@ module conv2d_core #(
   assign q_l  = l4;
   assign q_u  = u4;
   assign q_v = v4;
+  logic [2:0] out_level;                        // not used
   axis_if #(.DATA_W((C*CW))) u_out_fifo_s ();
   assign u_out_fifo_s.tdata = q_d;
   assign u_out_fifo_s.tlast = q_l;
@@ -181,6 +192,7 @@ module conv2d_core #(
     .rst_n,
     .s(u_out_fifo_s),
     .m(m_axis),
-    .level_o()
+    .level_o(out_level)
   );
+  wire unused_ok = &{1'b0, win_x, win_y, out_level, 1'b0};
 endmodule

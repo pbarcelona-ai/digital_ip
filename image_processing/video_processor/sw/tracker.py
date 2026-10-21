@@ -1,18 +1,23 @@
 """video_processor firmware: the object detectors and the multi-target tracking state machine.
 
-NTRK object_tracker detectors, one per object class (video_processor_map_pkg: detector c at
+NDET object_tracker detectors, one per object class (video_processor_map_pkg: detector c at
 TRK + c * TRK_STRIDE). The classes to detect (det_mask, bit c), the box style of each and the most
-targets tracked at any time (max_targets) come from the camera's control registers 0x50-0x55
+targets tracked at any time (max_targets) come from the camera's control registers 0x50-0x58
 (camera.py camera_detect). Each detector finds the pixels that look like its class (detect_setup):
-  0 pedestrian  luma below 80 (a dark figure on a light scene), runs of 2+ pixels
-  1 face        skin tone: Y 50-235, Cb 77-127, Cr 135-175, saturation 12+, runs 3 .. W/6
-  2 automobile  saturated paint: Y 30-235, saturation 40+, runs W/16 .. W/3
-  3 vehicle     the same paint in runs wider than W/3 (bus, truck, tram)
+  0 pedestrian  moving (feature_detect's motion bit: the silhouette), runs of 2 .. W/4 pixels
+  1 face        skin tone: Y 40-240 and a skin cell of the learned table (SKIN_LUT), runs 3 .. W/3
+  2 automobile  saturated paint or moving: Y 30-235, saturation 40+, runs W/16 .. W/3
+  3 vehicle     the same in runs wider than W/3 (bus, truck, tram)
+  4 aircraft    edges (Sobel) in runs of W/32+: an outlined object on a smooth sky (not motion: a
+                camera following planes sees the whole sky move)
 (W = frame width; a run is judged by its whole length) and groups them into up to NBLOB separate
 objects per frame (blobs: BLOB_X / BLOB_Y / BLOB_N; specks smaller than the class's least size are
 dropped by the hardware, BLOB_CFG.KEEP). The CPU checks the shape of each blob (class_ok: enough
 pixels; a pedestrian at least as tall as wide and at most a quarter of the frame wide; a face about
-as tall as it is wide; vehicles wider than tall; a face or a car at most half the frame wide). This
+as tall as it is wide; vehicles wider than tall; a face or a car at most half the frame wide; an
+aircraft 1 to 8 times as wide as tall, clear of the bottom edge; nothing inside a tracked aircraft
+is a pedestrian, face or vehicle; an aircraft has open sky right above it: feature_detect's sky
+profile, smooth bright lines from the top, ends at the blob's top in one of its column groups). This
 is a feature (colour, size, shape) detector, not a trained classifier. Each class has its own
 detector, so a person inside a vehicle (a driver's face behind the windscreen) is found by the face
 detector whatever the vehicle detectors find around it.
@@ -36,10 +41,16 @@ TRK_MIN_PIX = 40                   # pedestrian pixels for a detection
 FACE_MIN_PIX = 24
 CAR_MIN_PIX = 60
 VEH_MIN_PIX = 120
+AIR_MIN_PIX = 40
+SKY_TOL = 4                        # an aircraft's top within 4 lines of the open sky above it
+SKY_Y = 100                        # sky pixels: luma 100 or more (feature_detect SKY_CFG.Y_MIN)
+FACE_LUT = 1                       # face skin test: 1 the learned table (SKIN_LUT), 0 the Cb / Cr ranges
 TRK_LOST = 4                       # frames missed before the track is given up
+CONFIRM = 3                        # frames found in a row before a new target is drawn and labelled (a
+                                   # tentative one missed once is dropped: no one-frame false targets)
 TRK_GATE = 24                      # a blob farther than box width + height + 24 (x 2 units) is another target
 NTR = 3                            # tracks per class (overlay object c * NTR + k)
-NOBJ_MAX = 12                      # overlay objects: NTRK classes x NTR tracks
+NOBJ_MAX = 32                      # overlay objects (two banks of 16): the most targets at a time
 TW = 9                             # SCRATCH words per track
 S_SEARCH = 0                       # free: no target
 S_TRACK = 1
@@ -57,7 +68,7 @@ SC_FOUND = 8                       # frames this track found its target
 SC_CLASS_FOUND = 27                # the class: frames with at least one target found
 V_BIAS = 0x10000                   # velocities are stored + V_BIAS (registers hold unsigned words)
 det_mask = 1                       # classes detected (bit c)
-det_style = 0                      # box style of class c in bits 3c+2..3c (overlay.py)
+det_style = 0                      # symbol style of class c in bits 4c+3..4c (overlay.py)
 max_targets = NOBJ_MAX             # most targets tracked at any time, all classes together
 trk_live = 0                       # targets tracked now (all classes)
 trk_frames = 0                     # tracker frames processed
@@ -97,8 +108,10 @@ def class_name(c):
         puts("face")
     elif c == C_CAR:
         puts("automobile")
-    else:
+    elif c == C_VEH:
         puts("vehicle")
+    else:
+        puts("aircraft")
 
 
 def class_min(c):
@@ -109,7 +122,9 @@ def class_min(c):
         return FACE_MIN_PIX
     if c == C_CAR:
         return CAR_MIN_PIX
-    return VEH_MIN_PIX
+    if c == C_VEH:
+        return VEH_MIN_PIX
+    return AIR_MIN_PIX
 
 
 def detect_setup(c):
@@ -129,34 +144,53 @@ def detect_setup(c):
             "object_tracker RUN (pedestrian)",
             "runs of 2 .. width / 4 pixels: a figure, not a speck or a",
             "whole dark band of the scene"))
-        wreg(t + TRK_CTRL, 3 | (FEAT_OR << 12), strings(
+        wreg(t + TRK_CTRL, 1 | (FEAT_MOT << 12), strings(
             "object_tracker CTRL (pedestrian)",
-            "[0] on, [1] dark target (below THRESH), [13:12] 1: dark OR",
-            "moving (feature_detect motion bit): a walker in any clothes"))
+            "[0] on, [13:12] 3: the motion bit alone: a walker's moving",
+            "silhouette in any clothes, not dark road or shadows"))
     elif c == C_FACE:
-        wreg(t + TRK_Y_RANGE, (235 << 8) | 50, strings(
+        wreg(t + TRK_Y_RANGE, (240 << 8) | 40, strings(
             "object_tracker Y_RANGE (face)",
-            "luma 50-235: skin from shadow to highlight, not black or",
+            "luma 40-240: skin from shadow to highlight, not black or",
             "burnt-out white"))
-        wreg(t + TRK_CB_RANGE, (127 << 8) | 77, strings(
-            "object_tracker CB_RANGE (face)",
-            "Cb 77-127: skin tone has less blue than grey (every", "complexion falls in this band)"))
-        wreg(t + TRK_CR_RANGE, (175 << 8) | 135, strings(
-            "object_tracker CR_RANGE (face)",
-            "Cr 135-175: skin tone has more red than grey, less than a",
-            "saturated red"))
-        wreg(t + TRK_SAT_MIN, 12, strings(
-            "object_tracker SAT_MIN (face)",
-            "saturation |Cb - 128| + |Cr - 128| of 12 or more: grey and",
-            "white surfaces with a slight tint are not skin"))
-        wreg(t + TRK_RUN, (div(cam_w, 6) << 16) | 3, strings(
+        if FACE_LUT:
+            skin_table(t)
+        else:
+            wreg(t + TRK_CB_RANGE, (127 << 8) | 77, strings(
+                "object_tracker CB_RANGE (face)",
+                "Cb 77-127: skin tone has less blue than grey (every", "complexion falls in this band)"))
+            wreg(t + TRK_CR_RANGE, (175 << 8) | 135, strings(
+                "object_tracker CR_RANGE (face)",
+                "Cr 135-175: skin tone has more red than grey, less than a",
+                "saturated red"))
+            wreg(t + TRK_SAT_MIN, 12, strings(
+                "object_tracker SAT_MIN (face)",
+                "saturation |Cb - 128| + |Cr - 128| of 12 or more: grey and",
+                "white surfaces with a slight tint are not skin"))
+        wreg(t + TRK_RUN, (div(cam_w, 3) << 16) | 3, strings(
             "object_tracker RUN (face)",
-            "runs of 3 .. width / 6 skin pixels: a face, not a speck or a",
-            "large skin-coloured wall"))
-        wreg(t + TRK_CTRL, 5, strings(
+            "runs of 3 .. width / 3 skin pixels: a face (a close one too),",
+            "not a speck or a large skin-coloured wall"))
+        g = 5
+        if FACE_LUT:
+            g = 5 | SKIN_LUT
+        wreg(t + TRK_CTRL, g, strings(
             "object_tracker CTRL (face)",
-            "[0] measuring on, [2] colour mode: Y, Cb, Cr in their ranges",
-            "and saturation >= SAT_MIN make a target pixel"))
+            "[0] on, [2] colour mode, [15] SKIN_LUT: luma in Y_RANGE and",
+            "the chroma a skin cell of the learned table"))
+    elif c == C_AIR:
+        wreg(t + TRK_THRESH, 0, strings(
+            "object_tracker THRESH (aircraft)",
+            "0 with [1] dark: no pixel is below it, term A is empty (the",
+            "camera follows planes: motion is the whole sky)"))
+        wreg(t + TRK_RUN_B, cam_w >> 5, strings(
+            "object_tracker RUN_B (aircraft: edges)",
+            "edge runs of width / 32 or more: wings, engines and fuselage",
+            "outlined on a smooth sky"))
+        wreg(t + TRK_CTRL, 3 | TERM_B, strings(
+            "object_tracker CTRL (aircraft)",
+            "[0] on, [1] dark below THRESH 0: term A empty, [14] term B the",
+            "edge bit: the plane's outline on the sky"))
     else:
         wreg(t + TRK_Y_RANGE, (235 << 8) | 30, strings(
             "object_tracker Y_RANGE (automobile / vehicle)",
@@ -176,20 +210,17 @@ def detect_setup(c):
                 "object_tracker RUN (vehicle)",
                 "runs wider than width / 3 pixels: a bus, truck or tram, far",
                 "longer than a car"))
-            wreg(t + TRK_RUN_B, cam_w >> 4, strings(
-                "object_tracker RUN_B (vehicle: edges)",
-                "edge runs of width / 16 or more: an object outlined by edges",
-                "on a smooth background (a plane on the sky)"))
-            ctl = ctl | TERM_B
         wreg(t + TRK_CTRL, ctl, strings(
             "object_tracker CTRL (automobile / vehicle)",
             "[0] on, [2] colour mode, [13:12] 1: painted OR moving (white,",
-            "grey, black cars too), [14] vehicle: + edge term B"))
+            "grey, black cars too)"))
     g = (3 << 8) | 2                                   # a figure's head, body and legs: one object
     if c == C_FACE:
         g = (1 << 8) | 1
     if c >= C_CAR:                                     # a vehicle's roof and body, apart at its windows
-        g = (12 << 8) | 2
+        g = (12 << 8) | 2                              # (12 lines: frames are at most 240 lines high)
+    if c == C_AIR:                                     # wings, engines and fuselage: one object
+        g = (6 << 8) | 6
     wreg(t + TRK_BLOB_CFG, (class_min(c) << 16) | g, strings(
         "object_tracker BLOB_CFG",
         "[7:0] GAP columns, [15:8] GAP_Y lines (vehicles 12: roof and",
@@ -200,6 +231,45 @@ def detect_setup(c):
         track_free(t, track_word(k))
         k += 1
     sc_set(t, SC_CLASS_FOUND, 0)
+
+
+def skin_table(t):
+    """The face detector's learned skin table (SKIN_LUT; python-prototype/skin_lut.txt, train_skin.py
+    --ratio 2 --min-count 3 --weight 8): the words that are not 0 (the others reset to 0)."""
+    say("  object_tracker SKIN_LUT (face): the learned skin table, words 10-27")
+    mem32[t + TRK_SKIN_LUT + 40] = 0x00010000
+    mem32[t + TRK_SKIN_LUT + 44] = 0x00020000
+    mem32[t + TRK_SKIN_LUT + 56] = 0x00033800
+    mem32[t + TRK_SKIN_LUT + 60] = 0x00007C00
+    mem32[t + TRK_SKIN_LUT + 64] = 0x00015E00
+    mem32[t + TRK_SKIN_LUT + 68] = 0x00001540
+    mem32[t + TRK_SKIN_LUT + 72] = 0x00006FA2
+    mem32[t + TRK_SKIN_LUT + 76] = 0x000027C0
+    mem32[t + TRK_SKIN_LUT + 80] = 0x00002304
+    mem32[t + TRK_SKIN_LUT + 84] = 0x00000600
+    mem32[t + TRK_SKIN_LUT + 108] = 0x00004000
+
+
+def sky_shift():
+    """SKY_CFG.SHIFT for the frame width: the narrowest column groups, at most 32 of them."""
+    s = 0
+    while (cam_w - 1) >> s >= 32:
+        s += 1
+    return s
+
+
+def under_sky(x0, x1, y0):
+    """True when open sky (feature_detect's sky profile) reaches down to line y0 in a column group of
+    x0 .. x1, at least cam_h / 16 lines of it: the object is the first thing below the sky somewhere along
+    it (a plane, not a car under trees or buildings, nor the edges along the top of a sky-less frame)."""
+    s = sky_shift()
+    g = x0 >> s
+    while g <= x1 >> s:
+        v = mem32[FEAT + F_SKY + (g << 2)]
+        if (v << 4) >= cam_h and v + SKY_TOL >= y0 and v <= y0 + SKY_TOL:   # the sky (a 16th of the
+            return 1                                   # frame high or more) ends at the object's top
+        g += 1
+    return 0
 
 
 def track_free(t, b):
@@ -214,7 +284,7 @@ def tracker_setup():
     """Every selected class's detector set up (the others off), no target tracked."""
     global trk_live
     c = 0
-    while c < NTRK:
+    while c < NDET:
         if det_mask & (1 << c):
             detect_setup(c)
         else:
@@ -235,16 +305,26 @@ def mul(a, b):
 
 
 def class_ok(c, n, x0, y0, x1, y1):
-    """Enough pixels and the shape of class c: a solid object (pixels at least 1/3 of the box, 1/4 for
-    vehicles) that is not the scene itself (at most 3/4 of the frame wide and half its height,
-    touching at most one frame border: a textured scene or a moving camera gives one huge blob)."""
+    """Enough pixels and the shape of class c: a solid object (pixels at least 1/3 of the box, 1/5 for
+    ground transport) that is not the scene itself (at most 3/4 of the frame wide and half its height,
+    touching at most one frame border: a textured scene or a moving camera gives one huge blob).
+    An aircraft is its outline (an eighth of the box), 2 to 8 times as wide as tall (wings; not a
+    square building facade, the sun, a thin treeline or runway marking), at least width / 8 and up to
+    the whole frame wide, at most 2/3 of its height, clear of the bottom edge (ground, clouds below)."""
     w = x1 - x0 + 1
     h = y1 - y0 + 1
     if n < class_min(c):
         return 0
     a = mul(w, h)
-    if c == C_VEH:
-        if (n << 2) < a:
+    if c == C_AIR:                                     # any size (a distant plane in the sky counts)
+        if (n << 3) < a or y1 >= cam_h - 1 or w < h or w > (h << 3):
+            return 0
+        if x0 <= 2 and x1 >= cam_w - 1 and ((h << 2) < cam_h or mul(h, 3) > w):   # across the whole frame:
+            return 0                                   # a close plane is tall but still wide (wings); a low
+                                                       # one is a roof line, a square one the ground
+        return (h << 1) + h <= (cam_h << 1)
+    if c >= C_CAR:                                     # ground transport: paint and motion outline a car,
+        if (n << 2) + n < a:                           # a fifth of its box is enough
             return 0
     elif (n << 1) + n < a:
         return 0
@@ -259,20 +339,23 @@ def class_ok(c, n, x0, y0, x1, y1):
         b += 1
     if b >= 2 or (w << 2) > (cam_w << 1) + cam_w or (h << 1) > cam_h:
         return 0
-    if c == C_PED:                                     # a standing figure: at least as tall as wide
-        return h >= w and w <= (cam_w >> 2)
-    if w > (cam_w >> 1):                               # a face or a car: at most half the frame wide
+    if c == C_PED:                                     # a standing figure in the foreground: as tall as
+        return h >= w and w <= (cam_w >> 2) and mul(h, 5) >= cam_h   # wide, a fifth of the frame high
+    if c == C_FACE:                                    # 3/4 to 2 times as tall as wide; a foreground
+        return ((h << 2) >= (w << 1) + w and h <= (w << 1) and mul(w, 24) >= cam_w   # face: 1/24 to
+                and mul(w, 3) <= cam_w)                # 1/3 of the frame wide
+    if w > (cam_w >> 1):                               # a car: at most half the frame wide
         if c != C_VEH:
             return 0
-    if c == C_FACE:                                    # 3/4 to 2 times as tall as wide, small
-        return (h << 2) >= (w << 1) + w and h <= (w << 1) and w <= (cam_w >> 3)
-    if c == C_CAR:                                     # wider than tall, at least width / 10
-        return w >= h and w >= div(cam_w, 10)
-    return w >= (h << 1)                               # a bus, tram or plane: long and low
+    if c == C_CAR:                                     # wider than tall (up to 6 times: not a road
+        return w >= h and w <= mul(h, 6) and mul(w, 12) >= cam_w   # marking), foreground: width / 12
+    return w >= (h << 1) and w <= (h << 3)             # a bus or tram: long and low, not a line
 
 
 def in_target(c, x, y):
-    """True when (x, y) lies in the predicted box of a target of class c."""
+    """True when (x, y) lies in the predicted box of a target of class c; an aircraft's box counts
+    three times its height (the measured outline is mostly the wing line: the fuselage, nose and
+    tail fin reach above and below it)."""
     t = det_base(c)
     k = 0
     while k < NTR:
@@ -283,6 +366,8 @@ def in_target(c, x, y):
             if (x << 1) >= cx - w and (x << 1) <= cx + w:
                 cy = sc_get(t, b + SC_CY) + sc_get(t, b + SC_VY) - V_BIAS
                 h = sc_get(t, b + SC_H)
+                if c == C_AIR:
+                    h = h + (h << 1)
                 if (y << 1) >= cy - h and (y << 1) <= cy + h:
                     return 1
         k += 1
@@ -298,9 +383,19 @@ def blob_ok(c, t, i):
     y = mem32[t + TRK_BLOB_Y + (i << 2)]
     if not class_ok(c, n, x & 0xFFFF, y & 0xFFFF, x >> 16, y >> 16):
         return 0
+    if c == C_AIR and not under_sky(x & 0xFFFF, x >> 16, y & 0xFFFF):   # a plane has sky right above it
+        return 0
     cx = ((x & 0xFFFF) + (x >> 16)) >> 1
     cy = ((y & 0xFFFF) + (y >> 16)) >> 1
-    if c >= C_CAR:                                     # a moving pedestrian is not a car
+    if c == C_AIR:                                     # a car or bus is not a plane
+        if in_target(C_CAR, cx, cy):
+            return 0
+        return not in_target(C_VEH, cx, cy)
+    if in_target(C_AIR, cx, cy):                       # nor an engine, window or wheel of a plane
+        return 0                                       # a pedestrian, face or vehicle
+    if c >= C_CAR:                                     # a moving pedestrian is not a car, nor is a cloud
+        if under_sky(x & 0xFFFF, x >> 16, y & 0xFFFF):   # edge right under open sky (ground transport is
+            return 0                                   # not the first thing below the sky)
         return not in_target(C_PED, cx, cy)
     if c == C_PED:                                     # nor a moving car's or bus's end a pedestrian
         if in_target(C_CAR, cx, cy):
@@ -328,8 +423,9 @@ def track_step(t, b, i):
 
     An alpha-beta tracker (Kalata, IEEE Trans. AES 1984) with alpha = 1 and beta = 1/2: the centre
     takes the measured blob centre (no position smoothing: the blob box is already a clean
-    measurement), the velocity moves half way to the measured displacement, v = (v + (z - x)) / 2;
-    a missed target coasts with its velocity until TRK_LOST misses. Association (nearest_blob) is
+    measurement; an aircraft's outline is not, it takes alpha = 1/2), the velocity moves half way
+    to the measured displacement, v = (v + (z - x)) / 2;
+    a missed target coasts with its velocity until TRK_LOST misses or it leaves the frame. Association (nearest_blob) is
     gated greedy nearest neighbour in track order, a cheap stand-in for global nearest neighbour
     (Bar-Shalom & Fortmann 1988) that is enough for the few, mostly separated targets per class."""
     ok = i >= 0
@@ -359,6 +455,9 @@ def track_step(t, b, i):
         sc_set(t, b + SC_H, smooth_size(sc_get(t, b + SC_H), y1 - y0, st))
         cx = x0 + x1
         cy = y0 + y1
+        if t == det_base(C_AIR) and st != S_SEARCH:    # aircraft: the outline's box jumps with the
+            cx = (cx + sc_get(t, b + SC_CX) + vx) >> 1 # ground and sky behind it, so the centre
+            cy = (cy + sc_get(t, b + SC_CY) + vy) >> 1 # moves half way from the prediction
         st = S_TRACK
         miss = 0
         r = st
@@ -368,9 +467,13 @@ def track_step(t, b, i):
         cy = cy + vy
         st = S_COAST
         r = st
-        if miss >= TRK_LOST:                           # lost: the track is free again
-            st = S_SEARCH
-            r = S_LOST
+        if (miss >= TRK_LOST or sc_get(t, b + SC_FOUND) < CONFIRM or cx < 0 or cy < 0 or cx > (cam_w << 1)
+                or cy > (cam_h << 1)):
+            st = S_SEARCH                              # lost, or coasted out of the frame (the SCRATCH
+            r = S_LOST                                 # words hold no negative centre): free again
+            cx = 0
+            cy = 0
+            sc_set(t, b + SC_FOUND, 0)                 # the next target in this slot starts tentative
     sc_set(t, b + SC_STATE, st)
     sc_set(t, b + SC_MISS, miss)
     sc_set(t, b + SC_CX, cx)

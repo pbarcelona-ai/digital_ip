@@ -1,9 +1,9 @@
 {
-  "interface": true,
+ "interface": true,
  "name": "vision_system_regs",
  "ip": "vision_system",
  "id": "VSYS",
- "version": "1.10",
+ "version": "2.00",
  "desc": "Lens distortion correction: control, status, image size, distortion coefficients, calibration, model select, homography.",
  "addr_width": 8,
  "clk": "clk",
@@ -78,6 +78,14 @@
    "reset": "0x10000"
   },
   {
+   "name": "BYPASS",
+   "offset": "0x38",
+   "access": "RW",
+   "width": 1,
+   "reset": "1",
+   "desc": "[0] 1: frames pass unchanged (reset: no correction until software enables it); taken between frames"
+  },
+  {
    "name": "INTERP_MODE",
    "offset": "0x3C",
    "access": "RW",
@@ -131,7 +139,7 @@
    "name": "MODEL_SEL",
    "offset": "0x5C",
    "access": "RW",
-   "desc": "[2:0] 0 radial, 1 fisheye, 2 affine (reserved), 3 perspective, 4 scaling (reserved), 5 panoramic"
+   "desc": "[2:0] 0 radial, 1 fisheye (division model), 2 affine (reserved), 3 perspective, 4 scaling (reserved), 5 panoramic, 6 / 7 reserved; the reserved codes give the pinhole round trip (near identity) - software must not select them"
   },
   {
    "name": "H11",

@@ -43,7 +43,7 @@
 //   words read 0 and ignore writes; above the map: DECERR. Clock - aclk.
 //   Reset - synchronous active low aresetn. Latency - 2 clocks per write and
 //   read.
-// Date: 2026-10-16
+// Date: 2026-10-20
 module uart_regs #(
   parameter logic [31:0] FCW_RST = 32'd0  // FCW at reset (the BAUD parameter)
 ) (
@@ -84,6 +84,7 @@ module uart_regs #(
 
   logic             wr_en, rd_en, wr_err_q;
   logic [7:0]       wr_addr, rd_addr, rd_addr_q;
+  wire unused_addr_lsbs = &{1'b0, wr_addr[1:0], rd_addr[1:0]};   // word access: the byte offset is not decoded
   logic [31:0]      wr_data, rd_data;
   logic [3:0]       wr_strb;
   regbus_if #(.ADDR_W(8)) bus ();               // register bus of the AXI4-Lite front end
@@ -153,8 +154,8 @@ module uart_regs #(
       A_ID:      rd_data = IP_ID;
       A_VERSION: rd_data = IP_VERSION;
       A_DATE:    rd_data = IP_DATE;
-      A_CTRL: rd_data = ctrl_q;
-      A_FCW: rd_data = fcw_q;
+      A_CTRL: rd_data = 32'(ctrl_q[32-1:0]);
+      A_FCW: rd_data = 32'(fcw_q[32-1:0]);
       A_STATUS: rd_data = 32'(status_i);
       A_ERR_CNT: rd_data = 32'(err_cnt_i);
       default: begin

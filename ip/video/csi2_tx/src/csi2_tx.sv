@@ -19,7 +19,7 @@
 //   room, e.g. with the byte clock stopped: no line buffer is ever leaked). Config is quasi-static (change it between frames,
 //   or with enable_i low). Clocks - pclk, bclk (D-PHY byte clock). Resets -
 //   synchronous per domain, active low.
-// Date: 2026-10-16
+// Date: 2026-10-21
 module csi2_tx #(
   parameter int NLANES = 2,
   parameter int MAX_W  = 2048
@@ -182,6 +182,7 @@ module csi2_tx #(
     else if (cmd_r && ev_v) fs_done <= (e_type == 2'd0 && e_sof && !fs_done);
   end
 
+  logic pl_ready, eng_busy, eng_err;
   mipi_tx_engine #(
     .NLANES(NLANES),
     .MAX_W(MAX_W)
@@ -197,9 +198,12 @@ module csi2_tx #(
     .lb_done_o(lb_done),
     .pl_data_i(8'd0),
     .pl_valid_i(1'b0),
-    .pl_ready_o(),
+    .pl_ready_o(pl_ready),
     .ppi(ppi),
-    .busy_o(),
+    .busy_o(eng_busy),
+    .cmd_err_o(eng_err),
     .underflow_o
   );
+  // not used: CSI-2 TX sends no command payloads (pl_ready, cmd_err), the engine's busy flag
+  wire unused_ok = &{1'b0, pl_ready, eng_busy, eng_err, 1'b0};
 endmodule

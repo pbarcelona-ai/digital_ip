@@ -80,8 +80,8 @@ module dpll_ctrl #(
       code_o <= sum < 0 ? '0 : sum > CMAX ? {CW{1'b1}} : CW'(sum >>> G);
       // lock detector
       if (mag > AW'(LOCK_TOL)) lcnt <= '0;
-      else if (lcnt != LOCK_CNT) lcnt <= lcnt + 1'b1;
-      if (lcnt == LOCK_CNT) locked_o <= 1'b1;
+      else if (lcnt != $bits(lcnt)'(LOCK_CNT)) lcnt <= lcnt + 1'b1;
+      if (lcnt == $bits(lcnt)'(LOCK_CNT)) locked_o <= 1'b1;
       else if (mag > AW'(4 * LOCK_TOL)) locked_o <= 1'b0;
     end
   end

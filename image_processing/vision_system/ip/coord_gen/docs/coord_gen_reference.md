@@ -24,15 +24,15 @@
 //   MODEL_PANORAMIC use the division model, not OpenCV's equidistant theta polynomial, so
 //   coefficients from cv::fisheye::calibrate cannot be used directly; MODEL_AFFINE /
 //   MODEL_SCALING are reserved hooks (identity).
-// TODO(REF-COORD_GEN-1) [MEDIUM] Fisheye model. Prompt: in
-//   image_processing/vision_system/ip/coord_gen/src/coord_gen.sv, state in the header that
-//   MODEL_FISHEYE is Fitzgibbon's division model (CVPR 2001) and not the OpenCV fisheye
-//   (Kannala-Brandt) model, and give the conversion used by the calibration software;
-//   optionally add MODEL_FISHEYE_KB computing theta = atan(r) with a CORDIC or LUT and theta_d
-//   = theta(1 + k1 theta^2 + k2 theta^4 + k3 theta^6 + k4 theta^8), with a golden-model test
-//   against cv::fisheye::distortPoints values.
-// TODO(REF-COORD_GEN-2) [LOW] Reserved models. Prompt: in coord_gen.sv and
-//   distortion_model_pkg.sv, either implement MODEL_AFFINE (sx = a11 x + a12 y + a13, sy = a21
-//   x + a22 y + a23) and MODEL_SCALING, or make the register block reject those MODEL_SEL
-//   values (SLVERR) so software cannot select an identity mapping by mistake.
+// RESOLVED(REF-COORD_GEN-1) [MEDIUM] Fisheye model. Resolution: 2026-10-21: the coord_gen.sv
+//   header (MODELS) states that MODEL_FISHEYE is Fitzgibbon's division model (CVPR 2001), not the
+//   OpenCV (Kannala-Brandt) fisheye model, and that the calibration software fits the division-model
+//   k1 / k2 to the measured or Kannala-Brandt mapping by least squares over the frame
+//   (tb/image_io.py fit_division_model_coeffs); a Kannala-Brandt model is not added.
+// RESOLVED(REF-COORD_GEN-2) [LOW] Reserved models. Resolution: 2026-10-21: documented:
+//   MODEL_AFFINE (2), MODEL_SCALING (4) and codes 6 / 7 are reserved and give the pinhole round trip (near
+//   identity, not bit exact) (coord_gen.sv header, distortion_model_pkg.sv, the MODEL_SEL description in
+//   vision_system_regs.json: software must not select them); the golden model and tb/python check
+//   that mapping. The register block keeps them writable (no SLVERR) so the map stays one plain RW
+//   field.
 ```

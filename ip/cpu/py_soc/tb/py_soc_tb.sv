@@ -7,10 +7,12 @@
 //   flash model and the SoC boots from it. Board wiring - the flash on the
 //   boot SPI pins, UART0 TXD -> UART1 RXD and back, each SPI MOSI -> its MISO,
 //   I2C0 to a slave model at 0x50 and I2C1 to one at 0x51, GPIO0 pads
-//   looped to GPIO1 inputs, GPIO2 inputs driven here. The testbench pulses
+//   looped to GPIO1 inputs, GPIO2 inputs driven here, the DDR window
+//   (DDR_EN = 1) on a behavioral AXI4-Lite memory. The testbench pulses
 //   GPIO2 pins 0 and 31 when the firmware reaches stage 2, then waits for
 //   the watchdog reset, checks the firmware's result globals at that
-//   moment, and checks that the system boots from flash again and the
+//   moment (the data RAM and DDR words, the SYSCTL timer and the I2C0
+//   command-done interrupts included), and checks that the system boots from flash again and the
 //   firmware halts reporting the watchdog as the reset cause. The core
 //   logic reset output (core_rst_n_o) must be held after reset, released by
 //   the firmware's SYSCTL CORE_RESET write, and held again by the watchdog
@@ -19,7 +21,7 @@
 //   flipped and the test instead expects boot_err (checksum) and a core
 //   that never starts. Prints TEST PASSED on success.
 //   The test tasks are in tests/py_soc_tests.sv (`included).
-// Date: 2026-10-01
+// Date: 2026-10-20
 `timescale 1ns/1ps
 module py_soc_tb;
   `include "selftest_syms.svh"
@@ -33,7 +35,7 @@ module py_soc_tb;
   logic done, trap, wdt_reset, core_rst_n;
   logic [33:0] result;
   logic [3:0] trap_cause;
-  logic [12:0] trap_pc;
+  logic [14:0] trap_pc;
   logic boot_done, boot_err;
   logic [2:0] boot_err_code;
   logic fl_sclk, fl_cs_n, fl_mosi, fl_miso;
@@ -48,13 +50,44 @@ module py_soc_tb;
   assign dut_m_ext_axil.rdata = 32'b0;
   assign dut_m_ext_axil.rresp = 2'b0;
   assign dut_m_ext_axil.rvalid = 1'b0;
+  // DDR window: a behavioral AXI4-Lite memory (ready high, response the clock after) of 256 words,
+  // word index {addr[25], addr[8:2]} (aliased: enough for the bottom and the top of the window)
+  axil_if #(.ADDR_W(26)) dut_m_ddr_axil ();
+  logic [31:0] ddr_mem [256];
+  initial for (int i = 0; i < 256; i++) ddr_mem[i] = '0;
+  logic ddr_b, ddr_r;
+  logic [31:0] ddr_q;
+  assign dut_m_ddr_axil.awready = dut_m_ddr_axil.awvalid && dut_m_ddr_axil.wvalid && !ddr_b;
+  assign dut_m_ddr_axil.wready = dut_m_ddr_axil.awready;
+  assign dut_m_ddr_axil.bresp = 2'b0;
+  assign dut_m_ddr_axil.bvalid = ddr_b;
+  assign dut_m_ddr_axil.arready = !ddr_r;
+  assign dut_m_ddr_axil.rdata = ddr_q;
+  assign dut_m_ddr_axil.rresp = 2'b0;
+  assign dut_m_ddr_axil.rvalid = ddr_r;
+  always @(posedge clk) begin
+    if (!rst_n) begin
+      ddr_b <= 1'b0;
+      ddr_r <= 1'b0;
+    end else begin
+      if (dut_m_ddr_axil.awready) begin
+        ddr_mem[{dut_m_ddr_axil.awaddr[25], dut_m_ddr_axil.awaddr[8:2]}] <= dut_m_ddr_axil.wdata;
+        ddr_b <= 1'b1;
+      end else if (dut_m_ddr_axil.bready) ddr_b <= 1'b0;
+      if (dut_m_ddr_axil.arvalid && !ddr_r) begin
+        ddr_q <= ddr_mem[{dut_m_ddr_axil.araddr[25], dut_m_ddr_axil.araddr[8:2]}];
+        ddr_r <= 1'b1;
+      end else if (dut_m_ddr_axil.rready) ddr_r <= 1'b0;
+    end
+  end
   py_soc #(
     .CLK_HZ(100_000_000),
     .UART_BAUD(2_000_000),
     .I2C_HZ(2_000_000),
     .SPI_HZ(10_000_000),
     .FLASH_CLKDIV(3),
-    .CLKGEN_EN(1'b0)
+    .CLKGEN_EN(1'b0),
+    .DDR_EN(1'b1)
   ) dut (
     // clk is the CPU clock
     .clk,
@@ -92,7 +125,8 @@ module py_soc_tb;
     .wdt_reset_o(wdt_reset),
     .core_rst_n_o(core_rst_n),
     .ext_irq_i(4'b0),
-    .m_ext_axil(dut_m_ext_axil)
+    .m_ext_axil(dut_m_ext_axil),
+    .m_ddr_axil(dut_m_ddr_axil)
   );
 
   // ---------------- board ----------------
@@ -216,7 +250,11 @@ module py_soc_tb;
              g(G_errors), g(G_u0_count), g(G_u0_sum), g(G_spi1_count), g(G_spi1_sum),
              g(G_i2c1_count), g(G_i2c1_sum), g(G_gpio_edges), g(G_gpio_bits), g(G_flash_count), g(G_flash_word), g(G_wdt_pre));
     check(g(G_cause) == 1, $sformatf("first boot reset cause %0d, expected external (1)", g(G_cause)));
-    check(g(G_stage) == 12, $sformatf("firmware reached stage %0d before the watchdog fired", g(G_stage)));
+    check(g(G_timer_hits) == 1, $sformatf("SYSCTL timer interrupts %0d, expected 1", g(G_timer_hits)));
+    check(g(G_i2c0_done) == 1, $sformatf("I2C0 command-done interrupts %0d, expected 1", g(G_i2c0_done)));
+    check(ddr_mem[0] == 32'hCAFE_F00D && ddr_mem[255] == 32'h0BAD_C0DE, "firmware writes in the DDR window");
+    check(dut.u_ram.u_mem.mem[16'hFFFC >> 2] == 32'h1234_5678, "firmware write at the last data RAM word");
+    check(g(G_stage) == 15, $sformatf("firmware reached stage %0d before the watchdog fired", g(G_stage)));
     check(g(G_errors) == 0, $sformatf("firmware counted %0d errors", g(G_errors)));
     check(g(G_u0_count) == 16 && g(G_u0_sum) == 'h378, "UART0 interrupt receive of the 16-byte burst");
     check(g(G_spi1_count) == 3 && g(G_spi1_sum) == 'h6666, "SPI1 interrupt receive");

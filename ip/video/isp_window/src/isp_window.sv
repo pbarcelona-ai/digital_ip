@@ -15,6 +15,8 @@
 //   (static during a frame); the block scans a (W+R) x (H+R) grid, R =
 //   (N-1)/2, and generates the last R columns and rows itself, so a frame
 //   is complete without waiting for the next one.
+//   The input tlast is not used (the scan counts the lines itself).
+//   Golden model: model/isp_window_model.py (beat exact, tb/python).
 //   Window layout - m_axis_tdata[(r*N + c)*PW +: PW] is row r (0 = top),
 //   column c (0 = left); the centre is r = c = R. m_x / m_y give the
 //   centre coordinates. tuser = SOF, tlast = EOL, as on the input.
@@ -29,7 +31,7 @@
 //   lines per frame. Clock - clk only. Reset - synchronous rst_n (active
 //   low). Latency - R lines + R + 4 clocks. The output goes through a 2-entry ip_axis_fifo, so s_axis_tready does
 //   not depend combinationally on m_axis_tready (+3 clocks).
-// Date: 2026-10-16
+// Date: 2026-10-21
 module isp_window #(
   parameter int N     = 3,                     // window size, odd, >= 3
   parameter int PW    = 10,                    // pixel width
@@ -83,6 +85,8 @@ module isp_window #(
   wire  [15:0] raddr16 = advance ? nx : x;
   wire  [AW-1:0] raddr = (raddr16 < width_i) ? raddr16[AW-1:0] : '0;
   wire  wr_en = advance && (x < width_i);
+  // line buffers (block RAM) and their read registers are not reset: a window only uses rows
+  // and columns of the current frame (the border rule below), all written before they are read
   for (genvar j = 0; j < N - 1; j++) begin : g_lb
     logic [PW-1:0] mem [MAX_W];
     always_ff @(posedge clk) begin
@@ -97,7 +101,7 @@ module isp_window #(
   // row -m -> 0 (clamp) or m (mirror); row H-1+m -> H-1 or H-1-m. Only
   // windows of scan rows y >= R are output, and for those every remapped
   // row has already been received.
-  logic [PW-1:0] cstore [N][N];
+  logic [PW-1:0] cstore [N][N];                // not reset (only the current frame's columns are used)
   always_comb begin
     int yi, hi, d, sc;
     yi = int'(y);
@@ -183,6 +187,7 @@ module isp_window #(
   assign m_axis.tuser = u_out_fifo_m.tuser;
   assign m_axis.tvalid = u_out_fifo_m.tvalid;
   assign u_out_fifo_m.tready = m_axis.tready;
+  logic [2:0] out_level;                       // not used
   ip_axis_fifo #(
     .DATA_W(N*N*PW + 32),
     .DEPTH(2)
@@ -191,6 +196,8 @@ module isp_window #(
     .rst_n,
     .s(u_out_fifo_s),
     .m(u_out_fifo_m),
-    .level_o()
+    .level_o(out_level)
   );
+  // not used: the input tlast (the scan makes its own line ends), the FIFO level
+  wire unused_ok = &{1'b0, s_axis.tlast, out_level, 1'b0};
 endmodule

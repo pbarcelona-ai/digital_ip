@@ -15,7 +15,7 @@
 //   parent block, fixed and independent of data. Errors - none reported here,
 //   out-of-range parameters stop elaboration or are handled by the parent
 //   block.
-// Date: 2026-10-16
+// Date: 2026-10-20
 module spi_engine #(
   parameter int DATA_W = 32,
   parameter int NUM_CS = 4
@@ -43,7 +43,9 @@ module spi_engine #(
   spi_if.master spi,
   output logic                      busy_o
 );
+  /* verilator lint_off UNUSEDPARAM */             // version identification (library convention), not logic
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
+  /* verilator lint_on UNUSEDPARAM */
   localparam int CSW = (NUM_CS > 1) ? $clog2(NUM_CS) : 1;   // chip-select index width
 
   typedef enum logic [2:0] {
@@ -66,6 +68,7 @@ module spi_engine #(
   wire [IDX_W-1:0] tx_idx_nxt = lsb_first_i ? tx_idx + ONE : tx_idx - ONE;
   wire [5:0] wl_m1 = word_len_i - 6'd1;
   wire [IDX_W-1:0] first_idx = lsb_first_i ? '0 : wl_m1[IDX_W-1:0];
+  wire unused_wl = &{1'b0, wl_m1};                    // only the index bits of len - 1 are needed
 
   assign busy_o   = (state != S_IDLE);
   assign tx_ready = (state == S_IDLE) & enable_i;

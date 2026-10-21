@@ -12,7 +12,7 @@
 //   parent block. Latency - as documented in the parent block, fixed and
 //   independent of data. Errors - none reported here, out-of-range parameters
 //   stop elaboration or are handled by the parent block.
-// Date: 2026-10-16
+// Date: 2026-10-20
 module i2c_master_fsm (
   input  logic        clk,
   input  logic        rst_n,
@@ -44,7 +44,9 @@ module i2c_master_fsm (
 );
   assign m.tkeep = '1;      // not used by this block
   assign m.tuser = '0;      // not used by this block
+  /* verilator lint_off UNUSEDPARAM */             // version identification (library convention), not logic
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
+  /* verilator lint_on UNUSEDPARAM */
 
   localparam logic [1:0] C_START = 2'd0, C_STOP = 2'd1, C_WR = 2'd2, C_RD = 2'd3;
   typedef enum logic [4:0] {

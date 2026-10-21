@@ -21,22 +21,27 @@ def wait_idle():
     """Wait until no frame has ended at either stage for QUIET cycles."""
     c0 = mem32[FC + FC_COUNT0]
     c1 = mem32[FC + FC_COUNT1]
-    t0 = now()
-    while now() - t0 < QUIET:
+    t = deadline(QUIET)
+    irq_disable()
+    while not passed(t):                               # woken by the frame interrupts (13 / 14) or the
+        sleep_until(t)                                 # timer at the end of the quiet time
         n0 = mem32[FC + FC_COUNT0]
         n1 = mem32[FC + FC_COUNT1]
         if n0 != c0 or n1 != c1:
             c0 = n0
             c1 = n1
-            t0 = now()
+            t = deadline(QUIET)
+    irq_enable()
 
 
 def wait_sequence():
     """Wait for the camera's sequence to start (GPIO0[29] rising edge, latched by the interrupt
     handler); True when it did within SEQ_WAIT."""
-    t0 = now()
-    while not seq_seen and now() - t0 < SEQ_WAIT:
-        pass
+    t = deadline(SEQ_WAIT)
+    irq_disable()
+    while not seq_seen and not passed(t):              # the GPIO0 interrupt sets it
+        sleep_until(t)
+    irq_enable()
     return seq_seen
 
 

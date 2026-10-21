@@ -6,6 +6,9 @@
 #   video_processor). Lines starting with # are ignored. src/configuration.sv
 #   is first: it selects the external interfaces (it replaces the library
 #   default ip/video/video_pipeline/src/configuration.sv, which is NOT listed).
+#   The Python models (pysim) are found from this list: the model/ folder of
+#   every listed IP (ip/shared/pymodel/model_path.py); "#model <ip dir>" lines
+#   add an IP whose model comes before its RTL.
 # Date: 2026-10-02
 # ***************
 ../../ip/cpu/py_soc/src/py_soc_map_pkg.sv
@@ -76,6 +79,8 @@ src/configuration.sv
 ../../ip/cpu/py_soc/src/py_stream_port.sv
 ../../ip/cpu/py_soc/src/py_stream_port_top.sv
 ../../ip/cpu/py_soc/src/py_axil_xbar.sv
+../../ip/memory/single_port_ram/src/single_port_ram.sv
+../../ip/cpu/py_soc/src/py_data_ram.sv
 ../../ip/peripherals/spi_flash_ctrl/src/include/spi_flash_ctrl_regs.sv
 ../../ip/peripherals/spi_flash_ctrl/src/spi_flash_ctrl.sv
 ../../ip/peripherals/spi_flash_ctrl/src/spi_flash_ctrl_top.sv
@@ -134,6 +139,7 @@ src/configuration.sv
 ../vision_system/ip/bicubic/src/bicubic.sv
 ../vision_system/ip/frame_buffer/src/frame_buffer.sv
 ../vision_system/ip/ext_frame_buffer/src/ext_frame_buffer.sv
+../../ip/fifo/fallthrough_fifo/src/fallthrough_fifo.sv
 ../vision_system/src/axis_in_ctrl.sv
 ../vision_system/src/axis_out_ctrl.sv
 ../vision_system/src/include/vision_system_regs.sv
@@ -161,3 +167,5 @@ src/configuration.sv
 ../../ip/video/symbol_overlay/src/symbol_overlay.sv
 ../../ip/video/symbol_overlay/src/symbol_overlay_top.sv
 src/video_processor.sv
+# ---- models without RTL yet (the Python baseline is ahead: docs/pending_sv_changes.md)
+#model ../../ip/ai/npu

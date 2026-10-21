@@ -10,11 +10,11 @@
 //   ip/scripts/regmap_gen.py from feature_detect_regs.json and the ports of
 //   feature_detect: regenerate after changing either. Clock - clk. Reset -
 //   synchronous active low rst_n.
-// Date: 2026-10-16
+// Date: 2026-10-21
 module feature_detect_top #(
   parameter int MAXW = 2048,
   parameter int MAXH = 1152,
-  parameter int CELL_LOG2 = 3,
+  parameter int CELL_LOG2 = 2,
   parameter int SHIFT_MAX = 4,
   parameter int CW = 16
 ) (
@@ -24,6 +24,8 @@ module feature_detect_top #(
   axil_if.slave s_axil,
   // s_axis: axis_if.monitor (ip/shared/src/interfaces/axis_if.sv), DATA_W = 24
   axis_if.monitor s_axis,
+  // m_axis: axis_if.master (ip/shared/src/interfaces/axis_if.sv), DATA_W = 24
+  axis_if.master m_axis,
   output logic [1:0] feat_o,
   output logic done_o
 );
@@ -46,6 +48,7 @@ module feature_detect_top #(
     .clk,
     .rst_n,
     .s_axis,
+    .m_axis,
     .feat_o,
     .done_o,
     .regs(u_regs_if)

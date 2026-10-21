@@ -1,0 +1,8 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1792543745" />
+    <testcase name="test_core_clock_exact" classname="intc_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/ip/peripherals/intc/tb/python/intc_tb.py" lineno="80" time="2.404863119125366" sim_time_ns="200036.0" ratio_time="83179.78616294463" />
+    <testcase name="test_register_map" classname="intc_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/ip/peripherals/intc/tb/python/intc_tb.py" lineno="134" time="0.3041250705718994" sim_time_ns="102920.0" ratio_time="338413.4027703194" />
+    <testcase name="test_coverage" classname="intc_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/ip/peripherals/intc/tb/python/intc_tb.py" lineno="176" time="7.700920104980469e-05" sim_time_ns="0.0" ratio_time="0.0" />
+  </testsuite>
+</testsuites>

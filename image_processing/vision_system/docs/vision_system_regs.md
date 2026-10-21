@@ -18,6 +18,7 @@ Lens distortion correction: control, status, image size, distortion coefficients
 | 0x2C | CENTER_X | RW | 0x00008000 | unsigned Q16.16, fraction of the width (0.5 = 0x8000) |
 | 0x30 | CENTER_Y | RW | 0x00008000 | unsigned Q16.16, fraction of the height |
 | 0x34 | SCALE | RW | 0x00010000 | unsigned Q16.16 edge-crop zoom (1.0 = 0x10000) |
+| 0x38 | BYPASS | RW | 0x00000001 | [0] 1: frames pass unchanged (reset: no correction until software enables it); taken between frames |
 | 0x3C | INTERP_MODE | RW | 0x00000000 | [0] 0 bilinear, 1 bicubic (change only while idle) |
 | 0x40 | CALIB_MODE | RW | 0x00000000 | [0] 1 = direct camera calibration (FX / FY / CX / CY) |
 | 0x44 | FX | RW | 0x00010000 | signed Q16.16 pixels, focal length x (CALIB_MODE 1) |
@@ -26,7 +27,7 @@ Lens distortion correction: control, status, image size, distortion coefficients
 | 0x50 | CY | RW | 0x00000000 | signed Q16.16 pixels, principal point y (CALIB_MODE 1) |
 | 0x54 | P1 | RW | 0x00000000 | signed Q16.16 tangential coefficient 1 (RADIAL) |
 | 0x58 | P2 | RW | 0x00000000 | signed Q16.16 tangential coefficient 2 (RADIAL) |
-| 0x5C | MODEL_SEL | RW | 0x00000000 | [2:0] 0 radial, 1 fisheye, 2 affine (reserved), 3 perspective, 4 scaling (reserved), 5 panoramic |
+| 0x5C | MODEL_SEL | RW | 0x00000000 | [2:0] 0 radial, 1 fisheye (division model), 2 affine (reserved), 3 perspective, 4 scaling (reserved), 5 panoramic, 6 / 7 reserved; the reserved codes give the pinhole round trip (near identity) - software must not select them |
 | 0x60 | H11 | RW | 0x00010000 | homography, Q16.16 |
 | 0x64 | H12 | RW | 0x00000000 | homography, Q16.16 |
 | 0x68 | H13 | RW | 0x00000000 | homography translation, pixels |

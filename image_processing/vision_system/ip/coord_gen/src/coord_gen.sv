@@ -2,11 +2,12 @@
 // Filename: coord_gen.sv
 // Author: FPGA Cores 4 U
 // Description: Reusable IP. Per-pixel source-address generator. Fast
-// 23-cycle path for radial/tangential distortion and the
-// affine/scaling hooks; a second "slow path" per-pixel divide
-// FSM (reusing fixed_recip) implements fisheye, panoramic, and
-// perspective correction. All multiplies use the mulq_s IP.
-// Date: September 26, 2026
+// 23-cycle path for radial/tangential distortion and the reserved
+// affine/scaling codes (pinhole round trip); a second "slow path" per-pixel divide
+// FSM (reusing fixed_recip) implements fisheye (division model),
+// panoramic and perspective correction. All multiplies use the mulq_s
+// IP. Clock - clk. Reset - synchronous active low rst_n.
+// Date: 2026-10-21
 // ***************
 // =============================================================================
 // coord_gen.sv
@@ -29,22 +30,31 @@
 // cfg (calib_params_t, distortion_model_pkg.sv) bundles every one of the
 // above parameters into a single struct port -- see that package for why.
 //
-// ARCHITECTURE HOOK: when cfg.model_sel != distortion_model_pkg::MODEL_RADIAL (i.e. one of the
-// reserved FISHEYE/AFFINE/PERSPECTIVE/SCALING/PANORAMIC slots), the k1/k2/k3/p1/p2
-// contributions are gated to zero right where they're computed (stage 5
-// below) rather than being threaded through extra "is this the active
-// model" muxing at every later stage -- radial=1.0, tangential=0 falls
-// straight out of the existing math with no separate identity datapath,
-// so this reduces to the same normalize/denormalize round-trip the
-// current pinhole intrinsics already define (matches the golden models'
-// identity-passthrough for these model IDs bit-for-bit -- see the
-// project's smoke test). Implementing an actual FISHEYE/AFFINE/
-// PERSPECTIVE/SCALING projection means replacing this gate with real
-// per-model math -- see README.md "Extension hooks" for the equations
-// and where each would plug in.
+// MODELS (cfg.model_sel, distortion_model_pkg::distortion_model_e):
+//   MODEL_RADIAL (0): the radial + tangential model above, on the fast
+//     path (one request per clock, LATENCY clocks).
+//   MODEL_FISHEYE (1): Fitzgibbon's division model (CVPR 2001),
+//     s = c + n / (1 + k1 r2 + k2 r2^2) * f - not OpenCV's fisheye
+//     (Kannala-Brandt, theta_d = theta (1 + k1 theta^2 + ...)) model, so
+//     cv::fisheye::calibrate coefficients do not apply directly: the
+//     calibration software fits k1 / k2 of the division model to the
+//     measured (or Kannala-Brandt) mapping by least squares over the
+//     frame (tb: image_io.fit_division_model_coeffs).
+//   MODEL_PANORAMIC (5): the division model in x only.
+//   MODEL_PERSPECTIVE (3): the homography with h33 = 1,
+//     s = (h11 x + h12 y + h13, h21 x + h22 y + h23) / (h31 x + h32 y + 1).
+//   These three use the slow path (one request at a time, busy set from
+//     the clock after the request until the result, which comes 62 clocks
+//     after the request; the per-pixel divide is fixed_recip).
+//   MODEL_AFFINE (2), MODEL_SCALING (4) and the unused codes 6 / 7:
+//     reserved; the k / p terms are gated to zero where they are computed
+//     (stage 5), so they give the pinhole round trip
+//     s = c + qmul(qmul(x - c, recip_f), f) on the fast path (close to the
+//     identity, not bit exact: recip_f is rounded). Software must not select
+//     them (vision_system_regs MODEL_SEL documents them as reserved).
 //
-// All arithmetic is Q16.16 (see barrel_pkg). This is a fully pipelined,
-// feed-forward (no feedback/stall) datapath: one (x,y) request may be
+// All arithmetic is Q16.16 (see barrel_pkg). The fast path is fully
+// pipelined and feed-forward (no feedback/stall): one (x,y) request may be
 // accepted every clock cycle, with a fixed LATENCY-cycle delay to the
 // corresponding output (LATENCY=23 since the timing work: every multiply
 // goes through the mulq_s IP -- it was 9 with one single-cycle qmul per
@@ -89,7 +99,9 @@ module coord_gen #(
   output logic                    busy
 );
 
+  /* verilator lint_off UNUSEDPARAM */             // the fast path's latency (documentation, axis_out_ctrl)
   localparam int LATENCY = 23;
+  /* verilator lint_on UNUSEDPARAM */
 
   logic is_radial;
   assign is_radial = (cfg.model_sel == distortion_model_pkg::MODEL_RADIAL);
@@ -97,7 +109,7 @@ module coord_gen #(
   // Slow path: distortion_model_pkg::MODEL_FISHEYE/distortion_model_pkg::MODEL_PANORAMIC/distortion_model_pkg::MODEL_PERSPECTIVE need a
   // per-pixel reciprocal (see distortion_model_pkg.sv header for the
   // math) -- handled by a separate FSM below, entirely independent of
-  // the fast fixed-latency v0..v8 pipeline the other three models use.
+  // the fast fixed-latency pipeline every other MODEL_SEL code uses.
   logic is_slow_div;
   assign is_slow_div = (cfg.model_sel == distortion_model_pkg::MODEL_FISHEYE) ||
                         (cfg.model_sel == distortion_model_pkg::MODEL_PANORAMIC) ||
@@ -112,9 +124,9 @@ module coord_gen #(
   // (barrel_pkg::qsat48) and does any small add. qsat48(mulq_s(a,b)) is
   // exactly barrel_pkg::qmul(a,b), so results are bit-identical to the
   // original single-cycle formulation -- only registers were added.
-  // Data registers carry no reset (only the valid bits do): an async
-  // reset on a datapath register prevents DSP-register packing and costs
-  // an inverter per flop. Their contents are meaningless until valid.
+  // Data registers carry no reset (only the valid bits do): a reset on a
+  // datapath register prevents DSP-register packing and costs logic per
+  // flop. Their contents are meaningless until valid.
   //
   // Each "multiply stage" below is therefore 3 register levels: two inside
   // mulq_s, one saturate/add. Side-band values that must stay aligned with
@@ -131,7 +143,7 @@ module coord_gen #(
 
   // ---- valid pipeline: 23 stages, aligned with the datapath below -------
   logic [22:0] vpipe;
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk) begin
     if (!rst_n) vpipe <= '0;
     else        vpipe <= {vpipe[21:0], in_valid && !is_slow_div};
   end
@@ -141,8 +153,8 @@ module coord_gen #(
   // ---- Stage 0 (level 1): dx, dy ----------------------------------------
   logic signed [31:0] dx0, dy0;
   always_ff @(posedge clk) begin
-    dx0 <= ({{(32-COORD_W){1'b0}}, in_x} <<< barrel_pkg::FRAC_BITS) - cfg.cx_pix;
-    dy0 <= ({{(32-COORD_W){1'b0}}, in_y} <<< barrel_pkg::FRAC_BITS) - cfg.cy_pix;
+    dx0 <= barrel_pkg::sat40(barrel_pkg::w40({{(32-COORD_W){1'b0}}, in_x} <<< barrel_pkg::FRAC_BITS) - barrel_pkg::w40(cfg.cx_pix));
+    dy0 <= barrel_pkg::sat40(barrel_pkg::w40({{(32-COORD_W){1'b0}}, in_y} <<< barrel_pkg::FRAC_BITS) - barrel_pkg::w40(cfg.cy_pix));
   end
 
   // ---- Stage 1 (levels 2-4): nx = dx/fx ; ny = dy/fy --------------------
@@ -196,7 +208,7 @@ module coord_gen #(
     nxsq_2 <= barrel_pkg::qsat48(fm_nxsq);
     nysq_2 <= barrel_pkg::qsat48(fm_nysq);
     nxny_2 <= barrel_pkg::qsat48(fm_nxny);
-    r2_2   <= barrel_pkg::qsat48(fm_nxsq) + barrel_pkg::qsat48(fm_nysq);
+    r2_2   <= barrel_pkg::sat40(barrel_pkg::w40(barrel_pkg::qsat48(fm_nxsq)) + barrel_pkg::w40(barrel_pkg::qsat48(fm_nysq)));
     nx2    <= nx2b;
     ny2    <= ny2b;
   end
@@ -256,8 +268,8 @@ module coord_gen #(
     r4_4b <= r4_4a;
     nxny_4a <= nxny_3;
     nxny_4b <= nxny_4a;
-    sumb_4a <= r2_3 + (nxsq_3 <<< 1);          // r2 + 2nx^2
-    sumc_4a <= r2_3 + (nysq_3 <<< 1);          // r2 + 2ny^2
+    sumb_4a <= barrel_pkg::sat40(barrel_pkg::w40(r2_3) + (barrel_pkg::w40(nxsq_3) <<< 1));          // r2 + 2nx^2
+    sumc_4a <= barrel_pkg::sat40(barrel_pkg::w40(r2_3) + (barrel_pkg::w40(nysq_3) <<< 1));          // r2 + 2ny^2
     sumb_4b <= sumb_4a;
     sumc_4b <= sumc_4a;
     r6_4   <= barrel_pkg::qsat48(fm_r6);
@@ -331,8 +343,8 @@ module coord_gen #(
       t1_5    <= barrel_pkg::qsat48(fm_t1);
       t2_5    <= barrel_pkg::qsat48(fm_t2);
       t3_5    <= barrel_pkg::qsat48(fm_t3);
-      tangx_5 <= (barrel_pkg::qsat48(fm_ta) <<< 1) + barrel_pkg::qsat48(fm_tb);
-      tangy_5 <= barrel_pkg::qsat48(fm_tc) + (barrel_pkg::qsat48(fm_td) <<< 1);
+      tangx_5 <= barrel_pkg::sat40((barrel_pkg::w40(barrel_pkg::qsat48(fm_ta)) <<< 1) + barrel_pkg::w40(barrel_pkg::qsat48(fm_tb)));
+      tangy_5 <= barrel_pkg::sat40(barrel_pkg::w40(barrel_pkg::qsat48(fm_tc)) + (barrel_pkg::w40(barrel_pkg::qsat48(fm_td)) <<< 1));
     end else begin
       t1_5 <= '0;
       t2_5 <= '0;
@@ -347,7 +359,7 @@ module coord_gen #(
   always_ff @(posedge clk) begin
     nx6     <= nx5;
     ny6 <= ny5;
-    factor6 <= barrel_pkg::Q16_ONE + t1_5 + t2_5 + t3_5;
+    factor6 <= barrel_pkg::sat40(barrel_pkg::w40(barrel_pkg::Q16_ONE) + barrel_pkg::w40(t1_5) + barrel_pkg::w40(t2_5) + barrel_pkg::w40(t3_5));
     tangx6  <= tangx_5;
     tangy6  <= tangy_5;
   end
@@ -372,8 +384,8 @@ module coord_gen #(
     tangx7b <= tangx7a;
     tangy7a <= tangy6;
     tangy7b <= tangy7a;
-    sxn7 <= barrel_pkg::qsat48(fm_sx) + tangx7b;
-    syn7 <= barrel_pkg::qsat48(fm_sy) + tangy7b;
+    sxn7 <= barrel_pkg::sat40(barrel_pkg::w40(barrel_pkg::qsat48(fm_sx)) + barrel_pkg::w40(tangx7b));
+    syn7 <= barrel_pkg::sat40(barrel_pkg::w40(barrel_pkg::qsat48(fm_sy)) + barrel_pkg::w40(tangy7b));
   end
 
   // ---- Stage 8 (levels 21-23): sx = cx + sxn*fx ; sy = cy + syn*fy -------
@@ -392,8 +404,8 @@ module coord_gen #(
     .s(fm_fy)
   );
   always_ff @(posedge clk) begin
-    sx8 <= cfg.cx_pix + barrel_pkg::qsat48(fm_fx);
-    sy8 <= cfg.cy_pix + barrel_pkg::qsat48(fm_fy);
+    sx8 <= barrel_pkg::sat40(barrel_pkg::w40(cfg.cx_pix) + barrel_pkg::w40(barrel_pkg::qsat48(fm_fx)));
+    sy8 <= barrel_pkg::sat40(barrel_pkg::w40(cfg.cy_pix) + barrel_pkg::w40(barrel_pkg::qsat48(fm_fy)));
   end
 
   // =======================================================================
@@ -430,8 +442,8 @@ module coord_gen #(
   // L1: pixel-coordinate deltas and Q16.16 coordinates
   logic signed [31:0] s_dx, s_dy, s_xq, s_yq;
   always_ff @(posedge clk) begin
-    s_dx <= ({{(32-COORD_W){1'b0}}, sd_x} <<< barrel_pkg::FRAC_BITS) - cfg.cx_pix;
-    s_dy <= ({{(32-COORD_W){1'b0}}, sd_y} <<< barrel_pkg::FRAC_BITS) - cfg.cy_pix;
+    s_dx <= barrel_pkg::sat40(barrel_pkg::w40({{(32-COORD_W){1'b0}}, sd_x} <<< barrel_pkg::FRAC_BITS) - barrel_pkg::w40(cfg.cx_pix));
+    s_dy <= barrel_pkg::sat40(barrel_pkg::w40({{(32-COORD_W){1'b0}}, sd_y} <<< barrel_pkg::FRAC_BITS) - barrel_pkg::w40(cfg.cy_pix));
     s_xq <= {{(32-COORD_W){1'b0}}, sd_x} <<< barrel_pkg::FRAC_BITS;
     s_yq <= {{(32-COORD_W){1'b0}}, sd_y} <<< barrel_pkg::FRAC_BITS;
   end
@@ -491,8 +503,8 @@ module coord_gen #(
     s_ny   <= barrel_pkg::qsat48(sm_ny);
     s_hx   <= barrel_pkg::qsat48(sm_h31);
     s_hy   <= barrel_pkg::qsat48(sm_h32);
-    s_numx <= barrel_pkg::qsat48(sm_h11) + barrel_pkg::qsat48(sm_h12) + cfg.h13;
-    s_numy <= barrel_pkg::qsat48(sm_h21) + barrel_pkg::qsat48(sm_h22) + cfg.h23;
+    s_numx <= barrel_pkg::sat40(barrel_pkg::w40(barrel_pkg::qsat48(sm_h11)) + barrel_pkg::w40(barrel_pkg::qsat48(sm_h12)) + barrel_pkg::w40(cfg.h13));
+    s_numy <= barrel_pkg::sat40(barrel_pkg::w40(barrel_pkg::qsat48(sm_h21)) + barrel_pkg::w40(barrel_pkg::qsat48(sm_h22)) + barrel_pkg::w40(cfg.h23));
   end
   // L5-L7: nx^2, ny^2, r2
   logic signed [47:0] sm_nxsq, sm_nysq;
@@ -511,7 +523,7 @@ module coord_gen #(
   );
   always_ff @(posedge clk) begin
     s_nxsq <= barrel_pkg::qsat48(sm_nxsq);
-    s_r2   <= barrel_pkg::qsat48(sm_nxsq) + barrel_pkg::qsat48(sm_nysq);
+    s_r2   <= barrel_pkg::sat40(barrel_pkg::w40(barrel_pkg::qsat48(sm_nxsq)) + barrel_pkg::w40(barrel_pkg::qsat48(sm_nysq)));
   end
   // L8-L10: r4 = r2^2 ; k1*r2 ; k1*nx^2
   logic signed [47:0] sm_r4, sm_k1r2, sm_k1nxsq;
@@ -559,11 +571,11 @@ module coord_gen #(
   logic signed [31:0] s_raw, s_denom;
   always_comb begin
     if (cfg.model_sel == distortion_model_pkg::MODEL_FISHEYE)
-      s_raw = barrel_pkg::Q16_ONE + s_k1r2 + s_k2r4;
+      s_raw = barrel_pkg::sat40(barrel_pkg::w40(barrel_pkg::Q16_ONE) + barrel_pkg::w40(s_k1r2) + barrel_pkg::w40(s_k2r4));
     else if (cfg.model_sel == distortion_model_pkg::MODEL_PANORAMIC)
-      s_raw = barrel_pkg::Q16_ONE + s_k1nxsq;
+      s_raw = barrel_pkg::sat40(barrel_pkg::w40(barrel_pkg::Q16_ONE) + barrel_pkg::w40(s_k1nxsq));
     else if (cfg.model_sel == distortion_model_pkg::MODEL_PERSPECTIVE)
-      s_raw = barrel_pkg::Q16_ONE + s_hx + s_hy;
+      s_raw = barrel_pkg::sat40(barrel_pkg::w40(barrel_pkg::Q16_ONE) + barrel_pkg::w40(s_hx) + barrel_pkg::w40(s_hy));
     else
       s_raw = barrel_pkg::Q16_ONE;
   end
@@ -647,17 +659,17 @@ module coord_gen #(
       post_sx <= q_px;
       post_sy <= q_py;
     end else begin
-      post_sx <= cfg.cx_pix + barrel_pkg::qsat48(sq_bx);
+      post_sx <= barrel_pkg::sat40(barrel_pkg::w40(cfg.cx_pix) + barrel_pkg::w40(barrel_pkg::qsat48(sq_bx)));
       post_sy <= (cfg.model_sel == distortion_model_pkg::MODEL_PANORAMIC)
-                   ? cfg.cy_pix + barrel_pkg::qsat48(sq_pany)
-                   : cfg.cy_pix + barrel_pkg::qsat48(sq_by);
+                   ? barrel_pkg::sat40(barrel_pkg::w40(cfg.cy_pix) + barrel_pkg::w40(barrel_pkg::qsat48(sq_pany)))
+                   : barrel_pkg::sat40(barrel_pkg::w40(cfg.cy_pix) + barrel_pkg::w40(barrel_pkg::qsat48(sq_by)));
     end
   end
   assign sd_out_sx = post_sx;
   assign sd_out_sy = post_sy;
 
   // ---- FSM: only sequencing / fixed waits, no arithmetic ----------------
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk) begin
     if (!rst_n) begin
       sd_state <= SD_IDLE;
       sd_x <= '0;
@@ -678,7 +690,7 @@ module coord_gen #(
           end
         end
         SD_PRE: begin                      // let the PRE pipeline fill
-          if (sd_cnt == SD_PRE_CYCLES - 1) sd_state <= SD_ISSUE;
+          if (sd_cnt == 5'(SD_PRE_CYCLES - 1)) sd_state <= SD_ISSUE;
           else                             sd_cnt <= sd_cnt + 1'b1;
         end
         SD_ISSUE: begin                    // denominator settled: divide
@@ -692,7 +704,7 @@ module coord_gen #(
           end
         end
         SD_POST: begin                     // let the POST pipeline fill
-          if (sd_cnt == SD_POST_CYCLES - 1) sd_state <= SD_DONE;
+          if (sd_cnt == 5'(SD_POST_CYCLES - 1)) sd_state <= SD_DONE;
           else                              sd_cnt <= sd_cnt + 1'b1;
         end
         SD_DONE: begin
@@ -710,4 +722,5 @@ module coord_gen #(
   assign out_sx_q16 = is_slow_div ? sd_out_sx    : sx8;
   assign out_sy_q16 = is_slow_div ? sd_out_sy    : sy8;
 
+  wire unused_ok = &{1'b0, sd_recip_busy, 1'b0};   // the divider's busy: the FSM waits for done
 endmodule

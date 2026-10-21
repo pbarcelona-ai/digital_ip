@@ -884,7 +884,7 @@
         </ipxact:register>
         <ipxact:register>
           <ipxact:name>CSI_OVERFLOW</ipxact:name>
-          <ipxact:description>CSI words lost (bridge FIFO full)</ipxact:description>
+          <ipxact:description>CSI overflow events (bridge FIFO full; a burst of lost words counts once)</ipxact:description>
           <ipxact:addressOffset>0xE4</ipxact:addressOffset>
           <ipxact:size>32</ipxact:size>
           <ipxact:field>
@@ -983,7 +983,7 @@
         </ipxact:register>
         <ipxact:register>
           <ipxact:name>DSI_DROPS</ipxact:name>
-          <ipxact:description>lines DSI could not send in time</ipxact:description>
+          <ipxact:description>lines DSI could not send in time (dropped, or a burst that ran dry)</ipxact:description>
           <ipxact:addressOffset>0x100</ipxact:addressOffset>
           <ipxact:size>32</ipxact:size>
           <ipxact:field>
@@ -995,7 +995,7 @@
         </ipxact:register>
         <ipxact:register>
           <ipxact:name>CSITX_DROPS</ipxact:name>
-          <ipxact:description>lines CSI-2 TX could not send in time</ipxact:description>
+          <ipxact:description>lines CSI-2 TX could not send in time (dropped, or a burst that ran dry)</ipxact:description>
           <ipxact:addressOffset>0x104</ipxact:addressOffset>
           <ipxact:size>32</ipxact:size>
           <ipxact:field>

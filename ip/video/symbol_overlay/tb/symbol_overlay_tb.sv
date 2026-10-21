@@ -2,20 +2,14 @@
 // Filename: symbol_overlay_tb.sv
 // Author: FPGA Cores 4 U
 // Description: Self-checking testbench for symbol_overlay (NOBJ = 4, 24-bit
-//   pixels). Frames are driven and monitored by axis_frame_bfm (random
-//   input gaps and output back-pressure where a test asks for them); every
-//   output frame is compared with track_ref's drawing model of the objects
-//   the testbench expects to be active for that frame (the last COMMIT
-//   before the frame start, CTRL.ENABLE at the frame start). Tests:
-//   registers, pass-through and latency, every shape / dash / width /
-//   blend combination, object priority, COMMIT timing (also in the middle
-//   of a frame), boxes beyond the frame edge, random objects with
-//   back-pressure; text objects (every scale, backdrop, lengths 0 and 16,
-//   lowercase, over objects, clipped at the frame edge, COMMIT timing,
-//   random texts). Prints TEST PASSED on success; +vcd dumps
-//   symbol_overlay_tb.vcd. The test tasks are in tests/symbol_overlay_tests.sv
-//   (`included).
-// Date: 2026-10-11
+//   pixels): the structural checks (ID block, registers, pass-through with
+//   gaps and back-pressure, COMMIT / STATUS / ENABLE timing with a filled
+//   box, FRAME_NUM). Frames are driven and monitored by axis_frame_bfm. Every
+//   pixel of every symbol, label and text is compared with the golden model
+//   by the cocotb test tb/python/symbol_overlay_tb.py. Prints TEST PASSED on
+//   success; +vcd dumps symbol_overlay_tb.vcd. The test tasks are in
+//   tests/symbol_overlay_tests.sv (`included).
+// Date: 2026-10-20
 `timescale 1ns/1ps
 module symbol_overlay_tb;
   localparam int NOBJ = 4, NTXT = 4, MAXW = 64, MAXH = 48;
@@ -59,39 +53,12 @@ module symbol_overlay_tb;
     .m_tvalid(m_axis.tvalid),
     .m_tready(m_axis.tready)
   );
-  track_ref #(
-    .MAXW(MAXW),
-    .MAXH(MAXH),
-    .NOBJ(NOBJ)
-  ) mdl ();
-
-  // expected state: objects written (w_obj), committed and active for the next frame (a_obj)
-  logic [127:0] w_obj [NOBJ];
-  logic [127:0] a_obj [NOBJ];
-  logic [95:0] w_txt [NTXT];                         // texts written / active {COLOR, POS, CTRL}
-  logic [95:0] a_txt [NTXT];
-  logic [127:0] w_chr [NTXT];                        // and their characters
-  logic [127:0] a_chr [NTXT];
-  bit w_en = 0, pending = 0;
-  int a_fnum = 0, set_fnum = 0;                      // frame number shown; FRAME_NUM written for the next frame
-  bit fnum_pend = 0;
-
   `include "symbol_overlay_tests.sv"
 
   initial begin
     if ($test$plusargs("vcd")) begin
       $dumpfile("symbol_overlay_tb.vcd");
       $dumpvars(0, symbol_overlay_tb);
-    end
-    for (int i = 0; i < NOBJ; i++) begin
-      w_obj[i] = '0;
-      a_obj[i] = '0;
-    end
-    for (int j = 0; j < NTXT; j++) begin
-      w_txt[j] = '0;
-      a_txt[j] = '0;
-      w_chr[j] = '0;
-      a_chr[j] = '0;
     end
     vid.ow = W;
     vid.oh = H;
@@ -102,16 +69,8 @@ module symbol_overlay_tb;
     test_id_block();
     test_registers();
     test_passthrough();
-    test_shapes();
-    test_priority();
     test_commit();
-    test_edges();
-    test_random();
-    test_text();
-    test_text_commit();
-    test_text_random();
     test_frame_number();
-    test_circle();
     check(vid.errors == 0, $sformatf("%0d AXI4-Stream framing errors", vid.errors));
     if (errors == 0) $display("TEST PASSED");
     else $display("TEST FAILED (%0d errors)", errors);

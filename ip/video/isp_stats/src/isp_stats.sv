@@ -11,7 +11,8 @@
 //   complete frame and stay stable for a whole frame time. A frame that is
 //   never followed by another is reported when flush_i pulses. Clock - clk
 //   only. Reset - synchronous rst_n (active low).
-// Date: 2026-10-01
+//   Golden model: model/isp_stats_model.py (stats; tb/python).
+// Date: 2026-10-21
 module isp_stats #(
   parameter int CW = 8                         // component width
 ) (
@@ -75,9 +76,9 @@ module isp_stats #(
         nc <= 32'(clip);
         active <= 1'b1;
       end else if (beat && active) begin
-        ar <= ar + r;
-        ag <= ag + g;
-        ab <= ab + b;
+        ar <= ar + 40'(r);
+        ag <= ag + 40'(g);
+        ab <= ab + 40'(b);
         np <= np + 1'b1;
         nc <= nc + clip;
       end else if (flush_i) active <= 1'b0;

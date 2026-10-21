@@ -10,9 +10,11 @@
 //   bypass_i (sampled at each frame start) passes pixels unchanged through
 //   the same latency. Pixel {B, G, R}, component 0 in the LSBs. Clock - clk
 //   only. Reset - synchronous rst_n (active low). Latency - 6 clocks,
-//   1 pixel per clock (9 multipliers, map to DSP blocks). The output goes through a 2-entry ip_axis_fifo, so s_axis_tready does
+//   1 pixel per clock (9 multipliers, map to DSP blocks). The output goes
+//   through a 2-entry ip_axis_fifo, so s_axis_tready does
 //   not depend combinationally on m_axis_tready (+3 clocks).
-// Date: 2026-10-16
+//   Golden model: model/isp_ccm_model.py (ccm_frame; tb/python).
+// Date: 2026-10-21
 module isp_ccm #(
   parameter int PW = 10
 ) (
@@ -29,6 +31,7 @@ module isp_ccm #(
   // output stage: the last pipeline register (q_*) feeds a 2-entry FIFO whose ready is registered,
   // so s_axis_tready does not depend combinationally on m_axis_tready
   axis_if #(.DATA_W((3*PW)), .USER_W(1)) q ();
+  logic [2:0] out_level;                       // not used
   localparam int MW = PW + 17;                 // product width (unsigned PW+1 x signed 16)
   localparam int SW = MW + 3;                  // sum of 3 products + rounding + offset
 
@@ -50,7 +53,7 @@ module isp_ccm #(
 
   function automatic logic [PW-1:0] clamp(input logic signed [SW-1:0] x);
     if (x < 0)                                 clamp = '0;
-    else if (x > $signed({1'b0, {PW{1'b1}}}))  clamp = '1;
+    else if (x > SW'((1 << PW) - 1))           clamp = '1;
     else                                       clamp = x[PW-1:0];
   endfunction
 
@@ -103,6 +106,7 @@ module isp_ccm #(
     .rst_n,
     .s(q),
     .m(m_axis),
-    .level_o()
+    .level_o(out_level)
   );
+  wire unused_ok = &{1'b0, out_level, 1'b0};
 endmodule

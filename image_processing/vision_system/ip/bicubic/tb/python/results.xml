@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1792611430" />
+    <testcase name="test_bicubic_exact" classname="bicubic_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/image_processing/vision_system/ip/bicubic/tb/python/bicubic_tb.py" lineno="46" time="2.1643450260162354" sim_time_ns="100206.0" ratio_time="46298.53318000895" />
+  </testsuite>
+</testsuites>

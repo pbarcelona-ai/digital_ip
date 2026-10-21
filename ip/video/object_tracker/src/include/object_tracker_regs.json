@@ -11,7 +11,8 @@
                 {"name": "MODE", "bit": 2, "desc": "0 luma threshold, 1 colour ranges (Y_RANGE, CB_RANGE, CR_RANGE, SAT_MIN)"},
                 {"name": "MIN_RUN", "bit": "11:8", "desc": "shortest run counted when RUN.MIN_W = 0 (0 or 1: every pixel counts)"},
                 {"name": "FEAT_A", "bit": "13:12", "desc": "term A: 0 the luma / colour test, 1 it or the motion feature, 2 it and the motion feature, 3 the motion feature"},
-                {"name": "TERM_B", "bit": 14, "desc": "term B on: the edge feature, in runs of RUN_B (its own blob slots)"}]},
+                {"name": "TERM_B", "bit": 14, "desc": "term B on: the edge feature, in runs of RUN_B (its own blob slots)"},
+                {"name": "SKIN_LUT", "bit": 15, "desc": "colour mode: the chroma test is the SKIN_LUT table instead of CB_RANGE / CR_RANGE / SAT_MIN (Y_RANGE still applies)"}]},
     {"name": "FRAME_SIZE", "offset": "0x1C", "access": "RW", "desc": "frame size",
      "fields": [{"name": "WIDTH", "bit": "15:0", "desc": "width"}, {"name": "HEIGHT", "bit": "31:16", "desc": "height"}]},
     {"name": "THRESH", "offset": "0x20", "access": "RW", "width": 8, "desc": "luma threshold"},
@@ -51,6 +52,7 @@
      "fields": [{"name": "X_MIN", "bit": "15:0", "desc": "min"}, {"name": "X_MAX", "bit": "31:16", "desc": "max"}]},
     {"name": "BLOB_Y", "offset": "0x120", "access": "RO", "count": 8, "max_count": 8, "desc": "blob i lines",
      "fields": [{"name": "Y_MIN", "bit": "15:0", "desc": "min"}, {"name": "Y_MAX", "bit": "31:16", "desc": "max"}]},
-    {"name": "BLOB_N", "offset": "0x140", "access": "RO", "count": 8, "max_count": 8, "desc": "blob i pixels (0: no blob)"}
+    {"name": "BLOB_N", "offset": "0x140", "access": "RO", "count": 8, "max_count": 8, "desc": "blob i pixels (0: no blob)"},
+    {"name": "SKIN_LUT", "offset": "0x160", "access": "RW", "count": 32, "max_count": 32, "desc": "learned skin table (python-prototype/train_skin.py): word i = (Cr - 112) >> 1, bit j = (Cb - 96) >> 1 (Cb 96..159, Cr 112..175); 1 = skin"}
   ]
 }

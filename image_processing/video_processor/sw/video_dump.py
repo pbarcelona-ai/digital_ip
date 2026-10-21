@@ -185,7 +185,7 @@ def dump_video():
         "TIME         microseconds now                         ",
         "EV_EN        channels logged in the event log         "), 2)
     c = 0
-    while c < NTRK:                                    # one detector per object class
+    while c < NDET:                                    # one detector per object class
         puts(" object_tracker @ ")
         hex32(det_base(c))
         puts(" (")
@@ -222,7 +222,7 @@ def dump_video():
         "VERSION      ASCII \"d.dd\", +0.01 per source change    ",
         "DATE         BCD mm/dd/yyyy of that change            "), 3)
     dump(OVL + OVL_CTRL, strings(
-        "CTRL         [0] enable                               ",
+        "CTRL         [0] enable [2:1] LABEL_SCALE [3] FONT    ",
         "COMMIT       write 1: objects apply at next frame     ",
         "STATUS       [0] commit pending [31:16] frames        ",
         "FRAME_NUM    BCD frame number of the next frame       "), 4)

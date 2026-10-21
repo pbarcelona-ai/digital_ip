@@ -10,11 +10,11 @@
   <ipxact:memoryMaps>
     <ipxact:memoryMap>
       <ipxact:name>i2c_master_regs</ipxact:name>
-      <ipxact:description>I2C master: transaction control, target address, length, SCL divider and status. ID "I2CM", date 32'h10122026.</ipxact:description>
+      <ipxact:description>I2C master: transaction control, target address, length, SCL divider and status, done interrupt. ID "I2CM", date 32'h10122026.</ipxact:description>
       <ipxact:addressBlock>
         <ipxact:name>regs</ipxact:name>
         <ipxact:baseAddress>0x0</ipxact:baseAddress>
-        <ipxact:range>0x24</ipxact:range>
+        <ipxact:range>0x28</ipxact:range>
         <ipxact:width>32</ipxact:width>
         <ipxact:usage>register</ipxact:usage>
         <ipxact:register>
@@ -186,6 +186,24 @@
             <ipxact:description>bytes in the receive FIFO</ipxact:description>
             <ipxact:bitOffset>16</ipxact:bitOffset>
             <ipxact:bitWidth>16</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+          </ipxact:field>
+        </ipxact:register>
+        <ipxact:register>
+          <ipxact:name>IRQ_EN</ipxact:name>
+          <ipxact:description>interrupt enable</ipxact:description>
+          <ipxact:addressOffset>0x24</ipxact:addressOffset>
+          <ipxact:size>32</ipxact:size>
+          <ipxact:field>
+            <ipxact:name>DONE</ipxact:name>
+            <ipxact:description>irq_o while STATUS.DONE: the transaction finished (acknowledged or not)</ipxact:description>
+            <ipxact:bitOffset>0</ipxact:bitOffset>
+            <ipxact:resets>
+              <ipxact:reset>
+                <ipxact:value>0x0</ipxact:value>
+              </ipxact:reset>
+            </ipxact:resets>
+            <ipxact:bitWidth>1</ipxact:bitWidth>
             <ipxact:access>read-write</ipxact:access>
           </ipxact:field>
         </ipxact:register>

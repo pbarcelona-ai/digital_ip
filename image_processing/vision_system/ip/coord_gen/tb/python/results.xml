@@ -1,0 +1,7 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1792611457" />
+    <testcase name="test_fast_exact" classname="coord_gen_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/image_processing/vision_system/ip/coord_gen/tb/python/coord_gen_tb.py" lineno="79" time="0.4826843738555908" sim_time_ns="42326.0" ratio_time="87688.77198552746" />
+    <testcase name="test_slow_exact" classname="coord_gen_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/image_processing/vision_system/ip/coord_gen/tb/python/coord_gen_tb.py" lineno="109" time="0.48179006576538086" sim_time_ns="93626.0" ratio_time="194329.45312241744" />
+  </testsuite>
+</testsuites>

@@ -10,7 +10,7 @@
 //   low. Latency - about STAGES+2 dst clocks to pulse_o; busy clears after
 //   ~2*STAGES+3 clocks of the slower domain. Errors - drop_o on overrun;
 //   STAGES<2 rejected at elaboration.
-// Date: 2026-09-29
+// Date: 2026-10-21
 module pulse_sync #(
   parameter int STAGES = 2
 ) (
@@ -23,7 +23,9 @@ module pulse_sync #(
   input  logic dst_rst_n,
   output logic pulse_o                   // one-clock pulse, destination domain
 );
+  /* verilator lint_off UNUSEDPARAM */             // version identification (library convention), not logic
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
+  /* verilator lint_on UNUSEDPARAM */
   if (STAGES < 2) begin : g_bad_stages
     $error("pulse_sync: STAGES must be >= 2");
   end

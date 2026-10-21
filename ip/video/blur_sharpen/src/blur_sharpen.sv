@@ -23,10 +23,16 @@
 //   0x014, FRAME_SIZE 0x018, BLUR_SHIFT 0x01C, SHARP_SHIFT 0x020, STATUS
 //   0x024, INFO 0x028, BLUR_K[i] 0x050 + 4 i, SHARP_K[i] 0x0D0 + 4 i.
 //   Each stage: out = clamp((sum(K*p) + round) >>> SHIFT, 0, 2^CW-1).
+//   Frames match FRAME_SIZE and have at least 14 pixels (each side >= R + 1):
+//   copy A is replaced when the next frame enters stage 1, and up to 13
+//   beats can be between stage 1's scan and stage 2 (isp_window 5, MAC 4,
+//   output FIFO 4), so a smaller frame could reach stage 2 after the next
+//   one took over A. A and B load the register values while rst_n is low.
+//   Golden model: model/blur_sharpen_model.py (frame exact, tb/python).
 //   Data - C components of CW bits, tuser = SOF, tlast = EOL. Clock - clk.
 //   Reset - synchronous rst_n (active low). Latency - 2 x conv2d_core.
 //   Resources - 2 x N*N*C multipliers, 2 x (N-1) line buffers.
-// Date: 2026-10-12
+// Date: 2026-10-21
 module blur_sharpen #(
   parameter int N      = 5,                        // kernel size: 3 or 5
   parameter int C      = 3,
@@ -34,9 +40,11 @@ module blur_sharpen #(
   parameter int COEF_W = 12,
   parameter int MAX_W  = 2048,
   parameter int BORDER = 0,                        // 0 clamp to edge, 1 mirror
+  /* verilator lint_off UNUSEDPARAM */             // used by the register map (blur_sharpen_top)
   parameter int AMOUNT = 1,                        // reset sharpening strength
   parameter logic [15:0] RESET_W = 16'd1920,
   parameter logic [15:0] RESET_H = 16'd1080
+  /* verilator lint_on UNUSEDPARAM */
 ) (
   input  logic               clk,
   input  logic               rst_n,
@@ -86,6 +94,7 @@ module blur_sharpen #(
   wire sof1 = s_axis.tvalid && s_axis.tready && s_axis.tuser;
   wire sof2 = x_v && x_r && x_u;
   logic w1, w2;                                   // stage waits between frames (isp_window)
+  logic frame1, frame2;                           // a stage took its kernel (not used)
   wire [31:0] size1 = (w1 && s_axis.tvalid && s_axis.tuser) ? frame_size : a_size;
   wire [31:0] size2 = (w2 && x_v && x_u) ? a_size : b_size;
   always_ff @(posedge clk) begin
@@ -128,7 +137,7 @@ module blur_sharpen #(
     .shift_i(a_sh1),
     .s_axis(s_axis),
     .m_axis(u_stage1_m_axis),
-    .frame_o(),
+    .frame_o(frame1),
     .sof_wait_o(w1)
   );
   axis_if #(.DATA_W(C*CW)) u_stage2_s_axis ();
@@ -166,7 +175,10 @@ module blur_sharpen #(
     .shift_i(b_sh2),
     .s_axis(u_stage2_s_axis),
     .m_axis(m_axis),
-    .frame_o(),
+    .frame_o(frame2),
     .sof_wait_o(w2)
   );
+  // not used: the registers' write pulses (they act by value), the stages' frame_o
+  wire unused_ok = &{1'b0, regs.cfg_mode_wr, regs.cfg_frame_size_wr, regs.cfg_blur_shift_wr,
+                     regs.cfg_sharp_shift_wr, regs.cfg_blur_k_wr, regs.cfg_sharp_k_wr, frame1, frame2, 1'b0};
 endmodule

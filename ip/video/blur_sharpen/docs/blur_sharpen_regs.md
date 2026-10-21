@@ -9,7 +9,7 @@ Blur / sharpen filter pair: mode, frame size, shifts and both kernel banks (take
 | 0x08 | DATE | RO | - | date of the last source update, BCD mm/dd/yyyy (0xMMDDYYYY) |
 | 0x0C | reserved | RO | 0 | |
 | 0x14 | MODE | RW | 0x00000000 | 0 blur, 1 sharpen, 2 sharpen then blur, 3 blur then sharpen, 4-7 pass-through |
-| 0x18 | FRAME_SIZE | RW | `{RESET_H, RESET_W}` | [15:0] width [31:16] height (>= (N+1)/2 each) |
+| 0x18 | FRAME_SIZE | RW | `{RESET_H, RESET_W}` | [15:0] width [31:16] height (>= (N+1)/2 each, at least 14 pixels; must match the frames) |
 | 0x1C | BLUR_SHIFT | RW | `conv2d_pkg::blur_shift(N)` | blur normalisation shift |
 | 0x20 | SHARP_SHIFT | RW | `conv2d_pkg::blur_shift(N)` | sharpen normalisation shift |
 | 0x24 | STATUS | RO | 0x00000000 | [2:0] mode of the last frame that entered [31:16] frames out |

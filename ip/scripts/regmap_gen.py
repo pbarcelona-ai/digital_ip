@@ -55,7 +55,7 @@
 #   [count-1:0]). Unmapped words below the end of the map read 0 and ignore
 #   writes; beyond it the slave answers DECERR (axi4_lite_slave). Latency:
 #   write 2 clocks from AW + W to BVALID, read 2 clocks.
-# Date: 2026-10-11
+# Date: 2026-10-20
 # ***************
 # Usage: regmap_gen.py MAP.json [OUTDIR] [--doc DIR] [--check]
 #   OUTDIR  where <name>.sv, .h and .xml go (default: the JSON's directory,
@@ -267,6 +267,7 @@ def gen_sv(m, stamp_v, stamp_d):
     s += f"  localparam int MAP_WORDS = {m['map_words']};\n\n"
     s += f"""  logic             wr_en, rd_en, wr_err_q;
   logic [{aw-1}:0]       wr_addr, rd_addr, rd_addr_q;
+  wire unused_addr_lsbs = &{{1'b0, wr_addr[1:0], rd_addr[1:0]}};   // word access: the byte offset is not decoded
   logic [31:0]      wr_data, rd_data;
   logic [3:0]       wr_strb;
   axi4_lite_slave #(
@@ -386,14 +387,15 @@ def gen_sv(m, stamp_v, stamp_d):
             continue
         if a == "WO":
             continue
-        src = f"{nm}_i" if a in ("RO", "CMD", "RC") else f"{nm}_q"
-        s += f"      A_{r['name']}: rd_data = 32'({src});\n" if a in ("RO", "CMD", "RC") else f"      A_{r['name']}: rd_data = {src};\n"
+        # stored registers read back their declared width (the bits above it read 0)
+        src = f"{nm}_i" if a in ("RO", "CMD", "RC") else f"{nm}_q[{W}-1:0]"
+        s += f"      A_{r['name']}: rd_data = 32'({src});\n"
     s += "      default: begin\n"
     for r in arrays:
         nm, a, W = r["name"].lower(), r["access"], r["width"]
         if a == "WO":
             continue
-        src = f"32'({nm}_i[i*({W}) +: {W}])" if a in ("RO", "CMD") else f"{nm}_q[i]"
+        src = f"32'({nm}_i[i*({W}) +: {W}])" if a in ("RO", "CMD") else f"32'({nm}_q[i][{W}-1:0])"
         s += (f"        for (int i = 0; i < {r['count']}; i++)\n"
               f"          if (rd_addr_q == A_{r['name']} + {aw}'({r['stride']} * i)) rd_data = {src};\n")
     s += "      end\n    endcase\n  end\n"
@@ -573,7 +575,8 @@ def parse_module(path, name):
             if not item:
                 continue
             mm = re.match(r"(?:parameter\s+)?(.*?)\b(\w+)\s*=\s*(.+)$", item)
-            params.append(((mm.group(1).strip() or "int"), mm.group(2), mm.group(3).strip()))
+            dv = mm.group(3).strip()                      # an untyped string parameter stays untyped
+            params.append(((mm.group(1).strip() or ("" if dv.startswith('"') else "int")), mm.group(2), dv))
         i = k + 1
     j = t.index("(", i)
     depth, k = 0, j
@@ -765,7 +768,8 @@ def gen_top_if(m, core_path):
     s = "\n".join(hdr) + "\n"
     allp = params + [(p.get("type", "int"), p["name"], str(p["default"])) for p in m.get("top_params", [])]
     if allp:
-        s += f"module {top} #(\n" + ",\n".join(f"  parameter {ty} {pn} = {dv}" for ty, pn, dv in allp) + "\n) (\n"
+        s += f"module {top} #(\n" + ",\n".join(f"  parameter {ty + ' ' if ty else ''}{pn} = {dv}"
+                                               for ty, pn, dv in allp) + "\n) (\n"
     else:
         s += f"module {top} (\n"
     csrc = open(core_path).read()
@@ -876,7 +880,8 @@ def gen_top(m, core_path):
     s = "\n".join(hdr) + "\n"
     allp = params + [(p.get("type", "int"), p["name"], str(p["default"])) for p in m.get("top_params", [])]
     if allp:
-        pl = [f"  parameter {ty} {n} = {dv}" + ("," if i < len(allp) - 1 else "") for i, (ty, n, dv) in enumerate(allp)]
+        pl = [f"  parameter {ty + ' ' if ty else ''}{n} = {dv}" + ("," if i < len(allp) - 1 else "")
+              for i, (ty, n, dv) in enumerate(allp)]
         s += f"module {top} #(\n" + "\n".join(pl) + "\n) (\n"
     else:
         s += f"module {top} (\n"

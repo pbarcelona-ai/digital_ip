@@ -3,7 +3,7 @@
   "ip": "py_sysctl",
   "id": "SCTL",
   "version": "1.10",
-  "desc": "py_soc system control: reset cause, boot status, cycle counter, SoC ID, core logic reset, clock enables.",
+  "desc": "py_soc system control: reset cause, boot status, cycle counter, SoC ID, core logic reset, clock enables, timer compare interrupt.",
   "addr_width": 8,
   "clk": "aclk",
   "rst_n": "aresetn",
@@ -20,6 +20,11 @@
     {"name": "CORE_RESET", "offset": "0x20", "access": "RW", "width": 1, "desc": "1 = release the reset of the logic outside py_soc (cleared by every system reset)"},
     {"name": "CLK_EN", "offset": "0x24", "access": "RW", "width": "NCLK", "reset": "CLK_EN_RST[NCLK-1:0]", "desc": "clock generator output enables"},
     {"name": "CLK_STATUS", "offset": "0x28", "access": "RO", "width": 2, "desc": "clock generator status",
-     "fields": [{"name": "LOCKED", "bit": 0, "desc": "outputs locked (1 without a clock generator)"}, {"name": "PRESENT", "bit": 1, "desc": "clock generator present"}]}
+     "fields": [{"name": "LOCKED", "bit": 0, "desc": "outputs locked (1 without a clock generator)"}, {"name": "PRESENT", "bit": 1, "desc": "clock generator present"}]},
+    {"name": "TIMER_CMP", "offset": "0x2C", "access": "RW", "desc": "timer compare: STATUS.REACHED is set when CYCLES reaches this value (CYCLES - TIMER_CMP < 2**31, wrap-safe); the CPU's timeouts and timed waits sleep on it"},
+    {"name": "TIMER_CTRL", "offset": "0x30", "access": "RW", "width": 1, "desc": "timer interrupt",
+     "fields": [{"name": "IRQ_EN", "bit": 0, "desc": "irq_o (timer_irq_o, intc source 16) while TIMER_STATUS.REACHED"}]},
+    {"name": "TIMER_STATUS", "offset": "0x34", "access": "CMD", "width": 1, "desc": "timer status (the logic's flag); write 1 to clear",
+     "fields": [{"name": "REACHED", "bit": 0, "desc": "CYCLES reached TIMER_CMP: one-shot, armed by every TIMER_CMP write (which clears it), set in the clock CYCLES equals TIMER_CMP (in the clock after the write when it is already reached: CYCLES - TIMER_CMP < 2**31); write 1 to clear (a set in the same clock wins)"}]}
   ]
 }

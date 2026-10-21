@@ -3,10 +3,13 @@
 // Author: FPGA Cores 4 U
 // Description: Reusable IP. Separable Catmull-Rom (a=-0.5) bicubic
 // RGB888 interpolator over a 4x4 tap footprint, in an 18-stage
-// pipeline (every multiply built on the mulq_s IP). Higher
-// quality than bilinear but does not sustain 1 pixel/clock
-// (see axis_out_ctrl.sv's gather FSM).
-// Date: September 26, 2026
+// pipeline (every multiply built on the mulq_s IP), fully pipelined: one
+// set of taps per clock (vision_system presents one per 4 clocks, as it
+// reads the four tap rows one by one). Golden model:
+// model/bicubic_model.py (bit exact; tb/python). Clock - clk. Reset -
+// synchronous active low rst_n (the valid chain only). Clock-domain
+// crossings - none. Latency - 18.
+// Date: 2026-10-21
 // ***************
 // =============================================================================
 // bicubic.sv
@@ -37,9 +40,8 @@
 // bug -- see README for the worked derivation.
 //
 // 18-stage fixed pipeline (LATENCY=18; was 5 before the timing work --
-// see the per-module headers below), one job at a time, no backpressure
-// (matches how the caller -- the bicubic gather FSM in axis_out_ctrl --
-// only ever presents one set of taps at a time).
+// see the per-module headers below), a new set of taps every clock, no
+// back-pressure (the caller reserves space for every result).
 // =============================================================================
 
 // =============================================================================
@@ -52,6 +54,7 @@
 // single-stage formulation. Data registers carry no reset.
 //   levels 1-3: t^2   levels 4-6: t^3   levels 7-9: constant products, w
 // =============================================================================
+/* verilator lint_off DECLFILENAME */            // bicubic.sv holds its helper modules (weights, row, col)
 module bicubic_weights (
   input  logic               clk,
   input  logic signed [31:0] t,
@@ -237,6 +240,7 @@ module bicubic_col (
   assign a1 = r1[31:0];
   assign a2 = r2[31:0];
   assign a3 = r3[31:0];
+  wire unused_hi = &{1'b0, r0[39:32], r1[39:32], r2[39:32], r3[39:32], 1'b0};   // truncated to the qmul operands
   logic signed [47:0] m0, m1, m2, m3;
   mulq_s u_m0 (
     .clk,
@@ -280,23 +284,24 @@ endmodule
 // reset-free shift chains, which map onto SRL primitives. Only the valid
 // chain is reset. Bit-identical to the original 5-stage formulation.
 // =============================================================================
+/* verilator lint_on DECLFILENAME */
 module bicubic (
-  input  logic               clk,
-  input  logic               rst_n,
-  input  logic               valid_in,
+  input  logic               clk,        // clock
+  input  logic               rst_n,      // synchronous, active low (valid chain)
+  input  logic               valid_in,   // a pixel's taps and fractions
   input  logic        [31:0] tx_q16,     // unsigned Q16.16, 0.0 <= t < 1.0
-  input  logic        [31:0] ty_q16,
+  input  logic        [31:0] ty_q16,     // unsigned Q16.16, 0.0 <= t < 1.0
   input  logic [barrel_pkg::PIX_W-1:0]   p00, p01, p02, p03,   // row 0 (y0-1): cols x0-1,x0,x0+1,x0+2
   input  logic [barrel_pkg::PIX_W-1:0]   p10, p11, p12, p13,   // row 1 (y0)
   input  logic [barrel_pkg::PIX_W-1:0]   p20, p21, p22, p23,   // row 2 (y0+1)
   input  logic [barrel_pkg::PIX_W-1:0]   p30, p31, p32, p33,   // row 3 (y0+2)
-  output logic                valid_out,
-  output logic [barrel_pkg::PIX_W-1:0]    pixel_out
+  output logic                valid_out,     // pixel_out valid (18 clocks after valid_in)
+  output logic [barrel_pkg::PIX_W-1:0]    pixel_out   // the interpolated pixel, each channel clamped to 0..255
 );
 
   // ---- valid chain (18 stages) -------------------------------------------
   logic [17:0] vsr;
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk) begin
     if (!rst_n) vsr <= '0;
     else        vsr <= {vsr[16:0], valid_in};
   end

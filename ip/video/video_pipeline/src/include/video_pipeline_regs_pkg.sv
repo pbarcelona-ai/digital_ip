@@ -5,7 +5,7 @@
 //   window) and bit fields (<REG>_<FIELD>_LSB / _MASK), for firmware ("from
 //   video_pipeline_regs_pkg import *" in pyc.py) and testbenches. Generated
 //   by ip/scripts/regmap_gen.py from video_pipeline_regs.json.
-// Date: 2026-10-16
+// Date: 2026-10-21
 package video_pipeline_regs_pkg;
   localparam int VIDEO_PIPELINE_ID = 'h0;
   localparam int VIDEO_PIPELINE_VERSION = 'h4;

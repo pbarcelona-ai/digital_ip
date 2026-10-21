@@ -17,8 +17,6 @@
 //   Matches: per-CFA-colour black level with clip at 0, per-colour gains (Q4.8), saturation at
 //   full scale, CFA phase from the pattern. The full-scale rescale is not a separate step; it
 //   is obtained by folding Max / (Max - blc) into the gains (document that).
-// TODO(REF-ISP_BLC_WB-1) [LOW] Full-scale rescale after BLC. Prompt: in
-//   ip/video/isp_blc_wb/src/isp_blc_wb.sv header, add that white saturates below full scale
-//   after black-level subtraction unless software multiplies each gain by (2^PW - 1) / (2^PW -
-//   1 - blc[c]) (Ramanath 2005), and make sw/video_proc.py compute the gains that way.
+// RESOLVED(REF-ISP_BLC_WB-1) [LOW] Full-scale rescale after BLC. Resolution: 2026-10-21: the isp_blc_wb.sv header states that white tops out at 2^PW - 1 - blc[c] and how software scales
+//   the gains (Ramanath 2005); video_processor's firmware leaves BLC at 0, so sw needs no change.
 ```

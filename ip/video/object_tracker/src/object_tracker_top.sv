@@ -10,7 +10,7 @@
 //   ip/scripts/regmap_gen.py from object_tracker_regs.json and the ports of
 //   object_tracker: regenerate after changing either. Clock - clk. Reset -
 //   synchronous active low rst_n.
-// Date: 2026-10-16
+// Date: 2026-10-21
 module object_tracker_top #(
   parameter int CW = 16,
   parameter int NBLOB = 8

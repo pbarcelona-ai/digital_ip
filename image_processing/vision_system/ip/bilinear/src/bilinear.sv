@@ -4,8 +4,10 @@
 // Description: Reusable IP. Standard 2x2 bilinear RGB888 interpolator
 // using 8-bit fractional weights, in a 3-stage pipeline
 // (3-cycle latency: weights, products, sum) sustaining one
-// output pixel per clock.
-// Date: September 26, 2026
+// output pixel per clock. Golden model: model/bilinear_model.py (bit
+// exact; tb/python). Clock - clk. Reset - synchronous active low rst_n
+// (the valid bits only). Clock-domain crossings - none. Latency - 3.
+// Date: 2026-10-21
 // ***************
 // =============================================================================
 // bilinear.sv
@@ -22,19 +24,19 @@
 // =============================================================================
 
 module bilinear (
-  input  logic               clk,
-  input  logic                rst_n,
-  input  logic                valid_in,
+  input  logic                clk,         // clock
+  input  logic                rst_n,       // synchronous, active low (valid bits)
+  input  logic                valid_in,    // a pixel's taps and fractions
   input  logic  [7:0]         fx,          // Q0.8 horizontal fraction
   input  logic  [7:0]         fy,          // Q0.8 vertical fraction
-  input  logic  [barrel_pkg::PIX_W-1:0]   tl, tr, bl, br,
-  output logic                valid_out,
-  output logic  [barrel_pkg::PIX_W-1:0]   pixel_out
+  input  logic  [barrel_pkg::PIX_W-1:0]   tl, tr, bl, br,   // the taps (x0, y0) .. (x0 + 1, y0 + 1), RGB888
+  output logic                valid_out,   // pixel_out valid (3 clocks after valid_in)
+  output logic  [barrel_pkg::PIX_W-1:0]   pixel_out         // the interpolated pixel
 );
 
   // TIMING NOTE: three register stages (latency 3). Data registers carry
   // no reset -- only the valid bits do -- so the synthesizer can absorb
-  // the product registers into DSP48 MREG/PREG (an async reset on a data
+  // the product registers into DSP48 MREG/PREG (a reset on a data
   // register prevents that). Results are bit-identical to the earlier
   // two-stage version; only the sum was moved to its own stage.
 
@@ -43,15 +45,15 @@ module bilinear (
   logic [16:0] w00A, w10A, w01A, w11A;      // each up to 256*256
   logic [barrel_pkg::PIX_W-1:0] tlA, trA, blA, brA;
 
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk) begin
     if (!rst_n) vA <= 1'b0;
     else        vA <= valid_in;
   end
   always_ff @(posedge clk) begin
-    w00A <= (9'd256 - fx) * (9'd256 - fy);
-    w10A <= ({1'b0,fx})   * (9'd256 - fy);
-    w01A <= (9'd256 - fx) * ({1'b0,fy});
-    w11A <= ({1'b0,fx})   * ({1'b0,fy});
+    w00A <= 17'(9'd256 - {1'b0, fx}) * 17'(9'd256 - {1'b0, fy});
+    w10A <= 17'({1'b0, fx})          * 17'(9'd256 - {1'b0, fy});
+    w01A <= 17'(9'd256 - {1'b0, fx}) * 17'({1'b0, fy});
+    w11A <= 17'({1'b0, fx})          * 17'({1'b0, fy});
     tlA <= tl;
     trA <= tr;
     blA <= bl;
@@ -62,7 +64,7 @@ module bilinear (
   // 12 products (3 channels x 4 taps): 8-bit pixel x 17-bit weight.
   logic        vB1;
   logic [24:0] prB1 [0:2][0:3];             // [channel R,G,B][tap TL,TR,BL,BR]
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk) begin
     if (!rst_n) vB1 <= 1'b0;
     else        vB1 <= vA;
   end
@@ -90,13 +92,13 @@ module bilinear (
      input logic [24:0] p2, input logic [24:0] p3);
     logic [26:0] acc;
     begin
-      acc = p0 + p1 + p2 + p3;
+      acc = 27'(p0) + 27'(p1) + 27'(p2) + 27'(p3);
       acc = acc + 27'd32768;              // round-to-nearest before >>16
       sum_chan = acc[23:16];
     end
   endfunction
 
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk) begin
     if (!rst_n) vB <= 1'b0;
     else        vB <= vB1;
   end

@@ -36,7 +36,7 @@
 //   words read 0 and ignore writes; above the map: DECERR. Clock - aclk.
 //   Reset - synchronous active low aresetn. Latency - 2 clocks per write and
 //   read.
-// Date: 2026-10-16
+// Date: 2026-10-20
 module intc_regs #(
   parameter int NUM_IRQ = 16  // number of sources (1..32)
 ) (
@@ -90,6 +90,7 @@ module intc_regs #(
 
   logic             wr_en, rd_en, wr_err_q;
   logic [7:0]       wr_addr, rd_addr, rd_addr_q;
+  wire unused_addr_lsbs = &{1'b0, wr_addr[1:0], rd_addr[1:0]};   // word access: the byte offset is not decoded
   logic [31:0]      wr_data, rd_data;
   logic [3:0]       wr_strb;
   regbus_if #(.ADDR_W(8)) bus ();               // register bus of the AXI4-Lite front end
@@ -175,9 +176,9 @@ module intc_regs #(
       A_ID:      rd_data = IP_ID;
       A_VERSION: rd_data = IP_VERSION;
       A_DATE:    rd_data = IP_DATE;
-      A_ENABLE: rd_data = enable_q;
-      A_EDGE_TYPE: rd_data = edge_type_q;
-      A_ACTIVE_LOW: rd_data = active_low_q;
+      A_ENABLE: rd_data = 32'(enable_q[NUM_IRQ-1:0]);
+      A_EDGE_TYPE: rd_data = 32'(edge_type_q[NUM_IRQ-1:0]);
+      A_ACTIVE_LOW: rd_data = 32'(active_low_q[NUM_IRQ-1:0]);
       A_PENDING: rd_data = 32'(pending_i);
       A_VECTOR: rd_data = 32'(vector_i);
       A_MASKED: rd_data = 32'(masked_i);

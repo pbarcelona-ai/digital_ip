@@ -14,7 +14,7 @@
       <ipxact:addressBlock>
         <ipxact:name>regs</ipxact:name>
         <ipxact:baseAddress>0x0</ipxact:baseAddress>
-        <ipxact:range>0x160</ipxact:range>
+        <ipxact:range>0x1E0</ipxact:range>
         <ipxact:width>32</ipxact:width>
         <ipxact:usage>register</ipxact:usage>
         <ipxact:register>
@@ -137,6 +137,18 @@
             <ipxact:name>TERM_B</ipxact:name>
             <ipxact:description>term B on: the edge feature, in runs of RUN_B (its own blob slots)</ipxact:description>
             <ipxact:bitOffset>14</ipxact:bitOffset>
+            <ipxact:resets>
+              <ipxact:reset>
+                <ipxact:value>0x0</ipxact:value>
+              </ipxact:reset>
+            </ipxact:resets>
+            <ipxact:bitWidth>1</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+          </ipxact:field>
+          <ipxact:field>
+            <ipxact:name>SKIN_LUT</ipxact:name>
+            <ipxact:description>colour mode: the chroma test is the SKIN_LUT table instead of CB_RANGE / CR_RANGE / SAT_MIN (Y_RANGE still applies)</ipxact:description>
+            <ipxact:bitOffset>15</ipxact:bitOffset>
             <ipxact:resets>
               <ipxact:reset>
                 <ipxact:value>0x0</ipxact:value>
@@ -658,6 +670,25 @@
             <ipxact:bitOffset>0</ipxact:bitOffset>
             <ipxact:bitWidth>32</ipxact:bitWidth>
             <ipxact:access>read-only</ipxact:access>
+          </ipxact:field>
+          <ipxact:vendorExtensions><stride>4</stride></ipxact:vendorExtensions>
+        </ipxact:register>
+        <ipxact:register>
+          <ipxact:name>SKIN_LUT</ipxact:name>
+          <ipxact:description>learned skin table (python-prototype/train_skin.py): word i = (Cr - 112) &gt;&gt; 1, bit j = (Cb - 96) &gt;&gt; 1 (Cb 96..159, Cr 112..175); 1 = skin</ipxact:description>
+          <ipxact:dim>32</ipxact:dim>
+          <ipxact:addressOffset>0x160</ipxact:addressOffset>
+          <ipxact:size>32</ipxact:size>
+          <ipxact:field>
+            <ipxact:name>SKIN_LUT</ipxact:name>
+            <ipxact:bitOffset>0</ipxact:bitOffset>
+            <ipxact:resets>
+              <ipxact:reset>
+                <ipxact:value>0x0</ipxact:value>
+              </ipxact:reset>
+            </ipxact:resets>
+            <ipxact:bitWidth>32</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
           </ipxact:field>
           <ipxact:vendorExtensions><stride>4</stride></ipxact:vendorExtensions>
         </ipxact:register>

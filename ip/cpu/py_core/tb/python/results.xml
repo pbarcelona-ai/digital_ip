@@ -1,0 +1,9 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1792542223" />
+    <testcase name="test_pyc_programs" classname="py_core_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/ip/cpu/py_core/tb/python/py_core_tb.py" lineno="226" time="5.353005886077881" sim_time_ns="988665.0" ratio_time="184693.42665423252" />
+    <testcase name="test_random_fixed_timing" classname="py_core_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/ip/cpu/py_core/tb/python/py_core_tb.py" lineno="432" time="2.759852647781372" sim_time_ns="213214.99999999988" ratio_time="77255.9361715931" />
+    <testcase name="test_random_backpressure" classname="py_core_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/ip/cpu/py_core/tb/python/py_core_tb.py" lineno="438" time="1.886605978012085" sim_time_ns="128225.0" ratio_time="67965.96718892547" />
+    <testcase name="test_coverage" classname="py_core_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/ip/cpu/py_core/tb/python/py_core_tb.py" lineno="444" time="0.0002689361572265625" sim_time_ns="0.0" ratio_time="0.0" />
+  </testsuite>
+</testsuites>

@@ -14,8 +14,11 @@
 #   exists, the industry reference check (section 6a, copied verbatim).
 #   Usage: python3 ip/scripts/make_py_prompts.py [--only NAME ...] [--dry-run] [PATH ...]
 #   (PATH: files or directories; default: image_processing/*, ip/scripts, ip/tools,
-#   every ip/*/*/tb/python and ip/*/*/tools)
-# Date: 2026-10-16
+#   ip/shared/pymodel, every ip/*/*/tb/python, ip/*/*/tools and ip/*/*/model)
+#   Imports resolve to the importing file's folder, its IP's scripts/, tb/scripts/
+#   and sw/, then to the Python models (ip/shared/pymodel, every model/ folder)
+#   and the IP scripts (ip/*/*/scripts), as the simulations put them on sys.path.
+# Date: 2026-10-20
 import argparse
 import ast
 import datetime
@@ -32,6 +35,8 @@ PYC = REPO / "ip/cpu/py_core/tools/pyc.py"
 def owner(f: Path) -> Path:
     rel = f.relative_to(REPO)
     if rel.parts[0] == "image_processing":
+        if len(rel.parts) > 4 and rel.parts[2] == "ip":            # a design's own sub-IP: ip/<name>/...
+            return REPO / rel.parts[0] / rel.parts[1] / "ip" / rel.parts[3]
         return REPO / rel.parts[0] / rel.parts[1]
     if rel.parts[0] == "ip" and len(rel.parts) > 3 and rel.parts[1] not in ("scripts", "tools", "docs"):
         return REPO / "ip" / rel.parts[1] / rel.parts[2]
@@ -93,12 +98,27 @@ def fence(text: str) -> str:
     return "```text\n" + text.strip() + "\n```"
 
 
+_MODEL_INDEX: dict[str, Path] = {}
+
+
+def model_index() -> dict[str, Path]:
+    """Module name -> file of the Python models and IP scripts (ip/shared/pymodel, */model, ip/*/*/scripts)."""
+    if not _MODEL_INDEX:
+        for g in ("ip/shared/pymodel/*.py", "ip/*/*/model/*.py", "image_processing/*/model/*.py",
+                  "ip/*/*/scripts/*.py"):
+            for q in sorted(REPO.glob(g)):
+                if not set(q.relative_to(REPO).parts) & SKIP_DIRS:
+                    _MODEL_INDEX.setdefault(q.stem, q)
+    return _MODEL_INDEX
+
+
 def local_module(name: str, f: Path) -> Path | None:
+    stem = name.split(".")[0]
     for d in (f.parent, f.parent.parent / "scripts", f.parent.parent / "tb" / "scripts", f.parent.parent / "sw"):
-        q = d / (name.split(".")[0] + ".py")
+        q = d / (stem + ".py")
         if q.is_file():
             return q
-    return None
+    return model_index().get(stem)
 
 
 def sv_package(name: str, f: Path) -> Path | None:
@@ -265,11 +285,12 @@ def prompt(f: Path, files: list[Path]) -> str:
 def discover(paths: list[str]) -> list[Path]:
     roots = [REPO / p for p in paths] if paths else (
         sorted((REPO / "image_processing").glob("*")) + [REPO / "ip/scripts", REPO / "ip/tools"] +
+        [REPO / "ip/shared/pymodel"] + sorted((REPO / "ip").glob("*/*/model")) +
         sorted((REPO / "ip").glob("*/*/tb/python")) + sorted((REPO / "ip").glob("*/*/tools")) +
         sorted((REPO / "ip").glob("*/*/scripts")) + sorted((REPO / "ip").glob("*/*/tb/programs")))
     out = []
     for r in roots:
-        cand = [r] if r.is_file() else r.rglob("*.py")
+        cand = ([r] if r.suffix == ".py" else []) if r.is_file() else r.rglob("*.py")   # not .DS_Store etc.
         for f in cand:
             if set(f.relative_to(REPO).parts) & SKIP_DIRS or f.name.startswith("__"):
                 continue

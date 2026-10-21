@@ -13,10 +13,15 @@
 //   VERSION / DATE at 0x00-0x08, CTRL 0x10 [0] en [1] window_en [2] lock,
 //   TIMEOUT 0x14 ticks, PRESCALE 0x18, PRETIMEOUT 0x1C ticks, WINDOW_OPEN
 //   0x20 ticks, KICK 0x24, STATUS 0x28 [0] pretimeout [1] expired [2] early
-//   kick [3] bad key (W1C), COUNT 0x2C). Clock - single clock aclk.
+//   kick [3] bad key (W1C), COUNT 0x2C). The block follows the windowed-
+//   watchdog model: a pre-timeout interrupt at PRETIMEOUT ticks, the reset at
+//   TIMEOUT ticks, an early-kick reset in window mode and a one-way LOCK. It
+//   differs from Arm SP805, which raises its interrupt on a first time-out,
+//   resets on a second consecutive one and unlocks with the key 0x1ACCE551.
+//   Clock - single clock aclk.
 //   Reset - synchronous active low aresetn. Errors - illegal parameter
 //   values stop elaboration with an $error.
-// Date: 2026-10-16
+// Date: 2026-10-20
 module watchdog #(
   parameter int RESET_CYCLES = 16        // width of the reset pulse in clocks
 ) (
@@ -136,4 +141,7 @@ module watchdog #(
   assign regs.sts_ctrl = {lock_q, win_en, en_q};
   assign regs.sts_status = {key_f, early_f, exp_f, pre_f};
   assign regs.sts_count = cnt;
+  // not used: write pulses of the timing registers (their values are copied every clock until LOCK)
+  wire unused_wr = &{1'b0, regs.cfg_timeout_wr, regs.cfg_prescale_wr, regs.cfg_pretimeout_wr,
+                     regs.cfg_window_open_wr};
 endmodule

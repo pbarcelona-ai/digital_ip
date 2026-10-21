@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1792588272" />
+    <testcase name="test_frames_exact" classname="isp_ccm_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/ip/video/isp_ccm/tb/python/isp_ccm_tb.py" lineno="50" time="0.9338722229003906" sim_time_ns="105876.0" ratio_time="113373.11187088709" />
+  </testsuite>
+</testsuites>

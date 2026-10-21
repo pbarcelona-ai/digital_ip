@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0a192f"><link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta name="description" content="Passive protocol checkers with functional coverage. axis_checker covers AXI4-Stream handshake rules (no valid retraction, stable payload under stall, no…">
+  <title>axi_checkers | Scaler IP</title><link rel="canonical" href="https://pbarcelona-ai.github.io/digital_ip/docs/axi_checkers/index.html"><meta property="og:type" content="website"><meta property="og:site_name" content="Barcelona Enterprises"><meta property="og:title" content="axi_checkers | Scaler IP"><meta property="og:description" content="Passive protocol checkers with functional coverage. axis_checker covers AXI4-Stream handshake rules (no valid retraction, stable payload under stall, no…"><meta property="og:url" content="https://pbarcelona-ai.github.io/digital_ip/docs/axi_checkers/index.html"><meta property="og:image" content="https://pbarcelona-ai.github.io/og-image.png"><meta name="twitter:image" content="https://pbarcelona-ai.github.io/og-image.png"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="axi_checkers | Scaler IP"><meta name="twitter:description" content="Passive protocol checkers with functional coverage. axis_checker covers AXI4-Stream handshake rules (no valid retraction, stable payload under stall, no…">
+    <link rel="stylesheet" href="../site.css">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://pbarcelona-ai.github.io/"}, {"@type": "ListItem", "position": 2, "name": "Digital IP Catalog", "item": "https://pbarcelona-ai.github.io/digital_ip/docs/index.html"}, {"@type": "ListItem", "position": 3, "name": "axi_checkers", "item": "https://pbarcelona-ai.github.io/digital_ip/docs/axi_checkers/index.html"}]}</script></head>
+<body>
+    <header class="topbar"><a class="brand" href="../index.html"><span>BARCELONA ENTERPRISES / SCALER IP MODULE</span></a><a class="back-link" href="../index.html">All modules <span aria-hidden="true">↗</span></a></header>
+  <main class="page-shell">
+    <section class="hero">
+      <p class="eyebrow">verification IP / axi_checkers</p>
+      <h1>axi_checkers</h1>
+      <p class="lede">Passive protocol checkers with functional coverage. axis_checker covers AXI4-Stream handshake rules (no valid retraction, stable payload under stall, no X) and video framing (tuser on the first beat, tlast at the end of each line, complete frames). axil_checker covers the AXI4-Lite master and slave rules on all five channels, response ordering and OKAY responses. Each rule is implemented twice: as procedural checks that run on every simulator including Icarus, and as SVA properties compiled with +define+SVA_ON. Coverage counters (orderings, stalls, stall-length buckets, back-to-back transfers, frames) are printed by report(). The testbench drives legal traffic (zero errors expected) and then violates every rule on purpose (each must be detected).</p>
+    <div class="actions"><a class="button secondary" href="../../scalers/axi_checkers/README.md">README</a><span class="command">make -C scalers/axi_checkers test</span></div>
+    </section>
+    <section class="content-grid">
+      <article class="panel main-panel">
+        <p class="eyebrow">RTL source</p>
+        <h2>Implementation</h2>
+        <ul class="file-list"><li><span class="sv-ref">src/axil_checker.sv</span></li><li><span class="sv-ref">src/axis_checker.sv</span></li></ul>
+        <h2>Verification</h2>
+        <ul class="file-list"><li><span class="sv-ref">tb/axi_checkers_tb.sv</span></li><li><a href="../../scalers/axi_checkers/tb/build.f">tb/build.f</a></li><li><a href="../../scalers/axi_checkers/tb/scripts/build.f">tb/scripts/build.f</a></li></ul>
+      </article>
+      <aside class="panel side-panel">
+              <p class="eyebrow">Build surface</p>
+        <h2>Scripts &amp; manifests</h2>
+        <ul class="file-list"><li><a href="../../scalers/axi_checkers/scripts/run.sh">scripts/run.sh</a></li></ul>
+        <h2>Includes</h2>
+        <p class="quiet">No include/ directory was found for this module.</p>
+        <p class="dependency"><strong>Depends on:</strong> none</p>
+      </aside>
+    </section>
+    <section class="content"><article><p class="eyebrow">Scalers</p><h2>Typical applications</h2><p>Scaler and video-pipeline IP like this is used in image and video processing datapaths &mdash; typical uses include resolution conversion, sharpening, frame buffering, and control-plane register access in camera or display pipelines.</p><h2>Related modules</h2><ul class="file-list"><li><a href="../axil_regbus/index.html">axil_regbus</a></li><li><a href="../axil_split/index.html">axil_split</a></li><li><a href="../banked_framebuf/index.html">banked_framebuf</a></li><li><a href="../scaler_anisotropic/index.html">scaler_anisotropic</a></li><li><a href="../scaler_bicubic/index.html">scaler_bicubic</a></li></ul></article></section><footer class="page-footer"><a href="../index.html">← Back to scaler IP index</a><span>Generated from this module's README and file tree.</span></footer>
+  </main>
+</body>
+</html>

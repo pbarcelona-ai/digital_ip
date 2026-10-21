@@ -5,7 +5,7 @@
  "id": "VPIP",
  "version": "1.10",
  "desc": "Camera to display pipeline registers: control, ISP stages, statistics, display timing, MIPI / LVDS outputs, counters.",
- "addr_width": 9,
+ "addr_width": 14,
  "clk": "clk",
  "rst_n": "rst_n",
  "top": false,
@@ -339,7 +339,7 @@
    "name": "CSI_OVERFLOW",
    "offset": "0x0E4",
    "access": "RO",
-   "desc": "CSI words lost (bridge FIFO full)"
+   "desc": "CSI overflow events (bridge FIFO full; a burst of lost words counts once)"
   },
   {
    "name": "OUT_CTRL",
@@ -383,13 +383,13 @@
    "name": "DSI_DROPS",
    "offset": "0x100",
    "access": "RO",
-   "desc": "lines DSI could not send in time"
+   "desc": "lines DSI could not send in time (dropped, or a burst that ran dry)"
   },
   {
    "name": "CSITX_DROPS",
    "offset": "0x104",
    "access": "RO",
-   "desc": "lines CSI-2 TX could not send in time"
+   "desc": "lines CSI-2 TX could not send in time (dropped, or a burst that ran dry)"
   },
   {
    "name": "CSITX_FRAMES",

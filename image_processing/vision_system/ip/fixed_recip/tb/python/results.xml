@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1792611504" />
+    <testcase name="test_recip_exact" classname="fixed_recip_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/image_processing/vision_system/ip/fixed_recip/tb/python/fixed_recip_tb.py" lineno="31" time="0.8586509227752686" sim_time_ns="228025.0" ratio_time="265561.93436908483" />
+  </testsuite>
+</testsuites>

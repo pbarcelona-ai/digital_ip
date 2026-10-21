@@ -10,13 +10,15 @@
 //     otherwise      ->  out = c
 //   Borders are mirrored without repeating the edge pixel (isp_window
 //   BORDER = 1), so edge pixels also have 8 true same-colour neighbours.
-//   bypass_i
-//   (sampled at the start of each output frame) passes the centre pixel
+//   bypass_i (sampled with the frame's first output pixel; keep it from the
+//   frame's first input pixel until then - for a frame of few lines that is
+//   after its last input pixel) passes the centre pixel
 //   unchanged through the same latency. corrected_o pulses once per
 //   corrected pixel (for a statistics counter). Frame size from width_i /
 //   height_i. Clock - clk only.
 //   Reset - synchronous rst_n (active low). Latency - 2 lines + 7 clocks.
-// Date: 2026-10-16
+//   Golden model: model/isp_dpc_model.py (dpc_frame; tb/python).
+// Date: 2026-10-21
 module isp_dpc #(
   parameter int PW    = 10,
   parameter int MAX_W = 2048
@@ -37,7 +39,8 @@ module isp_dpc #(
 );
   assign m_axis.tkeep = '1;      // not used by this block
   axis_if #(.DATA_W(25*PW), .USER_W(1)) u_win_m_axis ();
-  logic [15:0] wx, wy;
+  logic [15:0] wx, wy;                         // window centre (not used)
+  logic sof_wait;
   isp_window #(
     .N(5),
     .PW(PW),
@@ -51,7 +54,8 @@ module isp_dpc #(
     .s_axis(s_axis),
     .m_axis(u_win_m_axis),
     .m_x(wx),
-    .m_y(wy)
+    .m_y(wy),
+    .sof_wait_o(sof_wait)
   );
 
   function automatic logic [PW-1:0] tap(input int r, input int c);
@@ -95,4 +99,5 @@ module isp_dpc #(
       end else if (m_axis.tready) m_axis.tvalid <= 1'b0;
     end
   end
+  wire unused_ok = &{1'b0, wx, wy, sof_wait, 1'b0};
 endmodule

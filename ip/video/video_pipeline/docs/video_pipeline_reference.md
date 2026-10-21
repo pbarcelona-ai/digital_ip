@@ -28,9 +28,6 @@
 //   chains usually correct defects before WB); the result is the same for clamp-based DPC as
 //   long as the WB gains are applied to all colours equally in the comparison, so this is
 //   documented, not changed.
-// TODO(REF-VIDEO_PIPELINE-1) [LOW] DPC placement. Prompt: in
-//   ip/video/video_pipeline/src/video_pipeline.sv header, note that DPC follows BLC / WB
-//   (Ramanath 2005 places defect correction before white balance) and that the DPC threshold is
-//   therefore in white-balanced units; move isp_dpc before isp_blc_wb only if a test shows a
-//   difference.
+// RESOLVED(REF-VIDEO_PIPELINE-1) [LOW] DPC placement. Resolution: 2026-10-21: the video_pipeline.sv header states that DPC follows BLC / WB (DPC_THR in
+//   white-balanced units) and that with unity gains, as in video_processor, the order makes no difference.
 ```

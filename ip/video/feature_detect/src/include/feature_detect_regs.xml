@@ -14,7 +14,7 @@
       <ipxact:addressBlock>
         <ipxact:name>regs</ipxact:name>
         <ipxact:baseAddress>0x0</ipxact:baseAddress>
-        <ipxact:range>0x44</ipxact:range>
+        <ipxact:range>0x100</ipxact:range>
         <ipxact:width>32</ipxact:width>
         <ipxact:usage>register</ipxact:usage>
         <ipxact:register>
@@ -375,6 +375,50 @@
             <ipxact:bitWidth>8</ipxact:bitWidth>
             <ipxact:access>read-only</ipxact:access>
           </ipxact:field>
+        </ipxact:register>
+        <ipxact:register>
+          <ipxact:name>SKY_CFG</ipxact:name>
+          <ipxact:description>sky profile: column groups of 2**SHIFT pixels (group g = x &gt;&gt; SHIFT, at most 32 groups); a sky pixel has no edge and luma Y_MIN or more</ipxact:description>
+          <ipxact:addressOffset>0x44</ipxact:addressOffset>
+          <ipxact:size>32</ipxact:size>
+          <ipxact:field>
+            <ipxact:name>SHIFT</ipxact:name>
+            <ipxact:description>log2 of the group width</ipxact:description>
+            <ipxact:bitOffset>0</ipxact:bitOffset>
+            <ipxact:resets>
+              <ipxact:reset>
+                <ipxact:value>0x0</ipxact:value>
+              </ipxact:reset>
+            </ipxact:resets>
+            <ipxact:bitWidth>4</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+          </ipxact:field>
+          <ipxact:field>
+            <ipxact:name>Y_MIN</ipxact:name>
+            <ipxact:description>least luma (R + 2G + B) / 4 of a sky pixel (a dark smooth road or ceiling is not sky)</ipxact:description>
+            <ipxact:bitOffset>8</ipxact:bitOffset>
+            <ipxact:resets>
+              <ipxact:reset>
+                <ipxact:value>0x0</ipxact:value>
+              </ipxact:reset>
+            </ipxact:resets>
+            <ipxact:bitWidth>8</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+          </ipxact:field>
+        </ipxact:register>
+        <ipxact:register>
+          <ipxact:name>SKY</ipxact:name>
+          <ipxact:description>sky profile of the last frame: lines from the top of column group i down to its first pixel that is not sky (the frame height: all sky); a plane in the sky is the first thing below it</ipxact:description>
+          <ipxact:dim>32</ipxact:dim>
+          <ipxact:addressOffset>0x80</ipxact:addressOffset>
+          <ipxact:size>32</ipxact:size>
+          <ipxact:field>
+            <ipxact:name>SKY</ipxact:name>
+            <ipxact:bitOffset>0</ipxact:bitOffset>
+            <ipxact:bitWidth>32</ipxact:bitWidth>
+            <ipxact:access>read-only</ipxact:access>
+          </ipxact:field>
+          <ipxact:vendorExtensions><stride>4</stride></ipxact:vendorExtensions>
         </ipxact:register>
       </ipxact:addressBlock>
       <ipxact:addressUnitBits>8</ipxact:addressUnitBits>

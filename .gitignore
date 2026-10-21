@@ -1,4 +1,6 @@
-/ip/
+# ip/ is tracked; only its generated outputs are not
+/ip/build/
+/ip/**/sim_out/
 /og/
 /pagefind/
 __pycache__/

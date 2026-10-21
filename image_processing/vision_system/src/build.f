@@ -15,6 +15,7 @@
 ../ip/bicubic/src/bicubic.sv
 ../ip/frame_buffer/src/frame_buffer.sv
 ../ip/ext_frame_buffer/src/ext_frame_buffer.sv
+../../../ip/fifo/fallthrough_fifo/src/fallthrough_fifo.sv
 axis_in_ctrl.sv
 axis_out_ctrl.sv
 ../../../ip/bus/axi4_lite_slave/src/axi4_lite_slave.sv

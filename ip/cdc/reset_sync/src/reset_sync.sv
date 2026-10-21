@@ -21,12 +21,18 @@ module reset_sync #(
   input  logic arst_i,
   output logic rst_o
 );
+  /* verilator lint_off UNUSEDPARAM */             // version identification (library convention), not logic
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
+  /* verilator lint_on UNUSEDPARAM */
   if (STAGES < 2) begin : g_bad_stages
     $error("reset_sync: STAGES must be >= 2");
   end
   wire asserted = ACTIVE_LOW_IN ? ~arst_i : arst_i;
+  // users may take rst_o as a synchronous reset in some flops and an asynchronous one in others (both
+  // are valid for a reset released synchronously to clk)
+  /* verilator lint_off SYNCASYNCNET */
   (* async_reg = "true", shreg_extract = "no" *) logic [STAGES-1:0] sr;
+  /* verilator lint_on SYNCASYNCNET */
   if (ASYNC_ASSERT) begin : g_async
     always_ff @(posedge clk or posedge asserted)
       if (asserted) sr <= '0;

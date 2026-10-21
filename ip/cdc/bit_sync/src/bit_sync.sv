@@ -9,7 +9,7 @@
 //   STAGES clock cycles. Timing - the flops carry async_reg so tools keep
 //   them together; no logic between stages. Errors - STAGES < 2 is
 //   rejected at elaboration.
-// Date: 2026-09-29
+// Date: 2026-10-21
 module bit_sync #(
   parameter int STAGES    = 2,           // synchronizer depth (>= 2)
   parameter bit RESET_VAL = 1'b0         // value held during reset
@@ -19,7 +19,9 @@ module bit_sync #(
   input  logic d_i,                      // asynchronous input
   output logic q_o                       // synchronized output
 );
+  /* verilator lint_off UNUSEDPARAM */             // version identification (library convention), not logic
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
+  /* verilator lint_on UNUSEDPARAM */
   if (STAGES < 2) begin : g_bad_stages
     $error("bit_sync: STAGES must be >= 2");
   end

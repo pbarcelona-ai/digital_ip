@@ -5,7 +5,7 @@
 //   window) and bit fields (<REG>_<FIELD>_LSB / _MASK), for firmware ("from
 //   object_tracker_regs_pkg import *" in pyc.py) and testbenches. Generated
 //   by ip/scripts/regmap_gen.py from object_tracker_regs.json.
-// Date: 2026-10-16
+// Date: 2026-10-21
 package object_tracker_regs_pkg;
   localparam int OBJECT_TRACKER_ID = 'h0;
   localparam int OBJECT_TRACKER_VERSION = 'h4;
@@ -23,6 +23,8 @@ package object_tracker_regs_pkg;
   localparam int OBJECT_TRACKER_CTRL_FEAT_A_MASK = 'h3000;
   localparam int OBJECT_TRACKER_CTRL_TERM_B_LSB = 14;
   localparam int OBJECT_TRACKER_CTRL_TERM_B_MASK = 'h4000;
+  localparam int OBJECT_TRACKER_CTRL_SKIN_LUT_LSB = 15;
+  localparam int OBJECT_TRACKER_CTRL_SKIN_LUT_MASK = 'h8000;
   localparam int OBJECT_TRACKER_FRAME_SIZE = 'h1C;
   localparam int OBJECT_TRACKER_FRAME_SIZE_WIDTH_LSB = 0;
   localparam int OBJECT_TRACKER_FRAME_SIZE_WIDTH_MASK = 'hFFFF;
@@ -111,4 +113,6 @@ package object_tracker_regs_pkg;
   localparam int OBJECT_TRACKER_BLOB_Y_Y_MAX_MASK = 'hFFFF0000;
   localparam int OBJECT_TRACKER_BLOB_N = 'h140;
   localparam int OBJECT_TRACKER_BLOB_N_STRIDE = 4;
+  localparam int OBJECT_TRACKER_SKIN_LUT = 'h160;
+  localparam int OBJECT_TRACKER_SKIN_LUT_STRIDE = 4;
 endpackage

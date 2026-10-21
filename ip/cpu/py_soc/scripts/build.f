@@ -16,7 +16,6 @@ src/include/py_sysctl_regs_if.sv
 ../../peripherals/uart/src/include/uart_regs_if.sv
 ../../timing/watchdog/src/include/watchdog_regs_if.sv
 ../py_core/src/py_core.sv
-../../shared/src/common/ip_axil_regs.sv
 ../../shared/src/fifo/ip_axis_fifo.sv
 ../../bus/axi4_lite_slave/src/axi4_lite_slave.sv
 ../../bus/axi4_lite_decoder/src/axi4_lite_decoder.sv
@@ -48,6 +47,8 @@ src/include/py_stream_port_regs.sv
 src/py_stream_port.sv
 src/py_stream_port_top.sv
 src/py_axil_xbar.sv
+../../memory/single_port_ram/src/single_port_ram.sv
+src/py_data_ram.sv
 ../../peripherals/spi_flash_ctrl/src/include/spi_flash_ctrl_regs.sv
 ../../peripherals/spi_flash_ctrl/src/spi_flash_ctrl.sv
 ../../peripherals/spi_flash_ctrl/src/spi_flash_ctrl_top.sv

@@ -1,7 +1,7 @@
 // ***************
 // Filename: video_pipeline.sv
 // Author: FPGA Cores 4 U
-// Description: MIPI CSI-2 camera to HDMI / DVI video pipeline. Version 1.0.0.
+// Description: MIPI CSI-2 camera to HDMI / DVI video pipeline. Version 1.1.0.
 //
 //   byte_clk | pix_clk
 //   D-PHY -> csi2_rx -> axis_async_bridge -> csi2_raw_unpack -> isp_blc_wb
@@ -12,6 +12,9 @@
 //                                                    -> csi2_tx  -> MIPI CSI-2 (processor)
 //   vid_timing_gen drives axis_to_video (genlock to the camera) and hdmi_tx;
 //   isp_stats taps the linear RGB after the CCM for AE / AWB software.
+//   isp_dpc follows black level and white balance (Ramanath et al. 2005 place
+//   defect correction before white balance), so DPC_THR is in white-balanced
+//   units; with unity gains (video_processor) the order makes no difference.
 //   eof_in_o / eof_out_o pulse at the end of every frame leaving
 //   csi2_raw_unpack (first stage) / entering axis_to_video (last stage),
 //   e.g. for a frame counter.
@@ -33,7 +36,7 @@
 //   independent frame rates.
 //
 //   AXI4-Lite (pix_clk), ADDR_W = 15 (src/video_pipeline_map_pkg.sv):
-//   0x0000-0x01FF pipeline registers, 0x4000-0x7FFF the scaler's own map
+//   0x0000-0x01FF pipeline registers (DECERR up to 0x3FFF), 0x4000-0x7FFF the scaler's own map
 //   (scaler_ctrl, base 0x4000).
 //     0x000 ID          RO "VPIP"; 0x004 VERSION RO ASCII "d.dd"; 0x008 DATE RO BCD
 //                       mm/dd/yyyy (the ID block); register k of the old map is at
@@ -69,7 +72,7 @@
 //                       (colour space and colorimetry follow CSC settings)
 //     0x0CC CSI_FRAMES  RO, 0x0D0 ECC_CORR RO, 0x0D4 ECC_ERR RO,
 //     0x0D8 CRC_ERR RO, 0x0DC UNDERFLOWS RO, 0x0E0 DPC_CORR RO,
-//     0x0E4 CSI_OVERFLOW RO (CSI words lost: the bridge FIFO was full)
+//     0x0E4 CSI_OVERFLOW RO (CSI overflow events: the bridge FIFO was full)
 //     0x0E8 OUT_CTRL    [0] LVDS dual link [1] LVDS 18 bpp [2] LVDS JEIDA
 //                       [4] DSI video [5] DSI EoTp [7:6] DSI virtual channel
 //                       [8] CSI-2 TX enable [9] CSI-2 TX YUV422 [11:10] its VC
@@ -79,8 +82,9 @@
 //                       type, [15:0] data / word count} (sent with DSI video off)
 //     0x0F8 DSI_CMD_BYTE write: [7:0] next payload byte of a long command
 //     0x0FC TX_STATUS   RO [0] DSI command queue busy
-//     0x100 DSI_DROPS   RO lines DSI could not send in time
-//     0x104 CSITX_DROPS RO lines CSI-2 TX could not send in time
+//     0x100 DSI_DROPS   RO lines DSI could not send in time (dropped, or a
+//                       burst that ran dry)
+//     0x104 CSITX_DROPS RO lines CSI-2 TX could not send in time (as DSI)
 //     0x108 CSITX_FRAMES RO frames sent by CSI-2 TX
 //   The DSI, CSI-2 TX and LVDS outputs carry the same timed video as HDMI;
 //   panels need RGB (CSC bypassed), CSI-2 YUV422 needs YCbCr (CSC on).
@@ -94,16 +98,21 @@
 //   interface has no ports or logic and its registers read as 0.
 //   Clocks - byte_clk (D-PHY), pix_clk (pipeline, registers, video out).
 //   Resets - byte_rst_n, pix_rst_n, synchronous active low; assert both.
-// Date: 2026-10-01
+// Date: 2026-10-21
 module video_pipeline #(
   parameter int NLANES     = 2,
   parameter int MAX_W      = 2048,               // longest camera / output line
   parameter int CSI_FIFO   = 2048,               // byte-clock to pixel-clock FIFO, words
   parameter int OUT_FIFO   = 2048,               // output pixel FIFO
   parameter bit SCALER     = 1,                  // include scaler_bilinear
+  /* verilator lint_off UNUSEDPARAM */            // used when the DSI / CSI-2 TX outputs are built
   parameter int DSI_LANES  = 2,                  // MIPI DSI output lanes (1, 2, 4)
   parameter int CSITX_LANES = 2                  // MIPI CSI-2 output lanes (1, 2, 4)
+  /* verilator lint_on UNUSEDPARAM */
 ) (
+  // byte_rst_n / pix_rst_n reset the logic synchronously; axis_async_bridge's reset synchronisers also
+  // take them asynchronously (asynchronous assertion, synchronous release)
+  /* verilator lint_off SYNCASYNCNET */
 `ifdef VP_CSI2_RX
   // MIPI CSI-2 camera input (D-PHY RX, PPI)
   input  logic                byte_clk,
@@ -113,6 +122,7 @@ module video_pipeline #(
 `endif
   input  logic                pix_clk,
   input  logic                pix_rst_n,
+  /* verilator lint_on SYNCASYNCNET */
   // AXI4-Lite slave (pix_clk)
   // s_axil: axil_if.slave (ip/shared/src/interfaces/axil_if.sv), ADDR_W = 15
   axil_if.slave s_axil,
@@ -203,7 +213,6 @@ module video_pipeline #(
   wire clk = pix_clk, rst_n = pix_rst_n;
 
   // ================================================================ registers
-  logic [14:0] r_awaddr [2], r_araddr [2];
   logic [29:0] sp_awaddr, sp_araddr;
   logic [1:0] sp_awvalid, sp_awready, sp_wvalid, sp_wready, sp_bvalid, sp_bready;
   logic [1:0] sp_arvalid, sp_arready, sp_rvalid, sp_rready;
@@ -216,7 +225,7 @@ module video_pipeline #(
   ) u_split (
     .clk,
     .rst_n,
-    .s_awaddr(s_axil.awaddr),
+    .s_awaddr(s_axil.awaddr[video_pipeline_map_pkg::ADDR_W-1:0]),
     .s_awvalid(s_axil.awvalid),
     .s_awready(s_axil.awready),
     .s_wdata(s_axil.wdata),
@@ -226,7 +235,7 @@ module video_pipeline #(
     .s_bresp(s_axil.bresp),
     .s_bvalid(s_axil.bvalid),
     .s_bready(s_axil.bready),
-    .s_araddr(s_axil.araddr),
+    .s_araddr(s_axil.araddr[video_pipeline_map_pkg::ADDR_W-1:0]),
     .s_arvalid(s_axil.arvalid),
     .s_arready(s_axil.arready),
     .s_rdata(s_axil.rdata),
@@ -260,11 +269,31 @@ module video_pipeline #(
   logic [31:0] gamma_data_d, dsi_cmd_d, dsi_cmd_byte_d;
   logic        gamma_addr_wr, gamma_data_wr, dsi_cmd_wr, dsi_cmd_byte_wr;
   assign regs[0 +: 32] = '0;
+  // read-only registers have no written value
+  assign regs[3*32 +: 32] = '0;
+  assign regs[29*32 +: 32] = '0;
+  assign regs[30*32 +: 32] = '0;
+  assign regs[31*32 +: 32] = '0;
+  assign regs[32*32 +: 32] = '0;
+  assign regs[33*32 +: 32] = '0;
+  assign regs[34*32 +: 32] = '0;
+  assign regs[47*32 +: 32] = '0;
+  assign regs[48*32 +: 32] = '0;
+  assign regs[49*32 +: 32] = '0;
+  assign regs[50*32 +: 32] = '0;
+  assign regs[51*32 +: 32] = '0;
+  assign regs[52*32 +: 32] = '0;
+  assign regs[53*32 +: 32] = '0;
+  assign regs[59*32 +: 32] = '0;
+  assign regs[60*32 +: 32] = '0;
+  assign regs[61*32 +: 32] = '0;
+  assign regs[62*32 +: 32] = '0;
+  assign regs[63*32 +: 32] = '0;
   assign regs[27*32 +: 32] = gamma_data_d;
   assign regs[57*32 +: 32] = dsi_cmd_d;
   assign regs[58*32 +: 32] = dsi_cmd_byte_d;
-  axil_if #(.ADDR_W(9)) u_regs_s_axil ();
-  assign u_regs_s_axil.awaddr = sp_awaddr[8:0];
+  axil_if #(.ADDR_W(14)) u_regs_s_axil ();       // the whole 16 KB window: DECERR above the map
+  assign u_regs_s_axil.awaddr = sp_awaddr[13:0];
   assign u_regs_s_axil.awvalid = sp_awvalid[0];
   assign sp_awready[0] = u_regs_s_axil.awready;
   assign u_regs_s_axil.wdata = sp_wdata[31:0];
@@ -274,7 +303,7 @@ module video_pipeline #(
   assign sp_bresp[1:0] = u_regs_s_axil.bresp;
   assign sp_bvalid[0] = u_regs_s_axil.bvalid;
   assign u_regs_s_axil.bready = sp_bready[0];
-  assign u_regs_s_axil.araddr = sp_araddr[8:0];
+  assign u_regs_s_axil.araddr = sp_araddr[13:0];
   assign u_regs_s_axil.arvalid = sp_arvalid[0];
   assign sp_arready[0] = u_regs_s_axil.arready;
   assign sp_rdata[31:0] = u_regs_s_axil.rdata;
@@ -349,6 +378,19 @@ module video_pipeline #(
   assign u_regs_r.sts_csitx_drops = rd[61*32 +: 32];
   assign u_regs_r.sts_csitx_frames = rd[62*32 +: 32];
   assign u_regs_r.sts_build_cfg = rd[63*32 +: 32];
+  // not used: the write pulses of the registers that act by value
+  wire unused_wr = &{1'b0, u_regs_r.cfg_avi_wr, u_regs_r.cfg_blc_b_wr, u_regs_r.cfg_blc_gb_wr, u_regs_r.cfg_blc_gr_wr,
+                     u_regs_r.cfg_blc_r_wr, u_regs_r.cfg_bypass_wr, u_regs_r.cfg_ccm_c00_wr, u_regs_r.cfg_ccm_c01_wr,
+                     u_regs_r.cfg_ccm_c02_wr, u_regs_r.cfg_ccm_c10_wr, u_regs_r.cfg_ccm_c11_wr,
+                     u_regs_r.cfg_ccm_c12_wr, u_regs_r.cfg_ccm_c20_wr, u_regs_r.cfg_ccm_c21_wr,
+                     u_regs_r.cfg_ccm_c22_wr, u_regs_r.cfg_ccm_off_b_wr, u_regs_r.cfg_ccm_off_g_wr,
+                     u_regs_r.cfg_ccm_off_r_wr, u_regs_r.cfg_csi_wr, u_regs_r.cfg_csitx_gap_wr, u_regs_r.cfg_ctrl_wr,
+                     u_regs_r.cfg_dpc_thr_wr, u_regs_r.cfg_dsi_gaps_wr, u_regs_r.cfg_frame_size_wr,
+                     u_regs_r.cfg_h_active_wr, u_regs_r.cfg_h_bp_wr, u_regs_r.cfg_h_fp_wr, u_regs_r.cfg_h_sync_wr,
+                     u_regs_r.cfg_lock_max_wr, u_regs_r.cfg_out_ctrl_wr, u_regs_r.cfg_start_level_wr,
+                     u_regs_r.cfg_stat_thr_wr, u_regs_r.cfg_sync_pol_wr, u_regs_r.cfg_v_active_wr,
+                     u_regs_r.cfg_v_bp_wr, u_regs_r.cfg_v_fp_wr, u_regs_r.cfg_v_sync_wr, u_regs_r.cfg_wb_b_wr,
+                     u_regs_r.cfg_wb_g_wr, u_regs_r.cfg_wb_r_wr, 1'b0};
   video_pipeline_regs u_regs (
     .clk(clk),
     .rst_n(rst_n),
@@ -406,13 +448,18 @@ module video_pipeline #(
     .m_axis(b)
   );
 
-  // Status events into the pixel domain
+  // Status events into the pixel domain. A pulse closer than the synchroniser's round trip to the one
+  // before is dropped (drop_o): the counters count events, e.g. CSI_OVERFLOW the overflow bursts the
+  // synchroniser passes, not every word lost. Not used: the synchronisers' status, csi2_rx's frame-end
+  // and line pulses.
+  logic [4:0] ps_busy, ps_drop;
+  wire unused_csi = &{1'b0, ps_busy, ps_drop, e_fe, e_line, 1'b0};
   pulse_sync u_ps_fs   (
     .src_clk(byte_clk),
     .src_rst_n(byte_rst_n),
     .pulse_i(e_fs),
-    .busy_o(),
-    .drop_o(),
+    .busy_o(ps_busy[0]),
+    .drop_o(ps_drop[0]),
     .dst_clk(clk),
     .dst_rst_n(rst_n),
     .pulse_o(p_fs)
@@ -421,8 +468,8 @@ module video_pipeline #(
     .src_clk(byte_clk),
     .src_rst_n(byte_rst_n),
     .pulse_i(e_corr),
-    .busy_o(),
-    .drop_o(),
+    .busy_o(ps_busy[1]),
+    .drop_o(ps_drop[1]),
     .dst_clk(clk),
     .dst_rst_n(rst_n),
     .pulse_o(p_corr)
@@ -431,8 +478,8 @@ module video_pipeline #(
     .src_clk(byte_clk),
     .src_rst_n(byte_rst_n),
     .pulse_i(e_err),
-    .busy_o(),
-    .drop_o(),
+    .busy_o(ps_busy[2]),
+    .drop_o(ps_drop[2]),
     .dst_clk(clk),
     .dst_rst_n(rst_n),
     .pulse_o(p_err)
@@ -441,8 +488,8 @@ module video_pipeline #(
     .src_clk(byte_clk),
     .src_rst_n(byte_rst_n),
     .pulse_i(e_crc),
-    .busy_o(),
-    .drop_o(),
+    .busy_o(ps_busy[3]),
+    .drop_o(ps_drop[3]),
     .dst_clk(clk),
     .dst_rst_n(rst_n),
     .pulse_o(p_crc)
@@ -451,8 +498,8 @@ module video_pipeline #(
     .src_clk(byte_clk),
     .src_rst_n(byte_rst_n),
     .pulse_i(e_ovf),
-    .busy_o(),
-    .drop_o(),
+    .busy_o(ps_busy[4]),
+    .drop_o(ps_drop[4]),
     .dst_clk(clk),
     .dst_rst_n(rst_n),
     .pulse_o(p_ovf)
@@ -765,7 +812,7 @@ module video_pipeline #(
       if (out_end) out_busy <= 1'b0;
       case ({push, pop})
         2'b10: begin
-          rq[rq_n] <= new_route;
+          rq[rq_n[1:0]] <= new_route;                   // rq_n < 4 when pushing
           rq_n <= rq_n + 1'b1;
         end
         2'b01: begin
@@ -774,7 +821,7 @@ module video_pipeline #(
         end
         2'b11: begin
           rq <= {1'b0, rq[3:1]};
-          rq[rq_n - 1'b1] <= new_route;
+          rq[2'(rq_n - 1'b1)] <= new_route;
         end
         default: ;
       endcase
@@ -833,10 +880,12 @@ module video_pipeline #(
     assign sc.tdata = '0;
     assign sc.tlast = 1'b0;
     assign sc.tuser = 1'b0;
-    // Answer the scaler window with SLVERR
-    logic aw_q, b_q, ar_q;
-    assign sp_awready[1] = !b_q;
-    assign sp_wready[1] = !b_q;
+    // Answer the scaler window with SLVERR (its address, data and strobes are not used); AW and W are
+    // taken in any order, the response follows both
+    wire unused_win = &{1'b0, sp_awaddr[28:15], sp_araddr[28:15], sp_wdata[63:32], sp_wstrb[7:4], 1'b0};
+    logic aw_q, w_q, b_q, ar_q;
+    assign sp_awready[1] = !aw_q && !b_q;
+    assign sp_wready[1] = !w_q && !b_q;
     assign sp_bvalid[1] = b_q;
     assign sp_bresp[3:2] = 2'b10;
     assign sp_arready[1] = !ar_q;
@@ -845,13 +894,21 @@ module video_pipeline #(
     assign sp_rdata[63:32] = '0;
     always_ff @(posedge clk) begin
       if (!rst_n) begin
+        aw_q <= 1'b0;
+        w_q <= 1'b0;
         b_q <= 1'b0;
         ar_q <= 1'b0;
-        aw_q <= 1'b0;
       end
       else begin
-        if (sp_awvalid[1] && sp_wvalid[1] && !b_q) b_q <= 1'b1;
-        else if (sp_bready[1]) b_q <= 1'b0;
+        if (b_q && sp_bready[1]) begin
+          b_q <= 1'b0;
+          aw_q <= 1'b0;
+          w_q <= 1'b0;
+        end else begin
+          if (sp_awvalid[1] && sp_awready[1]) aw_q <= 1'b1;
+          if (sp_wvalid[1] && sp_wready[1]) w_q <= 1'b1;
+          if (!b_q && (aw_q || sp_awvalid[1]) && (w_q || sp_wvalid[1])) b_q <= 1'b1;
+        end
         if (sp_arvalid[1] && !ar_q) ar_q <= 1'b1;
         else if (sp_rready[1]) ar_q <= 1'b0;
       end
@@ -990,6 +1047,9 @@ module video_pipeline #(
 `endif
 
   logic dsi_drop, dsi_busy, dsi_busy_p, dsi_uf, ctx_drop, ctx_uf;
+  // not reported: a DSI command over 64 payload bytes (cmd_err) or written into a full queue (cmd_ovf /
+  // pay_ovf) is dropped - software keeps commands short and waits for TX_STATUS[0] = 0 between commands
+  logic dsi_cmd_err, dsi_cmd_ovf, dsi_pay_ovf;
   logic [31:0] ctx_frames;
 `ifdef VP_MIPI_TX
   // Byte-clock settings are quasi-static (change them with the outputs off)
@@ -1002,6 +1062,8 @@ module video_pipeline #(
     cg_s1 <= regs[56*32 +: 32];
     cg_s2 <= cg_s1;
   end
+  // not used: the bits of OUT_CTRL / CSITX_GAP without a byte-clock function
+  wire unused_tx = &{1'b0, oc_s2[31:12], oc_s2[8], oc_s2[4:0], cg_s2[31:16], 1'b0};
 `endif
 `ifdef VP_DSI
   ppi_tx_if #(.NLANES(DSI_LANES)) u_dsi_ppi ();
@@ -1029,6 +1091,9 @@ module video_pipeline #(
     .line_gap_i(dg_s2[31:16]),
     .ppi(u_dsi_ppi),
     .cmd_busy_o(dsi_busy),
+    .cmd_err_o(dsi_cmd_err),
+    .cmd_ovf_o(dsi_cmd_ovf),
+    .pay_ovf_o(dsi_pay_ovf),
     .underflow_o(dsi_uf)
     );
   bit_sync u_dsi_busy (
@@ -1040,6 +1105,9 @@ module video_pipeline #(
 `else
   assign dsi_drop = 1'b0;
   assign dsi_busy_p = 1'b0;
+  assign dsi_busy = 1'b0;
+  assign dsi_uf = 1'b0;
+  assign {dsi_cmd_err, dsi_cmd_ovf, dsi_pay_ovf} = '0;
 `endif
 `ifdef VP_CSI2_TX
   ppi_tx_if #(.NLANES(CSITX_LANES)) u_csitx_ppi ();
@@ -1066,6 +1134,43 @@ module video_pipeline #(
 `else
   assign ctx_drop = 1'b0;
   assign ctx_frames = '0;
+  assign ctx_uf = 1'b0;
+`endif
+  // A byte engine that ran dry in a burst (underflow, tx_byte_clk) spoiled that line: counted with the
+  // line drops (DSI_DROPS / CSITX_DROPS)
+  logic dsi_uf_p, ctx_uf_p;
+  logic [1:0] uf_busy, uf_drop;                   // not used (an underflow is at most one per line)
+`ifdef VP_DSI
+  pulse_sync u_dsi_uf (
+    .src_clk(tx_byte_clk),
+    .src_rst_n(tx_byte_rst_n),
+    .pulse_i(dsi_uf),
+    .busy_o(uf_busy[0]),
+    .drop_o(uf_drop[0]),
+    .dst_clk(clk),
+    .dst_rst_n(rst_n),
+    .pulse_o(dsi_uf_p)
+  );
+`else
+  assign dsi_uf_p = 1'b0;
+  assign uf_busy[0] = 1'b0;
+  assign uf_drop[0] = 1'b0;
+`endif
+`ifdef VP_CSI2_TX
+  pulse_sync u_ctx_uf (
+    .src_clk(tx_byte_clk),
+    .src_rst_n(tx_byte_rst_n),
+    .pulse_i(ctx_uf),
+    .busy_o(uf_busy[1]),
+    .drop_o(uf_drop[1]),
+    .dst_clk(clk),
+    .dst_rst_n(rst_n),
+    .pulse_o(ctx_uf_p)
+  );
+`else
+  assign ctx_uf_p = 1'b0;
+  assign uf_busy[1] = 1'b0;
+  assign uf_drop[1] = 1'b0;
 `endif
   logic [31:0] n_dsi_drop, n_ctx_drop;
   always_ff @(posedge clk) begin
@@ -1074,8 +1179,8 @@ module video_pipeline #(
       n_ctx_drop <= '0;
     end
     else begin
-      n_dsi_drop <= n_dsi_drop + dsi_drop;
-      n_ctx_drop <= n_ctx_drop + ctx_drop;
+      n_dsi_drop <= n_dsi_drop + 32'(dsi_drop) + 32'(dsi_uf_p);
+      n_ctx_drop <= n_ctx_drop + 32'(ctx_drop) + 32'(ctx_uf_p);
     end
   end
 
@@ -1126,4 +1231,31 @@ module video_pipeline #(
     rd[62*32 +: 32] = ctx_frames;
     rd[63*32 +: 32] = {25'd0, BUILD_INSERT, SCALER, BUILD_CSI2_TX, BUILD_DSI, BUILD_LVDS, BUILD_HDMI, BUILD_CSI2_RX};
   end
+  // not used: register slots without a register (regs) and the values the register block reads itself
+  // (rd), the address bits above each window, the 40-bit sums' upper bits (STAT_SUM_* report the low 32),
+  // the video timing's unused outputs, the DSI command errors (see above), the synchronisers' status
+  wire unused_ok = &{1'b0, regs[0 +: 32], rd, sp_awaddr[29], sp_awaddr[14], sp_araddr[29], sp_araddr[14],
+                     st_r[39:32], st_g[39:32], st_b[39:32], uf_busy, uf_drop, dsi_cmd_err, dsi_cmd_ovf,
+                     dsi_pay_ovf, eol, waiting, vx, vy, 1'b0};
+  // not used in a build without these interfaces (configuration.sv)
+`ifndef VP_INSERT
+  wire unused_ins = &{1'b0, ir_r, 1'b0};
+`endif
+`ifndef VP_HDMI
+  wire unused_hdmi = &{1'b0, hdmi_mode, 1'b0};
+`endif
+`ifndef VP_DSI
+  wire unused_dsi = &{1'b0, dsi_cmd_wr, dsi_cmd_byte_wr, dsi_busy, dsi_uf, 1'b0};
+`endif
+`ifndef VP_CSI2_TX
+  wire unused_ctx = &{1'b0, ctx_uf, 1'b0};
+`endif
+`ifndef VP_LVDS
+`ifndef VP_MIPI_TX
+  wire unused_oc = &{1'b0, oc, 1'b0};
+`ifndef VP_HDMI
+  wire unused_vid = &{1'b0, v.data, 1'b0};               // no video output built
+`endif
+`endif
+`endif
 endmodule

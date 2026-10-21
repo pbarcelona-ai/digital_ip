@@ -6,8 +6,12 @@
 // fisheye/panoramic/perspective correction tests, each
 // bit-exact vs. an independent golden model with a genuine
 // measured image-quality improvement.
-//   The test tasks are in tests/vision_system_tests.sv (`included).
-// Date: September 26, 2026
+//   BYPASS (reset 1) is cleared after the ID check so the correction path
+//   is tested; the goldens use vision_system 2.0.0's edge rule. The exact
+//   comparison with the Python model is tb/python (vision_system_tb.py).
+//   The test tasks are in tests/vision_system_tests.sv (`included). Prints
+//   ALL SELF-CHECKS PASSED on success.
+// Date: 2026-10-21
 // ***************
 // =============================================================================
 // tb_vision_system.sv
@@ -50,6 +54,7 @@ module tb_vision_system;
   localparam int REG_CENTER_Y   = 8'h30;
   localparam int REG_SCALE      = 8'h34;
   localparam int REG_VERSION    = 8'h04;   // ID block VERSION (ASCII "d.dd")
+  localparam int REG_BYPASS     = 8'h38;   // reset 1 (pass-through); cleared for the correction tests
   localparam int REG_INTERP_MODE= 8'h3C;
   localparam int REG_CALIB_MODE = 8'h40;
   localparam int REG_FX         = 8'h44;
@@ -189,6 +194,7 @@ module tb_vision_system;
     axil_read(REG_VERSION, version_val);
     $display("core VERSION = \"%s\" (0x%08h)", version_val, version_val);
     if (version_val[23:16] != ".") $fatal(1, "VERSION 0x%08h is not ASCII \"d.dd\"", version_val);
+    axil_write(REG_BYPASS, 32'd0);                    // the correction path (BYPASS resets to 1)
 
     overall_pass = 0;
     overall_any_fail = 0;

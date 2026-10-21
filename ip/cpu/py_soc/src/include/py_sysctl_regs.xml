@@ -10,11 +10,11 @@
   <ipxact:memoryMaps>
     <ipxact:memoryMap>
       <ipxact:name>py_sysctl_regs</ipxact:name>
-      <ipxact:description>py_soc system control: reset cause, boot status, cycle counter, SoC ID, core logic reset, clock enables. ID "SCTL", date 32'h10122026.</ipxact:description>
+      <ipxact:description>py_soc system control: reset cause, boot status, cycle counter, SoC ID, core logic reset, clock enables, timer compare interrupt. ID "SCTL", date 32'h10122026.</ipxact:description>
       <ipxact:addressBlock>
         <ipxact:name>regs</ipxact:name>
         <ipxact:baseAddress>0x0</ipxact:baseAddress>
-        <ipxact:range>0x2C</ipxact:range>
+        <ipxact:range>0x38</ipxact:range>
         <ipxact:width>32</ipxact:width>
         <ipxact:usage>register</ipxact:usage>
         <ipxact:register>
@@ -186,6 +186,54 @@
             <ipxact:bitOffset>1</ipxact:bitOffset>
             <ipxact:bitWidth>1</ipxact:bitWidth>
             <ipxact:access>read-only</ipxact:access>
+          </ipxact:field>
+        </ipxact:register>
+        <ipxact:register>
+          <ipxact:name>TIMER_CMP</ipxact:name>
+          <ipxact:description>timer compare: STATUS.REACHED is set when CYCLES reaches this value (CYCLES - TIMER_CMP &lt; 2**31, wrap-safe); the CPU's timeouts and timed waits sleep on it</ipxact:description>
+          <ipxact:addressOffset>0x2C</ipxact:addressOffset>
+          <ipxact:size>32</ipxact:size>
+          <ipxact:field>
+            <ipxact:name>TIMER_CMP</ipxact:name>
+            <ipxact:bitOffset>0</ipxact:bitOffset>
+            <ipxact:resets>
+              <ipxact:reset>
+                <ipxact:value>0x0</ipxact:value>
+              </ipxact:reset>
+            </ipxact:resets>
+            <ipxact:bitWidth>32</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+          </ipxact:field>
+        </ipxact:register>
+        <ipxact:register>
+          <ipxact:name>TIMER_CTRL</ipxact:name>
+          <ipxact:description>timer interrupt</ipxact:description>
+          <ipxact:addressOffset>0x30</ipxact:addressOffset>
+          <ipxact:size>32</ipxact:size>
+          <ipxact:field>
+            <ipxact:name>IRQ_EN</ipxact:name>
+            <ipxact:description>irq_o (timer_irq_o, intc source 16) while TIMER_STATUS.REACHED</ipxact:description>
+            <ipxact:bitOffset>0</ipxact:bitOffset>
+            <ipxact:resets>
+              <ipxact:reset>
+                <ipxact:value>0x0</ipxact:value>
+              </ipxact:reset>
+            </ipxact:resets>
+            <ipxact:bitWidth>1</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+          </ipxact:field>
+        </ipxact:register>
+        <ipxact:register>
+          <ipxact:name>TIMER_STATUS</ipxact:name>
+          <ipxact:description>timer status (the logic's flag); write 1 to clear</ipxact:description>
+          <ipxact:addressOffset>0x34</ipxact:addressOffset>
+          <ipxact:size>32</ipxact:size>
+          <ipxact:field>
+            <ipxact:name>REACHED</ipxact:name>
+            <ipxact:description>CYCLES reached TIMER_CMP: one-shot, armed by every TIMER_CMP write (which clears it), set in the clock CYCLES equals TIMER_CMP (in the clock after the write when it is already reached: CYCLES - TIMER_CMP &lt; 2**31); write 1 to clear (a set in the same clock wins)</ipxact:description>
+            <ipxact:bitOffset>0</ipxact:bitOffset>
+            <ipxact:bitWidth>1</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
           </ipxact:field>
         </ipxact:register>
       </ipxact:addressBlock>

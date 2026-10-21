@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1792589792" />
+    <testcase name="test_isp_exact" classname="video_pipeline_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/ip/video/video_pipeline/tb/python/video_pipeline_tb.py" lineno="127" time="3.462491035461426" sim_time_ns="271860.0" ratio_time="78515.72674577938" />
+  </testsuite>
+</testsuites>

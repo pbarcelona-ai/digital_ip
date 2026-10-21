@@ -16,7 +16,7 @@
 //   2 clocks from both AW and W accepted to bvalid; read: 2 clocks (+ user
 //   latency). One transaction outstanding per direction. Errors -
 //   SLVERR/DECERR as above; ADDR_W < 2 rejected at elaboration.
-// Date: 2026-10-16
+// Date: 2026-10-20
 module axi4_lite_slave #(
   parameter int ADDR_W     = 8,
   parameter int READ_WAIT  = 0,            // 0: rd_data_i valid the cycle after rd_en_o; 1: wait for rd_valid_i
@@ -30,7 +30,9 @@ module axi4_lite_slave #(
   // bus: regbus_if.host (ip/shared/src/interfaces/regbus_if.sv), ADDR_W = ADDR_W {wr_en_o=wr wr_addr_o=waddr wr_data_o=wdata wr_strb_o=wstrb wr_err_i=wr_err rd_en_o=rd rd_addr_o=raddr rd_data_i=rdata rd_valid_i=rd_valid rd_err_i=rd_err}
   regbus_if.host bus
 );
+  /* verilator lint_off UNUSEDPARAM */             // version identification (library convention), not logic
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
+  /* verilator lint_on UNUSEDPARAM */
   if (ADDR_W < 2) begin : g_bad $error("axi4_lite_slave: ADDR_W must be >= 2"); end
   // ---------------- write path ----------------
   logic aw_got, w_got;
@@ -39,7 +41,7 @@ module axi4_lite_slave #(
   logic [3:0] ws_q;
   typedef enum logic [2:0] {W_IDLE, W_EXEC, W_WAIT, W_RESP} wst_t;
   wst_t wst;
-  wire wr_bad = (MAP_WORDS != 0) && (aw_q[ADDR_W-1:2] >= MAP_WORDS);
+  wire wr_bad = (MAP_WORDS != 0) && (int'(aw_q[ADDR_W-1:2]) >= MAP_WORDS);
   // one write outstanding: no new address/data is accepted while the previous response is still pending
   assign s_axil.awready = (wst == W_IDLE) & ~aw_got & ~s_axil.bvalid;
   assign s_axil.wready  = (wst == W_IDLE) & ~w_got  & ~s_axil.bvalid;
@@ -94,7 +96,7 @@ module axi4_lite_slave #(
   typedef enum logic [2:0] {R_IDLE, R_REQ, R_WAIT, R_DATA, R_RESP} rst_t;
   rst_t rst;
   logic [ADDR_W-1:0] ar_q;
-  wire rd_bad = (MAP_WORDS != 0) && (ar_q[ADDR_W-1:2] >= MAP_WORDS);
+  wire rd_bad = (MAP_WORDS != 0) && (int'(ar_q[ADDR_W-1:2]) >= MAP_WORDS);
   assign s_axil.arready = (rst == R_IDLE);
   assign bus.raddr = ar_q;
   always_ff @(posedge aclk) begin

@@ -1,0 +1,7 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1792533060" />
+    <testcase name="test_core_clock_exact" classname="spi_master_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/ip/peripherals/spi_master/tb/python/spi_master_tb.py" lineno="53" time="10.949201822280884" sim_time_ns="800026.0" ratio_time="73067.06123290205" />
+    <testcase name="test_register_map" classname="spi_master_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/ip/peripherals/spi_master/tb/python/spi_master_tb.py" lineno="124" time="0.08614611625671387" sim_time_ns="29515.0" ratio_time="342615.5615889384" />
+  </testsuite>
+</testsuites>

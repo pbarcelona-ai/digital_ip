@@ -16,13 +16,21 @@
 //   0x24 [NCLK-1:0] enables of the clock generator outputs (clk_en_o, py_soc
 //   clk_o), reset value CLK_EN_RST; CLK_STATUS 0x28 [0] clock generator
 //   outputs locked (clk_locked_i; 1 without a clock generator), [1] clock
-//   generator present).
+//   generator present); TIMER_CMP 0x2C, TIMER_CTRL 0x30 [0] IRQ_EN,
+//   TIMER_STATUS 0x34 [0] REACHED (write 1 to clear): a one-shot compare armed
+//   by every TIMER_CMP write (which clears REACHED), REACHED set in the clock
+//   CYCLES equals TIMER_CMP, or in the clock after the write when TIMER_CMP is
+//   already reached (CYCLES - TIMER_CMP < 2**31, wrap-safe); a set wins over a
+//   clear in the same clock; timer_irq_o = REACHED & IRQ_EN. Golden model:
+//   ip/cpu/py_soc/model/py_sysctl_model.py (tb/python).
 //   Clock - aclk only. Reset - aresetn (system reset) for the counter,
 //   CORE_RESET and CLK_EN, por_n (external reset) for RESET_CAUSE.
-// Date: 2026-10-12
+// Date: 2026-10-20
 module py_sysctl #(
   parameter int              NCLK       = 1,        // clock generator outputs (1..32)
+  /* verilator lint_off UNUSEDPARAM */             // the reset value is the register map's (py_sysctl_top)
   parameter logic [NCLK-1:0] CLK_EN_RST = '1,       // CLK_EN reset value
+  /* verilator lint_on UNUSEDPARAM */
   parameter bit              CLKGEN     = 1'b0      // clock generator present (CLK_STATUS[1])
 ) (
   input  logic            aclk,
@@ -35,6 +43,7 @@ module py_sysctl #(
   output logic            core_rst_n_o,     // CORE_RESET[0]: reset of the logic outside py_soc (0 = in reset)
   output logic [NCLK-1:0] clk_en_o,         // CLK_EN
   input  logic            clk_locked_i,     // clock generator outputs locked
+  output logic            timer_irq_o,      // TIMER_STATUS.REACHED and TIMER_CTRL.IRQ_EN
   // register ports
   // regs: py_sysctl_regs_if.core (src/include/py_sysctl_regs_if.sv)
   py_sysctl_regs_if.core regs
@@ -54,6 +63,27 @@ module py_sysctl #(
     if (!aresetn) cycles <= '0;
     else          cycles <= cycles + 1'b1;
   end
+
+  // Timer compare: one-shot, armed by a TIMER_CMP write; REACHED in the clock CYCLES == TIMER_CMP (the
+  // next counter value is compared, so the flag is visible in that clock)
+  logic        armed, reached;
+  wire signed [31:0] next_diff = $signed(cycles + 32'd1 - regs.cfg_timer_cmp);   // next CYCLES - TIMER_CMP
+  wire         hit = (armed | regs.cfg_timer_cmp_wr) & (next_diff >= 0);       // < 2**31: reached
+  always_ff @(posedge aclk) begin
+    if (!aresetn) begin
+      armed <= 1'b0;
+      reached <= 1'b0;
+    end else begin
+      if (regs.cfg_timer_cmp_wr) armed <= 1'b1;
+      if (hit) armed <= 1'b0;
+      if (regs.cfg_timer_cmp_wr || (regs.cfg_timer_status_wr && regs.cfg_timer_status)) reached <= 1'b0;
+      if (hit) reached <= 1'b1;                       // a set wins over a clear in the same clock
+    end
+  end
+  assign regs.sts_timer_status = reached;
+  assign timer_irq_o = reached & regs.cfg_timer_ctrl;
+
+  wire unused_wr = &{1'b0, regs.cfg_core_reset_wr, regs.cfg_clk_en_wr, regs.cfg_timer_ctrl_wr};  // by value
 
   assign core_rst_n_o = regs.cfg_core_reset;
   assign clk_en_o = regs.cfg_clk_en;

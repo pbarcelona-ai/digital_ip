@@ -9,7 +9,7 @@
 //   ip/scripts/regmap_gen.py from uart_regs.json and the ports of uart:
 //   regenerate after changing either. Clock - aclk. Reset - synchronous
 //   active low aresetn.
-// Date: 2026-10-16
+// Date: 2026-10-20
 module uart_top #(
   parameter int CLK_HZ = 100_000_000,
   parameter int BAUD = 115_200,
@@ -47,7 +47,7 @@ module uart_top #(
     .aresetn,
     .s_axis,
     .m_axis,
-    .uart,
+    .pins(uart),
     .regs(u_regs_if)
   );
 endmodule

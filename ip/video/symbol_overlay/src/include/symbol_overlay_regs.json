@@ -2,31 +2,319 @@
   "name": "symbol_overlay_regs",
   "ip": "symbol_overlay",
   "id": "SOVL",
-  "version": "1.10",
+  "version": "2.00",
   "desc": "Symbols (boxes, circles, crosshairs) and texts drawn over a video stream; every change applies at the next frame start after COMMIT.",
   "addr_width": 10,
-  "params": [{"name": "NOBJ", "default": 4, "desc": "objects (1..12)"},
-             {"name": "NTXT", "default": 4, "desc": "texts (0..8)"}],
+  "params": [
+    {
+      "name": "NOBJ",
+      "default": 4,
+      "desc": "objects (1..32: 0-15 in the first bank, 16-31 in the second)"
+    },
+    {
+      "name": "NTXT",
+      "default": 4,
+      "desc": "texts (0..4)"
+    }
+  ],
   "registers": [
-    {"name": "CTRL", "offset": "0x18", "access": "RW", "width": 1, "desc": "[0] enable (taken at a frame start)"},
-    {"name": "COMMIT", "offset": "0x1C", "access": "CMD", "width": 1, "desc": "write 1: the object and text registers apply at the next frame start; reads [0] commit pending"},
-    {"name": "STATUS", "offset": "0x20", "access": "RO", "desc": "state",
-     "fields": [{"name": "PENDING", "bit": 0, "desc": "commit pending"}, {"name": "FRAMES", "bit": "31:16", "desc": "frames (low 16 bits)"}]},
-    {"name": "FRAME_NUM", "offset": "0x24", "access": "CMD", "width": 20, "desc": "write: the number (5 BCD digits) the next frame shows, then one more per frame; read: the last frame's"},
-    {"name": "OBJ_CTRL", "offset": "0x50", "access": "RW", "count": "NOBJ", "max_count": 12, "stride": 16, "desc": "object i",
-     "fields": [{"name": "EN", "bit": 0, "desc": "enable"}, {"name": "SHAPE", "bit": "2:1", "desc": "0 rectangle outline, 1 filled, 2 crosshair, 3 circle (radius = half the larger side)"},
-                {"name": "DASHED", "bit": 3, "desc": "dashed"}, {"name": "BLEND", "bit": 4, "desc": "50 % blend"},
-                {"name": "OVAL", "bit": 5, "desc": "shape 3: an oval (ellipse) inside the box instead of the circle"},
-                {"name": "LINE_W", "bit": "11:8", "desc": "line width (0 = 1)"}, {"name": "DASH_LOG2", "bit": "14:12", "desc": "dash length log2"}]},
-    {"name": "OBJ_X", "offset": "0x54", "access": "RW", "count": "NOBJ", "max_count": 12, "stride": 16, "desc": "object i columns: [15:0] x0 [31:16] x1"},
-    {"name": "OBJ_Y", "offset": "0x58", "access": "RW", "count": "NOBJ", "max_count": 12, "stride": 16, "desc": "object i lines: [15:0] y0 [31:16] y1"},
-    {"name": "OBJ_COLOR", "offset": "0x5C", "access": "RW", "count": "NOBJ", "max_count": 12, "stride": 16, "width": 24, "desc": "object i colour, pixel as on the stream ([7:0] R [15:8] G [23:16] B)"},
-    {"name": "TXT_CTRL", "offset": "0x110", "access": "RW", "count": "(NTXT < 1 ? 1 : NTXT)", "max_count": 8, "stride": 16, "desc": "text j",
-     "fields": [{"name": "EN", "bit": 0, "desc": "enable"}, {"name": "SCALE", "bit": "2:1", "desc": "scale log2 (0-2: 1x, 2x, 4x)"},
-                {"name": "BACKDROP", "bit": 3, "desc": "darken the video under the text"}, {"name": "FNUM", "bit": 4, "desc": "the frame number after the characters"},
-                {"name": "LENGTH", "bit": "12:8", "desc": "characters (0-16)"}]},
-    {"name": "TXT_POS", "offset": "0x114", "access": "RW", "count": "(NTXT < 1 ? 1 : NTXT)", "max_count": 8, "stride": 16, "desc": "text j top-left corner: [15:0] x [31:16] y"},
-    {"name": "TXT_COLOR", "offset": "0x118", "access": "RW", "count": "(NTXT < 1 ? 1 : NTXT)", "max_count": 8, "stride": 16, "width": 24, "desc": "text j colour, pixel as on the stream"},
-    {"name": "TXT_CHARS", "offset": "0x210", "access": "RW", "count": "4 * (NTXT < 1 ? 1 : NTXT)", "max_count": 32, "desc": "characters: word 4 j + q of text j holds characters 4 q .. 4 q + 3 (ASCII, character 4 q in [7:0])"}
+    {
+      "name": "CTRL",
+      "offset": "0x18",
+      "access": "RW",
+      "width": 4,
+      "desc": "[0] enable (taken at every frame start), [2:1] LABEL_SCALE (taken with a COMMIT, as FONT): object labels drawn at 1 << LABEL_SCALE times the 3 x 5 font's cell (0 = 1x), [3] FONT: labels and texts at 2x, 4x, 8x in the smooth font (DejaVu Sans Mono Bold, 4-bit coverage blended with the video; src/include/overlay_font_aa_s<S>.mem from scripts/make_aa_font.py) instead of the enlarged 3 x 5 font (1x is always the 3 x 5 font)"
+    },
+    {
+      "name": "COMMIT",
+      "offset": "0x1C",
+      "access": "CMD",
+      "width": 1,
+      "desc": "write 1: the object and text registers apply at the next frame start; reads [0] commit pending"
+    },
+    {
+      "name": "STATUS",
+      "offset": "0x20",
+      "access": "RO",
+      "desc": "state",
+      "fields": [
+        {
+          "name": "PENDING",
+          "bit": 0,
+          "desc": "commit pending"
+        },
+        {
+          "name": "FRAMES",
+          "bit": "31:16",
+          "desc": "frames (low 16 bits)"
+        }
+      ]
+    },
+    {
+      "name": "FRAME_NUM",
+      "offset": "0x24",
+      "access": "CMD",
+      "width": 20,
+      "desc": "write: the number (5 BCD digits) the next frame shows, then one more per frame; read: the last frame's"
+    },
+    {
+      "name": "OBJ_CTRL",
+      "offset": "0x50",
+      "access": "RW",
+      "count": "(NOBJ > 16 ? 16 : NOBJ)",
+      "max_count": 16,
+      "stride": 16,
+      "desc": "object i: symbol and style",
+      "fields": [
+        {
+          "name": "EN",
+          "bit": 0,
+          "desc": "enable"
+        },
+        {
+          "name": "SHAPE",
+          "bit": "2:1",
+          "desc": "0 rectangle outline, 1 filled, 2 crosshair, 3 circle (round the box centre, diameter the larger side)"
+        },
+        {
+          "name": "DASHED",
+          "bit": 3,
+          "desc": "dashed"
+        },
+        {
+          "name": "BLEND",
+          "bit": 4,
+          "desc": "50 % blend with the video"
+        },
+        {
+          "name": "OVAL",
+          "bit": 5,
+          "desc": "shape 3: an oval (ellipse) inside the box instead of the circle"
+        },
+        {
+          "name": "TICKS",
+          "bit": "6",
+          "desc": "rectangle: a 2-pixel tick at the middle of each side, pointing to the centre"
+        },
+        {
+          "name": "TRIANGLE",
+          "bit": "7",
+          "desc": "an upward triangle inscribed in the box (any SHAPE): dashed edges with DASHED, the vertices solid"
+        },
+        {
+          "name": "LINE_W",
+          "bit": "11:8",
+          "desc": "line width (0 = 1)"
+        },
+        {
+          "name": "DASH_LOG2",
+          "bit": "14:12",
+          "desc": "dash length log2"
+        },
+        {
+          "name": "CORNERS",
+          "bit": "15",
+          "desc": "dashed rectangle: the corners (a quarter of the shorter side, at least 3 pixels) solid"
+        }
+      ]
+    },
+    {
+      "name": "OBJ_X",
+      "offset": "0x54",
+      "access": "RW",
+      "count": "(NOBJ > 16 ? 16 : NOBJ)",
+      "max_count": 16,
+      "stride": 16,
+      "desc": "object i columns: [15:0] x0 [31:16] x1"
+    },
+    {
+      "name": "OBJ_Y",
+      "offset": "0x58",
+      "access": "RW",
+      "count": "(NOBJ > 16 ? 16 : NOBJ)",
+      "max_count": 16,
+      "stride": 16,
+      "desc": "object i lines: [15:0] y0 [31:16] y1"
+    },
+    {
+      "name": "OBJ_COLOR",
+      "offset": "0x5C",
+      "access": "RW",
+      "count": "(NOBJ > 16 ? 16 : NOBJ)",
+      "max_count": 16,
+      "stride": 16,
+      "width": 24,
+      "desc": "object i colour, pixel as on the stream ([7:0] R [15:8] G [23:16] B)"
+    },
+    {
+      "name": "TXT_CTRL",
+      "offset": "0x150",
+      "access": "RW",
+      "count": "(NTXT < 1 ? 1 : NTXT)",
+      "max_count": 4,
+      "stride": 16,
+      "desc": "text j",
+      "fields": [
+        {
+          "name": "EN",
+          "bit": 0,
+          "desc": "enable"
+        },
+        {
+          "name": "SCALE",
+          "bit": "2:1",
+          "desc": "scale log2 (0-3: 1x, 2x, 4x, 8x)"
+        },
+        {
+          "name": "BACKDROP",
+          "bit": 3,
+          "desc": "darken the video under the text"
+        },
+        {
+          "name": "FNUM",
+          "bit": 4,
+          "desc": "the frame number after the characters"
+        },
+        {
+          "name": "LENGTH",
+          "bit": "12:8",
+          "desc": "characters (0-16)"
+        }
+      ]
+    },
+    {
+      "name": "TXT_POS",
+      "offset": "0x154",
+      "access": "RW",
+      "count": "(NTXT < 1 ? 1 : NTXT)",
+      "max_count": 4,
+      "stride": 16,
+      "desc": "text j top-left corner: [15:0] x [31:16] y"
+    },
+    {
+      "name": "TXT_COLOR",
+      "offset": "0x158",
+      "access": "RW",
+      "count": "(NTXT < 1 ? 1 : NTXT)",
+      "max_count": 4,
+      "stride": 16,
+      "width": 24,
+      "desc": "text j colour, pixel as on the stream"
+    },
+    {
+      "name": "TXT_CHARS",
+      "offset": "0x210",
+      "access": "RW",
+      "count": "4 * (NTXT < 1 ? 1 : NTXT)",
+      "max_count": 16,
+      "desc": "characters: word 4 j + q of text j holds characters 4 q .. 4 q + 3 (ASCII, character 4 q in [7:0])"
+    },
+    {
+      "name": "OBJ_LABEL",
+      "offset": "0x260",
+      "access": "RW",
+      "count": "(NOBJ > 16 ? 16 : NOBJ)",
+      "max_count": 16,
+      "stride": 4,
+      "desc": "object i label: up to 4 ASCII characters (character 0 in [7:0], 0 ends it), drawn at 1 << CTRL.LABEL_SCALE times the font, centred below the symbol (above it when it would cross the bottom of the frame) on a darkened backdrop"
+    },
+    {
+      "name": "OBJ2_CTRL",
+      "offset": "0x2A0",
+      "access": "RW",
+      "count": "(NOBJ > 16 ? NOBJ - 16 : 1)",
+      "max_count": 16,
+      "stride": 16,
+      "desc": "second bank: object 16 + i, as OBJ_CTRL (NOBJ above 16)",
+      "fields": [
+        {
+          "name": "EN",
+          "bit": 0,
+          "desc": "enable"
+        },
+        {
+          "name": "SHAPE",
+          "bit": "2:1",
+          "desc": "0 rectangle outline, 1 filled, 2 crosshair, 3 circle (round the box centre, diameter the larger side)"
+        },
+        {
+          "name": "DASHED",
+          "bit": 3,
+          "desc": "dashed"
+        },
+        {
+          "name": "BLEND",
+          "bit": 4,
+          "desc": "50 % blend with the video"
+        },
+        {
+          "name": "OVAL",
+          "bit": 5,
+          "desc": "shape 3: an oval (ellipse) inside the box instead of the circle"
+        },
+        {
+          "name": "TICKS",
+          "bit": "6",
+          "desc": "rectangle: a 2-pixel tick at the middle of each side, pointing to the centre"
+        },
+        {
+          "name": "TRIANGLE",
+          "bit": "7",
+          "desc": "an upward triangle inscribed in the box (any SHAPE): dashed edges with DASHED, the vertices solid"
+        },
+        {
+          "name": "LINE_W",
+          "bit": "11:8",
+          "desc": "line width (0 = 1)"
+        },
+        {
+          "name": "DASH_LOG2",
+          "bit": "14:12",
+          "desc": "dash length log2"
+        },
+        {
+          "name": "CORNERS",
+          "bit": "15",
+          "desc": "dashed rectangle: the corners (a quarter of the shorter side, at least 3 pixels) solid"
+        }
+      ]
+    },
+    {
+      "name": "OBJ2_X",
+      "offset": "0x2A4",
+      "access": "RW",
+      "count": "(NOBJ > 16 ? NOBJ - 16 : 1)",
+      "max_count": 16,
+      "stride": 16,
+      "desc": "second bank: object 16 + i, as OBJ_X (NOBJ above 16)"
+    },
+    {
+      "name": "OBJ2_Y",
+      "offset": "0x2A8",
+      "access": "RW",
+      "count": "(NOBJ > 16 ? NOBJ - 16 : 1)",
+      "max_count": 16,
+      "stride": 16,
+      "desc": "second bank: object 16 + i, as OBJ_Y (NOBJ above 16)"
+    },
+    {
+      "name": "OBJ2_COLOR",
+      "offset": "0x2AC",
+      "access": "RW",
+      "count": "(NOBJ > 16 ? NOBJ - 16 : 1)",
+      "max_count": 16,
+      "stride": 16,
+      "width": 24,
+      "desc": "second bank: object 16 + i, as OBJ_COLOR (NOBJ above 16)"
+    },
+    {
+      "name": "OBJ2_LABEL",
+      "offset": "0x3A0",
+      "access": "RW",
+      "count": "(NOBJ > 16 ? NOBJ - 16 : 1)",
+      "max_count": 16,
+      "stride": 4,
+      "desc": "second bank: label of object 16 + i, as OBJ_LABEL (NOBJ above 16)"
+    }
   ]
 }

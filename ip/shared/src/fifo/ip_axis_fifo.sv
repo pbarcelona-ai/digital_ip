@@ -10,7 +10,7 @@
 //   low, empty. Latency - 2 clocks from tvalid to output (registered
 //   read). Timing - registered outputs. Errors - a write while full is
 //   refused by tready=0; illegal parameters stop elaboration.
-// Date: 2026-09-29
+// Date: 2026-10-20
 module ip_axis_fifo #(
   parameter int DATA_W = 8,     // tdata width
   parameter int DEPTH  = 512    // memory depth, must be a power of two >= 2
@@ -27,7 +27,9 @@ module ip_axis_fifo #(
   output logic [$clog2(DEPTH)+1:0] level_o
 );
   assign m.tkeep = '1;      // not used by this block
+  /* verilator lint_off UNUSEDPARAM */             // version identification (library convention), not logic
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
+  /* verilator lint_on UNUSEDPARAM */
   if (DEPTH < 2 || (DEPTH & (DEPTH - 1)) != 0) begin : g_chk_d $error("%m: DEPTH must be a power of two >= 2"); end
   if (DATA_W < 1) begin : g_chk_w $error("%m: DATA_W must be >= 1"); end
 

@@ -1,6 +1,6 @@
 # symbol_overlay
 
-Symbol overlay for an AXI4-Stream video (24-bit pixels, tuser = start of frame, tlast = end of line). Version: the VERSION register. Draws up to NOBJ symbols over the image as it streams through: no frame buffer, one clock of latency, full back-pressure (a register stage). Each object is a box (x0..x1, y0..y1, inclusive) drawn as - shape 0: rectangle outline, LINE_W pixels wide, inside the box; - shape 1: filled rectangle; - shape 2: crosshair, a horizontal and a vertical line LINE_W wide through the centre of the box, as long as the box; - shape 3: circle round the centre of the box (radius half the larger side), or with OVAL (CTRL[5]) an oval (ellipse) inside the box, LINE_W wide inside it; solid or dashed (DASH: 2^DASH_LOG2 pixels on, as many off, counted from x0 along horizontal lines and from y0 along vertical ones), in COLOR or blended 50 % with the video. Object 0 is on top. NTXT text objects draw up to 16 characters each (3 x 5 pixel font in 4 x 6 cells, overlay_font_pkg; lowercase as capitals) at x, y, scaled 1x, 2x or 4x, in COLOR, optionally on a backdrop (the video under the text cells darkened to half) for legibility; texts are on top of the objects, text 0 on top. The CPU writes the object and text registers in any order, then COMMIT: they take effect together at the next frame start (no torn symbol or text); STATUS[0] stays set until then. CTRL.ENABLE is also taken at a frame start; with it clear the video passes unchanged. Registers on the cfg_* / sts_* ports; symbol_overlay_top.sv is the block with its AXI4-Lite register map (src/include/symbol_overlay_regs.sv, AXI4-Lite slave, ADDR_W = 10): ID "SOVL" / VERSION / DATE at 0x00-0x08, CTRL 0x18, COMMIT 0x1C, STATUS 0x20, FRAME_NUM 0x24, object i OBJ_CTRL / OBJ_X / OBJ_Y / OBJ_COLOR at 0x50 / 0x54 / 0x58 / 0x5C + 16 i, text j TXT_CTRL / TXT_POS / TXT_COLOR at 0x110 / 0x114 / 0x118 + 16 j, TXT_CHARS at 0x210 + 16 j (4 words). Clock - clk (pixel clock). Reset - synchronous active low rst_n.
+Symbol overlay for an AXI4-Stream video (24-bit pixels, tuser = start of frame, tlast = end of line), version 2.0. As the video streams through (no frame buffer) it draws up to NOBJ objects, each a symbol (rectangle outline with dashes, solid corners or ticks, filled box, crosshair, circle / oval as an exact integer ellipse ring, triangle) and a label of up to 4 characters, and NTXT texts (up to 16 characters, optionally followed by the 5-digit frame number), in the 3 x 5 font at 1x-8x or the smooth font (4-bit coverage ROMs in FONT_DIR) at 2x-8x. Layers: the lowest-index symbol, then the lowest-index label (on a darkened backdrop), then the lowest-index text. Register changes apply together at the next frame start after COMMIT. The stream is held while a committed set and each row's geometry are prepared (row engine: exact ellipse limits by division and integer square root); the output pixels do not depend on the timing. The golden model [`model/symbol_overlay_model.py`](model/symbol_overlay_model.py) defines every pixel; `tb/python` compares the RTL with it frame for frame, bit exact.
 
 symbol_overlay is an IP of the FPGA Cores 4 U digital IP library.
 
@@ -28,19 +28,11 @@ Targets: test (or sim), list-tests, cov, wave, yosys (or synth), docs, diagrams,
 
 | Testbench | Test | Description |
 |-----------|------|-------------|
-| `symbol_overlay_tb` | `test_registers` | reset CTRL / COMMIT / STATUS, object registers read back |
-| `symbol_overlay_tb` | `test_passthrough` | CTRL.ENABLE = 0: the output equals the input, one clock of latency, STATUS counts the frames |
-| `symbol_overlay_tb` | `test_shapes` | Outline, filled, crosshair and circle, solid and dashed (dash lengths 1 to 8), widths 1 to 4, colour and 50 % blend, each against the model |
-| `symbol_overlay_tb` | `test_priority` | Four overlapping objects: object 0 on top |
-| `symbol_overlay_tb` | `test_commit` | Written objects do not apply until COMMIT; COMMIT applies at the next frame start (STATUS[0] pending meanwhile); a COMMIT in the middle of a frame does not change that frame; CTRL.ENABLE is taken at the frame start |
-| `symbol_overlay_tb` | `test_edges` | Boxes reaching beyond the right / bottom edge, a box with x0 > x1 (nothing drawn), the frame corners |
-| `symbol_overlay_tb` | `test_random` | 20 frames of random objects with random input gaps and output back-pressure |
-| `symbol_overlay_tb` | `test_text` | Every scale (1x, 2x, 4x) with and without backdrop, lengths 0 and 16, lowercase (drawn as capitals), every printable character, text over an object, text clipped at the right and bottom edges, the registers read back |
-| `symbol_overlay_tb` | `test_text_commit` | Text written without COMMIT does not change the frame; a COMMIT in the middle of a frame applies from the next one |
-| `symbol_overlay_tb` | `test_text_random` | 12 frames of random texts over random objects with gaps and back-pressure |
-| `symbol_overlay_tb` | `test_frame_number` | FRAME_NUM sets the number the next frame shows; texts with CTRL[4] show it after their characters, one more each frame (carries 9 -> 10, 99 -> 100, 99999 -> 0); a FRAME_NUM write in the middle of a frame applies from the next one |
 | `symbol_overlay_tb` | `test_id_block` | ID "SOVL", VERSION ("d.dd") and DATE (BCD mm/dd/yyyy) at the base address, read only (SLVERR); the rest of the map from 0x10 |
-| `symbol_overlay_tb` | `test_circle` | Shape 3 circles, solid and dashed: square, wide and tall boxes (radius = half the larger side), a line wider than the radius (filled disc), circles cut by the frame edges, a one-pixel box; the same boxes as ovals (CTRL[5]: ellipse inside the box) |
+| `symbol_overlay_tb` | `test_registers` | Reset CTRL / STATUS / FRAME_NUM; object, label and text registers read back |
+| `symbol_overlay_tb` | `test_passthrough` | CTRL.ENABLE = 0: the output equals the input with gaps and back-pressure; STATUS counts the frames |
+| `symbol_overlay_tb` | `test_commit` | A filled box written without COMMIT does not apply; COMMIT applies at the next frame start (STATUS[0] pending meanwhile); a COMMIT in the middle of a frame applies from the next one; CTRL.ENABLE is taken at every frame start |
+| `symbol_overlay_tb` | `test_frame_number` | FRAME_NUM reads the current frame's number: one more each frame (carries), a write sets the next frame's |
 
 ## Registers
 

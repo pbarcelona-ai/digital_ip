@@ -29,6 +29,9 @@
 //                         feature, 3 the motion feature
 //                       [14] TERM_B: term B on: the edge feature, in runs of
 //                         RUN_B (its own blob slots)
+//                       [15] SKIN_LUT: colour mode: the chroma test is the
+//                         SKIN_LUT table instead of CB_RANGE / CR_RANGE /
+//                         SAT_MIN (Y_RANGE still applies)
 //     0x01C FRAME_SIZE  RW   frame size, reset 0x0
 //                       [15:0] WIDTH: width
 //                       [31:16] HEIGHT: height
@@ -99,19 +102,23 @@
 //                       [15:0] Y_MIN: min
 //                       [31:16] Y_MAX: max
 //     0x140 + 4 i BLOB_N [8]  RO   blob i pixels (0: no blob)
+//     0x160 + 4 i SKIN_LUT [32] RW   learned skin table (python-
+//                       prototype/train_skin.py): word i = (Cr - 112) >> 1,
+//                       bit j = (Cb - 96) >> 1 (Cb 96..159, Cr 112..175); 1 =
+//                       skin, reset 0x0
 //   Access: RW read / write (byte strobes), RO read only (writes answer
 //   SLVERR), W1C hardware sets / software writes 1 to clear (a set wins), W1S
 //   software writes 1 to set / hardware clears, WO write only (reads 0), CMD
 //   reads the hardware value, a write gives a pulse with its data. Unmapped
 //   words read 0 and ignore writes; above the map: DECERR. Clock - clk. Reset
 //   - synchronous active low rst_n. Latency - 2 clocks per write and read.
-// Date: 2026-10-16
+// Date: 2026-10-21
 module object_tracker_regs (
   input  logic                 clk,             // clock
   input  logic                 rst_n,           // synchronous reset, active low
   // s_axil: axil_if.slave (ip/shared/src/interfaces/axil_if.sv), ADDR_W = 9
   axil_if.slave s_axil,
-  // r: object_tracker_regs_if.regs (src/include/object_tracker_regs_if.sv) {ctrl_o=cfg_ctrl ctrl_wr_o=cfg_ctrl_wr frame_size_o=cfg_frame_size frame_size_wr_o=cfg_frame_size_wr thresh_o=cfg_thresh thresh_wr_o=cfg_thresh_wr win_x_o=cfg_win_x win_x_wr_o=cfg_win_x_wr win_y_o=cfg_win_y win_y_wr_o=cfg_win_y_wr frames_i=sts_frames count_i=sts_count box_x_i=sts_box_x box_y_i=sts_box_y sum_x_i=sts_sum_x sum_y_i=sts_sum_y status_i=sts_status run_o=cfg_run run_wr_o=cfg_run_wr y_range_o=cfg_y_range y_range_wr_o=cfg_y_range_wr cb_range_o=cfg_cb_range cb_range_wr_o=cfg_cb_range_wr cr_range_o=cfg_cr_range cr_range_wr_o=cfg_cr_range_wr sat_min_o=cfg_sat_min sat_min_wr_o=cfg_sat_min_wr blob_cfg_o=cfg_blob_cfg blob_cfg_wr_o=cfg_blob_cfg_wr scratch_o=cfg_scratch scratch_wr_o=cfg_scratch_wr run_b_o=cfg_run_b run_b_wr_o=cfg_run_b_wr blob_x_i=sts_blob_x blob_y_i=sts_blob_y blob_n_i=sts_blob_n}
+  // r: object_tracker_regs_if.regs (src/include/object_tracker_regs_if.sv) {ctrl_o=cfg_ctrl ctrl_wr_o=cfg_ctrl_wr frame_size_o=cfg_frame_size frame_size_wr_o=cfg_frame_size_wr thresh_o=cfg_thresh thresh_wr_o=cfg_thresh_wr win_x_o=cfg_win_x win_x_wr_o=cfg_win_x_wr win_y_o=cfg_win_y win_y_wr_o=cfg_win_y_wr frames_i=sts_frames count_i=sts_count box_x_i=sts_box_x box_y_i=sts_box_y sum_x_i=sts_sum_x sum_y_i=sts_sum_y status_i=sts_status run_o=cfg_run run_wr_o=cfg_run_wr y_range_o=cfg_y_range y_range_wr_o=cfg_y_range_wr cb_range_o=cfg_cb_range cb_range_wr_o=cfg_cb_range_wr cr_range_o=cfg_cr_range cr_range_wr_o=cfg_cr_range_wr sat_min_o=cfg_sat_min sat_min_wr_o=cfg_sat_min_wr blob_cfg_o=cfg_blob_cfg blob_cfg_wr_o=cfg_blob_cfg_wr scratch_o=cfg_scratch scratch_wr_o=cfg_scratch_wr run_b_o=cfg_run_b run_b_wr_o=cfg_run_b_wr blob_x_i=sts_blob_x blob_y_i=sts_blob_y blob_n_i=sts_blob_n skin_lut_o=cfg_skin_lut skin_lut_wr_o=cfg_skin_lut_wr}
   object_tracker_regs_if.regs r
 );
   // register signals, joined to the interface r
@@ -151,6 +158,8 @@ module object_tracker_regs (
   logic [(8)*(32)-1:0] blob_x_i;
   logic [(8)*(32)-1:0] blob_y_i;
   logic [(8)*(32)-1:0] blob_n_i;
+  logic [(32)*(32)-1:0] skin_lut_o;
+  logic [32-1:0] skin_lut_wr_o;
   assign r.cfg_ctrl = ctrl_o;
   assign r.cfg_ctrl_wr = ctrl_wr_o;
   assign r.cfg_frame_size = frame_size_o;
@@ -187,6 +196,8 @@ module object_tracker_regs (
   assign blob_x_i = r.sts_blob_x;
   assign blob_y_i = r.sts_blob_y;
   assign blob_n_i = r.sts_blob_n;
+  assign r.cfg_skin_lut = skin_lut_o;
+  assign r.cfg_skin_lut_wr = skin_lut_wr_o;
   // ---------------- register map
   localparam logic [31:0] IP_ID      = "OTRK";
   localparam logic [31:0] IP_VERSION = "1.00";
@@ -215,10 +226,12 @@ module object_tracker_regs (
   localparam logic [8:0] A_BLOB_X = 9'h100;   // + 4 i, i < 8
   localparam logic [8:0] A_BLOB_Y = 9'h120;   // + 4 i, i < 8
   localparam logic [8:0] A_BLOB_N = 9'h140;   // + 4 i, i < 8
-  localparam int MAP_WORDS = 88;
+  localparam logic [8:0] A_SKIN_LUT = 9'h160;   // + 4 i, i < 32
+  localparam int MAP_WORDS = 120;
 
   logic             wr_en, rd_en, wr_err_q;
   logic [8:0]       wr_addr, rd_addr, rd_addr_q;
+  wire unused_addr_lsbs = &{1'b0, wr_addr[1:0], rd_addr[1:0]};   // word access: the byte offset is not decoded
   logic [31:0]      wr_data, rd_data;
   logic [3:0]       wr_strb;
   regbus_if #(.ADDR_W(9)) bus ();               // register bus of the AXI4-Lite front end
@@ -261,6 +274,7 @@ module object_tracker_regs (
   logic [31:0] blob_cfg_q;
   logic [31:0] scratch_q [28];
   logic [31:0] run_b_q;
+  logic [31:0] skin_lut_q [32];
   logic ro_blob_x;   // a write to an element of BLOB_X
   always_comb begin
     ro_blob_x = 1'b0;
@@ -304,6 +318,8 @@ module object_tracker_regs (
       scratch_wr_o <= '0;
       run_b_q <= 32'h0;
       run_b_wr_o <= 1'b0;
+      for (int i = 0; i < 32; i++) skin_lut_q[i] <= 32'h0;
+      skin_lut_wr_o <= '0;
       wr_err_q <= 1'b0;
     end else begin
       wr_err_q <= wr_en && (wa == A_ID || wa == A_VERSION || wa == A_DATE || wa == A_FRAMES || wa == A_COUNT || wa == A_BOX_X || wa == A_BOX_Y || wa == A_SUM_X || wa == A_SUM_Y || wa == A_STATUS || ro_blob_x || ro_blob_y || ro_blob_n);   // writes to read-only words: SLVERR
@@ -359,6 +375,10 @@ module object_tracker_regs (
         run_b_wr_o <= wr_en && wa == A_RUN_B;
         if (wr_en && wa == A_RUN_B) run_b_q <= (run_b_q & ~wmask) | (wr_data & wmask);
       end
+      for (int i = 0; i < 32; i++) begin
+        skin_lut_wr_o[i] <= wr_en && wa == A_SKIN_LUT + 9'(4 * i);
+        if (wr_en && wa == A_SKIN_LUT + 9'(4 * i)) skin_lut_q[i] <= (skin_lut_q[i] & ~wmask) | (wr_data & wmask);
+      end
     end
   end
   assign ctrl_o = ctrl_q[32-1:0];
@@ -374,6 +394,7 @@ module object_tracker_regs (
   assign blob_cfg_o = blob_cfg_q[32-1:0];
   always_comb for (int i = 0; i < 28; i++) scratch_o[i*(32) +: 32] = scratch_q[i][32-1:0];
   assign run_b_o = run_b_q[32-1:0];
+  always_comb for (int i = 0; i < 32; i++) skin_lut_o[i*(32) +: 32] = skin_lut_q[i][32-1:0];
 
   // ---------------- reads: the word addressed in the clock before
   always_ff @(posedge clk) if (rd_en) rd_addr_q <= {rd_addr[8:2], 2'b00};
@@ -383,11 +404,11 @@ module object_tracker_regs (
       A_ID:      rd_data = IP_ID;
       A_VERSION: rd_data = IP_VERSION;
       A_DATE:    rd_data = IP_DATE;
-      A_CTRL: rd_data = ctrl_q;
-      A_FRAME_SIZE: rd_data = frame_size_q;
-      A_THRESH: rd_data = thresh_q;
-      A_WIN_X: rd_data = win_x_q;
-      A_WIN_Y: rd_data = win_y_q;
+      A_CTRL: rd_data = 32'(ctrl_q[32-1:0]);
+      A_FRAME_SIZE: rd_data = 32'(frame_size_q[32-1:0]);
+      A_THRESH: rd_data = 32'(thresh_q[8-1:0]);
+      A_WIN_X: rd_data = 32'(win_x_q[32-1:0]);
+      A_WIN_Y: rd_data = 32'(win_y_q[32-1:0]);
       A_FRAMES: rd_data = 32'(frames_i);
       A_COUNT: rd_data = 32'(count_i);
       A_BOX_X: rd_data = 32'(box_x_i);
@@ -395,22 +416,24 @@ module object_tracker_regs (
       A_SUM_X: rd_data = 32'(sum_x_i);
       A_SUM_Y: rd_data = 32'(sum_y_i);
       A_STATUS: rd_data = 32'(status_i);
-      A_RUN: rd_data = run_q;
-      A_Y_RANGE: rd_data = y_range_q;
-      A_CB_RANGE: rd_data = cb_range_q;
-      A_CR_RANGE: rd_data = cr_range_q;
-      A_SAT_MIN: rd_data = sat_min_q;
-      A_BLOB_CFG: rd_data = blob_cfg_q;
-      A_RUN_B: rd_data = run_b_q;
+      A_RUN: rd_data = 32'(run_q[32-1:0]);
+      A_Y_RANGE: rd_data = 32'(y_range_q[16-1:0]);
+      A_CB_RANGE: rd_data = 32'(cb_range_q[16-1:0]);
+      A_CR_RANGE: rd_data = 32'(cr_range_q[16-1:0]);
+      A_SAT_MIN: rd_data = 32'(sat_min_q[8-1:0]);
+      A_BLOB_CFG: rd_data = 32'(blob_cfg_q[32-1:0]);
+      A_RUN_B: rd_data = 32'(run_b_q[32-1:0]);
       default: begin
         for (int i = 0; i < 28; i++)
-          if (rd_addr_q == A_SCRATCH + 9'(4 * i)) rd_data = scratch_q[i];
+          if (rd_addr_q == A_SCRATCH + 9'(4 * i)) rd_data = 32'(scratch_q[i][32-1:0]);
         for (int i = 0; i < 8; i++)
           if (rd_addr_q == A_BLOB_X + 9'(4 * i)) rd_data = 32'(blob_x_i[i*(32) +: 32]);
         for (int i = 0; i < 8; i++)
           if (rd_addr_q == A_BLOB_Y + 9'(4 * i)) rd_data = 32'(blob_y_i[i*(32) +: 32]);
         for (int i = 0; i < 8; i++)
           if (rd_addr_q == A_BLOB_N + 9'(4 * i)) rd_data = 32'(blob_n_i[i*(32) +: 32]);
+        for (int i = 0; i < 32; i++)
+          if (rd_addr_q == A_SKIN_LUT + 9'(4 * i)) rd_data = 32'(skin_lut_q[i][32-1:0]);
       end
     endcase
   end

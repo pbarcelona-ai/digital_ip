@@ -8,6 +8,9 @@ Usage:
     WAVES=1 python3 run.py          also write a waveform (view with Surfer:
                                     ../synth/view_waves.sh <sim_build>/*.vcd)
 
+Sources: scripts/build.f (the RTL list every flow shares) and the discrete-port wrapper from
+ip/scripts/syn_wrap.py.
+
 Produces (in tb/work/):
     test.jpg / test.ppm       the original (input, or auto-generated chart)
     warped.jpg / warped.ppm   synthetically distorted version of the original
@@ -20,31 +23,20 @@ from cocotb_tools.runner import get_runner
 
 THIS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RTL_DIR = os.path.join(THIS_DIR, "..", "src")
-IP_DIR = os.path.join(THIS_DIR, "..", "ip")
-INCLUDE_DIR = os.path.join(THIS_DIR, "..", "include")
 LIB_DIR = os.path.join(THIS_DIR, "..", "..", "..", "ip")
 IF_DIR = os.path.join(LIB_DIR, "shared", "src", "interfaces")
 IFACES = [os.path.join(IF_DIR, f"{n}.sv") for n in ("axis_if", "axil_if", "regbus_if")] + [
     os.path.join(RTL_DIR, "include", "vision_system_regs_if.sv")]
 
-SOURCES = [
-    os.path.join(INCLUDE_DIR, "barrel_pkg.sv"),
-    os.path.join(INCLUDE_DIR, "distortion_model_pkg.sv"),
-    *IFACES,
-    os.path.join(IP_DIR, "fixed_recip", "src", "fixed_recip.sv"),
-    os.path.join(IP_DIR, "mulq", "src", "mulq_s.sv"),
-    os.path.join(IP_DIR, "coord_gen", "src", "coord_gen.sv"),
-    os.path.join(IP_DIR, "bilinear", "src", "bilinear.sv"),
-    os.path.join(IP_DIR, "bicubic", "src", "bicubic.sv"),
-    os.path.join(IP_DIR, "frame_buffer", "src", "frame_buffer.sv"),
-    os.path.join(IP_DIR, "ext_frame_buffer", "src", "ext_frame_buffer.sv"),
-    os.path.join(RTL_DIR, "axis_in_ctrl.sv"),
-    os.path.join(RTL_DIR, "axis_out_ctrl.sv"),
-    os.path.join(LIB_DIR, "bus", "axi4_lite_slave", "src", "axi4_lite_slave.sv"),
-    os.path.join(RTL_DIR, "include", "vision_system_regs.sv"),
-    os.path.join(RTL_DIR, "axi_lite_regs.sv"),
-    os.path.join(RTL_DIR, "vision_system.sv"),
-]
+
+def build_f_sources():
+    """The RTL file list of scripts/build.f (its paths are relative to src/), in order."""
+    with open(os.path.join(THIS_DIR, "..", "scripts", "build.f"), encoding="utf-8") as fh:
+        return [os.path.normpath(os.path.join(RTL_DIR, ln.strip())) for ln in fh
+                if ln.strip() and not ln.strip().startswith("#")]
+
+
+SOURCES = build_f_sources()
 TOP = "vision_system_syn"      # discrete-port wrapper: cocotb drives plain ports, not interfaces
 
 
@@ -62,6 +54,8 @@ def wrapper(build_dir):
 
 def main():
     sim = os.environ.get("SIM", "icarus")
+    if sim != "icarus":
+        sys.exit("run.py: SIM must be icarus (the build arguments are Icarus's); tb/python runs Verilator")
     runner = get_runner(sim)
     build_dir = os.path.join(THIS_DIR, "..", "sim_build")
     runner.build(

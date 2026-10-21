@@ -26,9 +26,12 @@
 //   DATE at 0x00-0x08, IRQ_EN 0x18, STATUS 0x1C, CLEAR 0x20, EVENT 0x24,
 //   EVENT_TIME 0x28, EVENT_POP 0x2C, COUNT[i] 0x30 + 4 i, TIME 0x50, EV_EN
 //   0x54).
+//   A marker of a channel whose previous event is still pending (not yet
+//   moved into the log) replaces it and sets the overflow. Golden model:
+//   model/frame_counter_model.py (FrameCounterCore, clock exact; tb/python).
 //   Clock - clk (the pipeline pixel clock). Reset - synchronous active low
 //   rst_n.
-// Date: 2026-10-11
+// Date: 2026-10-21
 module frame_counter #(
   parameter int NCH    = 2,                      // counters (1..8)
   parameter int EVQ    = 64,                     // event log entries (power of two >= 2)
@@ -58,6 +61,7 @@ module frame_counter #(
   assign regs.sts_count = count_flat;
   assign regs.sts_time = ts;
   localparam int QW = $clog2(EVQ);
+  localparam int CHW = (NCH > 1) ? $clog2(NCH) : 1;   // channel index width of the per-channel arrays
   logic [31:0] count [NCH];
   logic [31:0] n_count [NCH];                    // counts after this clock
   always_comb for (int i = 0; i < NCH; i++) count_flat[i*32 +: 32] = count[i];
@@ -107,7 +111,7 @@ module frame_counter #(
     push = 1'b0;
     pch = '0;
     for (int i = 0; i < NCH; i++)
-      if (pend[i] && (!push || pend_ts[i] < pend_ts[pch])) begin
+      if (pend[i] && (!push || pend_ts[i] < pend_ts[pch[CHW-1:0]])) begin
         push = 1'b1;
         pch = 3'(i);
       end
@@ -129,7 +133,7 @@ module frame_counter #(
       if (pop_wr && pop_data[1]) ovf <= 1'b0;
       if (push) begin
         if (!full || pop) begin
-          q[wp[QW-1:0]] <= {pch, pend_cnt[pch], pend_ts[pch]};
+          q[wp[QW-1:0]] <= {pch, pend_cnt[pch[CHW-1:0]], pend_ts[pch[CHW-1:0]]};
           wp <= wp + 1'b1;
         end else ovf <= 1'b1;                    // log full: the event is lost
       end
@@ -144,6 +148,9 @@ module frame_counter #(
     end
   end
   wire [58:0] head = q[rp[QW-1:0]];
+
+  // not used: the write pulses of the registers that act by value
+  wire unused_ok = &{1'b0, regs.cfg_irq_en_wr, regs.cfg_ev_en_wr, regs.cfg_status_wr, 1'b0};
 
   assign ev_word = empty ? {1'b0, ovf, 30'd0} : {1'b1, ovf, 3'd0, head[58:56], head[55:32]};
   assign ev_time = empty ? 32'd0 : head[31:0];

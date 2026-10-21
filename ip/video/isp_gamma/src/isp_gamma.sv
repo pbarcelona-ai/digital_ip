@@ -15,7 +15,8 @@
 //   clk only. Reset - synchronous rst_n (active low). Latency - 4 clocks.
 //   The output goes through a 2-entry ip_axis_fifo, so s_axis_tready does
 //   not depend combinationally on m_axis_tready (+3 clocks).
-// Date: 2026-10-16
+//   Golden model: model/isp_gamma_model.py (gamma_frame; tb/python).
+// Date: 2026-10-21
 module isp_gamma #(
   parameter int IN_W  = 10,
   parameter int OUT_W = 8
@@ -74,6 +75,7 @@ module isp_gamma #(
     end
   end
   assign q_d = by_q ? lin_q : lut_q;
+  logic [2:0] out_level;                       // not used
   axis_if #(.DATA_W((3*OUT_W))) u_out_fifo_s ();
   assign u_out_fifo_s.tdata = q_d;
   assign u_out_fifo_s.tlast = q_l;
@@ -88,6 +90,7 @@ module isp_gamma #(
     .rst_n,
     .s(u_out_fifo_s),
     .m(m_axis),
-    .level_o()
+    .level_o(out_level)
   );
+  wire unused_ok = &{1'b0, out_level, 1'b0};
 endmodule

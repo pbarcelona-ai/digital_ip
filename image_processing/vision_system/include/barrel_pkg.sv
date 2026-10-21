@@ -4,10 +4,11 @@
 // Description: Shared SystemVerilog package for the lens-distortion-
 // correction core. Defines the Q16.16 fixed-point format used by
 // every module in this design, the saturating qmul() multiply
-// helper, and the frame-size/pipeline-timing constants (MAX_W,
-// MAX_H, ADDR_W, COORD_W, LINE_GAP_CYCLES) every other file
-// imports.
-// Date: September 26, 2026
+// helper, the saturating sums (w40 / sat40), and the frame-size
+// constants (MAX_W, MAX_H, ADDR_W, COORD_W, LINE_GAP_CYCLES) every
+// other file imports. Golden model:
+// vision_system/model/barrel_pkg_model.py.
+// Date: 2026-10-21
 // ***************
 // =============================================================================
 // barrel_pkg.sv
@@ -24,7 +25,7 @@
 // A single uniform format is used throughout (pixel coordinates and
 // normalized [-1..1]-ish coordinates alike) to keep every multiply stage
 // identical: mult32x32 -> 64-bit product -> arithmetic-shift-right by 16 ->
-// truncate to 32 bits. This wastes a little headroom on the normalized
+// saturate to 32 bits; sums are exact and saturated to 32 bits as well. This wastes a little headroom on the normalized
 // values (which only ever use a couple of integer bits) but removes any
 // risk of per-signal format bookkeeping errors, which is the right
 // trade-off for a reference design.
@@ -33,6 +34,7 @@ package barrel_pkg;
 
   localparam int FRAC_BITS = 16;
   localparam int DATA_W    = 32;                 // Q16.16 word width
+  /* verilator lint_off UNUSEDPARAM */             // constants for the importers (not all use each one)
   localparam bit signed [DATA_W-1:0] Q16_ONE  = 32'h0001_0000; // 1.0
   localparam bit signed [DATA_W-1:0] Q16_ZERO = 32'h0000_0000;
 
@@ -55,10 +57,12 @@ package barrel_pkg;
   localparam int ADDR_W = $clog2(MAX_W*MAX_H);
   localparam int COORD_W = $clog2(MAX_W > MAX_H ? MAX_W : MAX_H) + 1;
 
-  // Number of idle cycles required between consecutive lines on both the
-  // slave (input) and master (output) AXI4-Stream video interfaces, per
-  // the spec ("5 idle clocks then the next continuous line").
+  // Idle clocks the testbenches leave between lines, and the base of
+  // vs_stream_adapter's GAP in video_processor. vision_system (2.0.0)
+  // itself needs no gaps: axis_in_ctrl accepts gaps anywhere and m_axis has
+  // back-pressure.
   localparam int LINE_GAP_CYCLES = 5;
+  /* verilator lint_on UNUSEDPARAM */
 
   // Post-multiply stage of the saturating fixed-point multiply: takes the
   // raw 64-bit signed product (Q32.32), shifts it back to Q16.16 with an
@@ -74,9 +78,9 @@ package barrel_pkg;
     begin
       prod = prod_in >>> FRAC_BITS;           // arithmetic shift back to Q16.16
       // saturate to 32 bits
-      if (prod > $signed({1'b0,{(DATA_W-1){1'b1}}}))
+      if (prod > (2*DATA_W)'($signed({1'b0,{(DATA_W-1){1'b1}}})))
         res = {1'b0,{(DATA_W-1){1'b1}}};
-      else if (prod < $signed({1'b1,{(DATA_W-1){1'b0}}}))
+      else if (prod < (2*DATA_W)'($signed({1'b1,{(DATA_W-1){1'b0}}})))
         res = {1'b1,{(DATA_W-1){1'b0}}};
       else
         res = prod[DATA_W-1:0];
@@ -105,6 +109,23 @@ package barrel_pkg;
     begin
       prod = a * b;                          // full 64-bit product
       qmul = qsat(prod);
+    end
+  endfunction
+
+  // Saturating sums: a sum of Q16.16 words is formed exactly in 40 bits (each operand sign-extended with
+  // w40, a doubling as w40(x) <<< 1) and saturated to signed 32 bits by sat40, so a sum past +/-32768.0
+  // clamps instead of wrapping to the opposite sign.
+  function automatic logic signed [39:0] w40(input logic signed [DATA_W-1:0] a);
+    begin
+      w40 = 40'(a);                          // sign extension (a is signed)
+    end
+  endfunction
+
+  function automatic logic signed [DATA_W-1:0] sat40(input logic signed [39:0] s);
+    begin
+      if (s > 40'sd2147483647)        sat40 = {1'b0,{(DATA_W-1){1'b1}}};
+      else if (s < -40'sd2147483648)  sat40 = {1'b1,{(DATA_W-1){1'b0}}};
+      else                            sat40 = s[DATA_W-1:0];
     end
   endfunction
 

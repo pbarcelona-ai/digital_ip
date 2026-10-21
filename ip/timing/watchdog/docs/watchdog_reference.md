@@ -1,6 +1,6 @@
 <!-- Industry reference check of watchdog: copied into docs/watchdog_prompt.md section 6a by ip/scripts/make_ip_prompts.py. Edit here, not in the prompt. -->
 ```text
-// Industry reference check - watchdog (2026-10-16)
+// Industry reference check - watchdog (2026-10-16, updated 2026-10-20)
 // Sources:
 //   [1] Arm, "ARM Watchdog Module (SP805) Technical Reference Manual", ARM DDI 0270B,
 //   https://developer.arm.com/documentation/ddi0270/b - WdogLoad, interrupt on the first time-
@@ -16,9 +16,9 @@
 //   0x5AFEC0DE written to KICK instead of WdogIntClr; LOCK is one-way until reset (SP805 can
 //   unlock with the key); optional window (early kick resets, as in windowed watchdogs) has no
 //   SP805 counterpart.
-// TODO(REF-WATCHDOG-1) [LOW] Document the watchdog model. Prompt: in
-//   ip/timing/watchdog/src/watchdog.sv, add to the header that the block follows the windowed-
-//   watchdog model (pre-timeout interrupt at PRETIMEOUT ticks, reset at TIMEOUT ticks, early-
-//   kick reset in window mode, one-way LOCK) and how it differs from Arm SP805 (two consecutive
-//   time-outs, unlock key 0x1ACCE551); keep the behaviour.
+// RESOLVED(REF-WATCHDOG-1) [LOW] Document the watchdog model. Resolution: 2026-10-20: the watchdog.sv
+//   header states the windowed-watchdog model (pre-timeout interrupt at PRETIMEOUT ticks, reset at
+//   TIMEOUT ticks, early-kick reset in window mode, one-way LOCK) and the differences from Arm SP805
+//   (two consecutive time-outs, unlock key 0x1ACCE551); behaviour unchanged and compared clock for
+//   clock with the golden model (tb/python).
 ```

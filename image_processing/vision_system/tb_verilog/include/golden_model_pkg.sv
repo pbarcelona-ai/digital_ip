@@ -5,16 +5,20 @@
 // package: fixed-point radial/tangential/fisheye/panoramic/
 // perspective remap, bilinear/bicubic sampling, coefficient
 // fitting (least-squares and grid search), homography inverse,
-// and synthetic chart generation.
-// Date: September 26, 2026
+// and synthetic chart generation. Sampling follows vision_system 2.0.0:
+// every tap clamped into the frame (clamp_ref; bilinear x0 / x0 + 1,
+// bicubic x0 - 1 .. x0 + 2), fractions from sx / sy. Sums are exact
+// (longint, not saturated as the RTL's sat40): equal to the RTL while no
+// Q16.16 sum leaves +/-32768, as with the calibrations of these tests.
+// Date: 2026-10-21
 // ***************
 // =============================================================================
 // golden_model_pkg.sv
 //
 // An INDEPENDENT (separately written, not shared/imported from the RTL)
 // reimplementation of the same Q16.16 fixed-point radial-remap primitive
-// the RTL (barrel_pkg::qmul + coord_gen + axis_out_ctrl's clamp logic +
-// bilinear.sv) implements, used both to synthesize warped.ppm from the
+// the RTL (barrel_pkg::qmul + coord_gen + axis_out_ctrl's edge clamps +
+// bilinear.sv / bicubic.sv) implements, used both to synthesize warped.ppm from the
 // original image and as the golden bit-exact reference that the DUT's
 // streamed output is checked against.
 //
@@ -61,6 +65,11 @@ package golden_model_pkg;
     end
   endfunction
 
+  // A tap coordinate clamped into [0, n - 1] (vision_system v2 edge replication).
+  function automatic int clamp_ref(input longint v, input int n);
+    clamp_ref = (v < 0) ? 0 : (v > n - 1) ? n - 1 : int'(v);
+  endfunction
+
   typedef struct packed {
     int    w, h;
     longint cx_pix, cy_pix;
@@ -100,7 +109,7 @@ package golden_model_pkg;
   );
     int x, y, x0, y0, fx, fy;
     longint dx, dy, nx, ny, r2, r4, r6, t1, t2, t3, factor, sxn, syn, sx, sy, x0s, y0s;
-    int idx_tl, idx_tr, idx_bl, idx_br;
+    int idx_tl, idx_tr, idx_bl, idx_br, x1, y1;
     longint w00, w10, w01, w11, acc;
     begin
       out_r = new[cfg.w * cfg.h];
@@ -127,39 +136,21 @@ package golden_model_pkg;
           sx  = cfg.cx_pix + qmul_ref(sxn, cfg.halfw_scaled);
           sy  = cfg.cy_pix + qmul_ref(syn, cfg.halfh_scaled);
 
-          if (sx < 0) begin
-            x0 = 0;
-            fx = 0;
-          end else begin
-            x0s = sx >>> FRAC_BITS;
-            if (x0s > (cfg.w - 2)) begin
-              x0 = cfg.w - 2;
-              fx = 255;
-            end
-            else begin
-              x0 = int'(x0s);
-              fx = bits_ref(sx, 15, 8);
-            end
-          end
-          if (sy < 0) begin
-            y0 = 0;
-            fy = 0;
-          end else begin
-            y0s = sy >>> FRAC_BITS;
-            if (y0s > (cfg.h - 2)) begin
-              y0 = cfg.h - 2;
-              fy = 255;
-            end
-            else begin
-              y0 = int'(y0s);
-              fy = bits_ref(sy, 15, 8);
-            end
-          end
+          // v2 edge rule: taps x0 / x0 + 1 and y0 / y0 + 1 (x0 = floor(sx)) each clamped into the frame,
+          // fractions sx[15:8] / sy[15:8]
+          x0s = sx >>> FRAC_BITS;
+          y0s = sy >>> FRAC_BITS;
+          x0  = clamp_ref(x0s, cfg.w);
+          x1  = clamp_ref(x0s + 1, cfg.w);
+          y0  = clamp_ref(y0s, cfg.h);
+          y1  = clamp_ref(y0s + 1, cfg.h);
+          fx  = bits_ref(sx, 15, 8);
+          fy  = bits_ref(sy, 15, 8);
 
           idx_tl = y0 * cfg.w + x0;
-          idx_tr = idx_tl + 1;
-          idx_bl = idx_tl + cfg.w;
-          idx_br = idx_bl + 1;
+          idx_tr = y0 * cfg.w + x1;
+          idx_bl = y1 * cfg.w + x0;
+          idx_br = y1 * cfg.w + x1;
 
           w00 = (256 - fx) * (256 - fy);
           w10 = fx * (256 - fy);
@@ -213,7 +204,7 @@ package golden_model_pkg;
   );
     int x, y, x0, y0, fx, fy;
     longint sx, sy, x0s, y0s;
-    int idx_tl, idx_tr, idx_bl, idx_br;
+    int idx_tl, idx_tr, idx_bl, idx_br, x1, y1;
     longint w00, w10, w01, w11, acc;
     begin
       out_r = new[cfg.w * cfg.h];
@@ -227,39 +218,21 @@ package golden_model_pkg;
                          h11, h12, h13, h21, h22, h23, h31, h32,
                          x, y, sx, sy);
 
-          if (sx < 0) begin
-            x0 = 0;
-            fx = 0;
-          end else begin
-            x0s = sx >>> FRAC_BITS;
-            if (x0s > (cfg.w - 2)) begin
-              x0 = cfg.w - 2;
-              fx = 255;
-            end
-            else begin
-              x0 = int'(x0s);
-              fx = bits_ref(sx, 15, 8);
-            end
-          end
-          if (sy < 0) begin
-            y0 = 0;
-            fy = 0;
-          end else begin
-            y0s = sy >>> FRAC_BITS;
-            if (y0s > (cfg.h - 2)) begin
-              y0 = cfg.h - 2;
-              fy = 255;
-            end
-            else begin
-              y0 = int'(y0s);
-              fy = bits_ref(sy, 15, 8);
-            end
-          end
+          // v2 edge rule: taps x0 / x0 + 1 and y0 / y0 + 1 (x0 = floor(sx)) each clamped into the frame,
+          // fractions sx[15:8] / sy[15:8]
+          x0s = sx >>> FRAC_BITS;
+          y0s = sy >>> FRAC_BITS;
+          x0  = clamp_ref(x0s, cfg.w);
+          x1  = clamp_ref(x0s + 1, cfg.w);
+          y0  = clamp_ref(y0s, cfg.h);
+          y1  = clamp_ref(y0s + 1, cfg.h);
+          fx  = bits_ref(sx, 15, 8);
+          fy  = bits_ref(sy, 15, 8);
 
           idx_tl = y0 * cfg.w + x0;
-          idx_tr = idx_tl + 1;
-          idx_bl = idx_tl + cfg.w;
-          idx_br = idx_bl + 1;
+          idx_tr = y0 * cfg.w + x1;
+          idx_bl = y1 * cfg.w + x0;
+          idx_br = y1 * cfg.w + x1;
 
           w00 = (256 - fx) * (256 - fy);
           w10 = fx * (256 - fy);
@@ -293,7 +266,7 @@ package golden_model_pkg;
     int x, y, x0, y0, fx, fy;
     longint dx, dy, nx, ny, r2, r4, r6, t1, t2, t3, factor, sxn, syn, sx, sy, x0s, y0s;
     longint tangx, tangy;
-    int idx_tl, idx_tr, idx_bl, idx_br;
+    int idx_tl, idx_tr, idx_bl, idx_br, x1, y1;
     longint w00, w10, w01, w11, acc;
     begin
       out_r = new[cfg.w * cfg.h];
@@ -328,39 +301,21 @@ package golden_model_pkg;
           sx  = cfg.cx_pix + qmul_ref(sxn, cfg.halfw_scaled);
           sy  = cfg.cy_pix + qmul_ref(syn, cfg.halfh_scaled);
 
-          if (sx < 0) begin
-            x0 = 0;
-            fx = 0;
-          end else begin
-            x0s = sx >>> FRAC_BITS;
-            if (x0s > (cfg.w - 2)) begin
-              x0 = cfg.w - 2;
-              fx = 255;
-            end
-            else begin
-              x0 = int'(x0s);
-              fx = bits_ref(sx, 15, 8);
-            end
-          end
-          if (sy < 0) begin
-            y0 = 0;
-            fy = 0;
-          end else begin
-            y0s = sy >>> FRAC_BITS;
-            if (y0s > (cfg.h - 2)) begin
-              y0 = cfg.h - 2;
-              fy = 255;
-            end
-            else begin
-              y0 = int'(y0s);
-              fy = bits_ref(sy, 15, 8);
-            end
-          end
+          // v2 edge rule: taps x0 / x0 + 1 and y0 / y0 + 1 (x0 = floor(sx)) each clamped into the frame,
+          // fractions sx[15:8] / sy[15:8]
+          x0s = sx >>> FRAC_BITS;
+          y0s = sy >>> FRAC_BITS;
+          x0  = clamp_ref(x0s, cfg.w);
+          x1  = clamp_ref(x0s + 1, cfg.w);
+          y0  = clamp_ref(y0s, cfg.h);
+          y1  = clamp_ref(y0s + 1, cfg.h);
+          fx  = bits_ref(sx, 15, 8);
+          fy  = bits_ref(sy, 15, 8);
 
           idx_tl = y0 * cfg.w + x0;
-          idx_tr = idx_tl + 1;
-          idx_bl = idx_tl + cfg.w;
-          idx_br = idx_bl + 1;
+          idx_tr = y0 * cfg.w + x1;
+          idx_bl = y1 * cfg.w + x0;
+          idx_br = y1 * cfg.w + x1;
 
           w00 = (256 - fx) * (256 - fy);
           w10 = fx * (256 - fy);
@@ -412,17 +367,16 @@ package golden_model_pkg;
   endtask
 
   // Bicubic counterpart of radial_remap_ref: same coord_gen math, but a
-  // 4x4-tap separable Catmull-Rom footprint instead of 2x2 bilinear.
-  // Anchor x0=floor(sx) clamped into [1,w-3] (y0 into [1,h-3]) exactly as
-  // axis_out_ctrl.sv's bicubic gather FSM does, with t forced to 0 at
-  // either clamp boundary.
+  // 4x4-tap separable Catmull-Rom footprint instead of 2x2 bilinear, every
+  // tap clamped into the frame (vision_system v2 edge replication, as
+  // axis_out_ctrl.sv).
   task automatic radial_remap_bicubic_ref(
     input  remap_cfg_t cfg,
     input  longint      k1_q16, input longint k2_q16, input longint k3_q16,
     input  logic [7:0] src_r[], input logic [7:0] src_g[], input logic [7:0] src_b[],
     output logic [7:0] out_r[], output logic [7:0] out_g[], output logic [7:0] out_b[]
   );
-    int x, y, x0, y0;
+    int x, y;
     longint dx, dy, nx, ny, r2, r4, r6, t1, t2, t3, factor, sxn, syn, sx, sy, x0s, y0s;
     longint tx, ty;
     longint wx0, wx1, wx2, wx3, wy0, wy1, wy2, wy3;
@@ -455,54 +409,24 @@ package golden_model_pkg;
           sx  = cfg.cx_pix + qmul_ref(sxn, cfg.halfw_scaled);
           sy  = cfg.cy_pix + qmul_ref(syn, cfg.halfh_scaled);
 
-          if (sx < 0) begin
-            x0 = 1;
-            tx = 0;
-          end else begin
-            x0s = sx >>> FRAC_BITS;
-            if (x0s < 1)              begin
-              x0 = 1;
-              tx = 0;
-            end
-            else if (x0s > cfg.w - 3) begin
-              x0 = cfg.w - 3;
-              tx = 0;
-            end
-            else                      begin
-              x0 = int'(x0s);
-              tx = sx & 64'hFFFF;
-            end
-          end
-          if (sy < 0) begin
-            y0 = 1;
-            ty = 0;
-          end else begin
-            y0s = sy >>> FRAC_BITS;
-            if (y0s < 1)              begin
-              y0 = 1;
-              ty = 0;
-            end
-            else if (y0s > cfg.h - 3) begin
-              y0 = cfg.h - 3;
-              ty = 0;
-            end
-            else                      begin
-              y0 = int'(y0s);
-              ty = sy & 64'hFFFF;
-            end
-          end
+          // v2 edge rule: taps x0 - 1 .. x0 + 2 and y0 - 1 .. y0 + 2 each clamped into the frame,
+          // fractions sx[15:0] / sy[15:0]
+          x0s = sx >>> FRAC_BITS;
+          y0s = sy >>> FRAC_BITS;
+          tx  = sx & 64'hFFFF;
+          ty  = sy & 64'hFFFF;
 
           cubic_weights_ref(tx, wx0, wx1, wx2, wx3);
           cubic_weights_ref(ty, wy0, wy1, wy2, wy3);
 
-          xm1 = x0-1;
-          xp0 = x0;
-          xp1 = x0+1;
-          xp2 = x0+2;
-          ym1 = y0-1;
-          yp0 = y0;
-          yp1 = y0+1;
-          yp2 = y0+2;
+          xm1 = clamp_ref(x0s - 1, cfg.w);
+          xp0 = clamp_ref(x0s, cfg.w);
+          xp1 = clamp_ref(x0s + 1, cfg.w);
+          xp2 = clamp_ref(x0s + 2, cfg.w);
+          ym1 = clamp_ref(y0s - 1, cfg.h);
+          yp0 = clamp_ref(y0s, cfg.h);
+          yp1 = clamp_ref(y0s + 1, cfg.h);
+          yp2 = clamp_ref(y0s + 2, cfg.h);
 
           rowR0 = longint'(src_r[ym1*cfg.w+xm1])*wx0 + longint'(src_r[ym1*cfg.w+xp0])*wx1
                 + longint'(src_r[ym1*cfg.w+xp1])*wx2 + longint'(src_r[ym1*cfg.w+xp2])*wx3;

@@ -14,7 +14,7 @@
       <ipxact:addressBlock>
         <ipxact:name>regs</ipxact:name>
         <ipxact:baseAddress>0x0</ipxact:baseAddress>
-        <ipxact:range>0x290</ipxact:range>
+        <ipxact:range>0x3E0</ipxact:range>
         <ipxact:width>32</ipxact:width>
         <ipxact:usage>register</ipxact:usage>
         <ipxact:register>
@@ -70,7 +70,7 @@
         </ipxact:register>
         <ipxact:register>
           <ipxact:name>CTRL</ipxact:name>
-          <ipxact:description>[0] enable (taken at a frame start)</ipxact:description>
+          <ipxact:description>[0] enable (taken at every frame start), [2:1] LABEL_SCALE (taken with a COMMIT, as FONT): object labels drawn at 1 &lt;&lt; LABEL_SCALE times the 3 x 5 font's cell (0 = 1x), [3] FONT: labels and texts at 2x, 4x, 8x in the smooth font (DejaVu Sans Mono Bold, 4-bit coverage blended with the video; src/include/overlay_font_aa_s&lt;S&gt;.mem from scripts/make_aa_font.py) instead of the enlarged 3 x 5 font (1x is always the 3 x 5 font)</ipxact:description>
           <ipxact:addressOffset>0x18</ipxact:addressOffset>
           <ipxact:size>32</ipxact:size>
           <ipxact:field>
@@ -131,8 +131,8 @@
         </ipxact:register>
         <ipxact:register>
           <ipxact:name>OBJ_CTRL</ipxact:name>
-          <ipxact:description>object i</ipxact:description>
-          <ipxact:dim>NOBJ</ipxact:dim>
+          <ipxact:description>object i: symbol and style</ipxact:description>
+          <ipxact:dim>(NOBJ &gt; 16 ? 16 : NOBJ)</ipxact:dim>
           <ipxact:addressOffset>0x50</ipxact:addressOffset>
           <ipxact:size>32</ipxact:size>
           <ipxact:field>
@@ -149,7 +149,7 @@
           </ipxact:field>
           <ipxact:field>
             <ipxact:name>SHAPE</ipxact:name>
-            <ipxact:description>0 rectangle outline, 1 filled, 2 crosshair, 3 circle (radius = half the larger side)</ipxact:description>
+            <ipxact:description>0 rectangle outline, 1 filled, 2 crosshair, 3 circle (round the box centre, diameter the larger side)</ipxact:description>
             <ipxact:bitOffset>1</ipxact:bitOffset>
             <ipxact:resets>
               <ipxact:reset>
@@ -173,7 +173,7 @@
           </ipxact:field>
           <ipxact:field>
             <ipxact:name>BLEND</ipxact:name>
-            <ipxact:description>50 % blend</ipxact:description>
+            <ipxact:description>50 % blend with the video</ipxact:description>
             <ipxact:bitOffset>4</ipxact:bitOffset>
             <ipxact:resets>
               <ipxact:reset>
@@ -187,6 +187,30 @@
             <ipxact:name>OVAL</ipxact:name>
             <ipxact:description>shape 3: an oval (ellipse) inside the box instead of the circle</ipxact:description>
             <ipxact:bitOffset>5</ipxact:bitOffset>
+            <ipxact:resets>
+              <ipxact:reset>
+                <ipxact:value>0x0</ipxact:value>
+              </ipxact:reset>
+            </ipxact:resets>
+            <ipxact:bitWidth>1</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+          </ipxact:field>
+          <ipxact:field>
+            <ipxact:name>TICKS</ipxact:name>
+            <ipxact:description>rectangle: a 2-pixel tick at the middle of each side, pointing to the centre</ipxact:description>
+            <ipxact:bitOffset>6</ipxact:bitOffset>
+            <ipxact:resets>
+              <ipxact:reset>
+                <ipxact:value>0x0</ipxact:value>
+              </ipxact:reset>
+            </ipxact:resets>
+            <ipxact:bitWidth>1</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+          </ipxact:field>
+          <ipxact:field>
+            <ipxact:name>TRIANGLE</ipxact:name>
+            <ipxact:description>an upward triangle inscribed in the box (any SHAPE): dashed edges with DASHED, the vertices solid</ipxact:description>
+            <ipxact:bitOffset>7</ipxact:bitOffset>
             <ipxact:resets>
               <ipxact:reset>
                 <ipxact:value>0x0</ipxact:value>
@@ -219,12 +243,24 @@
             <ipxact:bitWidth>3</ipxact:bitWidth>
             <ipxact:access>read-write</ipxact:access>
           </ipxact:field>
+          <ipxact:field>
+            <ipxact:name>CORNERS</ipxact:name>
+            <ipxact:description>dashed rectangle: the corners (a quarter of the shorter side, at least 3 pixels) solid</ipxact:description>
+            <ipxact:bitOffset>15</ipxact:bitOffset>
+            <ipxact:resets>
+              <ipxact:reset>
+                <ipxact:value>0x0</ipxact:value>
+              </ipxact:reset>
+            </ipxact:resets>
+            <ipxact:bitWidth>1</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+          </ipxact:field>
           <ipxact:vendorExtensions><stride>16</stride></ipxact:vendorExtensions>
         </ipxact:register>
         <ipxact:register>
           <ipxact:name>OBJ_X</ipxact:name>
           <ipxact:description>object i columns: [15:0] x0 [31:16] x1</ipxact:description>
-          <ipxact:dim>NOBJ</ipxact:dim>
+          <ipxact:dim>(NOBJ &gt; 16 ? 16 : NOBJ)</ipxact:dim>
           <ipxact:addressOffset>0x54</ipxact:addressOffset>
           <ipxact:size>32</ipxact:size>
           <ipxact:field>
@@ -243,7 +279,7 @@
         <ipxact:register>
           <ipxact:name>OBJ_Y</ipxact:name>
           <ipxact:description>object i lines: [15:0] y0 [31:16] y1</ipxact:description>
-          <ipxact:dim>NOBJ</ipxact:dim>
+          <ipxact:dim>(NOBJ &gt; 16 ? 16 : NOBJ)</ipxact:dim>
           <ipxact:addressOffset>0x58</ipxact:addressOffset>
           <ipxact:size>32</ipxact:size>
           <ipxact:field>
@@ -262,7 +298,7 @@
         <ipxact:register>
           <ipxact:name>OBJ_COLOR</ipxact:name>
           <ipxact:description>object i colour, pixel as on the stream ([7:0] R [15:8] G [23:16] B)</ipxact:description>
-          <ipxact:dim>NOBJ</ipxact:dim>
+          <ipxact:dim>(NOBJ &gt; 16 ? 16 : NOBJ)</ipxact:dim>
           <ipxact:addressOffset>0x5C</ipxact:addressOffset>
           <ipxact:size>32</ipxact:size>
           <ipxact:field>
@@ -282,7 +318,7 @@
           <ipxact:name>TXT_CTRL</ipxact:name>
           <ipxact:description>text j</ipxact:description>
           <ipxact:dim>(NTXT &lt; 1 ? 1 : NTXT)</ipxact:dim>
-          <ipxact:addressOffset>0x110</ipxact:addressOffset>
+          <ipxact:addressOffset>0x150</ipxact:addressOffset>
           <ipxact:size>32</ipxact:size>
           <ipxact:field>
             <ipxact:name>EN</ipxact:name>
@@ -298,7 +334,7 @@
           </ipxact:field>
           <ipxact:field>
             <ipxact:name>SCALE</ipxact:name>
-            <ipxact:description>scale log2 (0-2: 1x, 2x, 4x)</ipxact:description>
+            <ipxact:description>scale log2 (0-3: 1x, 2x, 4x, 8x)</ipxact:description>
             <ipxact:bitOffset>1</ipxact:bitOffset>
             <ipxact:resets>
               <ipxact:reset>
@@ -350,7 +386,7 @@
           <ipxact:name>TXT_POS</ipxact:name>
           <ipxact:description>text j top-left corner: [15:0] x [31:16] y</ipxact:description>
           <ipxact:dim>(NTXT &lt; 1 ? 1 : NTXT)</ipxact:dim>
-          <ipxact:addressOffset>0x114</ipxact:addressOffset>
+          <ipxact:addressOffset>0x154</ipxact:addressOffset>
           <ipxact:size>32</ipxact:size>
           <ipxact:field>
             <ipxact:name>TXT_POS</ipxact:name>
@@ -369,7 +405,7 @@
           <ipxact:name>TXT_COLOR</ipxact:name>
           <ipxact:description>text j colour, pixel as on the stream</ipxact:description>
           <ipxact:dim>(NTXT &lt; 1 ? 1 : NTXT)</ipxact:dim>
-          <ipxact:addressOffset>0x118</ipxact:addressOffset>
+          <ipxact:addressOffset>0x158</ipxact:addressOffset>
           <ipxact:size>32</ipxact:size>
           <ipxact:field>
             <ipxact:name>TXT_COLOR</ipxact:name>
@@ -392,6 +428,229 @@
           <ipxact:size>32</ipxact:size>
           <ipxact:field>
             <ipxact:name>TXT_CHARS</ipxact:name>
+            <ipxact:bitOffset>0</ipxact:bitOffset>
+            <ipxact:resets>
+              <ipxact:reset>
+                <ipxact:value>0x0</ipxact:value>
+              </ipxact:reset>
+            </ipxact:resets>
+            <ipxact:bitWidth>32</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+          </ipxact:field>
+          <ipxact:vendorExtensions><stride>4</stride></ipxact:vendorExtensions>
+        </ipxact:register>
+        <ipxact:register>
+          <ipxact:name>OBJ_LABEL</ipxact:name>
+          <ipxact:description>object i label: up to 4 ASCII characters (character 0 in [7:0], 0 ends it), drawn at 1 &lt;&lt; CTRL.LABEL_SCALE times the font, centred below the symbol (above it when it would cross the bottom of the frame) on a darkened backdrop</ipxact:description>
+          <ipxact:dim>(NOBJ &gt; 16 ? 16 : NOBJ)</ipxact:dim>
+          <ipxact:addressOffset>0x260</ipxact:addressOffset>
+          <ipxact:size>32</ipxact:size>
+          <ipxact:field>
+            <ipxact:name>OBJ_LABEL</ipxact:name>
+            <ipxact:bitOffset>0</ipxact:bitOffset>
+            <ipxact:resets>
+              <ipxact:reset>
+                <ipxact:value>0x0</ipxact:value>
+              </ipxact:reset>
+            </ipxact:resets>
+            <ipxact:bitWidth>32</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+          </ipxact:field>
+          <ipxact:vendorExtensions><stride>4</stride></ipxact:vendorExtensions>
+        </ipxact:register>
+        <ipxact:register>
+          <ipxact:name>OBJ2_CTRL</ipxact:name>
+          <ipxact:description>second bank: object 16 + i, as OBJ_CTRL (NOBJ above 16)</ipxact:description>
+          <ipxact:dim>(NOBJ &gt; 16 ? NOBJ - 16 : 1)</ipxact:dim>
+          <ipxact:addressOffset>0x2A0</ipxact:addressOffset>
+          <ipxact:size>32</ipxact:size>
+          <ipxact:field>
+            <ipxact:name>EN</ipxact:name>
+            <ipxact:description>enable</ipxact:description>
+            <ipxact:bitOffset>0</ipxact:bitOffset>
+            <ipxact:resets>
+              <ipxact:reset>
+                <ipxact:value>0x0</ipxact:value>
+              </ipxact:reset>
+            </ipxact:resets>
+            <ipxact:bitWidth>1</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+          </ipxact:field>
+          <ipxact:field>
+            <ipxact:name>SHAPE</ipxact:name>
+            <ipxact:description>0 rectangle outline, 1 filled, 2 crosshair, 3 circle (round the box centre, diameter the larger side)</ipxact:description>
+            <ipxact:bitOffset>1</ipxact:bitOffset>
+            <ipxact:resets>
+              <ipxact:reset>
+                <ipxact:value>0x0</ipxact:value>
+              </ipxact:reset>
+            </ipxact:resets>
+            <ipxact:bitWidth>2</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+          </ipxact:field>
+          <ipxact:field>
+            <ipxact:name>DASHED</ipxact:name>
+            <ipxact:description>dashed</ipxact:description>
+            <ipxact:bitOffset>3</ipxact:bitOffset>
+            <ipxact:resets>
+              <ipxact:reset>
+                <ipxact:value>0x0</ipxact:value>
+              </ipxact:reset>
+            </ipxact:resets>
+            <ipxact:bitWidth>1</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+          </ipxact:field>
+          <ipxact:field>
+            <ipxact:name>BLEND</ipxact:name>
+            <ipxact:description>50 % blend with the video</ipxact:description>
+            <ipxact:bitOffset>4</ipxact:bitOffset>
+            <ipxact:resets>
+              <ipxact:reset>
+                <ipxact:value>0x0</ipxact:value>
+              </ipxact:reset>
+            </ipxact:resets>
+            <ipxact:bitWidth>1</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+          </ipxact:field>
+          <ipxact:field>
+            <ipxact:name>OVAL</ipxact:name>
+            <ipxact:description>shape 3: an oval (ellipse) inside the box instead of the circle</ipxact:description>
+            <ipxact:bitOffset>5</ipxact:bitOffset>
+            <ipxact:resets>
+              <ipxact:reset>
+                <ipxact:value>0x0</ipxact:value>
+              </ipxact:reset>
+            </ipxact:resets>
+            <ipxact:bitWidth>1</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+          </ipxact:field>
+          <ipxact:field>
+            <ipxact:name>TICKS</ipxact:name>
+            <ipxact:description>rectangle: a 2-pixel tick at the middle of each side, pointing to the centre</ipxact:description>
+            <ipxact:bitOffset>6</ipxact:bitOffset>
+            <ipxact:resets>
+              <ipxact:reset>
+                <ipxact:value>0x0</ipxact:value>
+              </ipxact:reset>
+            </ipxact:resets>
+            <ipxact:bitWidth>1</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+          </ipxact:field>
+          <ipxact:field>
+            <ipxact:name>TRIANGLE</ipxact:name>
+            <ipxact:description>an upward triangle inscribed in the box (any SHAPE): dashed edges with DASHED, the vertices solid</ipxact:description>
+            <ipxact:bitOffset>7</ipxact:bitOffset>
+            <ipxact:resets>
+              <ipxact:reset>
+                <ipxact:value>0x0</ipxact:value>
+              </ipxact:reset>
+            </ipxact:resets>
+            <ipxact:bitWidth>1</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+          </ipxact:field>
+          <ipxact:field>
+            <ipxact:name>LINE_W</ipxact:name>
+            <ipxact:description>line width (0 = 1)</ipxact:description>
+            <ipxact:bitOffset>8</ipxact:bitOffset>
+            <ipxact:resets>
+              <ipxact:reset>
+                <ipxact:value>0x0</ipxact:value>
+              </ipxact:reset>
+            </ipxact:resets>
+            <ipxact:bitWidth>4</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+          </ipxact:field>
+          <ipxact:field>
+            <ipxact:name>DASH_LOG2</ipxact:name>
+            <ipxact:description>dash length log2</ipxact:description>
+            <ipxact:bitOffset>12</ipxact:bitOffset>
+            <ipxact:resets>
+              <ipxact:reset>
+                <ipxact:value>0x0</ipxact:value>
+              </ipxact:reset>
+            </ipxact:resets>
+            <ipxact:bitWidth>3</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+          </ipxact:field>
+          <ipxact:field>
+            <ipxact:name>CORNERS</ipxact:name>
+            <ipxact:description>dashed rectangle: the corners (a quarter of the shorter side, at least 3 pixels) solid</ipxact:description>
+            <ipxact:bitOffset>15</ipxact:bitOffset>
+            <ipxact:resets>
+              <ipxact:reset>
+                <ipxact:value>0x0</ipxact:value>
+              </ipxact:reset>
+            </ipxact:resets>
+            <ipxact:bitWidth>1</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+          </ipxact:field>
+          <ipxact:vendorExtensions><stride>16</stride></ipxact:vendorExtensions>
+        </ipxact:register>
+        <ipxact:register>
+          <ipxact:name>OBJ2_X</ipxact:name>
+          <ipxact:description>second bank: object 16 + i, as OBJ_X (NOBJ above 16)</ipxact:description>
+          <ipxact:dim>(NOBJ &gt; 16 ? NOBJ - 16 : 1)</ipxact:dim>
+          <ipxact:addressOffset>0x2A4</ipxact:addressOffset>
+          <ipxact:size>32</ipxact:size>
+          <ipxact:field>
+            <ipxact:name>OBJ2_X</ipxact:name>
+            <ipxact:bitOffset>0</ipxact:bitOffset>
+            <ipxact:resets>
+              <ipxact:reset>
+                <ipxact:value>0x0</ipxact:value>
+              </ipxact:reset>
+            </ipxact:resets>
+            <ipxact:bitWidth>32</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+          </ipxact:field>
+          <ipxact:vendorExtensions><stride>16</stride></ipxact:vendorExtensions>
+        </ipxact:register>
+        <ipxact:register>
+          <ipxact:name>OBJ2_Y</ipxact:name>
+          <ipxact:description>second bank: object 16 + i, as OBJ_Y (NOBJ above 16)</ipxact:description>
+          <ipxact:dim>(NOBJ &gt; 16 ? NOBJ - 16 : 1)</ipxact:dim>
+          <ipxact:addressOffset>0x2A8</ipxact:addressOffset>
+          <ipxact:size>32</ipxact:size>
+          <ipxact:field>
+            <ipxact:name>OBJ2_Y</ipxact:name>
+            <ipxact:bitOffset>0</ipxact:bitOffset>
+            <ipxact:resets>
+              <ipxact:reset>
+                <ipxact:value>0x0</ipxact:value>
+              </ipxact:reset>
+            </ipxact:resets>
+            <ipxact:bitWidth>32</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+          </ipxact:field>
+          <ipxact:vendorExtensions><stride>16</stride></ipxact:vendorExtensions>
+        </ipxact:register>
+        <ipxact:register>
+          <ipxact:name>OBJ2_COLOR</ipxact:name>
+          <ipxact:description>second bank: object 16 + i, as OBJ_COLOR (NOBJ above 16)</ipxact:description>
+          <ipxact:dim>(NOBJ &gt; 16 ? NOBJ - 16 : 1)</ipxact:dim>
+          <ipxact:addressOffset>0x2AC</ipxact:addressOffset>
+          <ipxact:size>32</ipxact:size>
+          <ipxact:field>
+            <ipxact:name>OBJ2_COLOR</ipxact:name>
+            <ipxact:bitOffset>0</ipxact:bitOffset>
+            <ipxact:resets>
+              <ipxact:reset>
+                <ipxact:value>0x0</ipxact:value>
+              </ipxact:reset>
+            </ipxact:resets>
+            <ipxact:bitWidth>32</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+          </ipxact:field>
+          <ipxact:vendorExtensions><stride>16</stride></ipxact:vendorExtensions>
+        </ipxact:register>
+        <ipxact:register>
+          <ipxact:name>OBJ2_LABEL</ipxact:name>
+          <ipxact:description>second bank: label of object 16 + i, as OBJ_LABEL (NOBJ above 16)</ipxact:description>
+          <ipxact:dim>(NOBJ &gt; 16 ? NOBJ - 16 : 1)</ipxact:dim>
+          <ipxact:addressOffset>0x3A0</ipxact:addressOffset>
+          <ipxact:size>32</ipxact:size>
+          <ipxact:field>
+            <ipxact:name>OBJ2_LABEL</ipxact:name>
             <ipxact:bitOffset>0</ipxact:bitOffset>
             <ipxact:resets>
               <ipxact:reset>

@@ -1,0 +1,2 @@
+# symbol_overlay synthesis parameters (scripts/run_yosys.sh): the smooth font's ROM files
+FONT_DIR="\"${IPDIR}/src/include/\""

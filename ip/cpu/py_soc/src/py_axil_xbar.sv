@@ -68,6 +68,9 @@ module py_axil_xbar #(
     .multi_o(ar_multi)
   );
 
+  // overlapping regions are rejected at elaboration (axi4_lite_decoder), so multi_o stays low
+  wire unused_ok = &{1'b0, aw_multi, ar_multi, 1'b0};
+
   assign m_axil_awaddr = s_axil.awaddr;
   assign m_axil_wdata = s_axil.wdata;
   assign m_axil_wstrb = s_axil.wstrb;

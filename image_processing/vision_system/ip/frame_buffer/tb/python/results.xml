@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1792611514" />
+    <testcase name="test_frame_buffer_exact" classname="frame_buffer_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/image_processing/vision_system/ip/frame_buffer/tb/python/frame_buffer_tb.py" lineno="25" time="1.9667868614196777" sim_time_ns="202556.0" ratio_time="102988.28204180184" />
+  </testsuite>
+</testsuites>

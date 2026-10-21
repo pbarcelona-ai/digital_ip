@@ -229,6 +229,23 @@
           </ipxact:field>
         </ipxact:register>
         <ipxact:register>
+          <ipxact:name>BYPASS</ipxact:name>
+          <ipxact:description>[0] 1: frames pass unchanged (reset: no correction until software enables it); taken between frames</ipxact:description>
+          <ipxact:addressOffset>0x38</ipxact:addressOffset>
+          <ipxact:size>32</ipxact:size>
+          <ipxact:field>
+            <ipxact:name>BYPASS</ipxact:name>
+            <ipxact:bitOffset>0</ipxact:bitOffset>
+            <ipxact:resets>
+              <ipxact:reset>
+                <ipxact:value>0x1</ipxact:value>
+              </ipxact:reset>
+            </ipxact:resets>
+            <ipxact:bitWidth>32</ipxact:bitWidth>
+            <ipxact:access>read-write</ipxact:access>
+          </ipxact:field>
+        </ipxact:register>
+        <ipxact:register>
           <ipxact:name>INTERP_MODE</ipxact:name>
           <ipxact:description>[0] 0 bilinear, 1 bicubic (change only while idle)</ipxact:description>
           <ipxact:addressOffset>0x3C</ipxact:addressOffset>
@@ -366,7 +383,7 @@
         </ipxact:register>
         <ipxact:register>
           <ipxact:name>MODEL_SEL</ipxact:name>
-          <ipxact:description>[2:0] 0 radial, 1 fisheye, 2 affine (reserved), 3 perspective, 4 scaling (reserved), 5 panoramic</ipxact:description>
+          <ipxact:description>[2:0] 0 radial, 1 fisheye (division model), 2 affine (reserved), 3 perspective, 4 scaling (reserved), 5 panoramic, 6 / 7 reserved; the reserved codes give the pinhole round trip (near identity) - software must not select them</ipxact:description>
           <ipxact:addressOffset>0x5C</ipxact:addressOffset>
           <ipxact:size>32</ipxact:size>
           <ipxact:field>

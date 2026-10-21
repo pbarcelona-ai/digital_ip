@@ -19,8 +19,8 @@
 //   the sum is correlation (k[r*N+c] multiplies the pixel at row r, column c); for non-
 //   symmetric kernels the kernel must be given rotated by 180 degrees to obtain mathematical
 //   convolution (document).
-// TODO(REF-CONV2D_CORE-1) [LOW] Correlation vs convolution. Prompt: in
-//   ip/video/conv2d_core/src/conv2d_core.sv header, state that the block computes correlation
-//   (k[r*N + c] weights window row r, column c) and that a convolution kernel must be loaded
-//   rotated by 180 degrees; nothing changes for the symmetric blur / sharpen kernels.
+// RESOLVED(REF-CONV2D_CORE-1) [LOW] Correlation vs convolution. Resolution: 2026-10-21: the
+//   conv2d_core.sv header states that the block computes correlation (k[r*N + c] weights window
+//   row r, column c) and that a convolution kernel is loaded rotated by 180 degrees; the golden
+//   model (model/conv2d_core_model.py) defines the same sum and tb/python checks it beat for beat.
 ```

@@ -16,7 +16,7 @@
 //   with skew control); the memory read path is registered. Errors - writing
 //   when full or reading when empty is ignored (and asserted in simulation);
 //   illegal parameters stop elaboration.
-// Date: 2026-10-16
+// Date: 2026-10-21
 module async_fifo #(
   parameter int DATA_W = 32,
   parameter int DEPTH  = 512
@@ -35,7 +35,9 @@ module async_fifo #(
   output logic              rvalid,
   input  logic              rready
 );
+  /* verilator lint_off UNUSEDPARAM */             // version identification (library convention), not logic
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
+  /* verilator lint_on UNUSEDPARAM */
   if (DEPTH < 4 || (DEPTH & (DEPTH - 1)) != 0) begin : g_chk_d $error("%m: DEPTH must be a power of two >= 4"); end
   if (DATA_W < 1) begin : g_chk_w $error("%m: DATA_W must be >= 1"); end
 

@@ -13,9 +13,15 @@
 //   The phase restarts at every tuser (SOF) and tlast (EOL) pixel. Bypass
 //   bits and the pattern are sampled at the start of each frame, so a
 //   change never splits a frame. Clock - clk only. Reset - synchronous
-//   rst_n (active low). Latency - 5 clocks, 1 pixel per clock. The output goes through a 2-entry ip_axis_fifo, so s_axis_tready does
+//   rst_n (active low). Latency - 5 clocks, 1 pixel per clock. The output
+//   goes through a 2-entry ip_axis_fifo, so s_axis_tready does
 //   not depend combinationally on m_axis_tready (+3 clocks).
-// Date: 2026-10-16
+//   After black-level subtraction white tops out at 2^PW - 1 - blc[c]:
+//   software that sets black levels scales each gain by (2^PW - 1) /
+//   (2^PW - 1 - blc[c]) to keep full scale (Ramanath et al., IEEE SPM 2005;
+//   video_processor's firmware leaves BLC at 0, so its gains need no scaling).
+//   Golden model: model/isp_blc_wb_model.py (blc_wb; tb/python).
+// Date: 2026-10-21
 module isp_blc_wb #(
   parameter int PW = 10                        // RAW pixel width
 ) (
@@ -60,7 +66,7 @@ module isp_blc_wb #(
   logic wb1, l1, u1, val1;
   // Stage 2: white balance (output register)
   wire [11:0] g = (c1 == 2'd0) ? gain_r_i : (c1 == 2'd3) ? gain_b_i : gain_g_i;
-  wire [PW+12:0] prod = v1 * g + 13'd128;
+  wire [PW+12:0] prod = (PW+13)'(v1) * (PW+13)'(g) + (PW+13)'(128);
   wire [PW+4:0]  scaled = prod[PW+12:8];
   wire [PW-1:0]  wb_out = (scaled > {5'd0, {PW{1'b1}}}) ? {PW{1'b1}} : scaled[PW-1:0];
 
@@ -104,6 +110,7 @@ module isp_blc_wb #(
       q_u <= u1;
     end
   end
+  logic [2:0] out_level;                       // not used
   axis_if #(.DATA_W(PW)) u_out_fifo_s ();
   assign u_out_fifo_s.tdata = q_d;
   assign u_out_fifo_s.tlast = q_l;
@@ -118,6 +125,7 @@ module isp_blc_wb #(
     .rst_n,
     .s(u_out_fifo_s),
     .m(m_axis),
-    .level_o()
+    .level_o(out_level)
   );
+  wire unused_ok = &{1'b0, out_level, prod[7:0], 1'b0};
 endmodule

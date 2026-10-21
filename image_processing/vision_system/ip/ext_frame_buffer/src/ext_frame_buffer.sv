@@ -1,8 +1,44 @@
 // ***************
 // Filename: ext_frame_buffer.sv
-// Description: SDR SDRAM-backed frame buffer with queued pixel writes and
-//              serialized four-address reads.
-// ***************
+// Author: FPGA Cores 4 U
+// Description: SDR SDRAM-backed frame store of vision_system (USE_EXT_FB),
+//   with queued pixel writes and serialized four-address reads. Golden
+//   model: model/ext_frame_buffer_model.py (clock exact; tb/python).
+//   - Init: INIT_WAIT_CYCLES with CKE low, PRECHARGE ALL, two AUTO REFRESH,
+//     LOAD MODE (CAS_LATENCY, burst length 1, single-location writes), then
+//     idle; wr_ready / rd_ready stay low until then.
+//   - Writes: wr_en with wr_ready pushes (wr_addr, wr_data) into a
+//     FIFO_DEPTH FIFO (wr_ready = initialized, no refresh due, room). Each
+//     entry becomes ACTIVATE (if its row is not open; a PRECHARGE first
+//     once tRAS and the last write's tWR have passed) and WRITE. wr_idle:
+//     the FIFO is empty and the last write has completed.
+//   - Reads: rd_en with rd_ready (initialized, no read active, write FIFO
+//     empty: reads see every earlier write) takes rd_addr0..3 and reads them
+//     one after the other (ACTIVATE as needed, READ, data captured
+//     CAS_LATENCY + 1 clocks later); rd_valid pulses one clock with
+//     rd_data0..3.
+//   - Refresh: due every REFRESH_INTERVAL_CYCLES clocks on a free-running
+//     schedule (a refresh served late does not delay the next one, so they
+//     average one per interval), served from idle (an open row precharged
+//     first); writes are not accepted while one is due.
+//   - Address: row = addr >> COL_W (SDRAM_A_W bits), column = the low COL_W
+//     bits, bank 0; the pixel in DQ[PIX_W-1:0], DQM low (all bytes).
+//   Timing parameters (clocks): the defaults assume clk = 100 MHz and a
+//   Micron MT48LC16M16A2 -7E class SDR SDRAM: INIT_WAIT 20000 = 200 us,
+//   tRP / tRCD 2 = 20 ns, tRAS 5 = 50 ns, tRFC 7 = 70 ns, tMRD / tWR 2,
+//   refresh every 780 = 7.8 us (8192 per 64 ms), CL 2 (up to 133 MHz). For
+//   another clock, set each to ceil(t_ns * f_MHz / 1000).
+//   Hardware note: the read capture is behavioural. sdram_clk is clk
+//   itself and DQ is sampled CAS_LATENCY + 1 clocks after READ, at the end
+//   of the data-valid window; a board needs a forwarded clock (ODDR), a
+//   phase-shifted capture clock, IOB registers and I/O constraints. The
+//   hardware frame store of video_processor is the DDR controller of
+//   docs/ddr_npu_architecture_study.md; this block serves simulation.
+//   Clock - clk (also driven out as sdram_clk). Reset - synchronous active
+//   low rst_n (vision_system's datapath reset). Clock-domain crossings -
+//   none. Latency - a read: ACTIVATE (if needed) + tRCD + READ + CL + 1
+//   clocks per address, rd_valid after the fourth. Errors - none.
+// Date: 2026-10-21
 module ext_frame_buffer #(
   parameter int PIX_W = barrel_pkg::PIX_W,
   parameter int ADDR_W = barrel_pkg::ADDR_W,
@@ -21,41 +57,44 @@ module ext_frame_buffer #(
   parameter int CAS_LATENCY = 2,
   parameter int REFRESH_INTERVAL_CYCLES = 780
 ) (
-  input  logic clk,
-  input  logic rst_n,
+  input  logic clk,                              // core and SDRAM clock
+  input  logic rst_n,                            // synchronous, active low
 
-  input  logic wr_en,
-  output logic wr_ready,
-  input  logic [ADDR_W-1:0] wr_addr,
-  input  logic [PIX_W-1:0] wr_data,
-  output logic wr_idle,
+  // write port (queued)
+  input  logic wr_en,                            // write request (taken with wr_ready)
+  output logic wr_ready,                         // initialized, no refresh due, FIFO not full
+  input  logic [ADDR_W-1:0] wr_addr,             // pixel address
+  input  logic [PIX_W-1:0] wr_data,              // pixel
+  output logic wr_idle,                          // every queued write has completed
 
-  input  logic rd_en,
-  output logic rd_ready,
-  input  logic [ADDR_W-1:0] rd_addr0,
-  input  logic [ADDR_W-1:0] rd_addr1,
-  input  logic [ADDR_W-1:0] rd_addr2,
-  input  logic [ADDR_W-1:0] rd_addr3,
-  output logic rd_valid,
-  output logic [PIX_W-1:0] rd_data0,
-  output logic [PIX_W-1:0] rd_data1,
-  output logic [PIX_W-1:0] rd_data2,
-  output logic [PIX_W-1:0] rd_data3,
+  // read port (four addresses, served one after the other)
+  input  logic rd_en,                            // read request (taken with rd_ready)
+  output logic rd_ready,                         // initialized, no read active, write FIFO empty
+  input  logic [ADDR_W-1:0] rd_addr0,            // first address
+  input  logic [ADDR_W-1:0] rd_addr1,            // second address
+  input  logic [ADDR_W-1:0] rd_addr2,            // third address
+  input  logic [ADDR_W-1:0] rd_addr3,            // fourth address
+  output logic rd_valid,                         // one clock: rd_data0..3 hold the read
+  output logic [PIX_W-1:0] rd_data0,             // pixel at rd_addr0
+  output logic [PIX_W-1:0] rd_data1,             // pixel at rd_addr1
+  output logic [PIX_W-1:0] rd_data2,             // pixel at rd_addr2
+  output logic [PIX_W-1:0] rd_data3,             // pixel at rd_addr3
 
-  output wire sdram_clk,
-  output logic sdram_cke,
-  output logic sdram_cs_n,
-  output logic sdram_ras_n,
-  output logic sdram_cas_n,
-  output logic sdram_we_n,
-  output logic [SDRAM_A_W-1:0] sdram_a,
-  output logic [1:0] sdram_ba,
-  output logic [SDRAM_DQ_W/8-1:0] sdram_dqm,
-  inout  wire [SDRAM_DQ_W-1:0] sdram_dq
+  // SDR SDRAM
+  output wire sdram_clk,                         // = clk (see the hardware note)
+  output logic sdram_cke,                        // clock enable (low during the power-up wait)
+  output logic sdram_cs_n,                       // chip select (always selected)
+  output logic sdram_ras_n,                      // command: RAS
+  output logic sdram_cas_n,                      // command: CAS
+  output logic sdram_we_n,                       // command: WE
+  output logic [SDRAM_A_W-1:0] sdram_a,          // row / column / mode register
+  output logic [1:0] sdram_ba,                   // bank (always 0)
+  output logic [SDRAM_DQ_W/8-1:0] sdram_dqm,     // byte masks (always 0: all bytes)
+  inout  wire [SDRAM_DQ_W-1:0] sdram_dq          // data, driven during WRITE only
 );
 
   localparam int PTR_W = (FIFO_AW > 0) ? FIFO_AW : 1;
-  localparam logic [SDRAM_A_W-1:0] MODE_REG = (CAS_LATENCY << 4) | 10'h200;
+  localparam logic [SDRAM_A_W-1:0] MODE_REG = SDRAM_A_W'((CAS_LATENCY << 4) | 'h200);   // burst 1, CL
 
   typedef enum logic [4:0] {
     ST_INIT_WAIT, ST_INIT_PRE, ST_INIT_RP, ST_INIT_REF1, ST_INIT_RFC1,
@@ -93,18 +132,18 @@ module ext_frame_buffer #(
 
   assign sdram_clk = clk;
   assign sdram_dq = dq_oe ? dq_out : {SDRAM_DQ_W{1'bz}};
-  assign wr_ready = initialized && !refresh_due && (wr_count < FIFO_DEPTH);
+  assign wr_ready = initialized && !refresh_due && (wr_count < (PTR_W+1)'(FIFO_DEPTH));
   assign write_push = wr_en && wr_ready;
   assign write_pop = (state == ST_WRITE);
   assign wr_idle = initialized && (wr_count == 0) && !write_pop && (write_age == 0);
   assign rd_ready = initialized && !read_active && (wr_count == 0);
 
-  always @* begin
+  always_comb begin
     if (read_active) current_addr = read_addr[read_index];
     else             current_addr = wr_fifo_addr[wr_rd_ptr];
     current_col = '0;
     current_col[COL_W-1:0] = current_addr[COL_W-1:0];
-    current_row = current_addr >> COL_W;
+    current_row = SDRAM_A_W'(current_addr >> COL_W);   // the row bits that fit the SDRAM address
   end
 
   always_comb begin
@@ -154,7 +193,7 @@ module ext_frame_buffer #(
     endcase
   end
 
-  always_ff @(posedge clk or negedge rst_n) begin
+  always_ff @(posedge clk) begin
     if (!rst_n) begin
       state <= ST_INIT_WAIT;
       wait_count <= INIT_WAIT_CYCLES;
@@ -182,9 +221,16 @@ module ext_frame_buffer #(
       if (write_age != 0) write_age <= write_age - 1'b1;
       if (open_row_valid && (row_age < T_RAS_CYCLES))
         row_age <= row_age + 1'b1;
-      if (initialized && !refresh_due) begin
-        if (refresh_count + 1 >= REFRESH_INTERVAL_CYCLES) refresh_due <= 1'b1;
-        else refresh_count <= refresh_count + 1'b1;
+      // refresh schedule: the count runs every clock once initialized; a REFRESH takes one interval off it,
+      // so refreshes average one per REFRESH_INTERVAL_CYCLES however long each one waited to be served
+      if (initialized) begin
+        if (state == ST_REFRESH) begin
+          refresh_count <= refresh_count + 1'b1 - 32'(REFRESH_INTERVAL_CYCLES);
+          refresh_due <= 1'b0;
+        end else begin
+          refresh_count <= refresh_count + 1'b1;
+          if (refresh_count + 1 >= REFRESH_INTERVAL_CYCLES) refresh_due <= 1'b1;
+        end
       end
 
       if (write_push) begin
@@ -323,8 +369,6 @@ module ext_frame_buffer #(
         end
         ST_REFRESH: begin
           open_row_valid <= 1'b0;
-          refresh_count <= '0;
-          refresh_due <= 1'b0;
           wait_count <= T_RFC_CYCLES;
           state <= ST_RFC;
         end
@@ -337,4 +381,7 @@ module ext_frame_buffer #(
     end
   end
 
+  if (SDRAM_DQ_W > PIX_W) begin : g_dq_hi
+    wire unused_dq = &{1'b0, dq_in[SDRAM_DQ_W-1:PIX_W], 1'b0};   // the bus bits above a pixel
+  end
 endmodule

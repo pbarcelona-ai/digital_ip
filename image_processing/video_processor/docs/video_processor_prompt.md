@@ -469,7 +469,7 @@ target (a quarter of its size, at least 8 pixels: large targets such as cars and
 not outlined). Pedestrians and faces are drawn on
 top of the vehicles (lower object numbers). Texts (3 x 5 font, on a darkened backdrop): T_NAME the image name in the upper left
 corner, T_CLOCK a clock (time since the core logic started, HH:MM:SS.mmm) in the upper right, T_FRAME
-"frame number <n>" in the lower left, the number counted by the overlay itself at every frame start
+"Frame Number <n>" in the lower left, the number counted by the overlay itself at every frame start
 (exact on every frame). Changes are committed (overlay_commit), so they apply whole at the next
 frame start.
 ```

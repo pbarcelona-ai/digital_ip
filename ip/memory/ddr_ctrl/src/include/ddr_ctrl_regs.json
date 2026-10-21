@@ -1,0 +1,20 @@
+{
+  "name": "ddr_ctrl_regs",
+  "ip": "ddr_ctrl",
+  "id": "DDRC",
+  "version": "1.00",
+  "desc": "Generic DDR controller: statistics clear, status, and the statistics counters (32-bit, wrapping).",
+  "addr_width": 8,
+  "clk": "clk",
+  "rst_n": "rst_n",
+  "registers": [
+    {"name": "CTRL", "offset": "0x10", "access": "WO", "width": 1, "desc": "[0] write 1: clear the statistics"},
+    {"name": "STATUS", "offset": "0x14", "access": "RO", "width": 5, "desc": "[0] a burst active, [4:1] refreshes owed"},
+    {"name": "RD_BEATS", "offset": "0x18", "access": "RO", "desc": "memory read beats (RD commands)"},
+    {"name": "WR_BEATS", "offset": "0x1C", "access": "RO", "desc": "memory write beats (WR commands)"},
+    {"name": "ACTS", "offset": "0x20", "access": "RO", "desc": "ACT commands (row openings)"},
+    {"name": "HITS", "offset": "0x24", "access": "RO", "desc": "memory beats issued without an ACT for the beat (row hits)"},
+    {"name": "REFS", "offset": "0x28", "access": "RO", "desc": "REF commands"},
+    {"name": "ERRS", "offset": "0x2C", "access": "RO", "desc": "error bursts (SLVERR: size or burst type, DECERR: beyond the memory)"}
+  ]
+}

@@ -283,6 +283,7 @@ Data-flow diagrams are generated from the RTL by `ip/scripts/make_dataflow_diagr
 | [`csi2_rx`](video/csi2_rx) | - | - | [data flow](video/csi2_rx/docs/csi2_rx_dataflow.svg) |
 | [`csi2_tx`](video/csi2_tx) | - | - | [data flow](video/csi2_tx/docs/csi2_tx_dataflow.svg) |
 | [`dsi_tx`](video/dsi_tx) | - | - | [data flow](video/dsi_tx/docs/dsi_tx_dataflow.svg) |
+| [`feature_detect`](video/feature_detect) | - | - | - |
 | [`frame_counter`](video/frame_counter) | - | [hierarchy](video/frame_counter/docs/block_diagram.svg) | [data flow](video/frame_counter/docs/frame_counter_dataflow.svg) |
 | [`hdmi_tx`](video/hdmi_tx) | - | - | [data flow](video/hdmi_tx/docs/hdmi_tx_dataflow.svg) |
 | [`isp_blc_wb`](video/isp_blc_wb) | - | - | [data flow](video/isp_blc_wb/docs/isp_blc_wb_dataflow.svg) |

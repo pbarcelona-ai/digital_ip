@@ -6,7 +6,9 @@
 // calib_params_t, the single packed struct bundling every
 // camera-calibration and distortion coefficient coord_gen
 // needs, so new models only require a struct-field addition.
-// Date: September 26, 2026
+// Golden model: ip/coord_gen/model/coord_gen_model.py (CalibParams,
+// the model codes).
+// Date: 2026-10-21
 // ***************
 // =============================================================================
 // distortion_model_pkg.sv
@@ -19,8 +21,7 @@
 // dozen individual scalar ports, as it used to) is what makes the pipeline
 // reusable: adding a new model's parameters is a struct-field addition,
 // not a port-list change propagated through every module that instantiates
-// or wires up coord_gen (axis_out_ctrl.sv, barrel_correct_top.sv,
-// axi_lite_regs.sv).
+// or wires up coord_gen (axis_out_ctrl.sv, axi_lite_regs.sv).
 //
 // FIXED-POINT: every field is Q16.16 (see barrel_pkg.sv) unless noted.
 //
@@ -84,11 +85,13 @@
 // ARCHITECTURE HOOKS: model_sel selects which distortion model coord_gen
 // applies. MODEL_RADIAL, MODEL_FISHEYE, MODEL_PANORAMIC and
 // MODEL_PERSPECTIVE are all functionally implemented (see above).
-// MODEL_AFFINE and MODEL_SCALING remain reserved, documented extension
-// points -- selecting them currently makes coord_gen fall back to an
-// exact identity mapping (sx=x, sy=y bit-for-bit, verified by the smoke
-// test) rather than silently producing wrong output. See the "Extension
-// hooks" section of README.md for what each of those two would need.
+// MODEL_AFFINE (2), MODEL_SCALING (4) and the unnamed codes 6 / 7 are
+// reserved: coord_gen gives the pinhole round trip
+// s = c + qmul(qmul(x - c, recip_f), f) for them, close to the identity
+// but not bit exact (recip_f is the rounded Q16.16 reciprocal of f).
+// Software must not select them; vision_system's BYPASS passes a frame
+// exactly. See the "Extension hooks" section of README.md for what
+// AFFINE / SCALING would need.
 // =============================================================================
 package distortion_model_pkg;
 

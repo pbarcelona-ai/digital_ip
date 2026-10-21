@@ -9,7 +9,7 @@
 //   IP; see the top level description for clock, reset, latency and error
 //   behavior. Errors - none reported here, out-of-range parameters stop
 //   elaboration or are handled by the parent block.
-// Date: 2026-09-29
+// Date: 2026-10-20
 module uart_rx (
   input  logic       clk,
   input  logic       rst_n,
@@ -25,7 +25,9 @@ module uart_rx (
   output logic       parity_err_o,   // valid with word: parity mismatch
   output logic       busy_o
 );
+  /* verilator lint_off UNUSEDPARAM */             // version identification (library convention), not logic
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
+  /* verilator lint_on UNUSEDPARAM */
 
   localparam logic [2:0] S_IDLE = 3'd0, S_START = 3'd1, S_DATA = 3'd2,
                          S_PAR = 3'd3, S_STOP = 3'd4;

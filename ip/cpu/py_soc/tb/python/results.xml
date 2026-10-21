@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1792545467" />
+    <testcase name="test_firmware_clock_exact" classname="py_soc_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/ip/cpu/py_soc/tb/python/py_soc_tb.py" lineno="288" time="3.403074026107788" sim_time_ns="342326.0" ratio_time="100593.16881552822" />
+  </testsuite>
+</testsuites>

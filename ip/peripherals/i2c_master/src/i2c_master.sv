@@ -9,13 +9,20 @@
 //   ID "I2CM" / VERSION / DATE at 0x00-0x08, CTRL 0x10 [0] en [1] start
 //   (command, reads 0) [2] read [3] no_stop (clear EN to abort a
 //   transaction waiting on its streams: STOP, NACK reported); ADDR 0x14 [6:0]; LEN 0x18; DIV 0x1C (phase
-//   clocks - 1, f_scl = f_clk / (4 * (DIV + 1))); STATUS 0x20 [0] busy
+//   clocks - 1, f_scl = f_clk / (4 * (DIV + 1)), SCL low and high 2 phases each; the reset value meets
+//   the UM10204 tLOW minimum of the bus mode: 4.7 us up to 100 kHz, 1.3 us up to 400 kHz, 0.5 us above,
+//   e.g. 384.6 kHz for SCL_HZ 400 kHz at 200 MHz; software writing DIV keeps 2 (DIV + 1) / f_clk at or
+//   above it); STATUS 0x20 [0] busy
 //   [1] done [2] nack [3] arb_lost, [3:1] write 1 to clear, [31:16] receive
-//   FIFO level). Clock - single clock aclk. Reset - synchronous active low
+//   FIFO level); IRQ_EN 0x24 [0] DONE: irq_o = STATUS.DONE & IRQ_EN.DONE.
+//   Usage: probe an address with a write of LEN 0; a read needs LEN >= 1
+//   (a target in read mode drives its first data bit after the address
+//   ACK and could hold SDA low against the STOP).
+//   Clock - single clock aclk. Reset - synchronous active low
 //   aresetn. Timing - registered outputs, no combinational path from the
 //   bus to the pins. Errors - illegal parameter values stop elaboration
 //   with an $error.
-// Date: 2026-10-16
+// Date: 2026-10-20
 module i2c_master #(
   parameter int CLK_HZ     = 100_000_000,
   parameter int SCL_HZ     = 100_000,      // default bus frequency
@@ -31,7 +38,8 @@ module i2c_master #(
   i2c_if.master i2c,
   // register ports
   // regs: i2c_master_regs_if.core (src/include/i2c_master_regs_if.sv)
-  i2c_master_regs_if.core regs
+  i2c_master_regs_if.core regs,
+  output logic        irq_o          // STATUS.DONE and IRQ_EN.DONE: the transaction finished
 );
   assign m_axis.tkeep = '1;      // not used by this block
   assign m_axis.tuser = '0;      // not used by this block
@@ -161,4 +169,11 @@ module i2c_master #(
   end
 
   assign regs.sts_status = {16'(rxf_lvl), 12'd0, f_arb, f_nack, f_done, busy};
+  assign irq_o = f_done & regs.cfg_irq_en;
+
+  // not used: write pulses of registers acted on by value, STATUS bits that are not flags, the TX FIFO's
+  // level, stream sidebands of byte streams, the bit engine's busy (the sequencer tracks it)
+  wire unused_ok = &{1'b0, regs.cfg_addr_wr, regs.cfg_len_wr, regs.cfg_div_wr, regs.cfg_irq_en_wr,
+                     regs.cfg_status[31:4], regs.cfg_status[0], txf_lvl, rxf_user, bc_busy,
+                     txf.tkeep, txf.tlast, txf.tuser, u_rxf_m.tkeep};
 endmodule

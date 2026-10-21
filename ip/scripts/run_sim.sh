@@ -4,12 +4,13 @@
 # Author: FPGA Cores 4 U
 # Description: Compile and run the self-checking testbench of one IP with the
 #   selected simulator. Optional VCD dump and Surfer waveform viewer.
-# Date: 2026-09-29
+# Date: 2026-10-20
 #
 # Usage: scripts/run_sim.sh <ip> [--vcd] [--wave] [--lint] [--list-tests]
 #   --vcd         write build/sim/<ip>/<tb>.vcd
 #   --wave        implies --vcd, then opens the VCD in Surfer if installed
-#   --lint        run verilator --lint-only on the RTL first
+#   --lint        run verilator --lint-only -Wall on the RTL first (default
+#                 timescale 1ns/1ps)
 #   --list-tests  print the name (and description) of each test available
 #                 to run in this IP (scripts/list_tests.py), then exit; every
 #                 run also prints the test names at its start
@@ -36,8 +37,8 @@ if [[ "$CAT" == scalers ]]; then
     esac
   done
   case "$SIM" in
-    iverilog|icarus) exec "$REPO/tools/run_iverilog.sh" "$IP" "${SCALER_ARGS[@]}" ;;
-    verilator) exec "$REPO/tools/run_sim.sh" "$IP" "${SCALER_ARGS[@]}" ;;
+    iverilog|icarus) exec "$REPO/tools/run_iverilog.sh" "$IP" ${SCALER_ARGS[@]+"${SCALER_ARGS[@]}"} ;;
+    verilator) exec "$REPO/tools/run_sim.sh" "$IP" ${SCALER_ARGS[@]+"${SCALER_ARGS[@]}"} ;;
     *) echo "unsupported simulator '$SIM'" >&2; exit 2 ;;
   esac
 fi
@@ -67,7 +68,9 @@ case "$SIM" in
 esac
 
 if [ "$LINT" = 1 ]; then
-  verilator --lint-only -Wall -Wno-fatal --top-module "$TOP" $SRCS
+  # --timescale: modules without a `timescale take 1ns/1ps, as in the iverilog run (-Wno-timescale);
+  # only behavioral models (e.g. dpll_dco) declare one
+  verilator --lint-only -Wall -Wno-fatal --timescale 1ns/1ps --top-module "$TOP" $SRCS
 fi
 cd "$OUT"                                   # VCD files land here
 iverilog -g2012 -Wall -Wno-timescale $TB_INC -s "$TB" -o "$TB.vvp" $SRCS ${EXTRA:-} $TB_SRCS

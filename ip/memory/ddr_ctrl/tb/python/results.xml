@@ -1,0 +1,7 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1792618398" />
+    <testcase name="test_ddr_ctrl_exact" classname="ddr_ctrl_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/ip/memory/ddr_ctrl/tb/python/ddr_ctrl_tb.py" lineno="113" time="21.743267059326172" sim_time_ns="300006.0" ratio_time="13797.650517810327" />
+    <testcase name="test_register_map" classname="ddr_ctrl_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/ip/memory/ddr_ctrl/tb/python/ddr_ctrl_tb.py" lineno="279" time="0.04012012481689453" sim_time_ns="1750.0" ratio_time="43619.0068696665" />
+  </testsuite>
+</testsuites>

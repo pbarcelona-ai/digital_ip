@@ -10,7 +10,7 @@
 //   ip/scripts/regmap_gen.py from py_stream_port_regs.json and the ports of
 //   py_stream_port: regenerate after changing either. Clock - aclk. Reset -
 //   synchronous active low aresetn.
-// Date: 2026-10-16
+// Date: 2026-10-20
 module py_stream_port_top #(
   parameter int DATA_W = 8,
   parameter int TX_DEPTH = 16,

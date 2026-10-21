@@ -17,7 +17,11 @@
 //   sampled at each frame start. Clock - clk only. Reset - synchronous
 //   rst_n (active low). Latency - 5 clocks. The output goes through a 2-entry ip_axis_fifo, so s_axis_tready does
 //   not depend combinationally on m_axis_tready (+3 clocks).
-// Date: 2026-10-16
+//   BT.709 Cb uses -86 for G (nearest integer to -86.71 would be -87): with
+//   -26 / -86 / +112 the row sums to 0, so grey maps exactly to Cb = 128
+//   (ITU-R BT.709-6 coefficients scaled by 219 / 224 and 256).
+//   Golden model: model/isp_csc_model.py (csc_frame; tb/python).
+// Date: 2026-10-21
 module isp_csc (
   input  logic        clk,
   input  logic        rst_n,
@@ -90,6 +94,7 @@ module isp_csc (
       q_d  <= b1 ? d1 : {clamp(128 + (scb >>> 8)), clamp(16 + (sy >>> 8)), clamp(128 + (scr >>> 8))};
     end
   end
+  logic [2:0] out_level;                       // not used
   axis_if #(.DATA_W(24)) u_out_fifo_s ();
   assign u_out_fifo_s.tdata = q_d;
   assign u_out_fifo_s.tlast = q_l;
@@ -104,6 +109,7 @@ module isp_csc (
     .rst_n,
     .s(u_out_fifo_s),
     .m(m_axis),
-    .level_o()
+    .level_o(out_level)
   );
+  wire unused_ok = &{1'b0, out_level, 1'b0};
 endmodule

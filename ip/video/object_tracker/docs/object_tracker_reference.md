@@ -21,10 +21,9 @@
 //   (intentional, joins parts split by windows); luma (R + 2G + B) / 4 and chroma (B - Y) / 2,
 //   (R - Y) / 2 approximate BT.601 (0.564 and 0.713 scale factors), so skin-tone / colour
 //   ranges tuned on standard YCbCr do not carry over directly.
-// TODO(REF-OBJECT_TRACKER-1) [LOW] Colour space approximation. Prompt: in
-//   ip/video/object_tracker/src/object_tracker.sv header, state that Y / Cb / Cr are the
-//   approximations Y = (R + 2G + B) / 4, Cb = 128 + (B - Y) / 2, Cr = 128 + (R - Y) / 2 (not
-//   BT.601) and how to convert BT.601 ranges to them, or switch to the BT.601 integer matrix of
-//   isp_csc (shared function) and update the testbench model; also document that grouping uses
-//   box proximity, not pixel connectivity.
+// RESOLVED(REF-OBJECT_TRACKER-1) [LOW] Colour space approximation. Resolution: 2026-10-21: the
+//   object_tracker.sv header states that Y / Cb / Cr are the shift-add approximations (not BT.601,
+//   ITU-R BT.601-7 quoted), how a BT.601 range converts (Cb = 128 + 0.89 (Cb601 - 128), Cr = 128 +
+//   0.70 (Cr601 - 128)), that SKIN_LUT is learned in this space, and that blobs are grouped by box
+//   proximity, not pixel connectivity.
 ```

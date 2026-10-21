@@ -17,7 +17,15 @@
 //     0x008 DATE        RO   date of the last source update, BCD mm/dd/yyyy
 //                       (0xMMDDYYYY)
 //     0x00C reserved    RO   0
-//     0x018 CTRL        RW   [0] enable (taken at a frame start), reset 0x0
+//     0x018 CTRL        RW   [0] enable (taken at every frame start), [2:1]
+//                       LABEL_SCALE (taken with a COMMIT, as FONT): object
+//                       labels drawn at 1 << LABEL_SCALE times the 3 x 5
+//                       font's cell (0 = 1x), [3] FONT: labels and texts at
+//                       2x, 4x, 8x in the smooth font (DejaVu Sans Mono Bold,
+//                       4-bit coverage blended with the video;
+//                       src/include/overlay_font_aa_s<S>.mem from
+//                       scripts/make_aa_font.py) instead of the enlarged 3 x
+//                       5 font (1x is always the 3 x 5 font), reset 0x0
 //     0x01C COMMIT      CMD  write 1: the object and text registers apply at
 //                       the next frame start; reads [0] commit pending
 //     0x020 STATUS      RO   state
@@ -26,55 +34,102 @@
 //     0x024 FRAME_NUM   CMD  write: the number (5 BCD digits) the next frame
 //                       shows, then one more per frame; read: the last
 //                       frame's
-//     0x050 + 16 i OBJ_CTRL [NOBJ] RW   object i, reset 0x0
+//     0x050 + 16 i OBJ_CTRL [(NOBJ > 16 ? 16 : NOBJ)] RW   object i: symbol
+//                       and style, reset 0x0
 //                       [0] EN: enable
 //                       [2:1] SHAPE: 0 rectangle outline, 1 filled, 2
-//                         crosshair, 3 circle (radius = half the larger side)
+//                         crosshair, 3 circle (round the box centre, diameter
+//                         the larger side)
 //                       [3] DASHED: dashed
-//                       [4] BLEND: 50 % blend
+//                       [4] BLEND: 50 % blend with the video
 //                       [5] OVAL: shape 3: an oval (ellipse) inside the box
 //                         instead of the circle
+//                       [6] TICKS: rectangle: a 2-pixel tick at the middle of
+//                         each side, pointing to the centre
+//                       [7] TRIANGLE: an upward triangle inscribed in the box
+//                         (any SHAPE): dashed edges with DASHED, the vertices
+//                         solid
 //                       [11:8] LINE_W: line width (0 = 1)
 //                       [14:12] DASH_LOG2: dash length log2
-//     0x054 + 16 i OBJ_X [NOBJ] RW   object i columns: [15:0] x0 [31:16] x1,
+//                       [15] CORNERS: dashed rectangle: the corners (a
+//                         quarter of the shorter side, at least 3 pixels)
+//                         solid
+//     0x054 + 16 i OBJ_X [(NOBJ > 16 ? 16 : NOBJ)] RW   object i columns:
+//                       [15:0] x0 [31:16] x1, reset 0x0
+//     0x058 + 16 i OBJ_Y [(NOBJ > 16 ? 16 : NOBJ)] RW   object i lines:
+//                       [15:0] y0 [31:16] y1, reset 0x0
+//     0x05C + 16 i OBJ_COLOR [(NOBJ > 16 ? 16 : NOBJ)] RW   object i colour,
+//                       pixel as on the stream ([7:0] R [15:8] G [23:16] B),
 //                       reset 0x0
-//     0x058 + 16 i OBJ_Y [NOBJ] RW   object i lines: [15:0] y0 [31:16] y1,
-//                       reset 0x0
-//     0x05C + 16 i OBJ_COLOR [NOBJ] RW   object i colour, pixel as on the
-//                       stream ([7:0] R [15:8] G [23:16] B), reset 0x0
-//     0x110 + 16 i TXT_CTRL [(NTXT < 1 ? 1 : NTXT)] RW   text j, reset 0x0
+//     0x150 + 16 i TXT_CTRL [(NTXT < 1 ? 1 : NTXT)] RW   text j, reset 0x0
 //                       [0] EN: enable
-//                       [2:1] SCALE: scale log2 (0-2: 1x, 2x, 4x)
+//                       [2:1] SCALE: scale log2 (0-3: 1x, 2x, 4x, 8x)
 //                       [3] BACKDROP: darken the video under the text
 //                       [4] FNUM: the frame number after the characters
 //                       [12:8] LENGTH: characters (0-16)
-//     0x114 + 16 i TXT_POS [(NTXT < 1 ? 1 : NTXT)] RW   text j top-left
+//     0x154 + 16 i TXT_POS [(NTXT < 1 ? 1 : NTXT)] RW   text j top-left
 //                       corner: [15:0] x [31:16] y, reset 0x0
-//     0x118 + 16 i TXT_COLOR [(NTXT < 1 ? 1 : NTXT)] RW   text j colour,
+//     0x158 + 16 i TXT_COLOR [(NTXT < 1 ? 1 : NTXT)] RW   text j colour,
 //                       pixel as on the stream, reset 0x0
 //     0x210 + 4 i TXT_CHARS [4 * (NTXT < 1 ? 1 : NTXT)] RW   characters: word
 //                       4 j + q of text j holds characters 4 q .. 4 q + 3
 //                       (ASCII, character 4 q in [7:0]), reset 0x0
+//     0x260 + 4 i OBJ_LABEL [(NOBJ > 16 ? 16 : NOBJ)] RW   object i label: up
+//                       to 4 ASCII characters (character 0 in [7:0], 0 ends
+//                       it), drawn at 1 << CTRL.LABEL_SCALE times the font,
+//                       centred below the symbol (above it when it would
+//                       cross the bottom of the frame) on a darkened
+//                       backdrop, reset 0x0
+//     0x2A0 + 16 i OBJ2_CTRL [(NOBJ > 16 ? NOBJ - 16 : 1)] RW   second bank:
+//                       object 16 + i, as OBJ_CTRL (NOBJ above 16), reset 0x0
+//                       [0] EN: enable
+//                       [2:1] SHAPE: 0 rectangle outline, 1 filled, 2
+//                         crosshair, 3 circle (round the box centre, diameter
+//                         the larger side)
+//                       [3] DASHED: dashed
+//                       [4] BLEND: 50 % blend with the video
+//                       [5] OVAL: shape 3: an oval (ellipse) inside the box
+//                         instead of the circle
+//                       [6] TICKS: rectangle: a 2-pixel tick at the middle of
+//                         each side, pointing to the centre
+//                       [7] TRIANGLE: an upward triangle inscribed in the box
+//                         (any SHAPE): dashed edges with DASHED, the vertices
+//                         solid
+//                       [11:8] LINE_W: line width (0 = 1)
+//                       [14:12] DASH_LOG2: dash length log2
+//                       [15] CORNERS: dashed rectangle: the corners (a
+//                         quarter of the shorter side, at least 3 pixels)
+//                         solid
+//     0x2A4 + 16 i OBJ2_X [(NOBJ > 16 ? NOBJ - 16 : 1)] RW   second bank:
+//                       object 16 + i, as OBJ_X (NOBJ above 16), reset 0x0
+//     0x2A8 + 16 i OBJ2_Y [(NOBJ > 16 ? NOBJ - 16 : 1)] RW   second bank:
+//                       object 16 + i, as OBJ_Y (NOBJ above 16), reset 0x0
+//     0x2AC + 16 i OBJ2_COLOR [(NOBJ > 16 ? NOBJ - 16 : 1)] RW   second bank:
+//                       object 16 + i, as OBJ_COLOR (NOBJ above 16), reset
+//                       0x0
+//     0x3A0 + 4 i OBJ2_LABEL [(NOBJ > 16 ? NOBJ - 16 : 1)] RW   second bank:
+//                       label of object 16 + i, as OBJ_LABEL (NOBJ above 16),
+//                       reset 0x0
 //   Access: RW read / write (byte strobes), RO read only (writes answer
 //   SLVERR), W1C hardware sets / software writes 1 to clear (a set wins), W1S
 //   software writes 1 to set / hardware clears, WO write only (reads 0), CMD
 //   reads the hardware value, a write gives a pulse with its data. Unmapped
 //   words read 0 and ignore writes; above the map: DECERR. Clock - clk. Reset
 //   - synchronous active low rst_n. Latency - 2 clocks per write and read.
-// Date: 2026-10-16
+// Date: 2026-10-20
 module symbol_overlay_regs #(
-  parameter int NOBJ = 4,  // objects (1..12)
-  parameter int NTXT = 4  // texts (0..8)
+  parameter int NOBJ = 4,  // objects (1..32: 0-15 in the first bank, 16-31 in the second)
+  parameter int NTXT = 4  // texts (0..4)
 ) (
-  input  logic                                        clk,            // clock
-  input  logic                                        rst_n,          // synchronous reset, active low
+  input  logic                                          clk,             // clock
+  input  logic                                          rst_n,           // synchronous reset, active low
   // s_axil: axil_if.slave (ip/shared/src/interfaces/axil_if.sv), ADDR_W = 10
   axil_if.slave s_axil,
-  // r: symbol_overlay_regs_if.regs (src/include/symbol_overlay_regs_if.sv) {ctrl_o=cfg_ctrl ctrl_wr_o=cfg_ctrl_wr commit_i=sts_commit commit_o=cfg_commit commit_wr_o=cfg_commit_wr status_i=sts_status frame_num_i=sts_frame_num frame_num_o=cfg_frame_num frame_num_wr_o=cfg_frame_num_wr obj_ctrl_o=cfg_obj_ctrl obj_ctrl_wr_o=cfg_obj_ctrl_wr obj_x_o=cfg_obj_x obj_x_wr_o=cfg_obj_x_wr obj_y_o=cfg_obj_y obj_y_wr_o=cfg_obj_y_wr obj_color_o=cfg_obj_color obj_color_wr_o=cfg_obj_color_wr txt_ctrl_o=cfg_txt_ctrl txt_ctrl_wr_o=cfg_txt_ctrl_wr txt_pos_o=cfg_txt_pos txt_pos_wr_o=cfg_txt_pos_wr txt_color_o=cfg_txt_color txt_color_wr_o=cfg_txt_color_wr txt_chars_o=cfg_txt_chars txt_chars_wr_o=cfg_txt_chars_wr}
+  // r: symbol_overlay_regs_if.regs (src/include/symbol_overlay_regs_if.sv) {ctrl_o=cfg_ctrl ctrl_wr_o=cfg_ctrl_wr commit_i=sts_commit commit_o=cfg_commit commit_wr_o=cfg_commit_wr status_i=sts_status frame_num_i=sts_frame_num frame_num_o=cfg_frame_num frame_num_wr_o=cfg_frame_num_wr obj_ctrl_o=cfg_obj_ctrl obj_ctrl_wr_o=cfg_obj_ctrl_wr obj_x_o=cfg_obj_x obj_x_wr_o=cfg_obj_x_wr obj_y_o=cfg_obj_y obj_y_wr_o=cfg_obj_y_wr obj_color_o=cfg_obj_color obj_color_wr_o=cfg_obj_color_wr txt_ctrl_o=cfg_txt_ctrl txt_ctrl_wr_o=cfg_txt_ctrl_wr txt_pos_o=cfg_txt_pos txt_pos_wr_o=cfg_txt_pos_wr txt_color_o=cfg_txt_color txt_color_wr_o=cfg_txt_color_wr txt_chars_o=cfg_txt_chars txt_chars_wr_o=cfg_txt_chars_wr obj_label_o=cfg_obj_label obj_label_wr_o=cfg_obj_label_wr obj2_ctrl_o=cfg_obj2_ctrl obj2_ctrl_wr_o=cfg_obj2_ctrl_wr obj2_x_o=cfg_obj2_x obj2_x_wr_o=cfg_obj2_x_wr obj2_y_o=cfg_obj2_y obj2_y_wr_o=cfg_obj2_y_wr obj2_color_o=cfg_obj2_color obj2_color_wr_o=cfg_obj2_color_wr obj2_label_o=cfg_obj2_label obj2_label_wr_o=cfg_obj2_label_wr}
   symbol_overlay_regs_if.regs r
 );
   // register signals, joined to the interface r
-  logic ctrl_o;
+  logic [4-1:0] ctrl_o;
   logic ctrl_wr_o;
   logic commit_i;
   logic commit_o;
@@ -83,14 +138,14 @@ module symbol_overlay_regs #(
   logic [20-1:0] frame_num_i;
   logic [20-1:0] frame_num_o;
   logic frame_num_wr_o;
-  logic [(NOBJ)*(32)-1:0] obj_ctrl_o;
-  logic [NOBJ-1:0] obj_ctrl_wr_o;
-  logic [(NOBJ)*(32)-1:0] obj_x_o;
-  logic [NOBJ-1:0] obj_x_wr_o;
-  logic [(NOBJ)*(32)-1:0] obj_y_o;
-  logic [NOBJ-1:0] obj_y_wr_o;
-  logic [(NOBJ)*(24)-1:0] obj_color_o;
-  logic [NOBJ-1:0] obj_color_wr_o;
+  logic [((NOBJ > 16 ? 16 : NOBJ))*(32)-1:0] obj_ctrl_o;
+  logic [(NOBJ > 16 ? 16 : NOBJ)-1:0] obj_ctrl_wr_o;
+  logic [((NOBJ > 16 ? 16 : NOBJ))*(32)-1:0] obj_x_o;
+  logic [(NOBJ > 16 ? 16 : NOBJ)-1:0] obj_x_wr_o;
+  logic [((NOBJ > 16 ? 16 : NOBJ))*(32)-1:0] obj_y_o;
+  logic [(NOBJ > 16 ? 16 : NOBJ)-1:0] obj_y_wr_o;
+  logic [((NOBJ > 16 ? 16 : NOBJ))*(24)-1:0] obj_color_o;
+  logic [(NOBJ > 16 ? 16 : NOBJ)-1:0] obj_color_wr_o;
   logic [((NTXT < 1 ? 1 : NTXT))*(32)-1:0] txt_ctrl_o;
   logic [(NTXT < 1 ? 1 : NTXT)-1:0] txt_ctrl_wr_o;
   logic [((NTXT < 1 ? 1 : NTXT))*(32)-1:0] txt_pos_o;
@@ -99,6 +154,18 @@ module symbol_overlay_regs #(
   logic [(NTXT < 1 ? 1 : NTXT)-1:0] txt_color_wr_o;
   logic [(4 * (NTXT < 1 ? 1 : NTXT))*(32)-1:0] txt_chars_o;
   logic [4 * (NTXT < 1 ? 1 : NTXT)-1:0] txt_chars_wr_o;
+  logic [((NOBJ > 16 ? 16 : NOBJ))*(32)-1:0] obj_label_o;
+  logic [(NOBJ > 16 ? 16 : NOBJ)-1:0] obj_label_wr_o;
+  logic [((NOBJ > 16 ? NOBJ - 16 : 1))*(32)-1:0] obj2_ctrl_o;
+  logic [(NOBJ > 16 ? NOBJ - 16 : 1)-1:0] obj2_ctrl_wr_o;
+  logic [((NOBJ > 16 ? NOBJ - 16 : 1))*(32)-1:0] obj2_x_o;
+  logic [(NOBJ > 16 ? NOBJ - 16 : 1)-1:0] obj2_x_wr_o;
+  logic [((NOBJ > 16 ? NOBJ - 16 : 1))*(32)-1:0] obj2_y_o;
+  logic [(NOBJ > 16 ? NOBJ - 16 : 1)-1:0] obj2_y_wr_o;
+  logic [((NOBJ > 16 ? NOBJ - 16 : 1))*(24)-1:0] obj2_color_o;
+  logic [(NOBJ > 16 ? NOBJ - 16 : 1)-1:0] obj2_color_wr_o;
+  logic [((NOBJ > 16 ? NOBJ - 16 : 1))*(32)-1:0] obj2_label_o;
+  logic [(NOBJ > 16 ? NOBJ - 16 : 1)-1:0] obj2_label_wr_o;
   assign r.cfg_ctrl = ctrl_o;
   assign r.cfg_ctrl_wr = ctrl_wr_o;
   assign commit_i = r.sts_commit;
@@ -124,6 +191,18 @@ module symbol_overlay_regs #(
   assign r.cfg_txt_color_wr = txt_color_wr_o;
   assign r.cfg_txt_chars = txt_chars_o;
   assign r.cfg_txt_chars_wr = txt_chars_wr_o;
+  assign r.cfg_obj_label = obj_label_o;
+  assign r.cfg_obj_label_wr = obj_label_wr_o;
+  assign r.cfg_obj2_ctrl = obj2_ctrl_o;
+  assign r.cfg_obj2_ctrl_wr = obj2_ctrl_wr_o;
+  assign r.cfg_obj2_x = obj2_x_o;
+  assign r.cfg_obj2_x_wr = obj2_x_wr_o;
+  assign r.cfg_obj2_y = obj2_y_o;
+  assign r.cfg_obj2_y_wr = obj2_y_wr_o;
+  assign r.cfg_obj2_color = obj2_color_o;
+  assign r.cfg_obj2_color_wr = obj2_color_wr_o;
+  assign r.cfg_obj2_label = obj2_label_o;
+  assign r.cfg_obj2_label_wr = obj2_label_wr_o;
   // ---------------- register map
   localparam logic [31:0] IP_ID      = "SOVL";
   localparam logic [31:0] IP_VERSION = "1.10";
@@ -133,18 +212,25 @@ module symbol_overlay_regs #(
   localparam logic [9:0] A_COMMIT = 10'h1C;
   localparam logic [9:0] A_STATUS = 10'h20;
   localparam logic [9:0] A_FRAME_NUM = 10'h24;
-  localparam logic [9:0] A_OBJ_CTRL = 10'h50;   // + 16 i, i < NOBJ
-  localparam logic [9:0] A_OBJ_X = 10'h54;   // + 16 i, i < NOBJ
-  localparam logic [9:0] A_OBJ_Y = 10'h58;   // + 16 i, i < NOBJ
-  localparam logic [9:0] A_OBJ_COLOR = 10'h5C;   // + 16 i, i < NOBJ
-  localparam logic [9:0] A_TXT_CTRL = 10'h110;   // + 16 i, i < (NTXT < 1 ? 1 : NTXT)
-  localparam logic [9:0] A_TXT_POS = 10'h114;   // + 16 i, i < (NTXT < 1 ? 1 : NTXT)
-  localparam logic [9:0] A_TXT_COLOR = 10'h118;   // + 16 i, i < (NTXT < 1 ? 1 : NTXT)
+  localparam logic [9:0] A_OBJ_CTRL = 10'h50;   // + 16 i, i < (NOBJ > 16 ? 16 : NOBJ)
+  localparam logic [9:0] A_OBJ_X = 10'h54;   // + 16 i, i < (NOBJ > 16 ? 16 : NOBJ)
+  localparam logic [9:0] A_OBJ_Y = 10'h58;   // + 16 i, i < (NOBJ > 16 ? 16 : NOBJ)
+  localparam logic [9:0] A_OBJ_COLOR = 10'h5C;   // + 16 i, i < (NOBJ > 16 ? 16 : NOBJ)
+  localparam logic [9:0] A_TXT_CTRL = 10'h150;   // + 16 i, i < (NTXT < 1 ? 1 : NTXT)
+  localparam logic [9:0] A_TXT_POS = 10'h154;   // + 16 i, i < (NTXT < 1 ? 1 : NTXT)
+  localparam logic [9:0] A_TXT_COLOR = 10'h158;   // + 16 i, i < (NTXT < 1 ? 1 : NTXT)
   localparam logic [9:0] A_TXT_CHARS = 10'h210;   // + 4 i, i < 4 * (NTXT < 1 ? 1 : NTXT)
-  localparam int MAP_WORDS = 164;
+  localparam logic [9:0] A_OBJ_LABEL = 10'h260;   // + 4 i, i < (NOBJ > 16 ? 16 : NOBJ)
+  localparam logic [9:0] A_OBJ2_CTRL = 10'h2A0;   // + 16 i, i < (NOBJ > 16 ? NOBJ - 16 : 1)
+  localparam logic [9:0] A_OBJ2_X = 10'h2A4;   // + 16 i, i < (NOBJ > 16 ? NOBJ - 16 : 1)
+  localparam logic [9:0] A_OBJ2_Y = 10'h2A8;   // + 16 i, i < (NOBJ > 16 ? NOBJ - 16 : 1)
+  localparam logic [9:0] A_OBJ2_COLOR = 10'h2AC;   // + 16 i, i < (NOBJ > 16 ? NOBJ - 16 : 1)
+  localparam logic [9:0] A_OBJ2_LABEL = 10'h3A0;   // + 4 i, i < (NOBJ > 16 ? NOBJ - 16 : 1)
+  localparam int MAP_WORDS = 248;
 
   logic             wr_en, rd_en, wr_err_q;
   logic [9:0]       wr_addr, rd_addr, rd_addr_q;
+  wire unused_addr_lsbs = &{1'b0, wr_addr[1:0], rd_addr[1:0]};   // word access: the byte offset is not decoded
   logic [31:0]      wr_data, rd_data;
   logic [3:0]       wr_strb;
   regbus_if #(.ADDR_W(10)) bus ();               // register bus of the AXI4-Lite front end
@@ -177,14 +263,20 @@ module symbol_overlay_regs #(
   logic [31:0] ctrl_q;
   logic [31:0] commit_q;
   logic [31:0] frame_num_q;
-  logic [31:0] obj_ctrl_q [NOBJ];
-  logic [31:0] obj_x_q [NOBJ];
-  logic [31:0] obj_y_q [NOBJ];
-  logic [31:0] obj_color_q [NOBJ];
+  logic [31:0] obj_ctrl_q [(NOBJ > 16 ? 16 : NOBJ)];
+  logic [31:0] obj_x_q [(NOBJ > 16 ? 16 : NOBJ)];
+  logic [31:0] obj_y_q [(NOBJ > 16 ? 16 : NOBJ)];
+  logic [31:0] obj_color_q [(NOBJ > 16 ? 16 : NOBJ)];
   logic [31:0] txt_ctrl_q [(NTXT < 1 ? 1 : NTXT)];
   logic [31:0] txt_pos_q [(NTXT < 1 ? 1 : NTXT)];
   logic [31:0] txt_color_q [(NTXT < 1 ? 1 : NTXT)];
   logic [31:0] txt_chars_q [4 * (NTXT < 1 ? 1 : NTXT)];
+  logic [31:0] obj_label_q [(NOBJ > 16 ? 16 : NOBJ)];
+  logic [31:0] obj2_ctrl_q [(NOBJ > 16 ? NOBJ - 16 : 1)];
+  logic [31:0] obj2_x_q [(NOBJ > 16 ? NOBJ - 16 : 1)];
+  logic [31:0] obj2_y_q [(NOBJ > 16 ? NOBJ - 16 : 1)];
+  logic [31:0] obj2_color_q [(NOBJ > 16 ? NOBJ - 16 : 1)];
+  logic [31:0] obj2_label_q [(NOBJ > 16 ? NOBJ - 16 : 1)];
   always_ff @(posedge clk) begin
     if (!rst_n) begin
       ctrl_q <= 32'h0;
@@ -193,13 +285,13 @@ module symbol_overlay_regs #(
       commit_wr_o <= 1'b0;
       frame_num_q <= '0;
       frame_num_wr_o <= 1'b0;
-      for (int i = 0; i < NOBJ; i++) obj_ctrl_q[i] <= 32'h0;
+      for (int i = 0; i < (NOBJ > 16 ? 16 : NOBJ); i++) obj_ctrl_q[i] <= 32'h0;
       obj_ctrl_wr_o <= '0;
-      for (int i = 0; i < NOBJ; i++) obj_x_q[i] <= 32'h0;
+      for (int i = 0; i < (NOBJ > 16 ? 16 : NOBJ); i++) obj_x_q[i] <= 32'h0;
       obj_x_wr_o <= '0;
-      for (int i = 0; i < NOBJ; i++) obj_y_q[i] <= 32'h0;
+      for (int i = 0; i < (NOBJ > 16 ? 16 : NOBJ); i++) obj_y_q[i] <= 32'h0;
       obj_y_wr_o <= '0;
-      for (int i = 0; i < NOBJ; i++) obj_color_q[i] <= 32'h0;
+      for (int i = 0; i < (NOBJ > 16 ? 16 : NOBJ); i++) obj_color_q[i] <= 32'h0;
       obj_color_wr_o <= '0;
       for (int i = 0; i < (NTXT < 1 ? 1 : NTXT); i++) txt_ctrl_q[i] <= 32'h0;
       txt_ctrl_wr_o <= '0;
@@ -209,6 +301,18 @@ module symbol_overlay_regs #(
       txt_color_wr_o <= '0;
       for (int i = 0; i < 4 * (NTXT < 1 ? 1 : NTXT); i++) txt_chars_q[i] <= 32'h0;
       txt_chars_wr_o <= '0;
+      for (int i = 0; i < (NOBJ > 16 ? 16 : NOBJ); i++) obj_label_q[i] <= 32'h0;
+      obj_label_wr_o <= '0;
+      for (int i = 0; i < (NOBJ > 16 ? NOBJ - 16 : 1); i++) obj2_ctrl_q[i] <= 32'h0;
+      obj2_ctrl_wr_o <= '0;
+      for (int i = 0; i < (NOBJ > 16 ? NOBJ - 16 : 1); i++) obj2_x_q[i] <= 32'h0;
+      obj2_x_wr_o <= '0;
+      for (int i = 0; i < (NOBJ > 16 ? NOBJ - 16 : 1); i++) obj2_y_q[i] <= 32'h0;
+      obj2_y_wr_o <= '0;
+      for (int i = 0; i < (NOBJ > 16 ? NOBJ - 16 : 1); i++) obj2_color_q[i] <= 32'h0;
+      obj2_color_wr_o <= '0;
+      for (int i = 0; i < (NOBJ > 16 ? NOBJ - 16 : 1); i++) obj2_label_q[i] <= 32'h0;
+      obj2_label_wr_o <= '0;
       wr_err_q <= 1'b0;
     end else begin
       wr_err_q <= wr_en && (wa == A_ID || wa == A_VERSION || wa == A_DATE || wa == A_STATUS);   // writes to read-only words: SLVERR
@@ -224,19 +328,19 @@ module symbol_overlay_regs #(
         frame_num_wr_o <= wr_en && wa == A_FRAME_NUM;
         if (wr_en && wa == A_FRAME_NUM) frame_num_q <= (frame_num_q & ~wmask) | (wr_data & wmask);
       end
-      for (int i = 0; i < NOBJ; i++) begin
+      for (int i = 0; i < (NOBJ > 16 ? 16 : NOBJ); i++) begin
         obj_ctrl_wr_o[i] <= wr_en && wa == A_OBJ_CTRL + 10'(16 * i);
         if (wr_en && wa == A_OBJ_CTRL + 10'(16 * i)) obj_ctrl_q[i] <= (obj_ctrl_q[i] & ~wmask) | (wr_data & wmask);
       end
-      for (int i = 0; i < NOBJ; i++) begin
+      for (int i = 0; i < (NOBJ > 16 ? 16 : NOBJ); i++) begin
         obj_x_wr_o[i] <= wr_en && wa == A_OBJ_X + 10'(16 * i);
         if (wr_en && wa == A_OBJ_X + 10'(16 * i)) obj_x_q[i] <= (obj_x_q[i] & ~wmask) | (wr_data & wmask);
       end
-      for (int i = 0; i < NOBJ; i++) begin
+      for (int i = 0; i < (NOBJ > 16 ? 16 : NOBJ); i++) begin
         obj_y_wr_o[i] <= wr_en && wa == A_OBJ_Y + 10'(16 * i);
         if (wr_en && wa == A_OBJ_Y + 10'(16 * i)) obj_y_q[i] <= (obj_y_q[i] & ~wmask) | (wr_data & wmask);
       end
-      for (int i = 0; i < NOBJ; i++) begin
+      for (int i = 0; i < (NOBJ > 16 ? 16 : NOBJ); i++) begin
         obj_color_wr_o[i] <= wr_en && wa == A_OBJ_COLOR + 10'(16 * i);
         if (wr_en && wa == A_OBJ_COLOR + 10'(16 * i)) obj_color_q[i] <= (obj_color_q[i] & ~wmask) | (wr_data & wmask);
       end
@@ -256,19 +360,49 @@ module symbol_overlay_regs #(
         txt_chars_wr_o[i] <= wr_en && wa == A_TXT_CHARS + 10'(4 * i);
         if (wr_en && wa == A_TXT_CHARS + 10'(4 * i)) txt_chars_q[i] <= (txt_chars_q[i] & ~wmask) | (wr_data & wmask);
       end
+      for (int i = 0; i < (NOBJ > 16 ? 16 : NOBJ); i++) begin
+        obj_label_wr_o[i] <= wr_en && wa == A_OBJ_LABEL + 10'(4 * i);
+        if (wr_en && wa == A_OBJ_LABEL + 10'(4 * i)) obj_label_q[i] <= (obj_label_q[i] & ~wmask) | (wr_data & wmask);
+      end
+      for (int i = 0; i < (NOBJ > 16 ? NOBJ - 16 : 1); i++) begin
+        obj2_ctrl_wr_o[i] <= wr_en && wa == A_OBJ2_CTRL + 10'(16 * i);
+        if (wr_en && wa == A_OBJ2_CTRL + 10'(16 * i)) obj2_ctrl_q[i] <= (obj2_ctrl_q[i] & ~wmask) | (wr_data & wmask);
+      end
+      for (int i = 0; i < (NOBJ > 16 ? NOBJ - 16 : 1); i++) begin
+        obj2_x_wr_o[i] <= wr_en && wa == A_OBJ2_X + 10'(16 * i);
+        if (wr_en && wa == A_OBJ2_X + 10'(16 * i)) obj2_x_q[i] <= (obj2_x_q[i] & ~wmask) | (wr_data & wmask);
+      end
+      for (int i = 0; i < (NOBJ > 16 ? NOBJ - 16 : 1); i++) begin
+        obj2_y_wr_o[i] <= wr_en && wa == A_OBJ2_Y + 10'(16 * i);
+        if (wr_en && wa == A_OBJ2_Y + 10'(16 * i)) obj2_y_q[i] <= (obj2_y_q[i] & ~wmask) | (wr_data & wmask);
+      end
+      for (int i = 0; i < (NOBJ > 16 ? NOBJ - 16 : 1); i++) begin
+        obj2_color_wr_o[i] <= wr_en && wa == A_OBJ2_COLOR + 10'(16 * i);
+        if (wr_en && wa == A_OBJ2_COLOR + 10'(16 * i)) obj2_color_q[i] <= (obj2_color_q[i] & ~wmask) | (wr_data & wmask);
+      end
+      for (int i = 0; i < (NOBJ > 16 ? NOBJ - 16 : 1); i++) begin
+        obj2_label_wr_o[i] <= wr_en && wa == A_OBJ2_LABEL + 10'(4 * i);
+        if (wr_en && wa == A_OBJ2_LABEL + 10'(4 * i)) obj2_label_q[i] <= (obj2_label_q[i] & ~wmask) | (wr_data & wmask);
+      end
     end
   end
-  assign ctrl_o = ctrl_q[1-1:0];
+  assign ctrl_o = ctrl_q[4-1:0];
   assign commit_o = commit_q[1-1:0];
   assign frame_num_o = frame_num_q[20-1:0];
-  always_comb for (int i = 0; i < NOBJ; i++) obj_ctrl_o[i*(32) +: 32] = obj_ctrl_q[i][32-1:0];
-  always_comb for (int i = 0; i < NOBJ; i++) obj_x_o[i*(32) +: 32] = obj_x_q[i][32-1:0];
-  always_comb for (int i = 0; i < NOBJ; i++) obj_y_o[i*(32) +: 32] = obj_y_q[i][32-1:0];
-  always_comb for (int i = 0; i < NOBJ; i++) obj_color_o[i*(24) +: 24] = obj_color_q[i][24-1:0];
+  always_comb for (int i = 0; i < (NOBJ > 16 ? 16 : NOBJ); i++) obj_ctrl_o[i*(32) +: 32] = obj_ctrl_q[i][32-1:0];
+  always_comb for (int i = 0; i < (NOBJ > 16 ? 16 : NOBJ); i++) obj_x_o[i*(32) +: 32] = obj_x_q[i][32-1:0];
+  always_comb for (int i = 0; i < (NOBJ > 16 ? 16 : NOBJ); i++) obj_y_o[i*(32) +: 32] = obj_y_q[i][32-1:0];
+  always_comb for (int i = 0; i < (NOBJ > 16 ? 16 : NOBJ); i++) obj_color_o[i*(24) +: 24] = obj_color_q[i][24-1:0];
   always_comb for (int i = 0; i < (NTXT < 1 ? 1 : NTXT); i++) txt_ctrl_o[i*(32) +: 32] = txt_ctrl_q[i][32-1:0];
   always_comb for (int i = 0; i < (NTXT < 1 ? 1 : NTXT); i++) txt_pos_o[i*(32) +: 32] = txt_pos_q[i][32-1:0];
   always_comb for (int i = 0; i < (NTXT < 1 ? 1 : NTXT); i++) txt_color_o[i*(24) +: 24] = txt_color_q[i][24-1:0];
   always_comb for (int i = 0; i < 4 * (NTXT < 1 ? 1 : NTXT); i++) txt_chars_o[i*(32) +: 32] = txt_chars_q[i][32-1:0];
+  always_comb for (int i = 0; i < (NOBJ > 16 ? 16 : NOBJ); i++) obj_label_o[i*(32) +: 32] = obj_label_q[i][32-1:0];
+  always_comb for (int i = 0; i < (NOBJ > 16 ? NOBJ - 16 : 1); i++) obj2_ctrl_o[i*(32) +: 32] = obj2_ctrl_q[i][32-1:0];
+  always_comb for (int i = 0; i < (NOBJ > 16 ? NOBJ - 16 : 1); i++) obj2_x_o[i*(32) +: 32] = obj2_x_q[i][32-1:0];
+  always_comb for (int i = 0; i < (NOBJ > 16 ? NOBJ - 16 : 1); i++) obj2_y_o[i*(32) +: 32] = obj2_y_q[i][32-1:0];
+  always_comb for (int i = 0; i < (NOBJ > 16 ? NOBJ - 16 : 1); i++) obj2_color_o[i*(24) +: 24] = obj2_color_q[i][24-1:0];
+  always_comb for (int i = 0; i < (NOBJ > 16 ? NOBJ - 16 : 1); i++) obj2_label_o[i*(32) +: 32] = obj2_label_q[i][32-1:0];
 
   // ---------------- reads: the word addressed in the clock before
   always_ff @(posedge clk) if (rd_en) rd_addr_q <= {rd_addr[9:2], 2'b00};
@@ -278,27 +412,39 @@ module symbol_overlay_regs #(
       A_ID:      rd_data = IP_ID;
       A_VERSION: rd_data = IP_VERSION;
       A_DATE:    rd_data = IP_DATE;
-      A_CTRL: rd_data = ctrl_q;
+      A_CTRL: rd_data = 32'(ctrl_q[4-1:0]);
       A_COMMIT: rd_data = 32'(commit_i);
       A_STATUS: rd_data = 32'(status_i);
       A_FRAME_NUM: rd_data = 32'(frame_num_i);
       default: begin
-        for (int i = 0; i < NOBJ; i++)
-          if (rd_addr_q == A_OBJ_CTRL + 10'(16 * i)) rd_data = obj_ctrl_q[i];
-        for (int i = 0; i < NOBJ; i++)
-          if (rd_addr_q == A_OBJ_X + 10'(16 * i)) rd_data = obj_x_q[i];
-        for (int i = 0; i < NOBJ; i++)
-          if (rd_addr_q == A_OBJ_Y + 10'(16 * i)) rd_data = obj_y_q[i];
-        for (int i = 0; i < NOBJ; i++)
-          if (rd_addr_q == A_OBJ_COLOR + 10'(16 * i)) rd_data = obj_color_q[i];
+        for (int i = 0; i < (NOBJ > 16 ? 16 : NOBJ); i++)
+          if (rd_addr_q == A_OBJ_CTRL + 10'(16 * i)) rd_data = 32'(obj_ctrl_q[i][32-1:0]);
+        for (int i = 0; i < (NOBJ > 16 ? 16 : NOBJ); i++)
+          if (rd_addr_q == A_OBJ_X + 10'(16 * i)) rd_data = 32'(obj_x_q[i][32-1:0]);
+        for (int i = 0; i < (NOBJ > 16 ? 16 : NOBJ); i++)
+          if (rd_addr_q == A_OBJ_Y + 10'(16 * i)) rd_data = 32'(obj_y_q[i][32-1:0]);
+        for (int i = 0; i < (NOBJ > 16 ? 16 : NOBJ); i++)
+          if (rd_addr_q == A_OBJ_COLOR + 10'(16 * i)) rd_data = 32'(obj_color_q[i][24-1:0]);
         for (int i = 0; i < (NTXT < 1 ? 1 : NTXT); i++)
-          if (rd_addr_q == A_TXT_CTRL + 10'(16 * i)) rd_data = txt_ctrl_q[i];
+          if (rd_addr_q == A_TXT_CTRL + 10'(16 * i)) rd_data = 32'(txt_ctrl_q[i][32-1:0]);
         for (int i = 0; i < (NTXT < 1 ? 1 : NTXT); i++)
-          if (rd_addr_q == A_TXT_POS + 10'(16 * i)) rd_data = txt_pos_q[i];
+          if (rd_addr_q == A_TXT_POS + 10'(16 * i)) rd_data = 32'(txt_pos_q[i][32-1:0]);
         for (int i = 0; i < (NTXT < 1 ? 1 : NTXT); i++)
-          if (rd_addr_q == A_TXT_COLOR + 10'(16 * i)) rd_data = txt_color_q[i];
+          if (rd_addr_q == A_TXT_COLOR + 10'(16 * i)) rd_data = 32'(txt_color_q[i][24-1:0]);
         for (int i = 0; i < 4 * (NTXT < 1 ? 1 : NTXT); i++)
-          if (rd_addr_q == A_TXT_CHARS + 10'(4 * i)) rd_data = txt_chars_q[i];
+          if (rd_addr_q == A_TXT_CHARS + 10'(4 * i)) rd_data = 32'(txt_chars_q[i][32-1:0]);
+        for (int i = 0; i < (NOBJ > 16 ? 16 : NOBJ); i++)
+          if (rd_addr_q == A_OBJ_LABEL + 10'(4 * i)) rd_data = 32'(obj_label_q[i][32-1:0]);
+        for (int i = 0; i < (NOBJ > 16 ? NOBJ - 16 : 1); i++)
+          if (rd_addr_q == A_OBJ2_CTRL + 10'(16 * i)) rd_data = 32'(obj2_ctrl_q[i][32-1:0]);
+        for (int i = 0; i < (NOBJ > 16 ? NOBJ - 16 : 1); i++)
+          if (rd_addr_q == A_OBJ2_X + 10'(16 * i)) rd_data = 32'(obj2_x_q[i][32-1:0]);
+        for (int i = 0; i < (NOBJ > 16 ? NOBJ - 16 : 1); i++)
+          if (rd_addr_q == A_OBJ2_Y + 10'(16 * i)) rd_data = 32'(obj2_y_q[i][32-1:0]);
+        for (int i = 0; i < (NOBJ > 16 ? NOBJ - 16 : 1); i++)
+          if (rd_addr_q == A_OBJ2_COLOR + 10'(16 * i)) rd_data = 32'(obj2_color_q[i][24-1:0]);
+        for (int i = 0; i < (NOBJ > 16 ? NOBJ - 16 : 1); i++)
+          if (rd_addr_q == A_OBJ2_LABEL + 10'(4 * i)) rd_data = 32'(obj2_label_q[i][32-1:0]);
       end
     endcase
   end

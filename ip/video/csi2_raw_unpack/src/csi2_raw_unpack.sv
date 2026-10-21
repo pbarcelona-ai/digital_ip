@@ -22,7 +22,7 @@
 //   therefore corrupt at most the line they belong to. Throughput - 1 pixel per clock; the input
 //   is back-pressured while the byte buffer is full. Clock - clk only.
 //   Reset - synchronous rst_n (active low). Latency - 2 clocks.
-// Date: 2026-10-01
+// Date: 2026-10-21
 module csi2_raw_unpack #(
   parameter int IN_BYTES = 2,                  // bytes per input word (CSI-2 lanes)
   parameter int OUT_W    = 10                  // output pixel width
@@ -61,7 +61,7 @@ module csi2_raw_unpack #(
   logic [OUT_W-1:0] px;
   logic glast;
   always_comb begin
-    if (is10)      px = align({4'd0, bq[pi], bq[4][2*pi +: 2]}, 10);
+    if (is10)      px = align({2'd0, bq[int'(pi)], bq[4][2*pi +: 2]}, 10);
     else if (is12) px = align((pi == 0) ? {bq[0], bq[2][3:0]} : {bq[1], bq[2][7:4]}, 12);
     else           px = align({4'd0, bq[0]}, 8);
     glast = 1'b0;
@@ -81,7 +81,7 @@ module csi2_raw_unpack #(
           mis = 1'b1;
           dropn = 3'(k);
         end
-        if (k < gsize - 1 && blast[k])      begin
+        if (k < int'(gsize) - 1 && blast[k]) begin
           mis = 1'b1;
           dropn = 3'(k + 1);
         end
@@ -125,17 +125,17 @@ module csi2_raw_unpack #(
         logic [BUF-1:0] nf, nl;
         int last_k;
         for (int k = 0; k < BUF; k++) begin
-          nb[k] = (k + popn < BUF) ? bq[k + popn] : bq[k];
-          nf[k] = (k + popn < BUF) ? bfirst[k + popn] : 1'b0;
-          nl[k] = (k + popn < BUF) ? blast[k + popn]  : 1'b0;
+          nb[k] = (k + int'(popn) < BUF) ? bq[k + int'(popn)] : bq[k];
+          nf[k] = (k + int'(popn) < BUF) ? bfirst[k + int'(popn)] : 1'b0;
+          nl[k] = (k + int'(popn) < BUF) ? blast[k + int'(popn)]  : 1'b0;
         end
         if (push) begin
           last_k = 0;
           for (int k = 0; k < IN_BYTES; k++) if (s_axis.tkeep[k]) last_k = k;
           for (int k = 0; k < IN_BYTES; k++) if (s_axis.tkeep[k]) begin
-            nb[cnt_pop + k] = s_axis.tdata[8*k +: 8];
-            nf[cnt_pop + k] = s_axis.tuser && (k == 0);
-            nl[cnt_pop + k] = s_axis.tlast && (k == last_k);
+            nb[int'(cnt_pop) + k] = s_axis.tdata[8*k +: 8];
+            nf[int'(cnt_pop) + k] = s_axis.tuser && (k == 0);
+            nl[int'(cnt_pop) + k] = s_axis.tlast && (k == last_k);
           end
         end
         for (int k = 0; k < BUF; k++) bq[k] <= nb[k];

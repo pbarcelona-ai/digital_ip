@@ -9,7 +9,7 @@
 //   ip/scripts/regmap_gen.py from intc_regs.json and the ports of intc:
 //   regenerate after changing either. Clock - aclk. Reset - synchronous
 //   active low aresetn.
-// Date: 2026-10-16
+// Date: 2026-10-20
 module intc_top #(
   parameter int NUM_IRQ = 16
 ) (

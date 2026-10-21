@@ -12,7 +12,7 @@
 //   destination clocks). Reset - synchronous active low per domain. Timing -
 //   see async_fifo. Errors - none at run time (full FIFO deasserts s_tready,
 //   nothing is dropped); illegal parameters stop elaboration.
-// Date: 2026-10-16
+// Date: 2026-10-21
 module axis_async_bridge #(
   parameter int DATA_W = 32,
   parameter int DEPTH  = 512,
@@ -29,7 +29,9 @@ module axis_async_bridge #(
   // m_axis: axis_if.master (ip/shared/src/interfaces/axis_if.sv), DATA_W = DATA_W, USER_W = USER_W
   axis_if.master m_axis
 );
+  /* verilator lint_off UNUSEDPARAM */             // version identification (library convention), not logic
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
+  /* verilator lint_on UNUSEDPARAM */
   if (DEPTH < 4 || (DEPTH & (DEPTH - 1)) != 0) begin : g_chk_d $error("%m: DEPTH must be a power of two >= 4"); end
   if (DATA_W < 1) begin : g_chk_w $error("%m: DATA_W must be >= 1"); end
   if (DATA_W % 8 != 0) begin : g_chk_w8 $error("%m: DATA_W must be a multiple of 8 (tkeep)"); end
@@ -47,7 +49,7 @@ module axis_async_bridge #(
 
   logic [W-1:0] wd, rd;
   logic wready, rvalid;
-  logic [$clog2(DEPTH):0] wl;
+  logic [$clog2(DEPTH):0] wl;                     // FIFO level (not used)
   assign wd = {s_axis.tuser, s_axis.tlast, s_axis.tkeep, s_axis.tdata};
   assign s_axis.tready = wready & s_rs[1];
 
@@ -70,4 +72,5 @@ module axis_async_bridge #(
 
   assign {m_axis.tuser, m_axis.tlast, m_axis.tkeep, m_axis.tdata} = rd;
   assign m_axis.tvalid = rvalid;
+  wire unused_ok = &{1'b0, wl, 1'b0};
 endmodule

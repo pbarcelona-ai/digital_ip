@@ -7,8 +7,10 @@
 // partial products (one DSP48 each, registered in stage 1) that are
 // combined in stage 2, avoiding the wide fabric adder that limits a
 // plain 32x32 multiply to ~11 ns. Apply barrel_pkg::qsat48 to get
-// the saturating qmul() result.
-// Date: September 26, 2026
+// the saturating qmul() result. Golden model: model/mulq_s_model.py
+// (bit exact; tb/python). Clock - clk. Reset - none (datapath only).
+// Clock-domain crossings - none. Latency - 2, throughput 1 per clock.
+// Date: 2026-10-21
 // ***************
 // =============================================================================
 // mulq_s.sv
@@ -23,15 +25,15 @@
 // value barrel_pkg::qmul shifts before saturating, so
 //   qsat48(mulq_s(a,b)) == barrel_pkg::qmul(a,b)   for all inputs.
 //
-// Stage 1 registers the four raw partial products (no reset -- an async
-// reset on a datapath register prevents DSP-register packing). Stage 2
+// Stage 1 registers the four raw partial products (no reset -- a reset on
+// a datapath register prevents DSP-register packing). Stage 2
 // registers the combined 48-bit result. Latency 2, throughput 1/clock.
 // =============================================================================
 module mulq_s (
-  input  logic               clk,
-  input  logic signed [31:0] a,
-  input  logic signed [31:0] b,
-  output logic signed [47:0] s
+  input  logic               clk,          // clock
+  input  logic signed [31:0] a,            // Q16.16 operand
+  input  logic signed [31:0] b,            // Q16.16 operand
+  output logic signed [47:0] s             // (a * b) >>> 16, exact, 2 clocks later
 );
   // Split operands. Low halves are zero-extended to 17-bit SIGNED values
   // (so they multiply as the non-negative numbers they are).
@@ -62,4 +64,5 @@ module mulq_s (
   always_ff @(posedge clk) begin
     s <= hh_sh + mid + ll_sh;
   end
+  wire unused_ok = &{1'b0, p_ll[15:0], 1'b0};      // shifted out: (al * bl) >> 16
 endmodule

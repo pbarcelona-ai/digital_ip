@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1792615084" />
+    <testcase name="test_ext_frame_buffer_exact" classname="ext_frame_buffer_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/image_processing/vision_system/ip/ext_frame_buffer/tb/python/ext_frame_buffer_tb.py" lineno="32" time="4.247936010360718" sim_time_ns="300006.0" ratio_time="70623.94519792324" />
+  </testsuite>
+</testsuites>

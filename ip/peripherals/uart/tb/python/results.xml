@@ -1,0 +1,7 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1792544966" />
+    <testcase name="test_core_clock_exact" classname="uart_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/ip/peripherals/uart/tb/python/uart_tb.py" lineno="96" time="18.773163080215454" sim_time_ns="1500026.0" ratio_time="79902.67775284167" />
+    <testcase name="test_register_map" classname="uart_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/ip/peripherals/uart/tb/python/uart_tb.py" lineno="185" time="0.08582830429077148" sim_time_ns="29515.0" ratio_time="343884.2261173921" />
+  </testsuite>
+</testsuites>

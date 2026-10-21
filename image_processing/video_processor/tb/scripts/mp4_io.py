@@ -60,7 +60,10 @@ def fit(w, h, mw, mh):
 
 def read_video(path, fps=10.0, start=0.0, frames=0, fit_w=320, fit_h=240):
     """Frames (PIL RGB) of the video at start + k / fps, k = 0 .. frames - 1 (0: to the end), scaled
-    to fit fit_w x fit_h."""
+    to fit fit_w x fit_h. Times count from the stream's first frame: a stream whose first timestamp is
+    after `start` returns frames from its first one. Every sampled frame is decoded (FFmpeg cannot skip
+    the frames in between cheaply: 3-16 s for the 4K clips). The file is opened by FFmpeg: treat videos
+    from elsewhere as untrusted input and keep PyAV current."""
     if fps <= 0:
         raise ValueError('fps must be above 0, not %g' % fps)
     out = []
@@ -100,13 +103,44 @@ def gif_colours(frame):
     return gif_palette(frame).convert('RGB')
 
 
-def write_gif(frames, path, fps):
-    """Looping GIF, a palette of its own per frame (median cut, no dithering), delay 1 / fps."""
-    pal = [gif_palette(f) for f in frames]
+# the overlay's symbol and text colours (white, red, green, yellow, blue, cyan, magenta, black)
+OVERLAY_COLOURS = ((255, 255, 255), (255, 0, 0), (0, 255, 0), (255, 255, 0), (0, 0, 255), (0, 255, 255),
+                   (255, 0, 255), (0, 0, 0))
+
+
+def gif_palette_keep(frame, keep, tol=0):
+    """A frame with a palette of its own: 256 - len(keep) median-cut colours plus the colours in keep
+    exactly; a pixel within tol (every channel) of a keep colour takes that colour. Thin overlay symbols
+    are too few pixels for median cut to give their colour an entry of its own (a green triangle on a sky
+    came out grey)."""
+    import numpy as np
+    n = 256 - len(keep)
+    q = frame.quantize(n, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
+    idx = np.array(q, np.uint8)
+    pal = (q.getpalette() or [])[:3 * n]
+    pal += [0] * (3 * n - len(pal))
+    rgb = np.asarray(frame.convert('RGB'), np.int16)
+    for k, c in enumerate(keep):
+        idx[(np.abs(rgb - np.array(c, np.int16)) <= tol).all(-1)] = n + k
+        pal += list(c)
+    out = Image.fromarray(idx, 'P')
+    out.putpalette(pal)
+    return out
+
+
+def write_gif(frames, path, fps, keep=(), tol=0):
+    """Looping GIF, a palette of its own per frame (median cut, no dithering), delay 1 / fps; keep: colours
+    given palette entries of their own (gif_palette_keep; e.g. OVERLAY_COLOURS for the tracked output)."""
+    pal = [gif_palette_keep(f, keep, tol) if keep else gif_palette(f) for f in frames]
     tmp = path + '.tmp'
-    pal[0].save(tmp, format='GIF', save_all=True, append_images=pal[1:], loop=0,
-                duration=max(20, round(1000 / fps / 10) * 10), disposal=1, optimize=False)
-    os.replace(tmp, path)                                  # whole or not at all (parallel runs)
+    try:
+        pal[0].save(tmp, format='GIF', save_all=True, append_images=pal[1:], loop=0,
+                    duration=max(20, round(1000 / fps / 10) * 10), disposal=1, optimize=False)
+        os.replace(tmp, path)                              # whole or not at all (parallel runs)
+    except BaseException:
+        if os.path.exists(tmp):                            # no partial file left behind
+            os.remove(tmp)
+        raise
 
 
 def gif_to_mp4(src, dst, scale=2, crf=18):
@@ -131,6 +165,18 @@ def write_mp4(frames, delays, dst, crf=18):
     ow, oh = w + w % 2, h + h % 2                          # H.264 4:2:0: even size
     tb = Fraction(1, 1000)                                 # time in ms
     tmp = dst + '.tmp.mp4'
+    try:
+        _encode(tmp, frames, delays, ow, oh, tb, crf)
+        os.replace(tmp, dst)
+    except BaseException:
+        if os.path.exists(tmp):                            # no partial file left behind
+            os.remove(tmp)
+        raise
+    return len(frames), ow, oh
+
+
+def _encode(tmp, frames, delays, ow, oh, tb, crf):
+    """The H.264 encoding of write_mp4 into tmp."""
     with av.open(tmp, 'w') as c:
         s = c.add_stream('libx264', rate=Fraction(1000, max(1, round(sum(delays) / len(delays)))))
         s.width, s.height, s.pix_fmt = ow, oh, 'yuv420p'
@@ -148,8 +194,6 @@ def write_mp4(frames, delays, dst, crf=18):
             t += max(1, d)
         for p in s.encode():
             c.mux(p)
-    os.replace(tmp, dst)
-    return len(frames), ow, oh
 
 
 def main():

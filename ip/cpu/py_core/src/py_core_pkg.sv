@@ -15,8 +15,29 @@
 //
 //   Encoding: 1 opcode byte, then 0, 1 or 2 little-endian operand bytes.
 //   The opcode set is MicroPython-inspired but NOT the real .mpy encoding;
-//   tools/pyc.py compiles a Python subset into it.
-// Date: 2026-10-01
+//   tools/pyc.py compiles a Python subset into it. Version 2 (pyc.py
+//   --core 2) adds BINARY_MUL, BINARY_FLOORDIV, BINARY_MOD (Python
+//   semantics: floor division, the remainder takes the divisor's sign) and
+//   WAIT_IRQ; the golden model is ip/cpu/py_core/model/py_core_model.py.
+//
+//   CPython correspondence (dis opcodes of CPython 3.12; pyc.py compiles the
+//   Python source's AST directly, not CPython bytecode):
+//     LOAD_SMALL, LOAD_CONST, LOAD_NONE / TRUE / FALSE  LOAD_CONST
+//     LOAD_FAST / STORE_FAST, LOAD_GLOBAL / STORE_GLOBAL  the same names
+//     POP_TOP  POP_TOP          DUP_TOP  COPY 1
+//     BINARY_ADD .. BINARY_MOD  BINARY_OP (+ - & | ^ << >> * // %)
+//     COMPARE_LT .. COMPARE_GE  COMPARE_OP (< == != > <= >=)
+//     JUMP  JUMP_FORWARD / JUMP_BACKWARD (absolute 16-bit target here)
+//     POP_JUMP_IF_FALSE / TRUE  the same names (absolute target)
+//     CALL  CALL of a function known at compile time (target address; the
+//           callee pops its arguments with STORE_FAST)
+//     RETURN  RETURN_VALUE inside a function; RETURN_VALUE  module level
+//           (halt, result_o)
+//     MEM32_LOAD / MEM32_STORE  BINARY_SUBSCR / STORE_SUBSCR on mem32
+//           (MicroPython machine.mem32)
+//     SET_IRQ_VECTOR, IRQ_ENABLE / DISABLE, RETURN_FROM_IRQ, WAIT_IRQ  no
+//           CPython opcode (interrupt support, cf. MicroPython machine.irq)
+// Date: 2026-10-20
 package py_core_pkg;
 
   localparam int VW = 34;                 // tagged value width
@@ -27,9 +48,11 @@ package py_core_pkg;
   localparam pyval_t PY_FALSE = 34'h0_0000_0006;
   localparam pyval_t PY_TRUE  = 34'h0_0000_000A;
 
+  /* verilator lint_off UNUSEDSIGNAL */          // only the tag bit of the word is examined
   function automatic logic is_small(input pyval_t v);
     is_small = v[0];
   endfunction
+  /* verilator lint_on UNUSEDSIGNAL */
   function automatic pyval_t mk_small(input logic signed [VW-2:0] i);
     mk_small = {i, 1'b1};
   endfunction
@@ -65,12 +88,15 @@ package py_core_pkg;
     OP_BINARY_XOR    = 8'h14,
     OP_BINARY_LSHIFT = 8'h15,
     OP_BINARY_RSHIFT = 8'h16,
+    OP_BINARY_MUL    = 8'h17,  // TOS1 * TOS                      (v2)
     OP_COMPARE_LT    = 8'h18,
     OP_COMPARE_EQ    = 8'h19,
     OP_COMPARE_NE    = 8'h1A,
     OP_COMPARE_GT    = 8'h1B,
     OP_COMPARE_LE    = 8'h1C,
     OP_COMPARE_GE    = 8'h1D,
+    OP_BINARY_FLOORDIV = 8'h1E, // TOS1 // TOS (floor)            (v2)
+    OP_BINARY_MOD    = 8'h1F,  // TOS1 % TOS (sign of TOS)         (v2)
     OP_JUMP          = 8'h20,  // abs16
     OP_POP_JUMP_IF_FALSE = 8'h21, // abs16
     OP_POP_JUMP_IF_TRUE  = 8'h22, // abs16
@@ -82,6 +108,7 @@ package py_core_pkg;
     OP_RETURN_FROM_IRQ = 8'h3B,
     OP_CALL          = 8'h3C,  // abs16          push a frame, jump (callee pops its args with STORE_FAST)
     OP_RETURN        = 8'h3D,  // pop the frame; the return value stays on the operand stack
+    OP_WAIT_IRQ      = 8'h3E,  // stop until irq_i is high (interrupts enabled or not)
     OP_RETURN_VALUE  = 8'h3F   // halt, result = pop
   } opcode_e;
 
@@ -106,7 +133,8 @@ package py_core_pkg;
     TRAP_BUS       = 4'h5,  // SLVERR/DECERR on mem32 access
     TRAP_INDEX     = 4'h6,  // local / global / const index out of range
     TRAP_IRQ_STATE = 4'h7,  // RETURN_FROM_IRQ outside a handler frame
-    TRAP_FRAME     = 4'h8   // RETURN with no caller (or from a handler frame)
+    TRAP_FRAME     = 4'h8,  // RETURN with no caller (or from a handler frame)
+    TRAP_DIV0      = 4'h9   // BINARY_FLOORDIV / BINARY_MOD by zero (ZeroDivisionError)
   } trap_e;
 
 endpackage

@@ -26,6 +26,25 @@ independently-reusable building blocks (`fixed_recip`, `mulq_s`,
 them can be lifted into a different project without pulling in this
 project's top-level integration or AXI framing (see "Reusable IP modules").
 
+## Version 2.0.0
+
+- **Exact golden model.** `model/vision_system_model.py` is the reference: `tb/python/vision_system_tb.py`
+  compares every output beat (data, tlast, tuser) of the RTL with it - every distortion model, both
+  calibration modes, bilinear and bicubic, BYPASS, out-of-range sizes, random input gaps and output
+  back-pressure, CTRL soft reset, the register map - on the on-chip store and on the SDRAM store
+  (`USE_EXT_FB`), with Verilator and Icarus. Every sub-block has its own exact model and cocotb test.
+- **BYPASS** (0x38, reset 1): frames pass unchanged. The "identity" calibration is not bit exact
+  (the Q16.16 reciprocal of the focal length is rounded), so software clears BYPASS once it has
+  programmed a calibration.
+- **Edge replication**: every interpolation tap is clamped into the frame (OpenCV `BORDER_REPLICATE`);
+  any frame size from 1 x 1 works.
+- **Back-pressure on m_axis** (credit-based, `axis_out_ctrl`), no line-gap requirement on s_axis.
+- **CTRL[0] soft reset**, synchronous resets throughout, frame sizes clamped into 1..MAX.
+- **Saturating sums** in `coord_gen` (barrel_pkg `sat40`): a source coordinate past +/-32768 clamps
+  instead of wrapping.
+- **Frame store**: the on-chip store holds MAX_W x MAX_H pixels four times (49.8 Mbit at 720 x 720);
+  the hardware store moves to DDR (`docs/ddr_npu_architecture_study.md` section 8).
+
 ## Block diagram
 
 Open the [HTML documentation site](docs/site/index.html) for a browsable
@@ -404,8 +423,9 @@ selects which projection `coord_gen.sv` applies. Four of the six are
 implemented: `MODEL_RADIAL` (above), and now `MODEL_FISHEYE`,
 `MODEL_PANORAMIC`, and `MODEL_PERSPECTIVE` too. `MODEL_AFFINE` and
 `MODEL_SCALING` remain reserved architecture hooks (see below);
-selecting either still falls back to an exact identity round-trip,
-verified by the smoke test.
+selecting either gives the pinhole round trip s = c + ((x - c) / f) * f,
+close to the identity but not bit exact (the reciprocal of f is
+rounded); BYPASS passes a frame exactly.
 
 **Fisheye and panoramic (division model).** Rather than the
 trigonometric equidistant fisheye model (`r_d=f*atan(r_u/f)`, which needs
@@ -494,52 +514,17 @@ What these two would need to become real:
 
 ## Interpolation modes
 
-`INTERP_MODE` (AXI-Lite 0x2C) selects between two interpolation modes,
-applied to whichever fractional source coordinate `coord_gen` computes —
-**`coord_gen` itself is completely unchanged between the two modes**; only
-how far the tap footprint is expanded, and how many memory-read cycles it
-costs, differs downstream in `axis_out_ctrl.sv`. The mode must be held
-static for the duration of a frame (changing it mid-frame is not
-supported — set it before `IMG_WIDTH`/`IMG_HEIGHT`/starting a frame).
+`INTERP_MODE` (0x3C) selects the interpolation applied to the source coordinate `coord_gen` computes;
+it is taken at the start of each output frame (change it only while STATUS.busy is clear).
 
-- **Bilinear (`INTERP_MODE=0`, default)**: the original 2x2-tap datapath.
-  Fully pipelined, never stalls, sustains **1 output pixel/clock**, fixed
-  13-cycle latency. Reproduces the exact same "line, then 5 idle cycles"
-  timing at the output as at the input.
-- **Bicubic (`INTERP_MODE=1`)**: a 4x4-tap separable Catmull-Rom filter
-  (`bicubic.sv`, a=-0.5, the same kernel OpenCV's default bicubic uses).
-  Weights: `w(-1)=-0.5t³+t²-0.5t`, `w(0)=1.5t³-2.5t²+1`,
-  `w(+1)=-1.5t³+2t²+0.5t`, `w(+2)=0.5t³-0.5t²` (sum to 1.0 for any t —
-  partition of unity). Higher quality (less blur, sharper edges) than
-  bilinear, at a real throughput cost explained below.
-
-### The throughput/timing trade-off (bicubic is NOT full-rate)
-
-`frame_buffer.sv` has only four read ports, sized for bilinear's 2x2
-footprint. Rather than replicating the memory sixteen-fold to give
-bicubic's 4x4 footprint the same single-cycle access, this design reuses
-the existing four ports and gathers the 4x4 footprint as **four
-sequential row-reads** (one row of 4 taps per cycle). This is a
-deliberate area/throughput trade-off for a reference design reusing a
-bilinear-sized memory system — a production design targeting bicubic at
-full rate would size the frame buffer with 16 read ports (or use an
-external-memory tile cache) instead.
-
-The consequence: bicubic mode processes **one pixel at a time** — the
-raster generator only issues a new source-coordinate request once the
-previous pixel's result has fully emerged (a `req_outstanding` handshake
-in `axis_out_ctrl.sv`; `coord_gen` sees the resulting sparse request
-stream as ordinary bubbles, exactly like the existing line-gap idle
-cycles it already tolerates, so it needed no changes at all). Measured
-end-to-end latency per pixel: coord_gen(23) + the gather FSM (lock anchor,
-registered row-base multiply, four sequential row-reads) + bicubic.sv's own
-18-stage pipeline = **48 cycles/pixel** (measured; it was 19 before the
-timing-closure work -- see "Pipeline / timing", and "A real bug found"
-below for why these numbers are always measured, never hand-derived). Bicubic mode
-therefore does **not** reproduce the input's "line, then 5 idle" timing
-at the output — the output runs much slower and with different (also
-measured, not guessed) internal gaps. This is an honest, documented
-trade-off, not an oversight.
+- **Bilinear (`INTERP_MODE=0`, default)**: taps x0 / x0 + 1 by y0 / y0 + 1 (each clamped into the
+  frame), 8-bit fractions sx[15:8] / sy[15:8], `bilinear.sv` (3 clocks). One frame-store request per
+  pixel: **1 pixel per clock** with the on-chip store and a fast-path model.
+- **Bicubic (`INTERP_MODE=1`)**: a 4x4-tap separable Catmull-Rom filter (`bicubic.sv`, a=-0.5, the same
+  kernel OpenCV's default bicubic uses), taps x0 - 1 .. x0 + 2 by y0 - 1 .. y0 + 2 (each clamped),
+  16-bit fractions. Weights: `w(-1)=-0.5t³+t²-0.5t`, `w(0)=1.5t³-2.5t²+1`, `w(+1)=-1.5t³+2t²+0.5t`,
+  `w(+2)=0.5t³-0.5t²` (partition of unity). The four tap rows are read one per clock from the
+  four-port store, so bicubic runs at **1 pixel per 4 clocks** (`bicubic.sv` itself is fully pipelined).
 
 ## Fixed-point format
 
@@ -551,62 +536,33 @@ arithmetic right-shift by 16, saturate to 32 bits) is reused at every
 pipeline stage — no per-signal bit-width bookkeeping, no room for
 format-mismatch bugs.
 
+Sums are formed exactly and saturated to 32 bits as well (`barrel_pkg::sat40`).
+
 Division (needed once, to get `1/(halfW*scale)` and `1/(halfH*scale)`) is
-kept **entirely off the per-pixel critical path**: `fixed_recip.sv` is a
-33-cycle iterative shift/subtract divider that runs only when geometry
+kept **off the per-pixel critical path** of the fast models: `fixed_recip.sv`
+is a 34-clock iterative shift/subtract divider that runs only when geometry
 registers are (re)written, producing a reciprocal that the per-pixel
 pipeline then just multiplies by. There is no divider anywhere in the
 per-pixel datapath.
 
 ## Pipeline / timing
 
-Latencies below are the **current** values (after the timing-closure work,
-next section) and are **measured in simulation**, not derived by hand --
-`axis_out_ctrl.sv`'s four `TOTAL_LATENCY_*` constants drive the tlast/tuser
-tag delay line, and the regression's tlast/tuser timing checks fail if any
-of them is off by even one.
+The output side (`axis_out_ctrl.sv`) generates the raster, asks `coord_gen` for each pixel's source
+position, reads the taps from the store and interpolates. At most CREDITS (64) pixels are between the
+raster and m_axis; a credit returns when a pixel leaves, so no FIFO inside can overflow and m_axis may be
+stalled at any time. tlast / tuser travel with each pixel through a FIFO (no latency constants).
 
-**Bilinear mode:**
-- `coord_gen`: 23-stage feed-forward pipeline, one new (x,y) request
-  accepted every clock.
-- address-expand (integer/fraction split + clamp-to-edge, `y0*width`
-  row-base multiply, row-base add, four corner addresses): 4 cycles.
-- `frame_buffer` synchronous read: +1 cycle.
-- `bilinear`: 3-stage pipeline (weights; the 12 pixel*weight products;
-  sum/round/select).
-- **Total pipeline latency: 31 cycles**, request to output pixel, fully
-  pipelined at 1 pixel/clock.
+Measured in simulation (tb/python, on-chip store), the first output pixel after the output starts:
 
-The bilinear datapath is feed-forward and never stalls once it starts (no
-backpressure capability mid-pipeline -- see Limitations). Because of that,
-whatever valid/idle pattern is fed into the request side reappears
-identically at the output, 31 cycles later. `axis_out_ctrl` exploits this
-directly: it generates the output raster with the *same* "W cycles valid,
-then 5 idle cycles" timing the input used, and the correct output timing
-falls out for free rather than needing to be reconstructed afterwards.
+| mode | first pixel (clocks) | throughput |
+|---|---|---|
+| bilinear, radial / reserved codes (fast path, 23 clocks in coord_gen) | 33 | 1 pixel / clock |
+| bicubic, fast path | 52 | 1 pixel / 4 clocks |
+| bilinear, fisheye / panoramic / perspective (slow path, 62 clocks per pixel) | ~73 | 1 pixel / ~63 clocks |
+| bicubic, slow path | ~92 | 1 pixel / ~63 clocks |
 
-**Bicubic mode:** one pixel processed at a time (see "Interpolation modes"
-for why): coord_gen (23) + the gather FSM (lock anchor, registered row-base
-multiply, four sequential row reads) + `bicubic.sv`'s own 18-stage
-pipeline = **48 cycles/pixel**.
-
-**Slow-path models (fisheye / panoramic / perspective):** coord_gen's
-per-pixel-divide path replaces its 23-cycle fast latency, giving **71**
-cycles/pixel (bilinear downstream) and **88** (bicubic downstream).
-
-| mode | total latency (cycles) |
-|---|---|
-| bilinear, radial (fast path) | 31 |
-| bicubic, radial (fast path) | 48 |
-| bilinear, fisheye/panoramic/perspective | 71 |
-| bicubic, fisheye/panoramic/perspective | 88 |
-
-**Throughput consequence.** Only bilinear + a fast-path model sustains one
-pixel per clock; bicubic and the slow-path models process one pixel at a
-time (this was already true -- the timing work only lengthened each
-pixel's latency, roughly 2-3x). The simulation throughput figures quoted
-in "Large-frame verification" below (345 / 161 pixels/sec) were measured on
-the earlier, shallower pipeline; every mode is now slower to simulate.
+A frame is output after it has been stored (T_LOAD, T_FLUSH, T_OUTPUT); the next input frame is taken
+when the corrected frame has left.
 
 ## Timing closure (pipeline updates)
 
@@ -847,64 +803,58 @@ header), `FULL=1` for full-size frames, `make clean`.
 
 ## AXI4-Stream interfaces
 
-Both `s_axis_*` (video in) and `m_axis_*` (video out) use: `tdata[23:0]`
-= packed RGB888, `tlast` = last pixel of a line, `tuser` = first pixel of
-the frame. Per the spec, each line is `IMG_WIDTH` back-to-back beats
-followed by **5 idle cycles** before the next line.
-
-`m_axis_tready` is expected to be held high throughout — this is a
-fixed-rate video pipeline with no internal stall capability (see
-Limitations).
+Both `s_axis` (video in) and `m_axis` (video out) are `axis_if` ports: `tdata[23:0]` = RGB888 as
+{B, G, R} with R in bits [7:0], `tlast` = last pixel of a line, `tuser` = first pixel of the frame.
+Gaps (tvalid low) are allowed anywhere on s_axis; m_axis honours back-pressure (tready). Beats outside a
+frame (before its tuser) are dropped in the correction path; frames are IMG_WIDTH x IMG_HEIGHT (clamped
+into 1..MAX_W / 1..MAX_H).
 
 ## AXI4-Lite register map
 
-32-bit registers, word-aligned:
+Generated from `src/include/vision_system_regs.json` (also `docs/vision_system_regs.md`, the C header
+`src/include/vision_system_regs.h`); 32-bit words, ID "VSYS" / VERSION / DATE at 0x00-0x08, addresses past
+the map answer DECERR, writes to read-only words SLVERR.
 
-| Offset | Name       | Access | Description |
-|--------|------------|--------|-------------|
-| 0x00   | CTRL       | -      | reserved |
-| 0x04   | STATUS     | RO     | bit0 busy, bit1 frame_done (sticky, W1C), bit2 recip_busy |
-| 0x08   | IMG_WIDTH  | RW     | active frame width, 1..MAX_W (default 512) |
-| 0x0C   | IMG_HEIGHT | RW     | active frame height, 1..MAX_H (default 512) |
-| 0x10   | K1         | RW     | signed Q16.16, r^2 coefficient |
-| 0x14   | K2         | RW     | signed Q16.16, r^4 coefficient |
-| 0x18   | K3         | RW     | signed Q16.16, r^6 coefficient |
-| 0x1C   | CENTER_X   | RW     | unsigned Q16.16, fraction of width (0.5 = 0x00008000) |
-| 0x20   | CENTER_Y   | RW     | unsigned Q16.16, fraction of height |
-| 0x24   | SCALE      | RW     | unsigned Q16.16, edge-crop zoom (1.0 = 0x00010000) |
-| 0x28   | VERSION    | RO     | 0x00010000 |
-| 0x2C   | INTERP_MODE| RW     | bit0: 0=bilinear (default), 1=bicubic. Static per frame -- do not change mid-frame. |
-| 0x30   | CALIB_MODE | RW     | bit0: 0=legacy normalized center+scale (default), 1=direct camera calibration (use FX/FY/CX/CY below instead of CENTER_X/CENTER_Y/SCALE) |
-| 0x34   | FX         | RW     | signed Q16.16 pixels, focal length X. Used only when CALIB_MODE=1. |
-| 0x38   | FY         | RW     | signed Q16.16 pixels, focal length Y. Used only when CALIB_MODE=1. |
-| 0x3C   | CX         | RW     | signed Q16.16 pixels, principal point X. Used only when CALIB_MODE=1. |
-| 0x40   | CY         | RW     | signed Q16.16 pixels, principal point Y. Used only when CALIB_MODE=1. |
-| 0x44   | P1         | RW     | signed Q16.16, tangential distortion coefficient 1. Applied only when MODEL_SEL=RADIAL (default). |
-| 0x48   | P2         | RW     | signed Q16.16, tangential distortion coefficient 2. Applied only when MODEL_SEL=RADIAL. |
-| 0x4C   | MODEL_SEL  | RW     | bits[2:0]: 0=RADIAL, 1=FISHEYE, 2=AFFINE (hook), 3=PERSPECTIVE, 4=SCALING (hook), 5=PANORAMIC -- RADIAL/FISHEYE/PERSPECTIVE/PANORAMIC implemented; AFFINE/SCALING are reserved architecture hooks. See "Fisheye, panoramic, and perspective correction" below. Static per frame. |
-| 0x50   | H11        | RW     | signed Q16.16. MODEL_PERSPECTIVE homography coefficient. Default 1.0 (identity). |
-| 0x54   | H12        | RW     | signed Q16.16. Default 0. |
-| 0x58   | H13        | RW     | signed Q16.16, pixels (translation). Default 0. |
-| 0x5C   | H21        | RW     | signed Q16.16. Default 0. |
-| 0x60   | H22        | RW     | signed Q16.16. Default 1.0 (identity). |
-| 0x64   | H23        | RW     | signed Q16.16, pixels (translation). Default 0. |
-| 0x68   | H31        | RW     | signed Q16.16. Default 0. |
-| 0x6C   | H32        | RW     | signed Q16.16. Default 0. (H33 implicit = 1.0.) |
+| Offset | Name | Access | Reset | Description |
+|---|---|---|---|---|
+| 0x10 | CTRL | WO | 0 | [0] soft reset request (self clearing, not stored) |
+| 0x14 | STATUS | CMD | 0 | [0] busy [1] frame done (W1C) [2] reciprocal busy |
+| 0x18 | IMG_WIDTH | RW | 64 | active frame width, 1..MAX_W |
+| 0x1C | IMG_HEIGHT | RW | 64 | active frame height, 1..MAX_H |
+| 0x20 | K1 | RW | 0 | signed Q16.16 radial coefficient (r^2 term) |
+| 0x24 | K2 | RW | 0 | signed Q16.16 radial coefficient (r^4 term) |
+| 0x28 | K3 | RW | 0 | signed Q16.16 radial coefficient (r^6 term) |
+| 0x2C | CENTER_X | RW | 0x8000 | unsigned Q16.16, fraction of the width (0.5 = 0x8000) |
+| 0x30 | CENTER_Y | RW | 0x8000 | unsigned Q16.16, fraction of the height |
+| 0x34 | SCALE | RW | 0x10000 | unsigned Q16.16 edge-crop zoom (1.0 = 0x10000) |
+| 0x38 | BYPASS | RW | 1 | [0] 1: frames pass unchanged (reset: no correction until software enables it); taken between frames |
+| 0x3C | INTERP_MODE | RW | 0 | [0] 0 bilinear, 1 bicubic (change only while idle) |
+| 0x40 | CALIB_MODE | RW | 0 | [0] 1 = direct camera calibration (FX / FY / CX / CY) |
+| 0x44 | FX | RW | 0x10000 | signed Q16.16 pixels, focal length x (CALIB_MODE 1) |
+| 0x48 | FY | RW | 0x10000 | signed Q16.16 pixels, focal length y (CALIB_MODE 1) |
+| 0x4C | CX | RW | 0 | signed Q16.16 pixels, principal point x (CALIB_MODE 1) |
+| 0x50 | CY | RW | 0 | signed Q16.16 pixels, principal point y (CALIB_MODE 1) |
+| 0x54 | P1 | RW | 0 | signed Q16.16 tangential coefficient 1 (RADIAL) |
+| 0x58 | P2 | RW | 0 | signed Q16.16 tangential coefficient 2 (RADIAL) |
+| 0x5C | MODEL_SEL | RW | 0 | [2:0] 0 radial, 1 fisheye (division model), 2 affine (reserved), 3 perspective, 4 scaling (reserved), 5 panoramic, 6 / 7 reserved; the reserved codes give the pinhole round trip (near identity) - software must not select them |
+| 0x60 | H11 | RW | 0x10000 | homography, Q16.16 |
+| 0x64 | H12 | RW | 0 | homography, Q16.16 |
+| 0x68 | H13 | RW | 0 | homography translation, pixels |
+| 0x6C | H21 | RW | 0 | homography, Q16.16 |
+| 0x70 | H22 | RW | 0x10000 | homography, Q16.16 |
+| 0x74 | H23 | RW | 0 | homography translation, pixels |
+| 0x78 | H31 | RW | 0 | homography, Q16.16 |
+| 0x7C | H32 | RW | 0 | homography, Q16.16 |
 
-Writing IMG_WIDTH, IMG_HEIGHT, CENTER_X, CENTER_Y, SCALE, CALIB_MODE, FX,
-FY, CX or CY automatically (re)triggers the reciprocal recompute (same
-mechanism, extended); K1-K3, P1, P2 and MODEL_SEL take effect immediately
-on the next output frame without a recompute pass, exactly like K1-K3
-already did.
-
-Writing `IMG_WIDTH`, `IMG_HEIGHT`, `CENTER_X`, `CENTER_Y` or `SCALE`
-automatically retriggers the derived-config recompute (pixel-domain
-center, half-width/height, and their reciprocals). Poll
-`STATUS.recip_busy` (bit 2) until clear before starting a frame after
-changing any of these. K1/K2/K3 can be written at any time (no recompute
-needed).
+Writing IMG_WIDTH, IMG_HEIGHT, CENTER_X, CENTER_Y, SCALE, CALIB_MODE, FX, FY, CX or CY starts the
+derived-calibration pass (STATUS.recip_busy, bit 2, about 45 clocks); a write during a pass starts
+another. No frame is taken while it runs. K1-K3, P1, P2, H11-H32 and MODEL_SEL go to coord_gen directly;
+change them, INTERP_MODE and BYPASS only while STATUS.busy is clear.
 
 ## A real bug found & fixed during bring-up
+
+*(Version 1.x history: 2.0.0 carries tlast / tuser with each pixel through a FIFO, so the
+latency constants below no longer exist.)*
 
 *(Historical account. The cycle counts quoted in this section -- 13, 18,
 19 -- were correct for the design at the time; the timing-closure work
@@ -1261,20 +1211,12 @@ reserved (`MODEL_AFFINE`/`MODEL_SCALING`) architecture hooks. **Result:
   backend avoids BRAM replication by storing pixels in external SDR SDRAM,
   but currently has no tile cache and serializes reads, so it trades
   throughput for capacity. Its generic timing and forwarded clock need
-  board-specific validation (see "External SDRAM frame buffer").
-- **No mid-pipeline backpressure**: `m_axis_tready` is assumed high
-  throughout. Adding true stalling would require either a small output
-  FIFO plus pausing the raster generator, or (cleaner) sizing the design
-  so downstream is guaranteed to always be ready by construction.
-- Out-of-frame samples use clamp-to-edge (repeats the border pixel) rather
-  than producing black; both are one-line changes in `axis_out_ctrl.sv`
-  if black borders are preferred.
-- **Bicubic mode requires `IMG_WIDTH>=4` and `IMG_HEIGHT>=4`** (its 4x4
-  tap footprint needs a 1-pixel margin beyond bilinear's on each side).
-  Not a practical concern for any realistic frame size; bilinear mode has
-  no such minimum.
-- **MODEL_AFFINE and MODEL_SCALING remain unimplemented hooks** (identity
-  passthrough only -- see "Remaining architecture hooks" above for what
+  board-specific validation (see "External SDRAM frame buffer"); the
+  hardware store moves to DDR (docs/ddr_npu_architecture_study.md).
+- Out-of-frame samples use clamp-to-edge (every tap clamped into the
+  frame: the border pixel repeats) rather than producing black.
+- **MODEL_AFFINE and MODEL_SCALING remain unimplemented hooks** (the pinhole
+  round trip, near identity -- see "Remaining architecture hooks" above for what
   each would need). MODEL_RADIAL, MODEL_FISHEYE, MODEL_PANORAMIC and
   MODEL_PERSPECTIVE are all functionally implemented and verified with
   real distortion-correction image tests.
@@ -1295,7 +1237,7 @@ reserved (`MODEL_AFFINE`/`MODEL_SCALING`) architecture hooks. **Result:
   configuration registers are timed as if they toggle every cycle
   (pessimistic); real routing delay is ignored (optimistic). Re-check with a
   vendor tool before relying on 100 MHz.
-- **DSP usage is high** (423 DSP48E1 at the top level) because every 32x32
+- **DSP usage is high** (425 DSP48E1 at the top level) because every 32x32
   multiply is four explicit 16x16 DSPs; shift-add replacements for the
   constant Catmull-Rom multiplies would save ~60-70 (see "Timing closure").
 - **The GitHub Actions workflow is unexecuted on GitHub** (see

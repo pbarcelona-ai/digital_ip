@@ -38,7 +38,7 @@
 //   words read 0 and ignore writes; above the map: DECERR. Clock - aclk.
 //   Reset - synchronous active low aresetn. Latency - 2 clocks per write and
 //   read.
-// Date: 2026-10-16
+// Date: 2026-10-20
 module gpio_regs #(
   parameter int WIDTH = 16  // number of pins (1..32)
 ) (
@@ -111,6 +111,7 @@ module gpio_regs #(
 
   logic             wr_en, rd_en, wr_err_q;
   logic [7:0]       wr_addr, rd_addr, rd_addr_q;
+  wire unused_addr_lsbs = &{1'b0, wr_addr[1:0], rd_addr[1:0]};   // word access: the byte offset is not decoded
   logic [31:0]      wr_data, rd_data;
   logic [3:0]       wr_strb;
   regbus_if #(.ADDR_W(8)) bus ();               // register bus of the AXI4-Lite front end
@@ -229,12 +230,12 @@ module gpio_regs #(
       A_VERSION: rd_data = IP_VERSION;
       A_DATE:    rd_data = IP_DATE;
       A_OUT: rd_data = 32'(out_i);
-      A_DIR: rd_data = dir_q;
+      A_DIR: rd_data = 32'(dir_q[WIDTH-1:0]);
       A_IN: rd_data = 32'(in_i);
-      A_INT_EN: rd_data = int_en_q;
-      A_RISE_EN: rd_data = rise_en_q;
-      A_FALL_EN: rd_data = fall_en_q;
-      A_INT_STATUS: rd_data = int_status_q;
+      A_INT_EN: rd_data = 32'(int_en_q[WIDTH-1:0]);
+      A_RISE_EN: rd_data = 32'(rise_en_q[WIDTH-1:0]);
+      A_FALL_EN: rd_data = 32'(fall_en_q[WIDTH-1:0]);
+      A_INT_STATUS: rd_data = 32'(int_status_q[WIDTH-1:0]);
       default: begin
       end
     endcase

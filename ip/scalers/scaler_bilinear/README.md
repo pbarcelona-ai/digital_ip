@@ -1,6 +1,6 @@
 # scaler_bilinear
 
-**Type:** IP
+Bilinear (2x2) image scaler IP. The 16.16 source coordinate s is rounded to PB = PHASE_BITS bits: s_r = s + 2^(15-PB); i = s_r >>> 16; f = s_r[15 -: PB] With ONE = 2^PHASE_BITS and taps p00 p01 / p10 p11 at (i, i+1): top = p00*(ONE-fx) + p01*fx bot = p10*(ONE-fx) + p11*fx out = (top*(ONE-fy) + bot*fy + ONE^2/2) >> (2*PHASE_BITS) Weights are computed in hardware; no coefficient tables. Interfaces: AXI4-Lite control (common map in scaler_ctrl), AXI4-Stream video in/out (tuser = SOF, tlast = EOL; pixel = CHANNELS x COMP_W bits, component 0 in the LSBs). Throughput: 1 output pixel/clock. Latency: one input frame (default and PINGPONG = 1) or a few input lines (LINE_BUF = 1). Uses: axil_regbus, scaler_ctrl, scaler_dda, banked_framebuf. Pixel-centre alignment (as OpenCV cv::resize INTER_LINEAR): OFFS_X / OFFS_Y = STEP / 2 - 0.5, i.e. (STEP >> 1) - 0x8000 in 16.16 (see scaler_ctrl).
 
 Bilinear scaler, 8-bit phase, weights computed in hardware.
 

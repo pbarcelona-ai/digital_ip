@@ -26,7 +26,9 @@ module axi4_lite_decoder #(
   output logic              miss_o,
   output logic              multi_o
 );
+  /* verilator lint_off UNUSEDPARAM */             // version identification (library convention), not logic
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
+  /* verilator lint_on UNUSEDPARAM */
   if (NSLAVE < 1) begin : g_bn $error("axi4_lite_decoder: NSLAVE must be >= 1"); end
   // constant overlap check: two regions overlap when their bases agree on the bits both masks compare
   for (genvar i = 0; i < NSLAVE; i++) begin : g_ci

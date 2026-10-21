@@ -12,7 +12,7 @@
 //   specification requires. q_o[0] is the first bit on the wire. Clock -
 //   pixel clock only. Reset - synchronous rst_n (active low). Latency -
 //   1 clock (registered output).
-// Date: 2026-10-01
+// Date: 2026-10-21
 module tmds_encoder (
   input  logic       clk,
   input  logic       rst_n,
@@ -23,7 +23,9 @@ module tmds_encoder (
   input  logic [9:0] g_i,
   output logic [9:0] q_o
 );
+  /* verilator lint_off UNUSEDPARAM */             // M_CTRL names the default (else) branch of the mode decode
   localparam logic [1:0] M_CTRL = 2'd0, M_VIDEO = 2'd1, M_TERC4 = 2'd2, M_GUARD = 2'd3;
+  /* verilator lint_on UNUSEDPARAM */
 
   // ---------------- 8b/10b video coding (DVI 1.0, section 3.2.2)
   logic [3:0] n1d, n1q;

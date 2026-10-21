@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1792588346" />
+    <testcase name="test_frames_exact" classname="isp_gamma_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/ip/video/isp_gamma/tb/python/isp_gamma_tb.py" lineno="35" time="0.8527398109436035" sim_time_ns="147086.0" ratio_time="172486.3763980261" />
+  </testsuite>
+</testsuites>

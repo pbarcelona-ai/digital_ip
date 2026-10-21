@@ -1,7 +1,7 @@
 """video_processor firmware: the camera module.
 
 Camera control over I2C 0 (CCI registers of the sensor at SENSOR_ADDR): the frame gap, the frame
-size, the image name and the detection options (classes, box styles) of the tracking sequence and
+size, the image name and the detection options (classes, symbol styles) of the tracking sequence and
 "stream on"; the image format pin GPIO0[30] and the ISP set for it.
 """
 from machine import mem32          # ignored by pyc: mem32 is native
@@ -60,52 +60,58 @@ def camera_frame_size():
 
 def camera_detect():
     """Object classes to detect (camera register 0x50, bit c; 0 = pedestrian only) into det_mask,
-    the box style of each class (registers 0x51-0x54, 0-6) into det_style and the most targets
-    tracked at any time (0x55, 1-12; 0 = 12) into max_targets; prints the selection."""
+    the symbol style of each class (registers 0x51-0x55, 0-9; larger: 0) into det_style and the
+    most targets tracked at any time (0x58, 1-32; 0 = 32) into max_targets; prints the selection."""
     global det_mask, det_style, max_targets
     ok = camera_reg(SENSOR_DETECT, 6, I_READ)
-    det_mask = rx_word(I2C0) & 15
+    det_mask = rx_word(I2C0) & 31
     if det_mask == 0:
         det_mask = 1
     det_style = 0
     c = 0
-    while c < NTRK:
-        det_style = det_style | ((rx_word(I2C0) & 7) << ((c << 1) + c))
+    while c < NDET:
+        s = rx_word(I2C0) & 255
+        if s > 9:
+            s = 0
+        det_style = det_style | (s << (c << 2))
         c += 1
-    max_targets = rx_word(I2C0) & 255
+    max_targets = camera_byte(SENSOR_MAXT)
     if max_targets == 0 or max_targets > NOBJ_MAX:
         max_targets = NOBJ_MAX
-    puts("  Detection (camera registers 0x50-0x55): up to ")
+    puts("  Detection (camera registers 0x50-0x55, 0x58): up to ")
     dec(max_targets)
-    say(" targets at a time; class, box colour, box style")
+    say(" targets at a time; class, symbol colour, symbol style")
     c = 0
-    while c < NTRK:
+    while c < NDET:
         if det_mask & (1 << c):
             puts("    ")
             class_name(c)
             s = class_style(c)
-            if c == C_PED:
+            if c == C_AIR:
                 puts(": green")
-            elif c == C_FACE:
-                puts(": magenta")
-            elif c == C_CAR:
-                puts(": cyan")
+            elif c >= C_CAR:
+                puts(": red")
             else:
-                puts(": orange")
+                puts(": white")
             if s == 6:
                 say(" solid box in the middle of the target")
-                c += 1
-                continue
-            if s & 1:
-                puts(" solid")
+            elif s == 7:
+                say(" dashed box, solid corners")
+            elif s == 8:
+                say(" dashed box, solid corners, ticks to the centre")
+            elif s == 9:
+                say(" dashed triangle, solid vertices")
             else:
-                puts(" dashed")
-            if s < 2:
-                say(" box")
-            elif s < 4:
-                say(" circle")
-            else:
-                say(" oval")
+                if s & 1:
+                    puts(" solid")
+                else:
+                    puts(" dashed")
+                if s < 2:
+                    say(" box")
+                elif s < 4:
+                    say(" circle")
+                else:
+                    say(" oval")
         c += 1
     return ok
 

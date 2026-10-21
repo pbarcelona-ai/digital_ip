@@ -8,9 +8,12 @@
 //   is shown next to the bytecode), each trap cause (overflow, type,
 //   illegal opcode, bus error), a full 32-bit register read, and resume
 //   past an emulated instruction, recursive calls, call depth overflow
-//   and RETURN without a caller. Interrupts are covered by py_soc_tb. Prints TEST PASSED on success.
+//   and RETURN without a caller, the v2 arithmetic (BINARY_MUL, floor
+//   division and modulo with a negative operand, the zero-divisor and
+//   product-overflow traps). Interrupts and WAIT_IRQ are covered by py_soc_tb
+//   and the cocotb comparison with the golden model (tb/python). Prints TEST PASSED on success.
 //   The test tasks are in tests/py_core_tests.sv (`included).
-// Date: 2026-10-01
+// Date: 2026-10-20
 `timescale 1ns/1ps
 module py_core_tb;
   import py_core_pkg::*;
@@ -282,6 +285,45 @@ module py_core_tb;
     op1(OP_LOAD_SMALL, 1);
     op0(OP_RETURN);
     expect_trap("return at frame 0", TRAP_FRAME, 2);
+
+    // ---- 10. v2 arithmetic: return (-7 * 6) + (-7 // 2) * 100 + (-7 % 2) * 10000 == -42 - 400 + 10000 ----
+    clear_prog();
+    op1(OP_LOAD_SMALL, -7);
+    op1(OP_LOAD_SMALL, 6);
+    op0(OP_BINARY_MUL);
+    op1(OP_LOAD_SMALL, -7);
+    op1(OP_LOAD_SMALL, 2);
+    op0(OP_BINARY_FLOORDIV);                                     // -4 (floor)
+    op1(OP_LOAD_SMALL, 100);
+    op0(OP_BINARY_MUL);
+    op0(OP_BINARY_ADD);
+    op1(OP_LOAD_SMALL, -7);
+    op1(OP_LOAD_SMALL, 2);
+    op0(OP_BINARY_MOD);                                          // 1 (the divisor's sign)
+    op1(OP_LOAD_SMALL, 100);
+    op1(OP_LOAD_SMALL, 100);
+    op0(OP_BINARY_MUL);
+    op0(OP_BINARY_MUL);
+    op0(OP_BINARY_ADD);
+    op0(OP_RETURN_VALUE);
+    run(tr);
+    check(!tr && result == mk_small(-42 - 400 + 10000), $sformatf("v2 arithmetic: result %h trap=%0b", result, tr));
+
+    // ---- 11. zero divisor ----
+    clear_prog();
+    op1(OP_LOAD_SMALL, 5);
+    op1(OP_LOAD_SMALL, 0);
+    op0(OP_BINARY_MOD);
+    op0(OP_RETURN_VALUE);
+    expect_trap("divide by zero", TRAP_DIV0, 4);
+
+    // ---- 12. product outside the small-int range ----
+    clear_prog();
+    op1(OP_LOAD_CONST, 1);
+    op1(OP_LOAD_SMALL, 2);
+    op0(OP_BINARY_MUL);
+    op0(OP_RETURN_VALUE);
+    expect_trap("product overflow", TRAP_OVERFLOW, 4);
 
     if (errors == 0) $display("TEST PASSED");
     else $display("TEST FAILED (%0d errors)", errors);

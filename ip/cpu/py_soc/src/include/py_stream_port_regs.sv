@@ -44,7 +44,7 @@
 //   words read 0 and ignore writes; above the map: DECERR. Clock - aclk.
 //   Reset - synchronous active low aresetn. Latency - 2 clocks per write and
 //   read.
-// Date: 2026-10-16
+// Date: 2026-10-20
 module py_stream_port_regs (
   input  logic          aclk,           // clock
   input  logic          aresetn,        // synchronous reset, active low
@@ -85,6 +85,7 @@ module py_stream_port_regs (
 
   logic             wr_en, rd_en, wr_err_q;
   logic [7:0]       wr_addr, rd_addr, rd_addr_q;
+  wire unused_addr_lsbs = &{1'b0, wr_addr[1:0], rd_addr[1:0]};   // word access: the byte offset is not decoded
   logic [31:0]      wr_data, rd_data;
   logic [3:0]       wr_strb;
   regbus_if #(.ADDR_W(8)) bus ();               // register bus of the AXI4-Lite front end
@@ -156,7 +157,7 @@ module py_stream_port_regs (
       A_DATE:    rd_data = IP_DATE;
       A_RXDATA: rd_data = 32'(rxdata_i);
       A_STATUS: rd_data = 32'(status_i);
-      A_IRQ_EN: rd_data = irq_en_q;
+      A_IRQ_EN: rd_data = 32'(irq_en_q[3-1:0]);
       default: begin
       end
     endcase

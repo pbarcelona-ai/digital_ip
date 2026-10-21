@@ -9,7 +9,7 @@
 //   ip/scripts/regmap_gen.py from gpio_regs.json and the ports of gpio:
 //   regenerate after changing either. Clock - aclk. Reset - synchronous
 //   active low aresetn.
-// Date: 2026-10-16
+// Date: 2026-10-20
 module gpio_top #(
   parameter int WIDTH = 16
 ) (

@@ -13,7 +13,7 @@
 //   (pixels) and bclk (D-PHY byte clock), unrelated; the free indications
 //   cross through pulse_sync. Resets - synchronous per domain, active low;
 //   assert both together.
-// Date: 2026-10-02
+// Date: 2026-10-21
 module mipi_line_buf #(
   parameter int MAX_W = 2048                     // even
 ) (
@@ -47,12 +47,13 @@ module mipi_line_buf #(
 
   // ---------------- buffer release (byte side -> pixel side)
   logic [1:0] freed;
+  logic [1:0] fr_busy, fr_drop;                  // not used: one release per line, far apart (never dropped)
   pulse_sync u_free0 (
     .src_clk(bclk),
     .src_rst_n(brst_n),
     .pulse_i(done_i && !rd_buf_i),
-    .busy_o(),
-    .drop_o(),
+    .busy_o(fr_busy[0]),
+    .drop_o(fr_drop[0]),
     .dst_clk(pclk),
     .dst_rst_n(prst_n),
     .pulse_o(freed[0])
@@ -61,8 +62,8 @@ module mipi_line_buf #(
     .src_clk(bclk),
     .src_rst_n(brst_n),
     .pulse_i(done_i &&  rd_buf_i),
-    .busy_o(),
-    .drop_o(),
+    .busy_o(fr_busy[1]),
+    .drop_o(fr_drop[1]),
     .dst_clk(pclk),
     .dst_rst_n(prst_n),
     .pulse_o(freed[1])
@@ -134,4 +135,5 @@ module mipi_line_buf #(
       if (line_end_i && in_line && !dropping && wp != 0) wb <= ~wb;
     end
   end
+  wire unused_ok = &{1'b0, fr_busy, fr_drop, 1'b0};
 endmodule

@@ -15,7 +15,9 @@
 //   Throughput: 1 output pixel/clock. Latency: one input frame (default
 //   and PINGPONG = 1) or a few input lines (LINE_BUF = 1).
 //   Uses: axil_regbus, scaler_ctrl, scaler_dda, banked_framebuf.
-// Date: 2026-10-16
+//   Pixel-centre alignment (as OpenCV cv::resize INTER_LINEAR): OFFS_X / OFFS_Y
+//   = STEP / 2 - 0.5, i.e. (STEP >> 1) - 0x8000 in 16.16 (see scaler_ctrl).
+// Date: 2026-10-21
 
 module scaler_bilinear #(
   parameter int CHANNELS = 3,        // components per pixel
@@ -62,12 +64,12 @@ module scaler_bilinear #(
     return r;
   endfunction
   localparam int WIN_T   = 2;                            // window size
-  localparam int NBUF    = PINGPONG ? 2 : 1;
-  localparam int LB_ROWS = LINE_BUF ? pow2ceil_i(WIN_T + 2 < 4 ? 4 : WIN_T + 2) : 0;
+  localparam int NBUF    = (PINGPONG != 0) ? 2 : 1;
+  localparam int LB_ROWS = (LINE_BUF != 0) ? pow2ceil_i(WIN_T + 2 < 4 ? 4 : WIN_T + 2) : 0;
   if (PHASE_BITS < 1 || PHASE_BITS > 15) begin : g_bad_pb
     $error("scaler_bilinear: PHASE_BITS must be 1..15");
   end
-  if (PINGPONG && LINE_BUF) begin : g_bad_mode
+  if (PINGPONG != 0 && LINE_BUF != 0) begin : g_bad_mode
     $error("scaler_bilinear: PINGPONG and LINE_BUF are mutually exclusive");
   end
 

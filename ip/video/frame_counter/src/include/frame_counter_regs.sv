@@ -38,7 +38,7 @@
 //   reads the hardware value, a write gives a pulse with its data. Unmapped
 //   words read 0 and ignore writes; above the map: DECERR. Clock - clk. Reset
 //   - synchronous active low rst_n. Latency - 2 clocks per write and read.
-// Date: 2026-10-16
+// Date: 2026-10-21
 module frame_counter_regs #(
   parameter int NCH = 2  // counters (1..8)
 ) (
@@ -98,6 +98,7 @@ module frame_counter_regs #(
 
   logic             wr_en, rd_en, wr_err_q;
   logic [7:0]       wr_addr, rd_addr, rd_addr_q;
+  wire unused_addr_lsbs = &{1'b0, wr_addr[1:0], rd_addr[1:0]};   // word access: the byte offset is not decoded
   logic [31:0]      wr_data, rd_data;
   logic [3:0]       wr_strb;
   regbus_if #(.ADDR_W(8)) bus ();               // register bus of the AXI4-Lite front end
@@ -188,12 +189,12 @@ module frame_counter_regs #(
       A_ID:      rd_data = IP_ID;
       A_VERSION: rd_data = IP_VERSION;
       A_DATE:    rd_data = IP_DATE;
-      A_IRQ_EN: rd_data = irq_en_q;
-      A_STATUS: rd_data = status_q;
+      A_IRQ_EN: rd_data = 32'(irq_en_q[NCH-1:0]);
+      A_STATUS: rd_data = 32'(status_q[NCH-1:0]);
       A_EVENT: rd_data = 32'(event_i);
       A_EVENT_TIME: rd_data = 32'(event_time_i);
       A_TIME: rd_data = 32'(time_i);
-      A_EV_EN: rd_data = ev_en_q;
+      A_EV_EN: rd_data = 32'(ev_en_q[NCH-1:0]);
       default: begin
         for (int i = 0; i < NCH; i++)
           if (rd_addr_q == A_COUNT + 8'(4 * i)) rd_data = 32'(count_i[i*(32) +: 32]);

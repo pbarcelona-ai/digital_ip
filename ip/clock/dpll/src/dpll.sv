@@ -47,7 +47,7 @@ module dpll #(
 );
   localparam int CW = 24, PW = 32, TDC_F = 8, G = 24;
   localparam longint SPAN     = F_MAX_KHZ - F_MIN_KHZ;
-  localparam longint VCO_KHZ  = REF_KHZ * M / D;
+  localparam longint VCO_KHZ  = REF_KHZ * M / longint'(D);
   // nominal tuning word for the target frequency
   localparam longint CODE_INIT = ((REF_KHZ * M - F_MIN_KHZ * D) << CW) / (SPAN * D);
   // proportional gain for alpha = 1: X = 2**G * 2**CW * REF / (SPAN * D * 2**TDC_F)

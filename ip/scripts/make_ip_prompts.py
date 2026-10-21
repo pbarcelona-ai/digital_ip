@@ -99,7 +99,7 @@ def parse_module(src: Path, top: str, text: str | None = None) -> ModuleDecl:
     state = "param" if "#(" in text[start] or (start + 1 < len(text) and text[start + 1].strip().startswith("#(")) else "port"
     if state == "port" and "(" not in text[start]:
         state = "pre"
-    group, define, last_param = "", "", None
+    group, define, last_param, if_note = "", "", None, ""
     for raw in text[start + 1:]:
         line = raw.rstrip()
         s = line.strip()
@@ -132,6 +132,7 @@ def parse_module(src: Path, top: str, text: str | None = None) -> ModuleDecl:
         if not code:
             if comment and state == "port":
                 group = comment.strip("-= ").strip()
+                if_note = comment
             elif comment and state == "param" and last_param is not None:
                 last_param.comment = (last_param.comment + " " + comment).strip()
             continue
@@ -140,6 +141,13 @@ def parse_module(src: Path, top: str, text: str | None = None) -> ModuleDecl:
             if m:
                 last_param = Param(m.group(2), m.group(3).rstrip(","), comment, m.group(1) == "localparam")
                 decl.params.append(last_param)
+            continue
+        m = re.match(r"(\w+_if)(\.\w+)?\s+(\w+)\s*(\[[^\]]*\])?\s*,?$", code)
+        if m and state == "port":                       # an interface port: <if>[.<modport>] <name> [N]
+            note = re.search(r"\)\s*,\s*(.+)$", if_note)  # the comment above: "...(path), DATA_W = 24"
+            decl.ports.append(Port(m.group(3), m.group(1) + (m.group(2) or ""), m.group(4) or "-",
+                                   comment or (note.group(1) if note else ""), group, define))
+            if_note = ""
             continue
         m = re.match(r"(input|output|inout)\b(.*)$", code)
         if not m:
@@ -257,16 +265,18 @@ STREAM_RE = re.compile(r"^(?P<p>(?:\w+_)?(?:s|m)_?axis\w*?)_t(?P<sig>data|valid|
 AXIL_RE = re.compile(r"^(?P<p>(?:\w+_)?[sm]_axil?\w*?)_(aw|w|b|ar|r)(addr|data|strb|valid|ready|resp|prot)$")
 
 
+IF_PORT_RE = re.compile(r"\w+_if(\.\w+)?$")         # Port.direction of an interface port: <if>[.<modport>]
 AXIS_IF = "ip/shared/src/interfaces/axis_if.sv"
 AXIL_IF = "ip/shared/src/interfaces/axil_if.sv"
 INTERFACE_RULE = (
     "Bus ports follow the library's SystemVerilog interfaces, one definition file per type: "
     f"AXI4-Stream `axis_if` (`{AXIS_IF}`, modports master / slave / monitor) and AXI4-Lite "
-    f"`axil_if` (`{AXIL_IF}`, modports master / slave). Icarus Verilog cannot drive members of "
-    "interface arrays and Yosys reads interfaces only through sv2v, so keep discrete ports "
-    "(<prefix>_tdata, <prefix>_awaddr, ...) and put the interface and modport in a comment line "
-    "directly above each port group: `// s_axis: axis_if.slave (ip/shared/src/interfaces/axis_if.sv), "
-    "DATA_W = 24`. Testbenches and Verilator flows may instantiate the interfaces directly.")
+    f"`axil_if` (`{AXIL_IF}`, modports master / slave). Declare bus ports as interface ports "
+    "(`axis_if.slave s_axis`) with the interface, modport and parameters in a comment line directly "
+    "above: `// s_axis: axis_if.slave (ip/shared/src/interfaces/axis_if.sv), DATA_W = 24`. Widths are "
+    "module parameters (Icarus has no $bits of an interface member); connect `.p(inst)`, not "
+    "`.p(inst.mp)`. Yosys reads a top with interface ports through its discrete wrapper "
+    "(`ip/scripts/syn_wrap.py`, sv2v); cocotb tests drive such a wrapper's plain ports.")
 
 
 def interfaces(decl: ModuleDecl) -> tuple[list[str], list[Port]]:
@@ -274,7 +284,15 @@ def interfaces(decl: ModuleDecl) -> tuple[list[str], list[Port]]:
     lite: dict[str, list[Port]] = {}
     stream: dict[str, list[Port]] = {}
     other = []
+    bundles = []
     for p in decl.ports:
+        if IF_PORT_RE.match(p.direction):               # an interface port (axis_if.slave s_axis, ...)
+            ifc = p.direction.split(".")[0]
+            cond = f" (when `{p.define}`)" if p.define else ""
+            arr = f", array {p.width}" if p.width != "-" else ""
+            bundles.append(f"- **{p.name}** - interface `{p.direction}` (`ip/shared/src/interfaces/{ifc}.sv`)"
+                           f"{', ' + p.comment if p.comment else ''}{arr}{cond}.")
+            continue
         m = AXIL_RE.match(p.name)
         if m and not STREAM_RE.match(p.name):
             lite.setdefault(m.group("p"), []).append(p)
@@ -284,7 +302,7 @@ def interfaces(decl: ModuleDecl) -> tuple[list[str], list[Port]]:
             stream.setdefault(m.group("p"), []).append(p)
             continue
         other.append(p)
-    out = []
+    out = list(bundles)
     for prefix, ps in lite.items():
         addr = next((p.width for p in ps if p.name.endswith("awaddr")), "?")
         role = "slave" if any(p.name.endswith("awaddr") and p.direction == "input" for p in ps) else "master"

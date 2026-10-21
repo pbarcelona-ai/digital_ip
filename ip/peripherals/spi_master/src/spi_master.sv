@@ -7,7 +7,8 @@
 //   ports. spi_top.sv is the block with its AXI4-Lite register map
 //   (src/include/spi_master_regs.sv: ID "SPIM" / VERSION / DATE at
 //   0x00-0x08, CTRL 0x10 [0] en [1] cpol [2] cpha [3] lsb_first [15:8]
-//   cs_select; DIV 0x14 (SCLK half period = DIV + 1 clocks, values below 2
+//   cs_select (its low clog2(NUM_CS) bits are used; a value >= NUM_CS
+//   selects no line); DIV 0x14 (SCLK half period = DIV + 1 clocks, values below 2
 //   act as 2: MISO is double registered); WORD_LEN 0x18 bits per word
 //   (1..DATA_W, other values act as DATA_W); STATUS 0x1C [0] busy [1] rx_overrun (W1C)
 //   [31:16] rx fifo level). Any clock frequency, default 1 MHz SCLK at
@@ -15,7 +16,7 @@
 //   aresetn. Timing - registered outputs, no combinational path from the
 //   bus to the pins. Errors - illegal parameter values stop elaboration
 //   with an $error.
-// Date: 2026-10-16
+// Date: 2026-10-20
 module spi_master #(
   parameter int CLK_HZ     = 100_000_000,
   parameter int SCLK_HZ    = 1_000_000,     // default SCLK frequency
@@ -123,4 +124,9 @@ module spi_master #(
   end
 
   assign regs.sts_status = {16'(rxf_lvl), 14'd0, overrun, busy};
+
+  // not used: CTRL bits beyond the mode and chip-select index, write pulses of registers acting by value,
+  // STATUS bits that are not W1C, the TX FIFO's level, the RX FIFO's tuser
+  wire unused_ok = &{1'b0, regs.cfg_ctrl, regs.cfg_ctrl_wr, regs.cfg_div_wr, regs.cfg_word_len_wr, regs.cfg_status,
+                     txf_lvl, rxf_user};
 endmodule

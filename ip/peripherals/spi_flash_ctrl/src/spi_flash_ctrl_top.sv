@@ -10,7 +10,7 @@
 //   ip/scripts/regmap_gen.py from spi_flash_ctrl_regs.json and the ports of
 //   spi_flash_ctrl: regenerate after changing either. Clock - aclk. Reset -
 //   synchronous active low aresetn.
-// Date: 2026-10-16
+// Date: 2026-10-20
 module spi_flash_ctrl_top (
   input  logic aclk,
   input  logic aresetn,

@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1792588572" />
+    <testcase name="test_frames_exact" classname="isp_demosaic_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/ip/video/isp_demosaic/tb/python/isp_demosaic_tb.py" lineno="39" time="1.23646879196167" sim_time_ns="75876.0" ratio_time="61365.07487554294" />
+  </testsuite>
+</testsuites>

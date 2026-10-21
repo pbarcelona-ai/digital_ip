@@ -39,7 +39,10 @@
 #     up to the core's call depth. Missing return -> None.
 #     A function passed to irq_handler() is an interrupt handler instead:
 #     no parameters, no return value, cannot be called directly.
-#   Builtins: irq_handler(fn), irq_enable(), irq_disable(), halt(value).
+#   Builtins: irq_handler(fn), irq_enable(), irq_disable(), wait_irq(), halt(value).
+#     wait_irq() (WAIT_IRQ, 0x3E) stops the core until its interrupt input is high (an enabled
+#     source pending at the intc), whether interrupts are enabled or not; with them disabled the
+#     code after it runs first (the race-free sleep: disable, test, wait_irq, enable).
 #   Strings: a string literal (in any expression, e.g. puts("text")) is a
 #     small int handle; the text goes to a string table in flash at
 #     STR_BASE (0x8000), outside the boot image, for the firmware to read at
@@ -53,10 +56,13 @@
 #     one-slot strings (each <= 62 bytes), so handle + i selects entry i (a
 #     block never straddles slot 256, so the decoding holds for handle + i).
 #     Identical strings share slots.
-#   Not in the hardware fast path (rejected): * / % ** on variables,
-#   default/keyword arguments, closures, lists, dicts, floats, classes.
+#   Not in the hardware fast path (rejected): * / % ** on variables (py_core v1),
+#   ** always, default/keyword arguments, closures, lists, dicts, floats, classes.
+#   --core 2 (py_core v2): * // % on variables (BINARY_MUL 0x17, BINARY_FLOORDIV
+#     0x1E, BINARY_MOD 0x1F: Python's floor division and modulo, a zero
+#     divisor traps), 256 globals and 32 locals per function.
 #
-# Usage: pyc.py prog.py -o build/prog [--code-aw N] [--str-slots N] [--split-consts]
+# Usage: pyc.py prog.py -o build/prog [--code-aw N] [--str-slots N] [--split-consts] [--core 1|2]
 #   --split-consts  saves constant-pool entries (256 at most): a folded
 #           address base + small offset is loaded as base, offset, add, and a
 #           string handle of slot 256 or above as its 128-slot block base +
@@ -78,7 +84,8 @@ OP = dict(NOP=0x00, LOAD_SMALL=0x01, LOAD_CONST=0x02, LOAD_FAST=0x03, STORE_FAST
           JUMP=0x20, POP_JUMP_IF_FALSE=0x21, POP_JUMP_IF_TRUE=0x22,
           MEM32_LOAD=0x30, MEM32_STORE=0x31,
           SET_IRQ_VECTOR=0x38, IRQ_ENABLE=0x39, IRQ_DISABLE=0x3A, RETURN_FROM_IRQ=0x3B,
-          CALL=0x3C, RETURN=0x3D,
+          CALL=0x3C, RETURN=0x3D, WAIT_IRQ=0x3E,
+          BINARY_MUL=0x17, BINARY_FLOORDIV=0x1E, BINARY_MOD=0x1F,
           RETURN_VALUE=0x3F)
 NAME = {v: k for k, v in OP.items()}
 ARGS = {OP[k]: 1 for k in ('LOAD_SMALL', 'LOAD_CONST', 'LOAD_FAST', 'STORE_FAST', 'LOAD_GLOBAL', 'STORE_GLOBAL')}
@@ -97,6 +104,17 @@ SMALL_MIN, SMALL_MAX = -(1 << 32), (1 << 32) - 1     # 33-bit signed small int
 STR_BASE, STR_SLOTS, STR_SLOT_BYTES = 0x8000, 512, 64  # string table in flash (up to 0xFFFF)
 STR_CHUNK = STR_SLOT_BYTES - 2
 N_LOCALS, N_GLOBALS, N_CONSTS, CODE_SIZE = 16, 32, 256, 1 << 13
+CORE = 1                                                # py_core version (--core): 2 adds * // %
+BINOP_V2 = {ast.Mult: 'BINARY_MUL', ast.FloorDiv: 'BINARY_FLOORDIV', ast.Mod: 'BINARY_MOD'}
+
+
+def binop(op, node):
+    """Opcode name of a binary operator, or a CompileError when the core lacks it."""
+    if type(op) in BINOP:
+        return BINOP[type(op)]
+    if CORE >= 2 and type(op) in BINOP_V2:
+        return BINOP_V2[type(op)]
+    raise CompileError(node, f"operator {type(op).__name__} is not in the hardware fast path (py_core v{CORE})")
 SPLIT_CONSTS = False                                   # --split-consts
 
 
@@ -389,11 +407,10 @@ class Compiler:
             self.expr(e.slice)
             return self.emit('MEM32_LOAD', node=e)
         if isinstance(e, ast.BinOp):
-            if type(e.op) not in BINOP:
-                raise CompileError(e, f"operator {type(e.op).__name__} is not in the hardware fast path")
+            name = binop(e.op, e)
             self.expr(e.left)
             self.expr(e.right)
-            return self.emit(BINOP[type(e.op)], node=e)
+            return self.emit(name, node=e)
         if isinstance(e, ast.UnaryOp):
             if isinstance(e.op, ast.USub):
                 self.load_int(0, e)
@@ -486,20 +503,19 @@ class Compiler:
                 self.store_name(t.id, s)
             return
         if isinstance(s, ast.AugAssign):
-            if type(s.op) not in BINOP:
-                raise CompileError(s, f"operator {type(s.op).__name__} is not in the hardware fast path")
+            name = binop(s.op, s)
             if self.is_mem32(s.target):
                 self.expr(s.target.slice)
                 self.emit('DUP_TOP', node=s)
                 self.emit('MEM32_LOAD', node=s)
                 self.expr(s.value)
-                self.emit(BINOP[type(s.op)], node=s)
+                self.emit(name, node=s)
                 return self.emit('MEM32_STORE', node=s)
             if not isinstance(s.target, ast.Name):
                 raise CompileError(s, "only name and mem32[...] targets are supported")
             self.load_name(s.target.id, s)
             self.expr(s.value)
-            self.emit(BINOP[type(s.op)], node=s)
+            self.emit(name, node=s)
             return self.store_name(s.target.id, s)
         if isinstance(s, ast.If):
             else_l, end_l = self.label(), self.label()
@@ -556,6 +572,8 @@ class Compiler:
             return self.emit('SET_IRQ_VECTOR', 'fn:' + args[0].id, c)
         if f in ('irq_enable', 'irq_disable') and not args:
             return self.emit('IRQ_ENABLE' if f == 'irq_enable' else 'IRQ_DISABLE', node=c)
+        if f == 'wait_irq' and not args:
+            return self.emit('WAIT_IRQ', node=c)
         if f == 'halt' and len(args) <= 1:
             if args:
                 self.expr(args[0])
@@ -691,11 +709,16 @@ def main():
     ap.add_argument('--code-aw', type=int, default=13, help='code memory 2**N bytes (py_soc CODE_AW, default 13)')
     ap.add_argument('--str-slots', type=int, default=512,
                     help='string table slots of 64 bytes from 0x8000 (default 512: up to 0xFFFF; the flash must hold them)')
+    ap.add_argument('--core', type=int, choices=(1, 2), default=1,
+                    help='py_core version: 2 adds * // % on variables, 256 globals, 32 locals (default 1)')
     ap.add_argument('--split-consts', action='store_true',
                     help='load a base + small offset not yet in the constant pool as base, offset, add (saves constants)')
     args = ap.parse_args()
-    global CODE_SIZE, STR_SLOTS, SPLIT_CONSTS
+    global CODE_SIZE, STR_SLOTS, SPLIT_CONSTS, CORE, N_GLOBALS, N_LOCALS
     CODE_SIZE, STR_SLOTS, SPLIT_CONSTS = 1 << args.code_aw, args.str_slots, args.split_consts
+    CORE = args.core
+    if CORE >= 2:
+        N_GLOBALS, N_LOCALS = 256, 32
     SV_PATH.extend(args.inc)
     lines, where = inline_imports(args.src)
     text = "\n".join(lines) + "\n"

@@ -1,6 +1,6 @@
 # i2c_master register map
 
-I2C master: transaction control, target address, length, SCL divider and status.
+I2C master: transaction control, target address, length, SCL divider and status, done interrupt.
 
 | Offset | Name | Access | Reset | Description |
 |---|---|---|---|---|
@@ -13,6 +13,7 @@ I2C master: transaction control, target address, length, SCL divider and status.
 | 0x18 | LEN | RW | 0x00000000 | bytes to transfer |
 | 0x1C | DIV | RW | `DIV_RST` | phase clocks - 1: f_scl = f_clk / (4 * (DIV + 1)) |
 | 0x20 | STATUS | CMD | 0x00000000 | status; write 1s to [3:1] to clear those flags |
+| 0x24 | IRQ_EN | RW | 0x00000000 | interrupt enable |
 
 ### CTRL (0x10)
 
@@ -32,3 +33,9 @@ I2C master: transaction control, target address, length, SCL divider and status.
 | 2 | NACK | target did not acknowledge (W1C) |
 | 3 | ARB_LOST | arbitration lost (W1C) |
 | 31:16 | RX_LEVEL | bytes in the receive FIFO |
+
+### IRQ_EN (0x24)
+
+| Bits | Field | Description |
+|---|---|---|
+| 0 | DONE | irq_o while STATUS.DONE: the transaction finished (acknowledged or not) |

@@ -18,9 +18,7 @@
 //   clamp-to-edge borders. The half-pixel alignment is programmed by software: OFFS = STEP / 2
 //   - 0.5 (as the testbench's calc_offs does) reproduces OpenCV; the reset value OFFS = 0
 //   aligns pixel corners instead.
-// TODO(REF-SCALER_BILINEAR-1) [LOW] Document the centre alignment. Prompt: in
-//   ip/scalers/scaler_ctrl/src/scaler_ctrl.sv and scaler_bilinear.sv headers, state that OFFS_X
-//   / OFFS_Y = STEP / 2 - 0.5 (16.16: (STEP >> 1) - 0x8000) gives pixel-centre alignment as in
-//   OpenCV cv::resize INTER_LINEAR, and make the firmware (sw/video_proc.py, scaler setup)
-//   program that value.
+// RESOLVED(REF-SCALER_BILINEAR-1) [LOW] Document the centre alignment. Resolution: 2026-10-21: the scaler_ctrl.sv and scaler_bilinear.sv headers state OFFS = STEP / 2 - 0.5
+//   ((STEP >> 1) - 0x8000) for pixel-centre alignment; video_processor's firmware does not use the scaler (it is
+//   bypassed), so sw needs no change.
 ```

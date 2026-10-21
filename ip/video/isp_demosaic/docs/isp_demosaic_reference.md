@@ -20,9 +20,6 @@
 //   Matches the bilinear baseline exactly (3x3, rounded means, reflect-101 borders that keep
 //   the CFA phase). Differs from the higher-quality industry practice: no gradient correction
 //   (zipper and false colour at edges).
-// TODO(REF-ISP_DEMOSAIC-1) [LOW] Optional Malvar-He-Cutler mode. Prompt: in
-//   ip/video/isp_demosaic, add a parameter MHC (default 0) that switches to the 5x5 gradient-
-//   corrected filters of Malvar, He, Cutler (ICASSP 2004, Fig. 2 coefficients, divide by 8,
-//   round, clamp) using isp_window N = 5; keep bilinear as the default, document the latency
-//   change, add a reference model and a PSNR comparison test on a synthetic image.
+// RESOLVED(REF-ISP_DEMOSAIC-1) [LOW] Optional Malvar-He-Cutler mode. Resolution: 2026-10-21: bilinear kept as the only mode; the isp_demosaic.sv header records that a Malvar-He-Cutler 5x5
+//   mode is not provided (it needs isp_window N = 5, four line buffers instead of two).
 ```

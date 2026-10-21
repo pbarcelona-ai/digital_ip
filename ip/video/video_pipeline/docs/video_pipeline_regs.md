@@ -60,14 +60,14 @@ Camera to display pipeline registers: control, ISP stages, statistics, display t
 | 0xD8 | CRC_ERR | RO | 0x00000000 | CSI-2 payload CRC errors |
 | 0xDC | UNDERFLOWS | RO | 0x00000000 | display underflows |
 | 0xE0 | DPC_CORR | RO | 0x00000000 | defective pixels corrected |
-| 0xE4 | CSI_OVERFLOW | RO | 0x00000000 | CSI words lost (bridge FIFO full) |
+| 0xE4 | CSI_OVERFLOW | RO | 0x00000000 | CSI overflow events (bridge FIFO full; a burst of lost words counts once) |
 | 0xE8 | OUT_CTRL | RW | 0x00000000 | [0] LVDS dual [1] LVDS 18 bpp [2] JEIDA [4] DSI video [5] DSI EoTp [7:6] DSI VC [8] CSI-2 TX [9] YUV422 [11:10] VC |
 | 0xEC | DSI_GAPS | RW | 0x0006000A | [15:0] LP clocks after a sync packet, [31:16] after pixels |
 | 0xF0 | CSITX_GAP | RW | 0x00000008 | LP clocks between CSI-2 TX packets |
 | 0xF4 | DSI_CMD | WO | 0x00000000 | queue a DSI command {[24] long, [23:16] data type, [15:0] data / word count} |
 | 0xF8 | DSI_CMD_BYTE | WO | 0x00000000 | [7:0] next payload byte of a long command |
 | 0xFC | TX_STATUS | RO | 0x00000000 | [0] DSI command queue busy |
-| 0x100 | DSI_DROPS | RO | 0x00000000 | lines DSI could not send in time |
-| 0x104 | CSITX_DROPS | RO | 0x00000000 | lines CSI-2 TX could not send in time |
+| 0x100 | DSI_DROPS | RO | 0x00000000 | lines DSI could not send in time (dropped, or a burst that ran dry) |
+| 0x104 | CSITX_DROPS | RO | 0x00000000 | lines CSI-2 TX could not send in time (dropped, or a burst that ran dry) |
 | 0x108 | CSITX_FRAMES | RO | 0x00000000 | frames sent by CSI-2 TX |
 | 0x10C | BUILD_CFG | RO | 0x00000000 | interfaces built: [0] CSI-2 RX [1] HDMI [2] LVDS [3] DSI [4] CSI-2 TX [5] scaler [6] insert point |

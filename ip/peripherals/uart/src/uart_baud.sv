@@ -12,7 +12,7 @@
 //   Latency - as documented in the parent block, fixed and independent of
 //   data. Errors - none reported here, out-of-range parameters stop
 //   elaboration or are handled by the parent block.
-// Date: 2026-09-29
+// Date: 2026-10-20
 module uart_baud #(
   parameter int PHASE_W = 32
 ) (
@@ -21,7 +21,9 @@ module uart_baud #(
   input  logic [PHASE_W-1:0] fcw,       // frequency control word
   output logic               tick16_o   // 16x oversample strobe
 );
+  /* verilator lint_off UNUSEDPARAM */             // version identification (library convention), not logic
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
+  /* verilator lint_on UNUSEDPARAM */
 
   logic [PHASE_W-1:0] acc;
   wire  [PHASE_W:0]   sum = {1'b0, acc} + {1'b0, fcw};

@@ -16,16 +16,24 @@ from video_processor_map_pkg import *   # *_BASE / *_OFFSET of every register wi
 VP = VP_BASE                       # video_pipeline (scaler at SCALER_BASE)
 SCALER = SCALER_BASE
 VS = VS_BASE                       # vision_system
-FLT = FLT_BASE                     # blur_sharpen
+FLT = FLT_BASE                     # blur_sharpen of the analysis path (feature_detect, object_trackers)
+FLT_DISP = FLT_BASE + 0x400        # 0x1_8600: blur_sharpen of the display path (vision_system -> overlay; new
+                                   # in the Python model, video_processor_map_pkg follows with the SV)
 FC = FC_BASE                       # frame_counter
-TRK = TRK_BASE                     # object_tracker detector 0; detector c at TRK + c * TRK_STRIDE (NTRK of them)
+TRK = TRK_BASE                     # object_tracker detector 0; detector c at TRK + c * TRK_STRIDE (NDET of them)
+NDET = 5                           # object classes = detectors: the Python-model baseline has 5 (aircraft added);
+                                   # video_processor_map_pkg NTRK (4) follows when the SV is updated
 OVL = OVL_BASE                     # symbol_overlay
+NPU = EXT_BASE + 0xA000            # 0x1_A000: NPU (ip/ai/npu; new in the Python model, the map package follows)
+RAM = 0x00040000                   # py_core v2 system: 64 KB data RAM (the firmware's arrays)
+DDR_WIN = 0x10000000               # the CPU's window onto DDR (64 MB): the NPU's program header and results
 
 # interrupts of the video system
 IRQ_GPIO0 = 1 << 6                 # image format pin
 IRQ_STATS = 1 << 12                # isp_stats frame done (edge)
 IRQ_FC_FIRST = 1 << 13             # end of frame at the first pipeline stage (level, frame_counter STATUS[0])
 IRQ_FC_LAST = 1 << 14              # end of frame at the last pipeline stage (level, frame_counter STATUS[1])
+IRQ_FC_EV = 1 << 15                # frame_counter channels 2-4: vision_system in / out, tracker (level, STATUS[4:2])
 
 # GPIO0 pins of the camera board
 CAM_RESET_N = 1 << 0               # output: camera out of reset
@@ -36,9 +44,10 @@ SENSOR_STREAM = 0x01               # camera control register: 1 = stream on
 SENSOR_GAP = 0x20                  # camera control registers 0x20-0x21: frame gap in ns (high, low byte)
 SENSOR_SIZE = 0x30                 # camera control registers 0x30-0x33: frame width, height (high, low byte)
 SENSOR_DETECT = 0x50               # camera control registers 0x50: object classes to detect (bit c, 0 = pedestrian only),
-                                   # 0x51-0x54: box style of class 0-3 (0 dashed box, 1 solid box, 2 dashed circle, 3 solid circle,
-                                   # 4 dashed oval, 5 solid oval, 6 solid box in the middle of the target), 0x55: most
-                                   # targets tracked at a time (1-12, 0 = 12)
+                                   # 0x51-0x55: symbol style of class 0-4 (0 dashed box, 1 solid box, 2 dashed circle,
+                                   # 3 solid circle, 4 dashed oval, 5 solid oval, 6 solid box in the middle of the target,
+                                   # 7 dashed box with solid corners, 8 the same with 2-pixel ticks, 9 dashed triangle
+                                   # with solid vertices; 0x56-0x57 below), 0x58: most targets tracked at a time (1-15, 0 = 15)
 FRAME_GAP_NS = 1280                # end of one frame to the start of the next (camera vertical blanking)
 
 # video registers (video_pipeline: register k at 0x10 + 4 k; blur_sharpen, frame_counter, object_tracker, symbol_overlay: ID block
@@ -110,33 +119,47 @@ TRK_RUN_B = 0xD0                   # term B (edges) run widths: [11:0] min [27:1
 TRK_BLOB_X = 0x100                 # blob i (+ 4 i): box columns [15:0] min [31:16] max, lines, pixels (0: none)
 TRK_BLOB_Y = 0x120
 TRK_BLOB_N = 0x140
+TRK_SKIN_LUT = 0x160               # 32 words: learned skin table (CTRL [15] SKIN_LUT), word (Cr - 112) >> 1, bit (Cb - 96) >> 1
 NBLOB = 8                          # blobs per detector (term A 0-3, term B 4-7 with TERM_B)
 FEAT_OR = 1                        # CTRL [13:12] FEAT_A: 1 the luma / colour test OR the motion bit
 TERM_B = 1 << 14                   # CTRL [14]: term B, the edge bit in runs of RUN_B
+SKIN_LUT = 1 << 15                 # CTRL [15]: colour mode chroma test by the SKIN_LUT table
+FEAT_MOT = 3                       # CTRL [13:12] FEAT_A: 3 the motion bit alone
 FEAT = FEAT_BASE                   # feature_detect: edge and motion bits for every detector
 F_CTRL = 0x18                      # [0] on [1] edges [2] motion [3] automatic camera shift [4] restart
 F_SIZE = 0x1C
 F_EDGE = 0x20                      # [10:0] Sobel threshold [19:16] fill span
 F_MOTION = 0x24                    # [7:0] threshold [11:8] fill span [14:12] background rate
+F_SKY_CFG = 0x44                   # [3:0] sky profile column groups of 2 ** SHIFT pixels
+F_SKY = 0x80                       # 32 words: lines above the first edge pixel of column group i (sky profile)
 FEAT_ID = 0x46454154               # "FEAT"
 C_PED = 0                          # object classes = detectors (detector c at TRK + c * TRK_STRIDE)
 C_FACE = 1
 C_CAR = 2
 C_VEH = 3
+C_AIR = 4
 OTRK = 0x4F54524B
-OVL_CTRL = 0x18                    # symbol_overlay: [0] enable
+OVL_CTRL = 0x18                    # symbol_overlay: [0] enable, [2:1] LABEL_SCALE, [3] FONT
+OVL_FONT = 8                       # CTRL.FONT: the smooth (anti-aliased) font for 2x and larger
 OVL_COMMIT = 0x1C                  # write 1: the object and text registers apply at the next frame start
 OVL_FNUM = 0x24                    # frame number (BCD) the next frame shows, then one more per frame
 OBJ_CTRL = 0x50                    # object 0: [0] en [2:1] shape [3] dashed [11:8] width [14:12] dash log2
 OBJ_X = 0x54
 OBJ_Y = 0x58
 OBJ_COLOR = 0x5C
-TXT_CTRL = 0x110                   # text j at + 16 j: [0] en [2:1] scale log2 [3] backdrop [4] + frame number [12:8] length
-TXT_POS = 0x114                    # [15:0] x [31:16] y
-TXT_COLOR = 0x118
+OBJ_LABEL = 0x260                  # object i at + 4 i: up to 4 ASCII characters drawn small below its symbol (0: none)
+OBJ2_CTRL = 0x2A0                  # second bank: objects 16-31 (OBJ2_CTRL / X / Y / COLOR at + 16 (i - 16))
+OBJ2_LABEL = 0x3A0                 # their labels (+ 4 (i - 16))
+OBJ_CORNERS = 1 << 15              # OBJ_CTRL [15]: dashed rectangle with solid corners
+OBJ_TICKS = 1 << 6                 # OBJ_CTRL [6]: 2-pixel ticks at the middle of each side, towards the centre
+OBJ_TRIANGLE = 1 << 7              # OBJ_CTRL [7]: triangle in the box (dashed: solid vertices)
+TXT_CTRL = 0x150                   # text j at + 16 j: [0] en [2:1] scale log2 [3] backdrop [4] + frame number [12:8] length
+TXT_POS = 0x154                    # [15:0] x [31:16] y
+TXT_COLOR = 0x158
 TXT_CHARS = 0x210                  # text j at + 16 j: 4 words, character k in byte k % 4 of word k / 4
 SENSOR_SEQS = 0x56                 # camera control register 0x56: tracking sequences the camera will send (0 = 1)
 SENSOR_LOADED = 0x57               # 0x57: number of the sequence whose size, name and options are loaded (1, 2, ...)
+SENSOR_MAXT = 0x58                 # 0x58: most targets tracked at a time (1-15, 0 = 15)
 SENSOR_NAME = 0x40                 # camera control registers 0x40-0x4F: image name (ASCII, 0 = end)
 SOVL = 0x534F564C
 

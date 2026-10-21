@@ -3,7 +3,7 @@
   "ip": "i2c_master",
   "id": "I2CM",
   "version": "1.10",
-  "desc": "I2C master: transaction control, target address, length, SCL divider and status.",
+  "desc": "I2C master: transaction control, target address, length, SCL divider and status, done interrupt.",
   "addr_width": 8,
   "clk": "aclk",
   "rst_n": "aresetn",
@@ -12,11 +12,11 @@
     {
       "name": "DIV_RST",
       "default": 249,
-      "desc": "DIV at reset (CLK_HZ / (4 * SCL_HZ) - 1)"
+      "desc": "DIV at reset: the larger of CLK_HZ / (4 SCL_HZ) and the phase that makes SCL low (2 phases) last the UM10204 tLOW minimum (4.7 us up to 100 kHz, 1.3 us up to 400 kHz, 0.5 us above), minus 1"
     }
   ],
   "regs_params": {
-    "DIV_RST": "(CLK_HZ / (4 * SCL_HZ)) - 1"
+    "DIV_RST": "((CLK_HZ / (4 * SCL_HZ)) > ((CLK_HZ / 1000 * (SCL_HZ <= 100_000 ? 4700 : SCL_HZ <= 400_000 ? 1300 : 500) + 1_999_999) / 2_000_000) ? (CLK_HZ / (4 * SCL_HZ)) : ((CLK_HZ / 1000 * (SCL_HZ <= 100_000 ? 4700 : SCL_HZ <= 400_000 ? 1300 : 500) + 1_999_999) / 2_000_000)) - 1"
   },
   "registers": [
     {
@@ -100,6 +100,20 @@
           "name": "RX_LEVEL",
           "bit": "31:16",
           "desc": "bytes in the receive FIFO"
+        }
+      ]
+    },
+    {
+      "name": "IRQ_EN",
+      "offset": "0x24",
+      "access": "RW",
+      "width": 1,
+      "desc": "interrupt enable",
+      "fields": [
+        {
+          "name": "DONE",
+          "bit": 0,
+          "desc": "irq_o while STATUS.DONE: the transaction finished (acknowledged or not)"
         }
       ]
     }

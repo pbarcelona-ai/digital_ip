@@ -113,15 +113,17 @@ def isr():
         mem32[GPIO0 + G_INT_STATUS] = s                 # write 1 to clear
         if s & MONO_SEL:
             set_format()                                # image format pin changed
-        if s & SEQ_ACTIVE:                              # the camera starts a sequence
-            seq_seen = 1
+        if s & SEQ_ACTIVE and mem32[GPIO0 + G_IN] & SEQ_ACTIVE:   # the camera starts a sequence (its
+            seq_seen = 1                                # end, the falling edge, only wakes the report)
     if pending & IRQ_FC_FIRST:                          # end of frame, first stage: read its counter
         fc_first = mem32[FC + FC_COUNT0]
         mem32[FC + FC_STATUS] = 1                       # write 1 to clear (level source)
     if pending & IRQ_FC_LAST:                           # end of frame, last stage: read its counter
         fc_last = mem32[FC + FC_COUNT1]
         mem32[FC + FC_STATUS] = 2
-    if pending & (IRQ_FC_FIRST | IRQ_FC_LAST):          # read back: the cleared level reaches the intc
+    if pending & IRQ_FC_EV:                             # a logged event of channels 2-4: it wakes the
+        mem32[FC + FC_STATUS] = 0x1C                    # report (events.py), the log holds it
+    if pending & (IRQ_FC_FIRST | IRQ_FC_LAST | IRQ_FC_EV):   # read back: the cleared level reaches the intc
         fc_status = mem32[FC + FC_STATUS]               # ~2 cpu_clk after the write (bit_sync)
     if pending & IRQ_STATS:
         frames += 1
@@ -164,8 +166,7 @@ def main():
     else:
         say("  SYSTEM NOT READY: see the [FAIL] lines above")
     say("END OF REPORT")
-    wait_set(UART0 + DPORT + PSTATUS, TX_EMPTY)
-    wait_clear(UART0 + U_STATUS, 1)
+    uart_drain()
     stage = 200
 
 

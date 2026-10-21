@@ -34,6 +34,9 @@
 //                       0x8000
 //     0x34 SCALE       RW   unsigned Q16.16 edge-crop zoom (1.0 = 0x10000),
 //                       reset 0x10000
+//     0x38 BYPASS      RW   [0] 1: frames pass unchanged (reset: no
+//                       correction until software enables it); taken between
+//                       frames, reset 0x1
 //     0x3C INTERP_MODE RW   [0] 0 bilinear, 1 bicubic (change only while
 //                       idle), reset 0x0
 //     0x40 CALIB_MODE  RW   [0] 1 = direct camera calibration (FX / FY / CX /
@@ -50,9 +53,11 @@
 //                       reset 0x0
 //     0x58 P2          RW   signed Q16.16 tangential coefficient 2 (RADIAL),
 //                       reset 0x0
-//     0x5C MODEL_SEL   RW   [2:0] 0 radial, 1 fisheye, 2 affine (reserved), 3
-//                       perspective, 4 scaling (reserved), 5 panoramic, reset
-//                       0x0
+//     0x5C MODEL_SEL   RW   [2:0] 0 radial, 1 fisheye (division model), 2
+//                       affine (reserved), 3 perspective, 4 scaling
+//                       (reserved), 5 panoramic, 6 / 7 reserved; the reserved
+//                       codes give the pinhole round trip (near identity) -
+//                       software must not select them, reset 0x0
 //     0x60 H11         RW   homography, Q16.16, reset 0x10000
 //     0x64 H12         RW   homography, Q16.16, reset 0x0
 //     0x68 H13         RW   homography translation, pixels, reset 0x0
@@ -67,13 +72,13 @@
 //   reads the hardware value, a write gives a pulse with its data. Unmapped
 //   words read 0 and ignore writes; above the map: DECERR. Clock - clk. Reset
 //   - synchronous active low rst_n. Latency - 2 clocks per write and read.
-// Date: 2026-10-16
+// Date: 2026-10-21
 module vision_system_regs (
   input  logic          clk,              // clock
   input  logic          rst_n,            // synchronous reset, active low
   // s_axil: axil_if.slave (ip/shared/src/interfaces/axil_if.sv), ADDR_W = 8
   axil_if.slave s_axil,
-  // r: vision_system_regs_if.regs (src/include/vision_system_regs_if.sv) {ctrl_o=cfg_ctrl ctrl_wr_o=cfg_ctrl_wr status_i=sts_status status_o=cfg_status status_wr_o=cfg_status_wr img_width_o=cfg_img_width img_width_wr_o=cfg_img_width_wr img_height_o=cfg_img_height img_height_wr_o=cfg_img_height_wr k1_o=cfg_k1 k1_wr_o=cfg_k1_wr k2_o=cfg_k2 k2_wr_o=cfg_k2_wr k3_o=cfg_k3 k3_wr_o=cfg_k3_wr center_x_o=cfg_center_x center_x_wr_o=cfg_center_x_wr center_y_o=cfg_center_y center_y_wr_o=cfg_center_y_wr scale_o=cfg_scale scale_wr_o=cfg_scale_wr interp_mode_o=cfg_interp_mode interp_mode_wr_o=cfg_interp_mode_wr calib_mode_o=cfg_calib_mode calib_mode_wr_o=cfg_calib_mode_wr fx_o=cfg_fx fx_wr_o=cfg_fx_wr fy_o=cfg_fy fy_wr_o=cfg_fy_wr cx_o=cfg_cx cx_wr_o=cfg_cx_wr cy_o=cfg_cy cy_wr_o=cfg_cy_wr p1_o=cfg_p1 p1_wr_o=cfg_p1_wr p2_o=cfg_p2 p2_wr_o=cfg_p2_wr model_sel_o=cfg_model_sel model_sel_wr_o=cfg_model_sel_wr h11_o=cfg_h11 h11_wr_o=cfg_h11_wr h12_o=cfg_h12 h12_wr_o=cfg_h12_wr h13_o=cfg_h13 h13_wr_o=cfg_h13_wr h21_o=cfg_h21 h21_wr_o=cfg_h21_wr h22_o=cfg_h22 h22_wr_o=cfg_h22_wr h23_o=cfg_h23 h23_wr_o=cfg_h23_wr h31_o=cfg_h31 h31_wr_o=cfg_h31_wr h32_o=cfg_h32 h32_wr_o=cfg_h32_wr}
+  // r: vision_system_regs_if.regs (src/include/vision_system_regs_if.sv) {ctrl_o=cfg_ctrl ctrl_wr_o=cfg_ctrl_wr status_i=sts_status status_o=cfg_status status_wr_o=cfg_status_wr img_width_o=cfg_img_width img_width_wr_o=cfg_img_width_wr img_height_o=cfg_img_height img_height_wr_o=cfg_img_height_wr k1_o=cfg_k1 k1_wr_o=cfg_k1_wr k2_o=cfg_k2 k2_wr_o=cfg_k2_wr k3_o=cfg_k3 k3_wr_o=cfg_k3_wr center_x_o=cfg_center_x center_x_wr_o=cfg_center_x_wr center_y_o=cfg_center_y center_y_wr_o=cfg_center_y_wr scale_o=cfg_scale scale_wr_o=cfg_scale_wr bypass_o=cfg_bypass bypass_wr_o=cfg_bypass_wr interp_mode_o=cfg_interp_mode interp_mode_wr_o=cfg_interp_mode_wr calib_mode_o=cfg_calib_mode calib_mode_wr_o=cfg_calib_mode_wr fx_o=cfg_fx fx_wr_o=cfg_fx_wr fy_o=cfg_fy fy_wr_o=cfg_fy_wr cx_o=cfg_cx cx_wr_o=cfg_cx_wr cy_o=cfg_cy cy_wr_o=cfg_cy_wr p1_o=cfg_p1 p1_wr_o=cfg_p1_wr p2_o=cfg_p2 p2_wr_o=cfg_p2_wr model_sel_o=cfg_model_sel model_sel_wr_o=cfg_model_sel_wr h11_o=cfg_h11 h11_wr_o=cfg_h11_wr h12_o=cfg_h12 h12_wr_o=cfg_h12_wr h13_o=cfg_h13 h13_wr_o=cfg_h13_wr h21_o=cfg_h21 h21_wr_o=cfg_h21_wr h22_o=cfg_h22 h22_wr_o=cfg_h22_wr h23_o=cfg_h23 h23_wr_o=cfg_h23_wr h31_o=cfg_h31 h31_wr_o=cfg_h31_wr h32_o=cfg_h32 h32_wr_o=cfg_h32_wr}
   vision_system_regs_if.regs r
 );
   // register signals, joined to the interface r
@@ -98,6 +103,8 @@ module vision_system_regs (
   logic center_y_wr_o;
   logic [32-1:0] scale_o;
   logic scale_wr_o;
+  logic bypass_o;
+  logic bypass_wr_o;
   logic [32-1:0] interp_mode_o;
   logic interp_mode_wr_o;
   logic [32-1:0] calib_mode_o;
@@ -153,6 +160,8 @@ module vision_system_regs (
   assign r.cfg_center_y_wr = center_y_wr_o;
   assign r.cfg_scale = scale_o;
   assign r.cfg_scale_wr = scale_wr_o;
+  assign r.cfg_bypass = bypass_o;
+  assign r.cfg_bypass_wr = bypass_wr_o;
   assign r.cfg_interp_mode = interp_mode_o;
   assign r.cfg_interp_mode_wr = interp_mode_wr_o;
   assign r.cfg_calib_mode = calib_mode_o;
@@ -202,6 +211,7 @@ module vision_system_regs (
   localparam logic [7:0] A_CENTER_X = 8'h2C;
   localparam logic [7:0] A_CENTER_Y = 8'h30;
   localparam logic [7:0] A_SCALE = 8'h34;
+  localparam logic [7:0] A_BYPASS = 8'h38;
   localparam logic [7:0] A_INTERP_MODE = 8'h3C;
   localparam logic [7:0] A_CALIB_MODE = 8'h40;
   localparam logic [7:0] A_FX = 8'h44;
@@ -223,6 +233,7 @@ module vision_system_regs (
 
   logic             wr_en, rd_en, wr_err_q;
   logic [7:0]       wr_addr, rd_addr, rd_addr_q;
+  wire unused_addr_lsbs = &{1'b0, wr_addr[1:0], rd_addr[1:0]};   // word access: the byte offset is not decoded
   logic [31:0]      wr_data, rd_data;
   logic [3:0]       wr_strb;
   regbus_if #(.ADDR_W(8)) bus ();               // register bus of the AXI4-Lite front end
@@ -262,6 +273,7 @@ module vision_system_regs (
   logic [31:0] center_x_q;
   logic [31:0] center_y_q;
   logic [31:0] scale_q;
+  logic [31:0] bypass_q;
   logic [31:0] interp_mode_q;
   logic [31:0] calib_mode_q;
   logic [31:0] fx_q;
@@ -301,6 +313,8 @@ module vision_system_regs (
       center_y_wr_o <= 1'b0;
       scale_q <= 32'h10000;
       scale_wr_o <= 1'b0;
+      bypass_q <= 32'h1;
+      bypass_wr_o <= 1'b0;
       interp_mode_q <= 32'h0;
       interp_mode_wr_o <= 1'b0;
       calib_mode_q <= 32'h0;
@@ -377,6 +391,10 @@ module vision_system_regs (
       begin
         scale_wr_o <= wr_en && wa == A_SCALE;
         if (wr_en && wa == A_SCALE) scale_q <= (scale_q & ~wmask) | (wr_data & wmask);
+      end
+      begin
+        bypass_wr_o <= wr_en && wa == A_BYPASS;
+        if (wr_en && wa == A_BYPASS) bypass_q <= (bypass_q & ~wmask) | (wr_data & wmask);
       end
       begin
         interp_mode_wr_o <= wr_en && wa == A_INTERP_MODE;
@@ -458,6 +476,7 @@ module vision_system_regs (
   assign center_x_o = center_x_q[32-1:0];
   assign center_y_o = center_y_q[32-1:0];
   assign scale_o = scale_q[32-1:0];
+  assign bypass_o = bypass_q[1-1:0];
   assign interp_mode_o = interp_mode_q[32-1:0];
   assign calib_mode_o = calib_mode_q[32-1:0];
   assign fx_o = fx_q[32-1:0];
@@ -485,31 +504,32 @@ module vision_system_regs (
       A_VERSION: rd_data = IP_VERSION;
       A_DATE:    rd_data = IP_DATE;
       A_STATUS: rd_data = 32'(status_i);
-      A_IMG_WIDTH: rd_data = img_width_q;
-      A_IMG_HEIGHT: rd_data = img_height_q;
-      A_K1: rd_data = k1_q;
-      A_K2: rd_data = k2_q;
-      A_K3: rd_data = k3_q;
-      A_CENTER_X: rd_data = center_x_q;
-      A_CENTER_Y: rd_data = center_y_q;
-      A_SCALE: rd_data = scale_q;
-      A_INTERP_MODE: rd_data = interp_mode_q;
-      A_CALIB_MODE: rd_data = calib_mode_q;
-      A_FX: rd_data = fx_q;
-      A_FY: rd_data = fy_q;
-      A_CX: rd_data = cx_q;
-      A_CY: rd_data = cy_q;
-      A_P1: rd_data = p1_q;
-      A_P2: rd_data = p2_q;
-      A_MODEL_SEL: rd_data = model_sel_q;
-      A_H11: rd_data = h11_q;
-      A_H12: rd_data = h12_q;
-      A_H13: rd_data = h13_q;
-      A_H21: rd_data = h21_q;
-      A_H22: rd_data = h22_q;
-      A_H23: rd_data = h23_q;
-      A_H31: rd_data = h31_q;
-      A_H32: rd_data = h32_q;
+      A_IMG_WIDTH: rd_data = 32'(img_width_q[32-1:0]);
+      A_IMG_HEIGHT: rd_data = 32'(img_height_q[32-1:0]);
+      A_K1: rd_data = 32'(k1_q[32-1:0]);
+      A_K2: rd_data = 32'(k2_q[32-1:0]);
+      A_K3: rd_data = 32'(k3_q[32-1:0]);
+      A_CENTER_X: rd_data = 32'(center_x_q[32-1:0]);
+      A_CENTER_Y: rd_data = 32'(center_y_q[32-1:0]);
+      A_SCALE: rd_data = 32'(scale_q[32-1:0]);
+      A_BYPASS: rd_data = 32'(bypass_q[1-1:0]);
+      A_INTERP_MODE: rd_data = 32'(interp_mode_q[32-1:0]);
+      A_CALIB_MODE: rd_data = 32'(calib_mode_q[32-1:0]);
+      A_FX: rd_data = 32'(fx_q[32-1:0]);
+      A_FY: rd_data = 32'(fy_q[32-1:0]);
+      A_CX: rd_data = 32'(cx_q[32-1:0]);
+      A_CY: rd_data = 32'(cy_q[32-1:0]);
+      A_P1: rd_data = 32'(p1_q[32-1:0]);
+      A_P2: rd_data = 32'(p2_q[32-1:0]);
+      A_MODEL_SEL: rd_data = 32'(model_sel_q[32-1:0]);
+      A_H11: rd_data = 32'(h11_q[32-1:0]);
+      A_H12: rd_data = 32'(h12_q[32-1:0]);
+      A_H13: rd_data = 32'(h13_q[32-1:0]);
+      A_H21: rd_data = 32'(h21_q[32-1:0]);
+      A_H22: rd_data = 32'(h22_q[32-1:0]);
+      A_H23: rd_data = 32'(h23_q[32-1:0]);
+      A_H31: rd_data = 32'(h31_q[32-1:0]);
+      A_H32: rd_data = 32'(h32_q[32-1:0]);
       default: begin
       end
     endcase

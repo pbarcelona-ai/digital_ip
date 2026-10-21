@@ -28,6 +28,9 @@
     {"name": "EDGE_COUNT", "offset": "0x38", "access": "RO", "desc": "pixels with the edge bit in the last frame"},
     {"name": "MOTION_COUNT", "offset": "0x3C", "access": "RO", "desc": "pixels with the motion bit in the last frame"},
     {"name": "SHIFT_USED", "offset": "0x40", "access": "RO", "desc": "camera shift in effect for the current / last frame (cells)",
-     "fields": [{"name": "X", "bit": "7:0", "desc": "columns (signed)"}, {"name": "Y", "bit": "15:8", "desc": "lines (signed)"}]}
+     "fields": [{"name": "X", "bit": "7:0", "desc": "columns (signed)"}, {"name": "Y", "bit": "15:8", "desc": "lines (signed)"}]},
+    {"name": "SKY_CFG", "offset": "0x44", "access": "RW", "width": 16, "desc": "sky profile: column groups of 2**SHIFT pixels (group g = x >> SHIFT, at most 32 groups); a sky pixel has no edge and luma Y_MIN or more",
+     "fields": [{"name": "SHIFT", "bit": "3:0", "desc": "log2 of the group width"}, {"name": "Y_MIN", "bit": "15:8", "desc": "least luma (R + 2G + B) / 4 of a sky pixel (a dark smooth road or ceiling is not sky)"}]},
+    {"name": "SKY", "offset": "0x80", "access": "RO", "count": 32, "max_count": 32, "width": 16, "desc": "sky profile of the last frame: lines from the top of column group i down to its first pixel that is not sky (the frame height: all sky); a plane in the sky is the first thing below it"}
   ]
 }

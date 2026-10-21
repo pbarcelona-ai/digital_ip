@@ -54,7 +54,7 @@
    "offset": "0x18",
    "access": "RW",
    "reset": "{RESET_H, RESET_W}",
-   "desc": "[15:0] width [31:16] height (>= (N+1)/2 each)"
+   "desc": "[15:0] width [31:16] height (>= (N+1)/2 each, at least 14 pixels; must match the frames)"
   },
   {
    "name": "BLUR_SHIFT",

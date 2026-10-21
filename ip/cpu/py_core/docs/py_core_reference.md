@@ -1,6 +1,6 @@
 <!-- Industry reference check of py_core: copied into docs/py_core_prompt.md section 6a by ip/scripts/make_ip_prompts.py. Edit here, not in the prompt. -->
 ```text
-// Industry reference check - py_core (2026-10-16)
+// Industry reference check - py_core (2026-10-16, updated 2026-10-20)
 // Sources:
 //   [1] Python Software Foundation, "dis - Disassembler for Python bytecode",
 //   https://docs.python.org/3/library/dis.html (CPython stack machine; bytecode is a CPython
@@ -15,12 +15,14 @@
 //   bigints, RecursionError on too deep calls). Differs: the opcode set is the library's own
 //   (py_core_pkg), not CPython bytecode of a given Python version, and ints are 33-bit (CPython
 //   ints are unbounded; overflow must trap).
-// TODO(REF-PY_CORE-1) [LOW] Opcode set is not CPython bytecode. Prompt: in ip/cpu/py_core,
-//   document in the py_core_pkg header which CPython version's dis opcodes each py_core opcode
-//   corresponds to (name, stack effect, argument), and state in the py_core.sv header that the
-//   compiler front end translates CPython bytecode of that version; add a testbench test that
-//   runs a program compiled from Python source through that translation.
-// TODO(REF-PY_CORE-2) [LOW] Small-int overflow. Prompt: in ip/cpu/py_core/src/py_core.sv, make
-//   every arithmetic opcode whose exact result does not fit 33 bits raise the bigint trap
-//   (CPython semantics: no wrap-around); add a test for ADD / MUL / LSHIFT overflow.
+// RESOLVED(REF-PY_CORE-1) [LOW] Opcode set is not CPython bytecode. Resolution: 2026-10-20: the
+//   py_core_pkg.sv header maps every py_core opcode to its CPython 3.12 dis counterpart (name,
+//   stack effect, argument) and states that pyc.py compiles the Python source's AST directly
+//   (not CPython bytecode); tb/python runs pyc.py-compiled programs (programs/prog_v1.py,
+//   prog_v2.py) on the RTL against the golden model.
+// RESOLVED(REF-PY_CORE-2) [LOW] Small-int overflow. Resolution: 2026-10-20: every arithmetic
+//   opcode whose exact result does not fit 33 bits raises TRAP_OVERFLOW (ADD / SUB / LSHIFT by
+//   fits_small and the shift-back check, MUL by the 66-bit product's top bits, FLOORDIV for
+//   -2**32 // -1; no wrap-around); tests: py_core_tb tests 3 (ADD) and 12 (MUL), and the cocotb
+//   random programs (every opcode with the 32-bit corner operands, OVERFLOW ends counted).
 ```

@@ -38,7 +38,9 @@
 //     0x01C OUT_SIZE  [15:0] width [31:16] height
 //     0x020 STEP_X    unsigned 16.16 source pixels per output pixel
 //     0x024 STEP_Y    unsigned 16.16
-//     0x028 OFFS_X    signed 16.16 source position of output pixel 0
+//     0x028 OFFS_X    signed 16.16 source position of output pixel 0; pixel-
+//                     centre alignment as OpenCV cv::resize INTER_LINEAR is
+//                     OFFS = STEP / 2 - 0.5, i.e. (STEP >> 1) - 0x8000
 //     0x02C OFFS_Y    signed 16.16
 //     0x030 FRAME_CNT (RO) frames completed
 //     0x034 IP_ID     (RO) ASCII IP tag (same as ID)
@@ -56,10 +58,12 @@
 //   beyond them (0x050 + 4 * EXT_WORDS and up, including 0x100+) answer
 //   SLVERR and are not forwarded. EXT_WORDS = -1 (default) forwards the
 //   whole range and always answers OKAY there (the IP decodes it).
-// Date: 2026-10-16
+// Date: 2026-10-21
 
 module scaler_ctrl #(
+  /* verilator lint_off UNUSEDPARAM */           // the width of s_axis / fb (set by their interfaces)
   parameter int          PIX_W   = 24,     // pixel width in bits
+  /* verilator lint_on UNUSEDPARAM */
   parameter int          ADDR_W  = 14,     // AXI-Lite address width
   parameter int          MAX_W   = 1920,   // frame buffer width (RO reg)
   parameter int          MAX_H   = 1080,   // frame buffer height (RO reg)
@@ -139,9 +143,11 @@ module scaler_ctrl #(
   // Address classes (internal addresses): 0x20-0x2F read only, 0x30-0x3F unmapped, 0x40+ the IP
   localparam logic [ADDR_W-1:0] RO_BASE = ADDR_W'('h20), UNM_BASE = ADDR_W'('h30);
   localparam logic [ADDR_W-1:0] EXT_BASE = ADDR_W'('h40);
+  /* verilator lint_off UNSIGNED */               // constant for EXT_WORDS = 0 (every IP address is beyond)
   function automatic logic ext_bad(input logic [ADDR_W-1:0] a);   // beyond the IP's EXT_WORDS
     return (EXT_WORDS >= 0) && (a >= EXT_BASE) && (32'(a - EXT_BASE) >= 32'(EXT_WORDS) * 32'd4);
   endfunction
+  /* verilator lint_on UNSIGNED */
   wire [ADDR_W-1:0] bus_wi = remap(bus.waddr), bus_ri = remap(bus.raddr);
   wire wr_bad = (bus.waddr < ID_END) || ((bus_wi >= RO_BASE) && (bus_wi < EXT_BASE)) || ext_bad(bus_wi);
   wire rd_bad = (bus.raddr >= ID_END) && (((bus_ri >= UNM_BASE) && (bus_ri < EXT_BASE)) || ext_bad(bus_ri));

@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1792587517" />
+    <testcase name="test_windows_exact" classname="isp_window_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/ip/video/isp_window/tb/python/isp_window_tb.py" lineno="65" time="0.2262587547302246" sim_time_ns="7966.0" ratio_time="35207.477427771184" />
+  </testsuite>
+</testsuites>

@@ -8,6 +8,9 @@ Exercises every peripheral, with receive both polled and interrupt driven:
   I2C0 write/read polled,  I2C1 read interrupt driven
   flash JEDEC ID polled,   flash read of this program's boot image
                            header, interrupt driven
+  data RAM and DDR window  word patterns, first and last words
+  SYSCTL timer             one-shot compare interrupt
+  I2C0 command done        controller interrupt (IRQ_EN) on an address probe
   watchdog serviced from its pre-timeout interrupt, then allowed to expire
   function calls: recursion, helpers shared by main code and the handler
   reset cause: after the watchdog reboot the firmware halts with it
@@ -55,6 +58,9 @@ CYCLES = 0x18
 CORE_RESET = 0x20                  # [0] 1 = release the core logic reset
 CAUSE_EXT = 1
 CAUSE_WDT = 2
+TIMER_CMP = 0x2C
+TIMER_CTRL = 0x30
+TIMER_STATUS = 0x34
 
 # interrupt controller
 INTC_ENABLE = 0x10
@@ -68,6 +74,7 @@ IRQ_SPI1 = 1 << 5
 IRQ_GPIO2 = 1 << 8
 IRQ_WDT = 1 << 9
 IRQ_FLASH_D = 1 << 11
+IRQ_TIMER = 1 << 16
 
 # GPIO (map: ID block 0x00-0x0F, registers from 0x10)
 G_OUT = 0x10
@@ -90,6 +97,7 @@ I_CTRL = 0x10
 I_ADDR = 0x14
 I_LEN = 0x18
 I_STATUS = 0x20
+I_IRQ_EN = 0x24
 I_EN = 1
 I_START = 2
 I_READ = 4
@@ -133,6 +141,8 @@ wdt_pre = 0
 wdt_feed = 1
 flash_count = 0
 flash_word = 0
+timer_hits = 0
+i2c0_done = 0
 
 
 # ---------------- functions ----------------
@@ -160,7 +170,7 @@ def rx_byte(port):
 
 def isr():
     global u0_count, u0_sum, spi1_count, spi1_sum, i2c1_count, i2c1_sum
-    global gpio_edges, gpio_bits, wdt_pre, flash_count, flash_word
+    global gpio_edges, gpio_bits, wdt_pre, flash_count, flash_word, timer_hits, i2c0_done
     pending = mem32[INTC + INTC_MASKED]
     if pending & IRQ_UART0:                   # drain the receive stream
         while True:
@@ -195,6 +205,12 @@ def isr():
         mem32[GPIO2 + G_INT_STATUS] = s       # write-1-to-clear
         gpio_bits |= s
         gpio_edges += 1
+    if pending & IRQ_TIMER:
+        mem32[SYSCTL + TIMER_STATUS] = 1      # write-1-to-clear REACHED
+        timer_hits += 1
+    if pending & IRQ_I2C0:                    # command done (the data port's receive is not enabled)
+        mem32[I2C0 + I_STATUS] = I_DONE
+        i2c0_done += 1
     if pending & IRQ_WDT:
         wdt_pre += 1
         if wdt_feed:
@@ -389,8 +405,54 @@ mem32[SYSCTL + CORE_RESET] = 1
 if mem32[SYSCTL + CORE_RESET] != 1:
     errors += 1
 
-# 11. Watchdog: kicked from the pre-timeout interrupt three times, then left to expire
+# 11. Data RAM and the DDR window: word patterns, first and last words
 stage = 11
+i = 0
+while i < 16:
+    mem32[RAM_BASE + 4 * i] = 0xDEADBEEF ^ (i * 0x01010101)
+    i += 1
+mem32[RAM_BASE + 0xFFFC] = 0x12345678
+i = 0
+while i < 16:
+    if mem32[RAM_BASE + 4 * i] != 0xDEADBEEF ^ (i * 0x01010101):
+        errors += 1
+    i += 1
+if mem32[RAM_BASE + 0xFFFC] != 0x12345678:
+    errors += 1
+mem32[DDR_BASE] = 0xCAFEF00D
+mem32[DDR_BASE + 0x3FFFFFC] = 0x0BADC0DE
+if mem32[DDR_BASE] != 0xCAFEF00D:
+    errors += 1
+if mem32[DDR_BASE + 0x3FFFFFC] != 0x0BADC0DE:
+    errors += 1
+
+# 12. SYSCTL timer: a one-shot compare 300 clocks ahead, interrupt driven
+stage = 12
+mem32[INTC + INTC_ENABLE] |= IRQ_TIMER
+mem32[SYSCTL + TIMER_CTRL] = 1
+mem32[SYSCTL + TIMER_CMP] = mem32[SYSCTL + CYCLES] + 300
+t = 0
+while timer_hits < 1 and t < TMO:
+    t += 1
+if timer_hits != 1:
+    errors += 1
+
+# 13. I2C0 command-done interrupt (i2c_master IRQ_EN) on an address probe of slave 0x50 (write, LEN 0)
+stage = 13
+mem32[I2C0 + I_STATUS] = I_CLEAR              # DONE is still set from stage 7: clear it first
+mem32[INTC + INTC_ENABLE] |= IRQ_I2C0
+mem32[I2C0 + I_IRQ_EN] = 1
+mem32[I2C0 + I_ADDR] = 0x50
+mem32[I2C0 + I_LEN] = 0
+mem32[I2C0 + I_CTRL] = I_EN | I_START
+t = 0
+while i2c0_done < 1 and t < TMO:
+    t += 1
+if i2c0_done != 1 or mem32[I2C0 + I_STATUS] & I_NACK:
+    errors += 1
+
+# 14. Watchdog: kicked from the pre-timeout interrupt three times, then left to expire
+stage = 14
 mem32[WDT + W_PRESCALE] = 9                    # one tick per 10 clocks
 mem32[WDT + W_PRETIMEOUT] = 50
 mem32[WDT + W_TIMEOUT] = 100
@@ -400,7 +462,7 @@ while wdt_pre < 3 and t < TMO:
     t += 1
 if wdt_pre < 3:
     errors += 1
-stage = 12                                     # results are final
+stage = 15                                     # results are final
 wdt_feed = 0
 while True:                                    # the watchdog resets the system
     pass

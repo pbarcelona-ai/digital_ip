@@ -19,6 +19,8 @@ Edge and motion features of a video stream for object detectors: Sobel edges and
 | 0x38 | EDGE_COUNT | RO | 0x00000000 | pixels with the edge bit in the last frame |
 | 0x3C | MOTION_COUNT | RO | 0x00000000 | pixels with the motion bit in the last frame |
 | 0x40 | SHIFT_USED | RO | 0x00000000 | camera shift in effect for the current / last frame (cells) |
+| 0x44 | SKY_CFG | RW | 0x00000000 | sky profile: column groups of 2**SHIFT pixels (group g = x >> SHIFT, at most 32 groups); a sky pixel has no edge and luma Y_MIN or more |
+| 0x80 + 4 i (i < 32) | SKY | RO | 0x00000000 | sky profile of the last frame: lines from the top of column group i down to its first pixel that is not sky (the frame height: all sky); a plane in the sky is the first thing below it |
 
 ### CTRL (0x18)
 
@@ -81,3 +83,10 @@ Edge and motion features of a video stream for object detectors: Sobel edges and
 |---|---|---|
 | 7:0 | X | columns (signed) |
 | 15:8 | Y | lines (signed) |
+
+### SKY_CFG (0x44)
+
+| Bits | Field | Description |
+|---|---|---|
+| 3:0 | SHIFT | log2 of the group width |
+| 15:8 | Y_MIN | least luma (R + 2G + B) / 4 of a sky pixel (a dark smooth road or ceiling is not sky) |

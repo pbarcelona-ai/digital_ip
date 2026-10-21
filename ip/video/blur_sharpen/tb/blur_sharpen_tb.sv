@@ -10,7 +10,7 @@
 //   the middle of a frame (that frame keeps the old mode); the smallest
 //   frame height (3). Prints TEST PASSED on success.
 //   The test tasks are in tests/blur_sharpen_tests.sv (`included).
-// Date: 2026-10-08
+// Date: 2026-10-21
 `timescale 1ns/1ps
 module blur_sharpen_tb;
   localparam int N = 5, C = 3, CW = 8, MAXW = 32, MAXH = 16, NN = N * N;
@@ -103,10 +103,10 @@ module blur_sharpen_tb;
     ss = sb;
     kbad = 0;
     for (int i = 0; i < NN; i++) begin
-      rd(16'h40 + 4 * i, v);
-      if (v != kb[i*32 +: 32]) kbad++;
+      rd(16'h40 + 4 * i, v);                       // a coefficient reads back its low 12 (COEF_W) bits
+      if (v != 32'(kb[i*32 +: 12])) kbad++;
       rd(16'hC0 + 4 * i, v);
-      if (v != ks[i*32 +: 32]) kbad++;
+      if (v != 32'(ks[i*32 +: 12])) kbad++;
     end
     check(kbad == 0, $sformatf("%0d reset coefficients differ from conv2d_pkg", kbad));
     wr(16'h008, (H << 16) | W);

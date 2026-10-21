@@ -11,23 +11,27 @@
 //   stays high with stable payload until the beat moves.
 //   Modports: master (drives the payload and tvalid), slave (drives
 //   tready), monitor (observes everything, a passive tap).
-//   Tool note: Icarus Verilog cannot drive members of interface arrays and
-//   Yosys cannot read interfaces without sv2v, so the library's modules keep
-//   discrete ports named <prefix>_tdata, <prefix>_tvalid, ... and name the
-//   interface and modport in a comment above each port group, e.g.
+//   Use: a module takes the interface as a port (axis_if.slave s_axis), named
+//   in a comment above it, e.g.
 //     // s_axis: axis_if.slave (ip/shared/src/interfaces/axis_if.sv), DATA_W = 24
-//   Testbenches and Verilator flows may use the interface directly.
+//   and the parent connects an instance (.s_axis(u_if)). Modules take widths
+//   as parameters (no $bits on interface members: Icarus), and Icarus cannot
+//   drive members of interface arrays (one instance per stream). Yosys reads
+//   interfaces through sv2v; a top level for synthesis keeps discrete ports
+//   (ip/scripts/syn_wrap.py writes the wrapper).
 //   Parameters - DATA_W (>= 1), USER_W (>= 1), KEEP_W (>= 1, normally
 //   DATA_W / 8). Clocks / resets - none (the stream is synchronous to the
 //   clock of the blocks it connects).
-// Date: 2026-10-16
+// Date: 2026-10-20
 interface axis_if #(
   parameter int DATA_W = 24,                     // payload width
   parameter int USER_W = 1,                      // tuser width (bit 0: start of frame)
   parameter int KEEP_W = (DATA_W >= 8) ? DATA_W / 8 : 1  // byte enables
 ) ();
   logic [DATA_W-1:0] tdata;                      // payload
+  /* verilator lint_off UNUSEDSIGNAL */          // optional member: only byte streams use it
   logic [KEEP_W-1:0] tkeep;                      // byte enables (byte streams)
+  /* verilator lint_on UNUSEDSIGNAL */
   logic              tlast;                      // end of line / packet
   logic [USER_W-1:0] tuser;                      // [0] start of frame
   logic              tvalid;                     // payload valid

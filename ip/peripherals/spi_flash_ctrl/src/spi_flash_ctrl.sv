@@ -19,7 +19,9 @@
 //   (poll STATUS-of-flash yourself by issuing 05 with LEN=1). Registers -
 //   0x10 CMD (write starts, reads back last), 0x14 ADDR, 0x18 LEN, 0x1C
 //   CLKDIV (sclk half period in clocks, min 3, reset 4, so 12.5 MHz at 100
-//   MHz), 0x20 STATUS (bit0 busy, bit1 done sticky, bit2 cmd_err sticky;
+//   MHz; change it only between commands: the half period is compared
+//   live, and lowering it below the running count stalls the command until
+//   the 16-bit count wraps), 0x20 STATUS (bit0 busy, bit1 done sticky, bit2 cmd_err sticky;
 //   write 1 to clear bits 1 and 2), 0x24 IRQ_EN (bit0). A
 //   CMD written while busy is ignored and sets cmd_err. irq_o = done &
 //   IRQ_EN. Clock - aclk; miso is asynchronous and double-registered, which
@@ -31,7 +33,7 @@
 //   wait. The flash write-in-progress state is the flash's own business: poll
 //   it with command 05. Errors - cmd_err (command while busy); a stalled
 //   stream simply pauses the transfer.
-// Date: 2026-10-12
+// Date: 2026-10-20
 module spi_flash_ctrl (
   input  logic        aclk,
   input  logic        aresetn,
@@ -56,7 +58,8 @@ module spi_flash_ctrl (
   logic [15:0] hc;
   logic [7:0] tx_sr, rx_sr;
   logic [2:0] bit_i;
-  logic sclk_hi, is_rx, done_f, err_f, sent_op, miso_s1, miso_s;
+  logic sclk_hi, is_rx, done_f, err_f, sent_op;
+  (* async_reg = "true" *) logic miso_s1, miso_s;      // MISO synchroniser
   logic [1:0] addr_left;
   logic [3:0] dummy_left;
   logic [15:0] data_left;
@@ -66,12 +69,14 @@ module spi_flash_ctrl (
   logic [15:0] cs_wait;
   wire [15:0] half = (regs.cfg_clkdiv < 16'd3) ? 16'd3 : regs.cfg_clkdiv;
   wire hc_done = (hc == half - 1'b1);
+  wire [4:0] addr_sh = {addr_left - 2'd1, 3'b000};     // the address byte addr_left - 1 (MSB first)
   wire start = regs.cfg_cmd_wr && (st == S_IDLE);
   assign spi.cs_n = (st == S_IDLE) | (st == S_CSGAP);
   assign spi.mosi = tx_sr[7];
   assign spi.sclk = sclk_hi;
   assign s_axis.tready = (st == S_WTX);
   assign irq_o = done_f & regs.cfg_irq_en;
+  // MISO synchroniser: no reset (it only carries the line; its value is used in shift clocks, long after reset)
   always_ff @(posedge aclk) begin
     miso_s1 <= spi.miso;
     miso_s <= miso_s1;
@@ -143,7 +148,7 @@ module spi_flash_ctrl (
             st <= S_SHIFT;
           end
           else if (addr_left != 0) begin
-            tx_sr <= addr[8*(addr_left-1) +: 8];
+            tx_sr <= addr[addr_sh +: 8];
             addr_left <= addr_left - 1'b1;
             st <= S_SHIFT;
           end
@@ -213,4 +218,9 @@ module spi_flash_ctrl (
     end
   end
   assign regs.sts_status = {err_f, done_f, (st != S_IDLE)};
+
+  // not used: CMD bits outside opcode / address / dummy / read / write, write pulses of registers acting by
+  // value, STATUS bit 0 (not a flag)
+  wire unused_ok = &{1'b0, regs.cfg_cmd[31:18], regs.cfg_cmd[11:9], regs.cfg_addr_wr, regs.cfg_len_wr,
+                     regs.cfg_clkdiv_wr, regs.cfg_status[0], regs.cfg_irq_en_wr};
 endmodule

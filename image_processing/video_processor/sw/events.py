@@ -21,6 +21,8 @@ EV_VS_IN = 2
 EV_VS_OUT = 3
 EV_TRACK = 4
 EV_ALL = 0x1F
+SEQ_IDLE = 200000000               # 1 s: the longest sleep while the camera's sequence runs (a frame or
+                                   # its end wakes the report long before)
 ev_count = 0                       # events reported since events_start()
 ev_lost = 0                        # 1 once the log overflowed
 
@@ -33,6 +35,8 @@ def events_start(mask):
     while mem32[FC + FC_EVENT] & EV_VALID:
         mem32[FC + FC_EVENT_POP] = 1
     mem32[FC + FC_EVENT_POP] = 2                       # overflow flag cleared
+    mem32[FC + FC_STATUS] = 0x1C
+    mem32[FC + FC_IRQ_EN] = 3 | (mask & 0x1C)          # channels 2-4 logged: their markers interrupt (15)
     mem32[FC + FC_EV_EN] = mask
     ev_count = 0
     ev_lost = 0
@@ -40,6 +44,7 @@ def events_start(mask):
 
 def events_stop():
     mem32[FC + FC_EV_EN] = 0
+    mem32[FC + FC_IRQ_EN] = 3
 
 
 def event_next(track):
@@ -92,15 +97,24 @@ def event_next(track):
 
 def events_run(track, quiet):
     """Report every event until the camera's sequence (GPIO0[29]) has ended and no event came for
-    quiet CPU cycles."""
+    quiet CPU cycles. With the log empty the core sleeps: a logged frame marker (interrupts 13-15),
+    the sequence's end (GPIO0[29] falling, interrupt 6) or the end of the quiet time (timer) wakes it."""
     seq = 1
-    t0 = now()
-    while seq or now() - t0 < quiet:
+    t = deadline(quiet)
+    while seq or not passed(t):
         if event_next(track) >= 0:
-            t0 = now()
+            t = deadline(quiet)
+        else:
+            irq_disable()
+            if not mem32[FC + FC_EVENT] & EV_VALID and (not seq or mem32[GPIO0 + G_IN] & SEQ_ACTIVE):
+                if seq:
+                    sleep_until(deadline(SEQ_IDLE))
+                else:
+                    sleep_until(t)
+            irq_enable()
         if seq and not mem32[GPIO0 + G_IN] & SEQ_ACTIVE:
             seq = 0
-            t0 = now()
+            t = deadline(quiet)
 
 
 def now():

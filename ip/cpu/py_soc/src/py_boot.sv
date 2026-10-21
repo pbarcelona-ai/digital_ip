@@ -74,6 +74,7 @@ module py_boot #(
   wire  [15:0]  const_cnt = hdr[63:48];
   wire  [7:0]   rx_byte   = op_rdata[7:0];
   wire          rx_valid  = op_rdata[31];
+  wire          unused_rx = &{1'b0, op_rdata[30:8], 1'b0};   // RXDATA tlast / level bits: not needed
 
   assign busy_o = (st != S_DONE) && (st != S_ERR);
   assign done_o = (st == S_DONE);
@@ -198,14 +199,14 @@ module py_boot #(
               hdr <= {rx_byte, hdr[95:8]};
               hcnt <= hcnt + 1'b1;
               idle_polls <= '0;
-              if (hcnt == HDR_BYTES - 1) st <= S_CHECK;
+              if (hcnt == 4'(HDR_BYTES - 1)) st <= S_CHECK;
             end else if (idle_polls == 16'hFFFF) begin
               err_code_o <= 3'd5;
               st <= S_ERR;
             end
             else idle_polls <= idle_polls + 1'b1;
           end
-          if (!(op_done && rx_valid && hcnt == HDR_BYTES - 1)) begin
+          if (!(op_done && rx_valid && hcnt == 4'(HDR_BYTES - 1))) begin
             do_rd = 1'b1;
             do_a = P_RX;
           end

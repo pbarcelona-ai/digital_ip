@@ -37,7 +37,7 @@
 //   words read 0 and ignore writes; above the map: DECERR. Clock - aclk.
 //   Reset - synchronous active low aresetn. Latency - 2 clocks per write and
 //   read.
-// Date: 2026-10-16
+// Date: 2026-10-20
 module spi_master_regs #(
   parameter int DIV_RST = 49  // DIV at reset (CLK_HZ / (2 * SCLK_HZ) - 1)
 ) (
@@ -80,6 +80,7 @@ module spi_master_regs #(
 
   logic             wr_en, rd_en, wr_err_q;
   logic [7:0]       wr_addr, rd_addr, rd_addr_q;
+  wire unused_addr_lsbs = &{1'b0, wr_addr[1:0], rd_addr[1:0]};   // word access: the byte offset is not decoded
   logic [31:0]      wr_data, rd_data;
   logic [3:0]       wr_strb;
   regbus_if #(.ADDR_W(8)) bus ();               // register bus of the AXI4-Lite front end
@@ -157,9 +158,9 @@ module spi_master_regs #(
       A_ID:      rd_data = IP_ID;
       A_VERSION: rd_data = IP_VERSION;
       A_DATE:    rd_data = IP_DATE;
-      A_CTRL: rd_data = ctrl_q;
-      A_DIV: rd_data = div_q;
-      A_WORD_LEN: rd_data = word_len_q;
+      A_CTRL: rd_data = 32'(ctrl_q[16-1:0]);
+      A_DIV: rd_data = 32'(div_q[16-1:0]);
+      A_WORD_LEN: rd_data = 32'(word_len_q[6-1:0]);
       A_STATUS: rd_data = 32'(status_i);
       default: begin
       end

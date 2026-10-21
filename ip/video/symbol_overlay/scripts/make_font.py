@@ -3,8 +3,9 @@
 # Filename: make_font.py
 # Author: FPGA Cores 4 U
 # Description: Writes src/overlay_font_pkg.sv, the 3 x 5 pixel font of
-#   symbol_overlay's text objects (ASCII 32-126; lowercase letters use the
-#   capital glyphs). Each glyph is 15 bits, row 0 (top) in bits [2:0],
+#   symbol_overlay's text objects (ASCII 32-126; lowercase letters have
+#   glyphs of their own: x-height 3 rows, ascenders in row 0, the tails of
+#   g p q y in row 4). Each glyph is 15 bits, row 0 (top) in bits [2:0],
 #   column 0 (left) in the lowest bit of a row. Edit GLYPHS and rerun to
 #   change the font: python3 scripts/make_font.py
 # Date: 2026-10-11
@@ -35,6 +36,15 @@ GLYPHS = {
     "\\": "#.. #.. .#. ..# ..#", "]": ".## ..# ..# ..# .##", "^": ".#. #.# ... ... ...",
     "_": "... ... ... ... ###", "`": "#.. .#. ... ... ...", "{": ".## .#. ##. .#. .##",
     "|": ".#. .#. .#. .#. .#.", "}": "##. .#. .## .#. ##.", "~": "... ##. ..# ... ...",
+    "a": "... ##. .## #.# ###", "b": "#.. ##. #.# #.# ##.", "c": "... .## #.. #.. .##",
+    "d": "..# .## #.# #.# .##", "e": "... .#. ### #.. .##", "f": "..# .#. ### .#. .#.",
+    "g": "... .## #.# .## ##.", "h": "#.. ##. #.# #.# #.#", "i": ".#. ... ##. .#. ###",
+    "j": "..# ... ..# #.# .#.", "k": "#.. #.# ##. ##. #.#", "l": "##. .#. .#. .#. ###",
+    "m": "... ### ### #.# #.#", "n": "... ##. #.# #.# #.#", "o": "... .#. #.# #.# .#.",
+    "p": "... ##. #.# ##. #..", "q": "... .## #.# .## ..#", "r": "... .## #.. #.. #..",
+    "s": "... .## #.. ..# ##.", "t": ".#. ### .#. .#. ..#", "u": "... #.# #.# #.# .##",
+    "v": "... #.# #.# #.# .#.", "w": "... #.# #.# ### ###", "x": "... #.# .#. .#. #.#",
+    "y": "... #.# #.# .#. #..", "z": "... ### .## ##. ###",
 }
 
 
@@ -52,7 +62,7 @@ def main() -> None:
     rows = []
     for code in range(32, 127):
         ch = chr(code)
-        g = GLYPHS.get(ch.upper() if "a" <= ch <= "z" else ch, GLYPHS["?"])
+        g = GLYPHS.get(ch, GLYPHS["?"])
         name = "backslash" if ch == chr(92) else ("space" if ch == " " else ch)
         rows.append(f"      8'd{code:<3}: return 15'h{bits(g):04X};   // {name}")
     text = f"""// ***************
@@ -60,13 +70,15 @@ def main() -> None:
 // Author: FPGA Cores 4 U
 // Description: 3 x 5 pixel font of symbol_overlay's text objects, generated
 //   by scripts/make_font.py (edit the glyphs there). glyph(c) returns the 15
-//   pixels of ASCII character c (32-126; lowercase letters drawn as
-//   capitals, anything else blank): bit r * 3 + col, row 0 at the top,
+//   pixels of ASCII character c (32-126, lowercase letters with glyphs of
+//   their own; anything else blank): bit r * 3 + col, row 0 at the top,
 //   column 0 at the left. Characters sit in 4 x 6 cells (one blank column
 //   and row of spacing).
 // Date: 2026-10-11
 package overlay_font_pkg;
+  /* verilator lint_off UNUSEDPARAM */             // the font's geometry (documentation for users)
   localparam int GLYPH_W = 3, GLYPH_H = 5, CELL_W = 4, CELL_H = 6;
+  /* verilator lint_on UNUSEDPARAM */
   function automatic logic [14:0] glyph(input logic [7:0] c);
     case (c)
 {chr(10).join(rows)}

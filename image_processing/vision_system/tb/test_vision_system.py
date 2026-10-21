@@ -13,8 +13,8 @@ Flow (matches the spec), run once per distortion type (barrel, pincushion):
      distortion, and compute the bit-exact golden "corrected" image the
      RTL is expected to produce (same primitive, correction k's, applied
      to the warped image).
-  4. Program the DUT over AXI4-Lite (K1/K2/K3, IMG_WIDTH/HEIGHT,
-     CENTER_X/Y, SCALE), then stream the warped image in over AXI4-Stream
+  4. Program the DUT over AXI4-Lite (BYPASS = 0: it resets to 1, pass-through; K1/K2/K3,
+     IMG_WIDTH/HEIGHT, CENTER_X/Y, SCALE), then stream the warped image in over AXI4-Stream
      with the spec's "line, then 5 idle cycles" timing, while capturing
      the AXI4-Stream output with the same timing.
   5. Save corrected_<type>.jpg/.ppm from the DUT's actual output.
@@ -23,6 +23,10 @@ Flow (matches the spec), run once per distortion type (barrel, pincushion):
      and (b) the corrected image must be substantially closer to the
      original than the warped image was (catches algorithmic/ordering
      mistakes that a narrow bit-exact check alone might miss).
+
+The goldens (image_io) sample with vision_system 2.0.0's edge rule (every tap clamped into the frame:
+sample_bilinear / sample_bicubic); the exact, beat-by-beat comparison with the Python model is
+tb/python/vision_system_tb.py.
 
 Two independent @cocotb.test() entry points below run this flow with
 opposite-signed distortion coefficients, so both barrel *and* pincushion
@@ -53,6 +57,7 @@ REG_CENTER_X   = 0x2C
 REG_CENTER_Y   = 0x30
 REG_SCALE      = 0x34
 REG_VERSION    = 0x04  # ID block VERSION (ASCII "d.dd")
+REG_BYPASS     = 0x38  # reset 1 (pass-through); cleared for the correction tests
 REG_INTERP_MODE= 0x3C
 REG_CALIB_MODE = 0x40
 REG_FX         = 0x44
@@ -99,6 +104,8 @@ async def axil_write(dut, addr, data):
         if dut.s_axil_bvalid.value == 1:
             break
         await RisingEdge(dut.clk)
+    else:
+        raise AssertionError(f"AXI4-Lite write 0x{addr:02X}: no BVALID within 100 clocks")
     dut.s_axil_bready.value = 1
     await RisingEdge(dut.clk)
     dut.s_axil_bready.value = 0
@@ -113,6 +120,8 @@ async def axil_read(dut, addr) -> int:
         if dut.s_axil_rvalid.value == 1:
             break
         await RisingEdge(dut.clk)
+    else:
+        raise AssertionError(f"AXI4-Lite read 0x{addr:02X}: no RVALID within 100 clocks")
     data = int(dut.s_axil_rdata.value)
     dut.s_axil_rready.value = 1
     await RisingEdge(dut.clk)
@@ -155,7 +164,12 @@ async def stream_frame_in(dut, img: np.ndarray):
             dut.s_axis_tdata.value = pack_pixel(img[y, x])
             dut.s_axis_tlast.value = 1 if (x == w - 1) else 0
             dut.s_axis_tuser.value = 1 if (x == 0 and y == 0) else 0
-            await RisingEdge(dut.clk)
+            for _ in range(100_000):                    # the beat is taken at an edge with tready high
+                await RisingEdge(dut.clk)
+                if dut.s_axis_tready.value == 1:
+                    break
+            else:
+                raise AssertionError(f"s_axis_tready low for 100000 clocks at pixel ({x}, {y})")
         dut.s_axis_tvalid.value = 0
         dut.s_axis_tlast.value = 0
         dut.s_axis_tuser.value = 0
@@ -215,6 +229,7 @@ async def run_one_frame(dut, label: str, src: np.ndarray, test_path: str,
     else:
         golden = io.radial_remap_fixed(warped, cfg, kc1_q, kc2_q, kc3_q)
 
+    await axil_write(dut, REG_BYPASS, 0)               # the correction path (BYPASS resets to 1)
     await axil_write(dut, REG_IMG_WIDTH, w)
     await axil_write(dut, REG_IMG_HEIGHT, h)
 
@@ -343,6 +358,7 @@ async def run_division_model_correction_test(dut, label: str, model_sel_val: int
     await axil_write(dut, REG_CENTER_X, io.to_q16(0.5))
     await axil_write(dut, REG_CENTER_Y, io.to_q16(0.5))
     await axil_write(dut, REG_SCALE, io.to_q16(1.0))
+    await axil_write(dut, REG_BYPASS, 0)               # the correction path (BYPASS resets to 1)
     await axil_write(dut, REG_IMG_WIDTH, w)
     await axil_write(dut, REG_IMG_HEIGHT, h)
 
@@ -441,6 +457,7 @@ async def run_perspective_correction_test(dut, label: str, src: np.ndarray, test
     await axil_write(dut, REG_CENTER_X, io.to_q16(0.5))
     await axil_write(dut, REG_CENTER_Y, io.to_q16(0.5))
     await axil_write(dut, REG_SCALE, io.to_q16(1.0))
+    await axil_write(dut, REG_BYPASS, 0)               # the correction path (BYPASS resets to 1)
     await axil_write(dut, REG_IMG_WIDTH, w)
     await axil_write(dut, REG_IMG_HEIGHT, h)
 

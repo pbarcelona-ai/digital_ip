@@ -321,6 +321,18 @@ module video_processor #(
 
   // ================================================================ control CPU
   axil_if #(.ADDR_W(16), .DATA_W(32)) c ();
+  // py_soc DDR window (DDR_EN = 0 until the DDR controller is in the design: the port is idle)
+  axil_if #(.ADDR_W(26)) cpu_ddr ();
+  assign cpu_ddr.awready = 1'b0;
+  assign cpu_ddr.wready = 1'b0;
+  assign cpu_ddr.bresp = 2'b00;
+  assign cpu_ddr.bvalid = 1'b0;
+  assign cpu_ddr.arready = 1'b0;
+  assign cpu_ddr.rdata = '0;
+  assign cpu_ddr.rresp = 2'b00;
+  assign cpu_ddr.rvalid = 1'b0;
+  wire unused_cpu_ddr = &{1'b0, cpu_ddr.awaddr, cpu_ddr.awvalid, cpu_ddr.wdata, cpu_ddr.wstrb, cpu_ddr.wvalid,
+                          cpu_ddr.bready, cpu_ddr.araddr, cpu_ddr.arvalid, cpu_ddr.rready, 1'b0};
   logic irq_stats;
   logic [1:0] irq_frame;
   py_soc #(
@@ -408,7 +420,8 @@ module video_processor #(
     .wdt_reset_o,
     .core_rst_n_o(core_rel),
     .ext_irq_i({ext_irq_i, irq_frame, irq_stats}),
-    .m_ext_axil(c)
+    .m_ext_axil(c),
+    .m_ddr_axil(cpu_ddr)
   );
 
   // isp_stats frame done (pix_clk pulse) -> intc source 12

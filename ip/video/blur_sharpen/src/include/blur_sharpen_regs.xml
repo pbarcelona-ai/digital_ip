@@ -87,7 +87,7 @@
         </ipxact:register>
         <ipxact:register>
           <ipxact:name>FRAME_SIZE</ipxact:name>
-          <ipxact:description>[15:0] width [31:16] height (&gt;= (N+1)/2 each) (reset {RESET_H, RESET_W})</ipxact:description>
+          <ipxact:description>[15:0] width [31:16] height (&gt;= (N+1)/2 each, at least 14 pixels; must match the frames) (reset {RESET_H, RESET_W})</ipxact:description>
           <ipxact:addressOffset>0x18</ipxact:addressOffset>
           <ipxact:size>32</ipxact:size>
           <ipxact:field>

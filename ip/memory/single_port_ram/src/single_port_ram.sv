@@ -28,7 +28,9 @@ module single_port_ram #(
   input  logic [WIDTH-1:0]         wdata_i,
   output logic [WIDTH-1:0]         rdata_o
 );
+  /* verilator lint_off UNUSEDPARAM */             // version identification (library convention), not logic
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
+  /* verilator lint_on UNUSEDPARAM */
   if (DEPTH < 2 || WIDTH < 1) begin : g_bad $error("single_port_ram: bad DEPTH/WIDTH"); end
   if (MODE < 0 || MODE > 2) begin : g_badm $error("single_port_ram: MODE must be 0..2"); end
   if (BYTE_EN && (WIDTH % 8) != 0) begin : g_badb $error("single_port_ram: BYTE_EN needs WIDTH %% 8 == 0"); end

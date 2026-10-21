@@ -20,7 +20,7 @@
 //   including the FIFO output registers, so they can reach DEPTH+2.
 //   Clock - aclk only. Reset - synchronous aresetn (active low), FIFOs
 //   empty. Latency - FIFO fall-through 2 clocks.
-// Date: 2026-10-16
+// Date: 2026-10-20
 module py_stream_port #(
   parameter int DATA_W   = 8,              // <= 24
   parameter int TX_DEPTH = 16,             // power of two >= 2
@@ -101,6 +101,10 @@ module py_stream_port #(
 
   assign regs.sts_rxdata = {rx.tvalid, 6'd0, rx.tvalid & rx.tlast, 24'(rx.tvalid ? rx.tdata : '0)};
   assign regs.sts_status = {12'(tx_level), 12'(rx_level), 4'd0, tx_empty, tx_ovf, tx_ready, rx.tvalid};
+
+  // not used: TXDATA bits above DATA_W (but tlast [24]), the STATUS bits that are not W1C, IRQ_EN's write
+  // pulse (acts by value), the TX FIFO's tuser
+  wire unused_ok = &{1'b0, regs.cfg_txdata, regs.cfg_status, regs.cfg_irq_en_wr, tx_user};
 
   always_ff @(posedge aclk) begin
     if (!aresetn) irq_o <= 1'b0;

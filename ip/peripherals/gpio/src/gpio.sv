@@ -14,7 +14,7 @@
 //   Clock - single clock aclk; gpio_i is synchronised by two flops.
 //   Reset - synchronous active low aresetn. Timing - registered outputs, no
 //   combinational path from the bus to the pins.
-// Date: 2026-10-12
+// Date: 2026-10-20
 module gpio #(
   parameter int WIDTH = 16               // number of pins (1..32)
 ) (
@@ -69,4 +69,7 @@ module gpio #(
   assign gpio_t = ~regs.cfg_dir;
   assign regs.sts_out = out_q;
   assign regs.sts_in = sync2;
+  // not used: write pulses of registers acting by value (INT_STATUS's W1C is the register map's)
+  wire unused_wr = &{1'b0, regs.cfg_dir_wr, regs.cfg_int_en_wr, regs.cfg_rise_en_wr, regs.cfg_fall_en_wr,
+                     regs.cfg_int_status_wr};
 endmodule

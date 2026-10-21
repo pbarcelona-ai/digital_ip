@@ -11,6 +11,7 @@ from video_regs import *
 FRAME_W = 32                       # live video and image sequence: 32 x 24 frames
 FRAME_H = 24
 FRAMES = 6                         # statistics interrupts awaited at the video start
+FRAME_WAIT = 40000000              # 200 ms (CPU clock cycles) for them
 frames = 0                         # isp_stats interrupts (counted by the interrupt handler)
 
 
@@ -30,6 +31,9 @@ def frame_size(w, h):
         "blur_sharpen FRAME_SIZE",
         "[15:0] width, [31:16] height: the 5 x 5 filter window's line",
         "buffers and edge replication follow this frame size"))
+    wreg(FLT_DISP + FLT_FRAME_SIZE, s, strings(
+        "blur_sharpen FRAME_SIZE (display path)",
+        "[15:0] width, [31:16] height of the display filter's frames", ""))
     wreg(TRK + TRK_SIZE, s, strings(
         "object_tracker FRAME_SIZE",
         "[15:0] width, [31:16] height: the tracker's pixel and line",
@@ -46,7 +50,8 @@ def frame_size(w, h):
         "video_pipeline V_ACTIVE",
         "display timing: visible lines per frame, the frame height; the",
         "vertical blanking is unchanged"))
-    return wait_clear(VS + VS_STATUS, VS_RECIP_BUSY)
+    return 1                                           # vision_system's reciprocals (VS_RECIP_BUSY): its
+                                                       # own FSM holds the next frame until they are done
 
 
 def video_setup():
@@ -102,9 +107,13 @@ def video_setup():
     camera_size_set(FRAME_W, FRAME_H)                  # the detectors' frame: the 32 x 24 test images
     tracker_setup()                                    # object_tracker measures every frame (transcript)
     wreg(FLT + FLT_MODE, MODE_BLUR_SHARPEN, strings(
-        "blur_sharpen MODE",
+        "blur_sharpen MODE (analysis path)",
         "3 = blur then sharpen: the 5 x 5 blur kernel smooths noise,",
         "then the sharpen kernel restores the edges (0-2, 4 = off)"))
+    wreg(FLT_DISP + FLT_MODE, MODE_BLUR_SHARPEN, strings(
+        "blur_sharpen MODE (display path)",
+        "3 = blur then sharpen: the picture shown (with the overlay) is",
+        "denoised and sharpened; the analysis path has its own filter"))
     result(mem32[VP] == VPIP and mem32[VP + VP_BUILD_CFG] & CFG_INSERT,
            "video_pipeline: ID \"VPIP\", insert point built")
     wreg(VP + VP_CTRL, 0, strings(
@@ -161,10 +170,10 @@ def video_setup():
         "gpio0 RISE_EN",
         "rising edges of [30] image format (to monochrome) and [29]",
         "(the camera starts an image sequence) set INT_STATUS"))
-    wreg(GPIO0 + G_FALL_EN, MONO_SEL, strings(
+    wreg(GPIO0 + G_FALL_EN, MONO_SEL | SEQ_ACTIVE, strings(
         "gpio0 FALL_EN",
-        "falling edges of [30] (format back to colour) set INT_STATUS;",
-        "[29] falling (sequence end) is not an interrupt"))
+        "falling edges of [30] (format back to colour) and [29] (the",
+        "sequence ended: the event report stops waiting) set INT_STATUS"))
     wreg(GPIO0 + G_INT_EN, MONO_SEL | SEQ_ACTIVE, strings(
         "gpio0 INT_EN",
         "[30] and [29] drive GPIO0's interrupt (INTC source 6): the",
@@ -189,14 +198,14 @@ def video_setup():
         "frame_counter IRQ_EN",
         "[0] end of frame at the first stage (IRQ 13) and [1] at the",
         "last stage (IRQ 14) raise the frame_counter interrupts"))
-    wreg(INTC + INTC_ENABLE, mem32[INTC + INTC_ENABLE] | IRQ_FC_FIRST | IRQ_FC_LAST, strings(
+    wreg(INTC + INTC_ENABLE, mem32[INTC + INTC_ENABLE] | IRQ_FC_FIRST | IRQ_FC_LAST | IRQ_FC_EV, strings(
         "intc ENABLE",
-        "[13] and [14] frame_counter end-of-frame interrupts enabled:",
-        "the handler reads COUNT0 / COUNT1 at every frame"))
-    wreg(INTC + INTC_EDGE, IRQ_STATS | IRQ_SOFT, strings(
+        "[13] [14] frame_counter end of frame: handler reads COUNT0/1;",
+        "[15] its channels 2-4: logged events wake the report"))
+    wreg(INTC + INTC_EDGE, IRQ_STATS, strings(
         "intc EDGE",
-        "[12] isp_stats frame done and [15] software source are edge",
-        "sources (latched in PENDING); the others are level"))
+        "[12] isp_stats frame done is an edge source (latched in",
+        "PENDING); the others, [15] now frame_counter too, are level"))
     wreg(INTC + INTC_PENDING, IRQ_STATS, strings(
         "intc PENDING",
         "write 1 to clear [12]: a statistics edge latched before the",
@@ -213,8 +222,11 @@ def video_start():
     stage = 6
     heading("6. Video start")
     result(camera_stream_on(), "camera: \"stream on\" written over I2C 0 (reg 0x01 = 1)")
-    while frames < FRAMES:
-        pass
+    t = deadline(FRAME_WAIT)
+    irq_disable()
+    while frames < FRAMES and not passed(t):           # the handler counts the statistics interrupts
+        sleep_until(t)
+    irq_enable()
     puts("  ")
     dec(frames)
     say(" statistics interrupts (one per camera frame) received")

@@ -4,6 +4,8 @@
 src/include/symbol_overlay_regs_if.sv
 ../../bus/axi4_lite_slave/src/axi4_lite_slave.sv
 src/overlay_font_pkg.sv
+src/overlay_font_rom.sv
+src/symbol_overlay_rows.sv
 src/include/symbol_overlay_regs.sv
 src/symbol_overlay.sv
 src/symbol_overlay_top.sv

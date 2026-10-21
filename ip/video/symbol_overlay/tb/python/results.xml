@@ -1,0 +1,7 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1792560700" />
+    <testcase name="test_frames_exact" classname="symbol_overlay_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/ip/video/symbol_overlay/tb/python/symbol_overlay_tb.py" lineno="200" time="174.2256371974945" sim_time_ns="2741540.0" ratio_time="15735.571664991594" />
+    <testcase name="test_register_map" classname="symbol_overlay_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/ip/video/symbol_overlay/tb/python/symbol_overlay_tb.py" lineno="268" time="1.6913049221038818" sim_time_ns="25465.0" ratio_time="15056.421622851465" />
+  </testsuite>
+</testsuites>

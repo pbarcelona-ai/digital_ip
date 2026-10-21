@@ -30,7 +30,7 @@
 //   accept commands in LP escape mode need the PHY's escape-mode path.
 //   Clocks - pclk (video, commands), bclk (D-PHY byte clock). Resets -
 //   synchronous per domain, active low.
-// Date: 2026-10-16
+// Date: 2026-10-21
 module dsi_tx #(
   parameter int NLANES = 2,
   parameter int MAX_W  = 2048
@@ -152,7 +152,10 @@ module dsi_tx #(
   );
 
   // Commands and their payload bytes
-  logic [24:0] cq;
+  logic [24:0] cq;                                // {[24] long, [23:22] not used (VC from vc_i), [21:16] type, [15:0]}
+  logic [4:0] cq_level;                           // FIFO levels (not used)
+  logic [8:0] pb_level;
+  logic err_busy, err_drop;                       // not used: an error pulse per rejected command
   logic cq_wr, pb_wr;                               // command / payload queues not full (pclk)
   logic cq_v, cq_r;
   logic [7:0] pb;
@@ -166,7 +169,7 @@ module dsi_tx #(
     .wdata(cmd_i),
     .wvalid(cmd_wr_i),
     .wready(cq_wr),
-    .wlevel_o(),
+    .wlevel_o(cq_level),
     .rclk(bclk),
     .rrst_n(brst_n),
     .rdata(cq),
@@ -182,7 +185,7 @@ module dsi_tx #(
     .wdata(cmd_byte_i),
     .wvalid(cmd_byte_wr_i),
     .wready(pb_wr),
-    .wlevel_o(),
+    .wlevel_o(pb_level),
     .rclk(bclk),
     .rrst_n(brst_n),
     .rdata(pb),
@@ -240,8 +243,8 @@ module dsi_tx #(
     .src_clk(bclk),
     .src_rst_n(brst_n),
     .pulse_i(eng_err),
-    .busy_o(),
-    .drop_o(),
+    .busy_o(err_busy),
+    .drop_o(err_drop),
     .dst_clk(pclk),
     .dst_rst_n(prst_n),
     .pulse_o(cmd_err_o)
@@ -268,4 +271,5 @@ module dsi_tx #(
     .underflow_o,
     .cmd_err_o(eng_err)
   );
+  wire unused_ok = &{1'b0, vs_lead, cq[23:22], cq_level, pb_level, err_busy, err_drop, 1'b0};
 endmodule

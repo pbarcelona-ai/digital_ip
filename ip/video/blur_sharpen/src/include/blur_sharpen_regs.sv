@@ -19,8 +19,9 @@
 //     0x00C reserved    RO   0
 //     0x014 MODE        RW   0 blur, 1 sharpen, 2 sharpen then blur, 3 blur
 //                       then sharpen, 4-7 pass-through, reset 0x0
-//     0x018 FRAME_SIZE  RW   [15:0] width [31:16] height (>= (N+1)/2 each),
-//                       reset {RESET_H, RESET_W}
+//     0x018 FRAME_SIZE  RW   [15:0] width [31:16] height (>= (N+1)/2 each, at
+//                       least 14 pixels; must match the frames), reset
+//                       {RESET_H, RESET_W}
 //     0x01C BLUR_SHIFT  RW   blur normalisation shift, reset
 //                       conv2d_pkg::blur_shift(N)
 //     0x020 SHARP_SHIFT RW   sharpen normalisation shift, reset
@@ -38,7 +39,7 @@
 //   reads the hardware value, a write gives a pulse with its data. Unmapped
 //   words read 0 and ignore writes; above the map: DECERR. Clock - clk. Reset
 //   - synchronous active low rst_n. Latency - 2 clocks per write and read.
-// Date: 2026-10-16
+// Date: 2026-10-21
 module blur_sharpen_regs #(
   parameter int N = 5,  // kernel size: 3 or 5
   parameter int COEF_W = 12,  // coefficient width
@@ -100,6 +101,7 @@ module blur_sharpen_regs #(
 
   logic             wr_en, rd_en, wr_err_q;
   logic [8:0]       wr_addr, rd_addr, rd_addr_q;
+  wire unused_addr_lsbs = &{1'b0, wr_addr[1:0], rd_addr[1:0]};   // word access: the byte offset is not decoded
   logic [31:0]      wr_data, rd_data;
   logic [3:0]       wr_strb;
   regbus_if #(.ADDR_W(9)) bus ();               // register bus of the AXI4-Lite front end
@@ -193,17 +195,17 @@ module blur_sharpen_regs #(
       A_ID:      rd_data = IP_ID;
       A_VERSION: rd_data = IP_VERSION;
       A_DATE:    rd_data = IP_DATE;
-      A_MODE: rd_data = mode_q;
-      A_FRAME_SIZE: rd_data = frame_size_q;
-      A_BLUR_SHIFT: rd_data = blur_shift_q;
-      A_SHARP_SHIFT: rd_data = sharp_shift_q;
+      A_MODE: rd_data = 32'(mode_q[3-1:0]);
+      A_FRAME_SIZE: rd_data = 32'(frame_size_q[32-1:0]);
+      A_BLUR_SHIFT: rd_data = 32'(blur_shift_q[5-1:0]);
+      A_SHARP_SHIFT: rd_data = 32'(sharp_shift_q[5-1:0]);
       A_STATUS: rd_data = 32'(status_i);
       A_INFO: rd_data = 32'(info_i);
       default: begin
         for (int i = 0; i < N * N; i++)
-          if (rd_addr_q == A_BLUR_K + 9'(4 * i)) rd_data = blur_k_q[i];
+          if (rd_addr_q == A_BLUR_K + 9'(4 * i)) rd_data = 32'(blur_k_q[i][COEF_W-1:0]);
         for (int i = 0; i < N * N; i++)
-          if (rd_addr_q == A_SHARP_K + 9'(4 * i)) rd_data = sharp_k_q[i];
+          if (rd_addr_q == A_SHARP_K + 9'(4 * i)) rd_data = 32'(sharp_k_q[i][COEF_W-1:0]);
       end
     endcase
   end

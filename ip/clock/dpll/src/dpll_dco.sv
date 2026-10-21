@@ -81,7 +81,7 @@ module dpll_dco #(
   endfunction
 
   // Oscillator phase in half periods: h(t) = h_a + (t - t_a) / th (anchor t_a, h_a)
-  real t_a = 0.0, h_a = 0.0, th;
+  real t_a, h_a, th;                                // reals start at 0.0
   function automatic real h_now();
     return h_a + ($realtime - t_a) / th;
   endfunction
@@ -98,7 +98,7 @@ module dpll_dco #(
   end
 
   // Edge scheduler: every output toggles each O[n] oscillator half periods
-  longint h_ev = 0;                                 // half period of the last output edge
+  longint h_ev;                                     // half period of the last output edge (starts at 0)
   always begin : sched
     real hn, h, d;
     longint k, best;
@@ -118,13 +118,15 @@ module dpll_dco #(
       end
       hn = best;
       d  = t_a + (hn - h_a) * th - $realtime;
+      /* verilator lint_off ZERODLY */             // behavioral oscillator: a computed delay
       #(d);
+      /* verilator lint_on ZERODLY */
       // ideal edge time as the new anchor (no accumulation of the delay rounding)
       t_a = t_a + (hn - h_a) * th;
       h_a = hn;
       h_ev = best;
       for (int n = 0; n < NOUT; n++)
-        if (best % O[16*n +: 16] == 0) begin
+        if (best % longint'(O[16*n +: 16]) == 0) begin
           // rising edges on multiples of 2 O[n] half periods: aligned across outputs
           if (best % (2 * O[16*n +: 16]) == 0) clk_o[n] = en_i[n];
           else clk_o[n] = 1'b0;

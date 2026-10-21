@@ -5,7 +5,7 @@
 //   window) and bit fields (<REG>_<FIELD>_LSB / _MASK), for firmware ("from
 //   spi_flash_ctrl_regs_pkg import *" in pyc.py) and testbenches. Generated
 //   by ip/scripts/regmap_gen.py from spi_flash_ctrl_regs.json.
-// Date: 2026-10-16
+// Date: 2026-10-20
 package spi_flash_ctrl_regs_pkg;
   localparam int SPI_FLASH_CTRL_ID = 'h0;
   localparam int SPI_FLASH_CTRL_VERSION = 'h4;

@@ -1,6 +1,6 @@
 # py_sysctl register map
 
-py_soc system control: reset cause, boot status, cycle counter, SoC ID, core logic reset, clock enables.
+py_soc system control: reset cause, boot status, cycle counter, SoC ID, core logic reset, clock enables, timer compare interrupt.
 
 | Offset | Name | Access | Reset | Description |
 |---|---|---|---|---|
@@ -15,6 +15,9 @@ py_soc system control: reset cause, boot status, cycle counter, SoC ID, core log
 | 0x20 | CORE_RESET | RW | 0x00000000 | 1 = release the reset of the logic outside py_soc (cleared by every system reset) |
 | 0x24 | CLK_EN | RW | `CLK_EN_RST[NCLK-1:0]` | clock generator output enables |
 | 0x28 | CLK_STATUS | RO | 0x00000000 | clock generator status |
+| 0x2C | TIMER_CMP | RW | 0x00000000 | timer compare: STATUS.REACHED is set when CYCLES reaches this value (CYCLES - TIMER_CMP < 2**31, wrap-safe); the CPU's timeouts and timed waits sleep on it |
+| 0x30 | TIMER_CTRL | RW | 0x00000000 | timer interrupt |
+| 0x34 | TIMER_STATUS | CMD | 0x00000000 | timer status (the logic's flag); write 1 to clear |
 
 ### RESET_CAUSE (0x10)
 
@@ -37,3 +40,15 @@ py_soc system control: reset cause, boot status, cycle counter, SoC ID, core log
 |---|---|---|
 | 0 | LOCKED | outputs locked (1 without a clock generator) |
 | 1 | PRESENT | clock generator present |
+
+### TIMER_CTRL (0x30)
+
+| Bits | Field | Description |
+|---|---|---|
+| 0 | IRQ_EN | irq_o (timer_irq_o, intc source 16) while TIMER_STATUS.REACHED |
+
+### TIMER_STATUS (0x34)
+
+| Bits | Field | Description |
+|---|---|---|
+| 0 | REACHED | CYCLES reached TIMER_CMP: one-shot, armed by every TIMER_CMP write (which clears it), set in the clock CYCLES equals TIMER_CMP (in the clock after the write when it is already reached: CYCLES - TIMER_CMP < 2**31); write 1 to clear (a set in the same clock wins) |

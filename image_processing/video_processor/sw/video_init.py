@@ -12,7 +12,12 @@ Imported by video_proc.py (the program; pyc.py inlines this file at its
     writes it straight to the transcript file) and only the tracking
     sections are written (con: 0 muted, 1 UART 0, 2 transcript port);
   - cpu_isr(pending): the CPU's own interrupt sources (software interrupt,
-    GPIO2 edge, watchdog pre-timeout), called by the program's handler;
+    GPIO2 edge, watchdog pre-timeout, timer, the wake sources), called by
+    the program's handler;
+  - waiting without polling: wait_bit / port_wait / rx_word / pause sleep
+    on the peripheral's interrupt (py_core WAIT_IRQ, interrupts disabled
+    around the test so none is missed), every sleep bounded by the SYSCTL
+    timer compare interrupt (TMO);
   - cpu_init(start): report section 1 (boot-up sequence: reset cause, the
     boot image header read back from flash, boot status, SoC ID, start-up
     cycle count) and section 2 (peripheral self-test, one PASS / FAIL line
@@ -59,6 +64,10 @@ RX_VALID = 1 << 31
 LAST = 1 << 24
 TX_READY = 2
 TX_EMPTY = 8
+PIRQ_EN = 0x1C                     # data port IRQ_EN: [0] RX FIFO not empty [1] TX FIFO not full [2] TX FIFO empty
+P_RX = 1
+P_TXR = 2
+P_TXE = 4
 
 # system control, interrupt controller, watchdog
 RESET_CAUSE = 0x10
@@ -68,14 +77,26 @@ SOC_ID = 0x1C
 CORE_RESET = 0x20                  # [0] 1 = release the core logic (video) reset
 CLK_EN = 0x24                      # clock generator output enables
 CLK_STATUS = 0x28                  # [0] clock generator outputs locked [1] clock generator present
+TIMER_CMP = 0x2C                   # timer compare: TIMER_STATUS.REACHED when CYCLES reaches it (interrupt 16)
+TIMER_CTRL = 0x30                  # [0] timer interrupt enable
 INTC_ENABLE = 0x10
 INTC_EDGE = 0x14
 INTC_PENDING = 0x1C
 INTC_SOFT = 0x20
 INTC_MASKED = 0x28
+IRQ_UART0 = 1 << 0                 # intc sources (py_soc irq_src): data port of UART 0 / 1,
+IRQ_UART1 = 1 << 1
+IRQ_I2C0 = 1 << 2                  # I2C 0 / 1 (done interrupt or data port),
+IRQ_I2C1 = 1 << 3
+IRQ_SPI0 = 1 << 4                  # SPI 0 / 1 data port,
+IRQ_SPI1 = 1 << 5
 IRQ_GPIO2 = 1 << 8
 IRQ_WDT = 1 << 9
+IRQ_FLASH = 1 << 10                # flash controller done,
+IRQ_FPORT = 1 << 11                # flash data port,
 IRQ_SOFT = 1 << 15                 # software-set self-test source (13 / 14: frame counter)
+IRQ_TIMER = 1 << 16                # SYSCTL timer compare
+IRQ_WAKE = 0x0C3F                  # the sources a wait sleeps on (wait_bit): masked by the handler when they come
 W_CTRL = 0x10
 W_TIMEOUT = 0x14
 W_PRESCALE = 0x18
@@ -112,6 +133,7 @@ I_READ = 4
 I_DONE = 2
 I_NACK = 4
 I_CLEAR = 0xE
+I_IRQ_EN = 0x24                    # [0] done interrupt
 F_CMD = 0x10
 F_ADDR = 0x14
 F_LEN = 0x18
@@ -121,9 +143,11 @@ F_BUSY = 1
 F_DONE = 2
 F_READ_DATA = 1 << 16
 F_ADDR_EN = 1 << 8
+F_IRQ_EN = 0x24                    # [0] done interrupt
 SENSOR_ADDR = 0x36                 # camera control interface on I2C 0
 EEPROM_ADDR = 0x50
-TMO = 20000
+TMO = 2000000                      # 10 ms (CPU clock cycles at 200 MHz): a wait for the hardware gives up
+CHAR_CYC = 17400                   # one UART character at 115200 baud (10 bits): 87 us
 
 # ---------------- state (globals) ----------------
 errors = 0
@@ -150,8 +174,10 @@ def putc(c):
         return
     if con == 0:
         return
-    while not mem32[UART0 + DPORT + PSTATUS] & TX_READY:
-        pass
+    if not mem32[UART0 + DPORT + PSTATUS] & TX_READY:  # FIFO full: sleep until it has room
+        mem32[UART0 + DPORT + PIRQ_EN] = P_TXR
+        wait_bit(UART0 + DPORT + PSTATUS, TX_READY, 1, IRQ_UART0)
+        mem32[UART0 + DPORT + PIRQ_EN] = 0
     mem32[UART0 + DPORT + TXDATA] = c
 
 
@@ -171,7 +197,7 @@ def putw(w):
 def flash_read(addr, n):
     """Start a READ (03h) of n bytes at addr; the bytes arrive on the flash data port. 0 when the
     controller stays busy (timeout), else 1."""
-    if not wait_clear(FLASH + F_STATUS, F_BUSY):
+    if not wait_bit(FLASH + F_STATUS, F_BUSY, 0, IRQ_FLASH):
         return 0
     mem32[FLASH + F_ADDR] = addr
     mem32[FLASH + F_LEN] = n
@@ -182,11 +208,12 @@ def flash_read(addr, n):
 
 def flash_byte():
     """Next byte of a flash read (0 after a timeout: the read never delivers it)."""
-    t = 0
     d = mem32[FLASH + DPORT + RXDATA]
-    while not d & RX_VALID and t < TMO:
+    if not d & RX_VALID:                               # none yet: sleep on the data port's interrupt
+        mem32[FLASH + DPORT + PIRQ_EN] = P_RX
+        wait_bit(FLASH + DPORT + PSTATUS, 1, 1, IRQ_FPORT)
+        mem32[FLASH + DPORT + PIRQ_EN] = 0
         d = mem32[FLASH + DPORT + RXDATA]
-        t += 1
     return d & 0xFF
 
 
@@ -310,28 +337,108 @@ def heading(h):
     say("--------------------------------------------------------------")
 
 
-def wait_set(addr, mask):
-    t = 0
-    while not mem32[addr] & mask and t < TMO:
-        t += 1
-    return t < TMO
+# ---- waiting for the hardware: interrupts, no polling loops. The core sleeps (wait_irq, py_core
+# WAIT_IRQ) with interrupts disabled until an enabled source is pending, then lets the handler run;
+# every sleep is bounded by the SYSCTL timer compare interrupt (16), so a wait can time out.
+
+def deadline(n):
+    """CYCLES + n (mod 2**32): the end of a wait of n cycles (n < 2**31)."""
+    c = mem32[SYSCTL + CYCLES]
+    if c > 0xFFFFFFFF - n:
+        c = c - 0x80000000 - 0x80000000                # (no 2**32 literal: it is not a small int)
+    return (c + n) & 0xFFFFFFFF
 
 
-def wait_clear(addr, mask):
-    t = 0
-    while mem32[addr] & mask and t < TMO:
-        t += 1
-    return t < TMO
+def passed(t):
+    """True once CYCLES has reached t (wrap-safe)."""
+    return (mem32[SYSCTL + CYCLES] - t) & 0xFFFFFFFF < 0x80000000
+
+
+def sleep_until(t):
+    """Interrupts disabled: sleep until an interrupt comes, at the latest when CYCLES reaches t (the
+    timer interrupt; the handler turns it off), let the handler run, then disable them again."""
+    mem32[SYSCTL + TIMER_CMP] = t
+    mem32[SYSCTL + TIMER_CTRL] = 1
+    wait_irq()
+    irq_enable()
+    irq_disable()
+
+
+def pause(n):
+    """Sleep n cycles (other interrupts are served meanwhile)."""
+    t = deadline(n)
+    irq_disable()
+    while not passed(t):
+        sleep_until(t)
+    irq_enable()
+
+
+def wait_bit(addr, mask, want, src):
+    """Sleep until mem32[addr] & mask is non-zero (want 1) or zero (want 0); src: the intc source
+    whose interrupt says so, enabled while waiting (the handler masks it again when it comes). 1, or
+    0 when TMO cycles pass first. A leaf (deadline, passed and sleep_until written out): it is called
+    from deep in the text output and py_core has 16 call frames, one kept for the handler."""
+    t = mem32[SYSCTL + CYCLES]
+    if t > 0xFFFFFFFF - TMO:
+        t = t - 0x80000000 - 0x80000000
+    t = (t + TMO) & 0xFFFFFFFF
+    irq_disable()
+    ok = 1
+    while True:
+        v = mem32[addr] & mask
+        if want:
+            if v:
+                break
+        elif v == 0:
+            break
+        if (mem32[SYSCTL + CYCLES] - t) & 0xFFFFFFFF < 0x80000000:
+            ok = 0
+            break
+        mem32[INTC + INTC_ENABLE] = mem32[INTC + INTC_ENABLE] | src
+        mem32[SYSCTL + TIMER_CMP] = t
+        mem32[SYSCTL + TIMER_CTRL] = 1
+        wait_irq()
+        irq_enable()
+        irq_disable()
+    mem32[INTC + INTC_ENABLE] = mem32[INTC + INTC_ENABLE] & ~src
+    irq_enable()
+    return ok
+
+
+def port_src(port):
+    """intc source of a peripheral's data port (I2C: shared with its done interrupt)."""
+    if port == UART0:
+        return IRQ_UART0
+    if port == UART1:
+        return IRQ_UART1
+    if port == I2C0:
+        return IRQ_I2C0
+    if port == I2C1:
+        return IRQ_I2C1
+    if port == SPI0:
+        return IRQ_SPI0
+    if port == SPI1:
+        return IRQ_SPI1
+    return IRQ_FPORT
+
+
+def port_wait(port, en, bit):
+    """Sleep until the data port's PSTATUS bit is set, on its interrupt (IRQ_EN en); 1, or 0 on timeout."""
+    mem32[port + DPORT + PIRQ_EN] = en
+    ok = wait_bit(port + DPORT + PSTATUS, bit, 1, port_src(port))
+    mem32[port + DPORT + PIRQ_EN] = 0
+    return ok
 
 
 def rx_word(port):
-    """Next word from a data port's RX FIFO, or -1 after a timeout."""
-    t = 0
-    while t < TMO:
+    """Next word from a data port's RX FIFO (sleeping until one arrives), or -1 after a timeout."""
+    d = mem32[port + DPORT + RXDATA]
+    if d & RX_VALID:
+        return d & 0xFFFFFF
+    if port_wait(port, P_RX, 1):
         d = mem32[port + DPORT + RXDATA]
         if d & RX_VALID:
             return d & 0xFFFFFF
-        t += 1
     return -1
 
 
@@ -405,6 +512,10 @@ def cpu_isr(pending):
     if pending & IRQ_WDT:
         wdt_cnt += 1
         mem32[WDT + W_KICK] = WDT_KEY                   # serviced from the pre-timeout interrupt
+    if pending & IRQ_TIMER:                             # a sleep's time is up: the timer off until the
+        mem32[SYSCTL + TIMER_CTRL] = 0                  # next sleep_until
+    if pending & IRQ_WAKE:                              # what a wait sleeps on: masked, the waiting code
+        mem32[INTC + INTC_ENABLE] = mem32[INTC + INTC_ENABLE] & ~(pending & IRQ_WAKE)   # tests it
 
 
 # ======================================================================= 1. boot-up sequence
@@ -488,9 +599,11 @@ def test_gpio():
     mem32[GPIO2 + G_RISE_EN] = 1
     mem32[GPIO2 + G_INT_EN] = 1
     mem32[GPIO2 + G_SET] = 1                           # rising edge on GPIO2[0]
-    t = 0
-    while gpio_cnt == 0 and t < TMO:
-        t += 1
+    t = deadline(TMO)
+    irq_disable()
+    while gpio_cnt == 0 and not passed(t):             # the handler counts it
+        sleep_until(t)
+    irq_enable()
     result(gpio_cnt > 0, "GPIO2: rising edge on pin 0 raises interrupt 8")
 
 
@@ -508,14 +621,21 @@ def test_uart1():
     result(ok, "UART1: 4 bytes sent and received back (txd looped to rxd)")
 
 
+def uart_drain():
+    """Sleep until UART 0 has sent everything and the echo of it is back: the data port's TX FIFO empty
+    (interrupt), then the UART's own FIFO (2 words) and shift register (4 character times), then its TX and
+    RX engines idle (STATUS [1:0]; the UART has no interrupt for that)."""
+    port_wait(UART0, P_TXE, TX_EMPTY)
+    pause(4 * CHAR_CYC)
+    while mem32[UART0 + U_STATUS] & 3:
+        pause(CHAR_CYC)
+
+
 def test_uart0():
     puts("  ... UART0 echo: sending 'U' -> ")
-    wait_set(UART0 + DPORT + PSTATUS, TX_EMPTY)      # let the report text drain
-    wait_clear(UART0 + U_STATUS, 1)
-    while mem32[UART0 + DPORT + RXDATA] & RX_VALID:   # the report itself is echoed: drop it
-        pass
-    while not mem32[UART0 + DPORT + PSTATUS] & TX_READY:
-        pass
+    uart_drain()                                       # let the report text go out
+    while mem32[UART0 + DPORT + RXDATA] & RX_VALID:   # the report itself is echoed: drop it (each read
+        pass                                           # takes one character out of the RX FIFO)
     mem32[UART0 + DPORT + TXDATA] = 0x55               # on the UART itself (the text may go elsewhere)
     nl()
     result(rx_word(UART0) == 0x55, "UART0: character echoed back through the loopback")
@@ -542,7 +662,7 @@ def i2c_go(bus, addr, n, rd):
     mem32[bus + I_LEN] = n
     mem32[bus + I_STATUS] = I_CLEAR
     mem32[bus + I_CTRL] = I_EN | I_START | rd
-    if not wait_set(bus + I_STATUS, I_DONE):
+    if not wait_bit(bus + I_STATUS, I_DONE, 1, port_src(bus)):   # the done interrupt
         return 0
     return not mem32[bus + I_STATUS] & I_NACK
 
@@ -576,8 +696,7 @@ def test_i2c():
 
 
 def test_flash():
-    while mem32[FLASH + F_STATUS] & F_BUSY:
-        pass
+    wait_bit(FLASH + F_STATUS, F_BUSY, 0, IRQ_FLASH)
     mem32[FLASH + F_LEN] = 3
     mem32[FLASH + F_STATUS] = F_DONE
     mem32[FLASH + F_CMD] = F_READ_DATA | 0x9F
@@ -592,9 +711,11 @@ def test_flash():
 
 def test_intc():
     mem32[INTC + INTC_SOFT] = IRQ_SOFT                 # software-set source 15
-    t = 0
-    while soft_cnt == 0 and t < TMO:
-        t += 1
+    t = deadline(TMO)
+    irq_disable()
+    while soft_cnt == 0 and not passed(t):
+        sleep_until(t)
+    irq_enable()
     result(soft_cnt > 0, "INTC: software interrupt 15 taken by the handler")
 
 
@@ -603,9 +724,11 @@ def test_wdt():
     mem32[WDT + W_PRETIMEOUT] = 50
     mem32[WDT + W_TIMEOUT] = 100
     mem32[WDT + W_CTRL] = 1
-    t = 0
-    while wdt_cnt < 3 and t < TMO:
-        t += 1
+    t = deadline(TMO)
+    irq_disable()
+    while wdt_cnt < 3 and not passed(t):               # pre-timeout interrupts, kicked by the handler
+        sleep_until(t)
+    irq_enable()
     mem32[WDT + W_CTRL] = 0
     mem32[WDT + W_STATUS] = 15
     result(wdt_cnt >= 3, "WDT: 3 pre-timeout interrupts, kicked each time, then disabled")
@@ -626,7 +749,10 @@ def cpu_init(start):
     mem32[GPIO0 + G_OUT] = 0
     mem32[GPIO0 + G_DIR] = LED_RUN
     mem32[INTC + INTC_EDGE] = IRQ_SOFT
-    mem32[INTC + INTC_ENABLE] = IRQ_GPIO2 | IRQ_WDT | IRQ_SOFT
+    mem32[INTC + INTC_ENABLE] = IRQ_GPIO2 | IRQ_WDT | IRQ_SOFT | IRQ_TIMER
+    mem32[FLASH + F_IRQ_EN] = 1                        # done interrupts (enabled at the intc only while
+    mem32[I2C0 + I_IRQ_EN] = 1                         # a wait sleeps on them)
+    mem32[I2C1 + I_IRQ_EN] = 1
     irq_enable()
     boot_report(start)
     stage = 2

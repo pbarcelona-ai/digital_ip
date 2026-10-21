@@ -4,8 +4,19 @@
 // Description: Interrupt controller logic with NUM_IRQ sources. Each source
 //   has enable, edge or level type, polarity, and software set. Edge
 //   sources latch into a pending register cleared by write-1-to-clear,
-//   level sources follow the input. A lowest-index-wins priority encoder
-//   reports the active vector (pipelined) and the irq output. Its registers
+//   level sources follow the input; a software set (either type) latches
+//   into the same register (a set wins over a clear in the same clock). A
+//   lowest-index-wins priority encoder reports the active vector
+//   (registered) and the irq output. The priority is fixed (no programmable
+//   priorities, threshold or claim / complete as in the RISC-V PLIC): one
+//   CPU and at most 32 sources, the handler reads VECTOR or PENDING, clears
+//   edge bits itself (W1C) and a level source stays pending until its device
+//   drops it.
+//   Latency: an input change shows in PENDING / MASKED 2 clocks later (the
+//   synchroniser) for level and edge sources alike, in VECTOR and irq_o 3
+//   clocks later; a register write acts from the clock after its cfg_*_wr
+//   pulse. Golden model: ip/peripherals/intc/model/intc_model.py (the same
+//   function with these latencies applied, tb/python). Version 1.1.0. Its registers
 //   come and go on the cfg_* / sts_* ports; intc_top.sv is the block with
 //   its AXI4-Lite register map (src/include/intc_regs.sv: ID "INTC" /
 //   VERSION / DATE at 0x00-0x08, ENABLE 0x10, EDGE_TYPE 0x14, ACTIVE_LOW
@@ -14,7 +25,7 @@
 //   irq_i is synchronised by two flops. Reset - synchronous active low
 //   aresetn. Errors - illegal parameter values stop elaboration with an
 //   $error.
-// Date: 2026-10-12
+// Date: 2026-10-20
 module intc #(
   parameter int NUM_IRQ = 16             // number of sources (1..32)
 ) (
@@ -28,24 +39,24 @@ module intc #(
 );
   if (NUM_IRQ < 1 || NUM_IRQ > 32) begin : g_chk_n $error("%m: NUM_IRQ must be 1..32"); end
 
+  wire unused_wr = &{1'b0, regs.cfg_enable_wr, regs.cfg_edge_type_wr, regs.cfg_active_low_wr};  // act by value
   wire [NUM_IRQ-1:0] en   = regs.cfg_enable;
   wire [NUM_IRQ-1:0] edg  = regs.cfg_edge_type;
   wire [NUM_IRQ-1:0] pol  = regs.cfg_active_low;
 
   // Synchronize and normalize polarity (active high internally)
   (* async_reg = "true" *) logic [NUM_IRQ-1:0] s1, s2;
-  logic [NUM_IRQ-1:0] prev, lvl;
+  logic [NUM_IRQ-1:0] prev;
+  wire  [NUM_IRQ-1:0] lvl = s2 ^ pol;                 // synchronised level, active high
   always_ff @(posedge aclk) begin
     if (!aresetn) begin
       s1 <= '0;
       s2 <= '0;
       prev <= '0;
-      lvl <= '0;
     end
     else begin
       s1 <= irq_i;
       s2 <= s1;
-      lvl <= s2 ^ pol;
       prev <= lvl;
     end
   end
@@ -58,8 +69,8 @@ module intc #(
     else pend_edge <= (pend_edge & ~(regs.cfg_pending_wr ? regs.cfg_pending : '0)) | (rise & edg)
                     | (regs.cfg_soft_set_wr ? regs.cfg_soft_set : '0);
   end
-  // Level sources follow the input; software set works for them via edge latch
-  wire [NUM_IRQ-1:0] pending = (edg & pend_edge) | (~edg & lvl) | (~edg & pend_edge);
+  // Edge sources: latched bits and this clock's rising edge; level sources: the input or a software set
+  wire [NUM_IRQ-1:0] pending = (edg & (pend_edge | rise)) | (~edg & (lvl | pend_edge));
   wire [NUM_IRQ-1:0] masked  = pending & en;
 
   // Pipelined priority encoder (lowest index first)

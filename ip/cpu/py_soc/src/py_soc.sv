@@ -2,7 +2,7 @@
 // Filename: py_soc.sv
 // Author: FPGA Cores 4 U
 // Description: Python microcontroller. py_core plus code/constant memory,
-//   a flash boot loader, an AXI4-Lite interconnect and the library
+//   a 64 KB data RAM, a flash boot loader, an AXI4-Lite interconnect and the library
 //   peripherals: SPI NOR flash controller, 2x UART, 2x I2C master, 2x SPI
 //   master, 3x 32-bit GPIO, watchdog and interrupt controller. Every
 //   streaming data path (UART, I2C, SPI, flash) goes through a
@@ -31,8 +31,13 @@
 //     0x8000 I2C0   0x8100 I2C0_D   0x9000 I2C1   0x9100 I2C1_D
 //     0xA000 SPI0   0xA100 SPI0_D   0xB000 SPI1   0xB100 SPI1_D
 //     0xC000 FLASH  0xC100 FLASH_D
-//     0x1_0000-0x1_FFFF EXT (EXT_EN = 1): the m_ext_axil_* master port, for
+//     0x1_0000-0x1_FFFF EXT (EXT_EN = 1): the m_ext_axil master port, for
 //                       registers outside py_soc (address offset in the window)
+//     0x4_0000-0x4_FFFF RAM: the data RAM (py_data_ram, 32-bit words, byte
+//                       strobes; undefined until written, kept over a system
+//                       reset)
+//     0x1000_0000-0x13FF_FFFF DDR (DDR_EN = 1): the m_ddr_axil master port,
+//                       a 64 MB window onto the external DDR (26-bit offset)
 //   Unmapped addresses return DECERR (core trap TRAP_BUS).
 //
 //   Core logic reset - core_rst_n_o follows SYSCTL CORE_RESET[0] (0x0120):
@@ -46,6 +51,14 @@
 //     6 GPIO0    7 GPIO1    8 GPIO2   9 WDT pre-timeout
 //     10 FLASH command done  11 FLASH_D
 //     12-15 ext_irq_i[3:0] (level, synchronous to clk; tie low if unused)
+//     16 SYSCTL timer (TIMER_CMP reached)
+//   I2Cn's source is its data port's interrupt OR the controller's
+//   command-done interrupt (i2c_master IRQ_EN).
+//
+//   Core - py_core with the parameters CODE_AW, CONST_AW, STACK_DEPTH,
+//   N_LOCALS, N_FRAMES, N_GLOBALS; the defaults are the v2 system (32 KB code,
+//   64-word stack, 32 locals, 32 frames, 256 globals: PyCore.v2() in the
+//   model ip/cpu/py_soc/model/py_soc_model.py).
 //
 //   Reset - rst_n (synchronous, active low) resets everything. A watchdog
 //   expiry is stretched to WDT_RST_CYCLES clocks (wdt_reset_o) and resets
@@ -71,7 +84,7 @@
 //   reference, CPU 200 MHz (x24 / 4), one 100 MHz output (x4 / 8); UART
 //   115200 baud, I2C 400 kHz, SPI 10 MHz, boot flash 33 MHz. For synthesis only the PLL oscillators
 //   (dpll_dco) are black boxes; see clk_gen.sv.
-// Date: 2026-10-16
+// Date: 2026-10-20
 module py_soc #(
   parameter int          CLK_HZ       = 200_000_000,  // CPU clock (with CLKGEN_EN: the generated one)
   parameter int          UART_BAUD    = 115_200,
@@ -107,14 +120,18 @@ module py_soc #(
   parameter int          SPI1_DATA_W   = 16,
   parameter int          SPI1_TX_FIFO  = SPI_TX_FIFO,
   parameter int          SPI1_RX_FIFO  = SPI_RX_FIFO,
-  parameter int          CODE_AW      = 13,
+  // py_core (defaults: the v2 system, PyCore.v2() in the model)
+  parameter int          CODE_AW      = 15,            // code memory 2**CODE_AW bytes
   parameter int          CONST_AW     = 8,
-  parameter int          STACK_DEPTH  = 32,            // py_core operand stack (shared by every call and the handler)
-  parameter int          N_FRAMES     = 16,            // py_core call depth (main program and a handler included)
+  parameter int          STACK_DEPTH  = 64,            // py_core operand stack (shared by every call and the handler)
+  parameter int          N_LOCALS     = 32,            // py_core locals per frame
+  parameter int          N_FRAMES     = 32,            // py_core call depth (main program and a handler included)
+  parameter int          N_GLOBALS    = 256,
   parameter logic [23:0] BOOT_ADDR    = 24'h00_0000,   // image location in flash
   parameter int          FLASH_CLKDIV = 3,             // boot sclk half period in clocks (>= 3): 33 MHz
   parameter int          WDT_RST_CYCLES = 32,          // system reset length after a watchdog expiry
-  parameter bit          EXT_EN       = 1'b0,          // decode the external window (m_ext_axil_*)
+  parameter bit          EXT_EN       = 1'b0,          // decode the external window (m_ext_axil)
+  parameter bit          DDR_EN       = 1'b0,          // decode the DDR window (m_ddr_axil)
   // Clock generator (CLKGEN_EN = 1): CPU clock = REF_KHZ * CPU_M / (CPU_D * CPU_O) (= CLK_HZ),
   // clk_o[n] = CPU clock * CLK_M / (CLK_D * CLK_O[16n +: 16]); see clk_gen.sv
   // Defaults: 33.333 MHz board clock -> CPU x24 / 4 = 200 MHz -> core clock x4 / 8 = 100 MHz
@@ -186,7 +203,11 @@ module py_soc #(
   // External AXI4-Lite master: window 0x1_0000-0x1_FFFF (EXT_EN = 1), 16-bit offset.
   // With EXT_EN = 0 the window is not decoded (DECERR) and the port is idle.
   // m_ext_axil: axil_if.master (ip/shared/src/interfaces/axil_if.sv), ADDR_W = 16
-  axil_if.master m_ext_axil
+  axil_if.master m_ext_axil,
+  // DDR AXI4-Lite master: window 0x1000_0000-0x13FF_FFFF (DDR_EN = 1), 26-bit offset.
+  // With DDR_EN = 0 the window is not decoded (DECERR) and the port is idle.
+  // m_ddr_axil: axil_if.master (ip/shared/src/interfaces/axil_if.sv), ADDR_W = 26
+  axil_if.master m_ddr_axil
 );
   import py_core_pkg::*;
   // The peripherals' internal FIFOs are kept minimal: py_stream_port does the buffering
@@ -198,7 +219,8 @@ module py_soc #(
   // match REF_KHZ * CPU_M / (CPU_D * CPU_O) within 100 ppm (e.g. 33.333 MHz x 6 = 200 MHz)
   localparam int SYS_HZ = CLK_HZ;
   localparam longint PLL_HZ = REF_KHZ * 1000 * CPU_M / (CPU_D * CPU_O);
-  if (CLKGEN_EN && (PLL_HZ - CLK_HZ > CLK_HZ / 10_000 || CLK_HZ - PLL_HZ > CLK_HZ / 10_000)) begin : g_bad_hz
+  if (CLKGEN_EN && (PLL_HZ - longint'(CLK_HZ) > longint'(CLK_HZ) / 10_000 ||
+                  longint'(CLK_HZ) - PLL_HZ > longint'(CLK_HZ) / 10_000)) begin : g_bad_hz
     $error(
     "py_soc: CLK_HZ %0d differs from the generated CPU clock %0d Hz",
     CLK_HZ,
@@ -235,6 +257,8 @@ module py_soc #(
     );
     assign srst_n = cpu_locked;                        // arst_n AND locked, released on sclk
     // core logic reset: CORE_RESET while the output clocks are locked, one register (glitch free)
+    // srst_n clears this flop asynchronously (a lost CPU PLL must reset the core logic at once) and is
+    // the synchronous reset of the rest of py_soc: both are intended (reset_sync waives the net)
     always_ff @(posedge sclk or negedge srst_n)
       if (!srst_n) core_rst_n_o <= 1'b0;
       else         core_rst_n_o <= core_rel & clk_ok;
@@ -244,6 +268,7 @@ module py_soc #(
     assign clk_ok = 1'b1;
     assign clk_o  = '0;
     assign core_rst_n_o = core_rel;
+    wire unused_clk_en = &{1'b0, clk_en, 1'b0};        // SYSCTL CLK_EN: no clock outputs to gate
   end
   assign cpu_clk_o   = sclk;
   assign cpu_rst_n_o = srst_n;
@@ -255,7 +280,7 @@ module py_soc #(
   logic [$clog2(WDT_RST_CYCLES+1)-1:0] rst_cnt;
   always_ff @(posedge sclk) begin
     if (!srst_n)         rst_cnt <= '0;
-    else if (wdt_rst)    rst_cnt <= WDT_RST_CYCLES;
+    else if (wdt_rst)    rst_cnt <= $bits(rst_cnt)'(WDT_RST_CYCLES);
     else if (rst_cnt != 0) rst_cnt <= rst_cnt - 1'b1;
     sys_rst_n <= srst_n && !wdt_rst && rst_cnt == 0;
   end
@@ -313,6 +338,8 @@ module py_soc #(
   logic p_awvalid, p_wvalid, p_bready, p_arvalid, p_rready;
   logic irq;
   trap_e cause;
+  logic core_busy, core_in_irq;                        // status not brought out
+  logic [7:0] core_trap_op;
   assign trap_cause_o = cause;
 
   axil_if #(.ADDR_W(32)) u_core_m_axil ();
@@ -337,22 +364,24 @@ module py_soc #(
     .CODE_AW(CODE_AW),
     .CONST_AW(CONST_AW),
     .STACK_DEPTH(STACK_DEPTH),
-    .N_FRAMES(N_FRAMES)
+    .N_LOCALS(N_LOCALS),
+    .N_FRAMES(N_FRAMES),
+    .N_GLOBALS(N_GLOBALS)
   ) u_core (
     .clk(sclk),
     .rst_n(sys_rst_n),
     .start_i((start_i & boot_done) | boot_start),
     .resume_i,
     .resume_pc_i,
-    .busy_o(),
+    .busy_o(core_busy),
     .done_o,
     .result_o,
     .trap_o,
     .trap_cause_o(cause),
     .trap_pc_o,
-    .trap_op_o(),
+    .trap_op_o(core_trap_op),
     .irq_i(irq),
-    .in_irq_o(),
+    .in_irq_o(core_in_irq),
     .code_addr_o(code_addr),
     .code_data_i(code_q),
     .const_addr_o(const_addr),
@@ -383,15 +412,17 @@ module py_soc #(
   end
 
   // ---------------- interconnect ----------------
-  localparam int NS = 20 + int'(EXT_EN);
+  // Slaves 0-20 are always decoded; DDR and EXT follow when enabled (their index packs down)
+  localparam int NS = 21 + int'(DDR_EN) + int'(EXT_EN);
   localparam int S_INTC = 0, S_WDT = 1, S_GPIO = 2,             // GPIO 2..4
                  S_UART = 5, S_I2C = 9, S_SPI = 13,             // +2*n regs, +2*n+1 data port
                  S_FLASH = 17,                                  // 17 regs, 18 data port
-                 S_SYS = 19, S_EXT = 20;
-  // Slave 20 (EXT) is dropped from the decode when EXT_EN = 0 (the casts keep the low NS entries)
+                 S_SYS = 19, S_RAM = 20,
+                 S_DDR = DDR_EN ? 21 : 0,                       // (0: not used)
+                 S_EXT = EXT_EN ? 21 + int'(DDR_EN) : 0;
   // bases and masks from the memory map package (py_soc_map_pkg.sv)
-  localparam logic [NS*32-1:0] BASE = (NS*32)'({
-    py_soc_map_pkg::EXT_BASE,                                                         // 20  EXT
+  localparam logic [21*32-1:0] BASE_FIXED = {
+    py_soc_map_pkg::RAM_BASE,                                                         // 20  RAM
     py_soc_map_pkg::SYSCTL_BASE,                                                      // 19  SYSCTL
     py_soc_map_pkg::FLASH_BASE + py_soc_map_pkg::DPORT, py_soc_map_pkg::FLASH_BASE,   // 18..17
     py_soc_map_pkg::SPI1_BASE + py_soc_map_pkg::DPORT, py_soc_map_pkg::SPI1_BASE,     // 16..13
@@ -401,8 +432,19 @@ module py_soc #(
     py_soc_map_pkg::UART1_BASE + py_soc_map_pkg::DPORT, py_soc_map_pkg::UART1_BASE,   // 8..5
     py_soc_map_pkg::UART0_BASE + py_soc_map_pkg::DPORT, py_soc_map_pkg::UART0_BASE,
     py_soc_map_pkg::GPIO2_BASE, py_soc_map_pkg::GPIO1_BASE, py_soc_map_pkg::GPIO0_BASE, // 4..2
-    py_soc_map_pkg::WDT_BASE, py_soc_map_pkg::INTC_BASE});                            // 1..0
-  localparam logic [NS*32-1:0] MASK = (NS*32)'({py_soc_map_pkg::EXT_MASK, {20{py_soc_map_pkg::WIN_MASK}}});
+    py_soc_map_pkg::WDT_BASE, py_soc_map_pkg::INTC_BASE};                             // 1..0
+  localparam logic [21*32-1:0] MASK_FIXED = {py_soc_map_pkg::RAM_MASK, {20{py_soc_map_pkg::WIN_MASK}}};
+  function automatic logic [NS*32-1:0] map_vec(input logic [21*32-1:0] fixed, input logic [31:0] ddr,
+                                               input logic [31:0] ext);
+    logic [NS*32-1:0] v;
+    v = '0;
+    v[21*32-1:0] = fixed;
+    if (DDR_EN) v[S_DDR*32 +: 32] = ddr;
+    if (EXT_EN) v[S_EXT*32 +: 32] = ext;
+    return v;
+  endfunction
+  localparam logic [NS*32-1:0] BASE = map_vec(BASE_FIXED, py_soc_map_pkg::DDR_BASE, py_soc_map_pkg::EXT_BASE);
+  localparam logic [NS*32-1:0] MASK = map_vec(MASK_FIXED, py_soc_map_pkg::DDR_MASK, py_soc_map_pkg::EXT_MASK);
 
   logic [31:0] b_awaddr, b_wdata, b_araddr;
   logic [3:0] b_wstrb;
@@ -466,8 +508,65 @@ module py_soc #(
     assign rdata[(K)*32 +: 32] = N.rdata; assign rresp[(K)*2 +: 2] = N.rresp; assign rvalid[K] = N.rvalid; \
     assign N.rready = rready[K];
 
-  logic [15:0] irq_src;
+  logic [16:0] irq_src;
   assign irq_src[15:12] = ext_irq_i;
+
+  // ---------------- data RAM ----------------
+  axil_if #(.ADDR_W(16)) u_ram_axil ();
+  assign u_ram_axil.awaddr = b_awaddr[15:0];
+  assign u_ram_axil.awvalid = awvalid[S_RAM];
+  assign awready[S_RAM] = u_ram_axil.awready;
+  assign u_ram_axil.wdata = b_wdata;
+  assign u_ram_axil.wstrb = b_wstrb;
+  assign u_ram_axil.wvalid = wvalid[S_RAM];
+  assign wready[S_RAM] = u_ram_axil.wready;
+  assign bresp[S_RAM*2 +: 2] = u_ram_axil.bresp;
+  assign bvalid[S_RAM] = u_ram_axil.bvalid;
+  assign u_ram_axil.bready = bready[S_RAM];
+  assign u_ram_axil.araddr = b_araddr[15:0];
+  assign u_ram_axil.arvalid = arvalid[S_RAM];
+  assign arready[S_RAM] = u_ram_axil.arready;
+  assign rdata[S_RAM*32 +: 32] = u_ram_axil.rdata;
+  assign rresp[S_RAM*2 +: 2] = u_ram_axil.rresp;
+  assign rvalid[S_RAM] = u_ram_axil.rvalid;
+  assign u_ram_axil.rready = rready[S_RAM];
+  py_data_ram #(.BYTES(65536)) u_ram (
+    .aclk(sclk),
+    .aresetn(sys_rst_n),
+    .s_axil(u_ram_axil));
+
+  // ---------------- DDR window ----------------
+  if (DDR_EN) begin : g_ddr
+    assign m_ddr_axil.awaddr = b_awaddr[25:0];
+    assign m_ddr_axil.awvalid = awvalid[S_DDR];
+    assign awready[S_DDR] = m_ddr_axil.awready;
+    assign m_ddr_axil.wdata  = b_wdata;
+    assign m_ddr_axil.wstrb   = b_wstrb;
+    assign m_ddr_axil.wvalid = wvalid[S_DDR];
+    assign wready[S_DDR]      = m_ddr_axil.wready;
+    assign bresp[S_DDR*2 +: 2] = m_ddr_axil.bresp;
+    assign bvalid[S_DDR]  = m_ddr_axil.bvalid;
+    assign m_ddr_axil.bready = bready[S_DDR];
+    assign m_ddr_axil.araddr = b_araddr[25:0];
+    assign m_ddr_axil.arvalid = arvalid[S_DDR];
+    assign arready[S_DDR] = m_ddr_axil.arready;
+    assign rdata[S_DDR*32 +: 32] = m_ddr_axil.rdata;
+    assign rresp[S_DDR*2 +: 2] = m_ddr_axil.rresp;
+    assign rvalid[S_DDR] = m_ddr_axil.rvalid;
+    assign m_ddr_axil.rready  = rready[S_DDR];
+  end else begin : g_no_ddr
+    assign m_ddr_axil.awaddr = '0;
+    assign m_ddr_axil.awvalid = 1'b0;
+    assign m_ddr_axil.wdata = '0;
+    assign m_ddr_axil.wstrb = '0;
+    assign m_ddr_axil.wvalid = 1'b0;
+    assign m_ddr_axil.bready = 1'b0;
+    assign m_ddr_axil.araddr = '0;
+    assign m_ddr_axil.arvalid = 1'b0;
+    assign m_ddr_axil.rready = 1'b0;
+    wire unused_ddr = &{1'b0, m_ddr_axil.awready, m_ddr_axil.wready, m_ddr_axil.bresp, m_ddr_axil.bvalid,
+                        m_ddr_axil.arready, m_ddr_axil.rdata, m_ddr_axil.rresp, m_ddr_axil.rvalid, 1'b0};
+  end
 
   // ---------------- external window ----------------
   if (EXT_EN) begin : g_ext
@@ -498,6 +597,8 @@ module py_soc #(
     assign m_ext_axil.araddr = '0;
     assign m_ext_axil.arvalid = 1'b0;
     assign m_ext_axil.rready = 1'b0;
+    wire unused_ext = &{1'b0, m_ext_axil.awready, m_ext_axil.wready, m_ext_axil.bresp, m_ext_axil.bvalid,
+                        m_ext_axil.arready, m_ext_axil.rdata, m_ext_axil.rresp, m_ext_axil.rvalid, 1'b0};
   end
 
   // ---------------- system control ----------------
@@ -517,11 +618,12 @@ module py_soc #(
     .core_rst_n_o(core_rel),
     .clk_en_o(clk_en),
     .clk_locked_i(clk_ok),
+    .timer_irq_o(irq_src[16]),
     .s_axil(u_sys_axil));
 
   // ---------------- interrupt controller ----------------
   `PY_AXIL_IF(S_INTC, u_intc_axil)
-  intc_top #(.NUM_IRQ(16)) u_intc (
+  intc_top #(.NUM_IRQ(17)) u_intc (
     .aclk(sclk),
     .aresetn(sys_rst_n),
     .s_axil(u_intc_axil),
@@ -563,6 +665,7 @@ module py_soc #(
     assign u_uart_s_axis.tvalid = tx_v;
     assign tx_r = u_uart_s_axis.tready;
     assign u_uart_s_axis.tlast = tx_l;
+    assign u_uart_s_axis.tuser = '0;                  // not used (the TX FIFO stores it)
     axis_if #(.DATA_W(8)) u_uart_m_axis ();
     assign rx_d = u_uart_m_axis.tdata;
     assign rx_v = u_uart_m_axis.tvalid;
@@ -594,6 +697,7 @@ module py_soc #(
     assign u_port_s_axis.tvalid = rx_v;
     assign rx_r = u_port_s_axis.tready;
     assign u_port_s_axis.tlast = rx_l;
+    assign u_port_s_axis.tuser = '0;                  // not used by the data port
     py_stream_port_top #(
       .DATA_W(8),
       .TX_DEPTH(TX_FIFO),
@@ -621,11 +725,14 @@ module py_soc #(
     assign u_i2c_s_axis.tvalid = tx_v;
     assign tx_r = u_i2c_s_axis.tready;
     assign u_i2c_s_axis.tlast = tx_l;
+    assign u_i2c_s_axis.tuser = '0;                  // not used (the TX FIFO stores it)
     axis_if #(.DATA_W(8)) u_i2c_m_axis ();
     assign rx_d = u_i2c_m_axis.tdata;
     assign rx_v = u_i2c_m_axis.tvalid;
     assign u_i2c_m_axis.tready = rx_r;
     assign rx_l = u_i2c_m_axis.tlast;
+    logic i2c_irq, port_irq;
+    assign irq_src[2 + n] = port_irq | i2c_irq;          // the data port's or the command-done interrupt
     i2c_if u_i2c_i2c ();
     assign u_i2c_i2c.scl_i = i2c_scl_i[n];
     assign i2c_scl_o[n] = u_i2c_i2c.scl_o;
@@ -643,7 +750,8 @@ module py_soc #(
       .s_axil(u_i2c_axil),
       .s_axis(u_i2c_s_axis),
       .m_axis(u_i2c_m_axis),
-      .i2c(u_i2c_i2c)
+      .i2c(u_i2c_i2c),
+      .irq_o(i2c_irq)
       );
     `PY_AXIL_IF(S_I2C + 2*n + 1, u_port_axil)
     axis_if #(.DATA_W(8)) u_port_m_axis ();
@@ -656,6 +764,7 @@ module py_soc #(
     assign u_port_s_axis.tvalid = rx_v;
     assign rx_r = u_port_s_axis.tready;
     assign u_port_s_axis.tlast = rx_l;
+    assign u_port_s_axis.tuser = '0;                  // not used by the data port
     py_stream_port_top #(
       .DATA_W(8),
       .TX_DEPTH(TX_FIFO),
@@ -666,7 +775,7 @@ module py_soc #(
       .s_axil(u_port_axil),
       .m_axis(u_port_m_axis),
       .s_axis(u_port_s_axis),
-      .irq_o(irq_src[2 + n])
+      .irq_o(port_irq)
       );
   end
 
@@ -684,6 +793,7 @@ module py_soc #(
     assign u_spi_s_axis.tvalid = tx_v;
     assign tx_r = u_spi_s_axis.tready;
     assign u_spi_s_axis.tlast = tx_l;
+    assign u_spi_s_axis.tuser = '0;                  // not used (the TX FIFO stores it)
     axis_if #(.DATA_W(DW)) u_spi_m_axis ();
     assign rx_d = u_spi_m_axis.tdata;
     assign rx_v = u_spi_m_axis.tvalid;
@@ -719,6 +829,7 @@ module py_soc #(
     assign u_port_s_axis.tvalid = rx_v;
     assign rx_r = u_port_s_axis.tready;
     assign u_port_s_axis.tlast = rx_l;
+    assign u_port_s_axis.tuser = '0;                  // not used by the data port
     py_stream_port_top #(
       .DATA_W(DW),
       .TX_DEPTH(TX_FIFO),
@@ -757,6 +868,8 @@ module py_soc #(
   assign fl_tx.tvalid = u_flash_port_m_axis.tvalid;
   assign u_flash_port_m_axis.tready = fl_tx.tready;
   assign fl_tx_l = u_flash_port_m_axis.tlast;
+  assign fl_tx.tlast = fl_tx_l;                       // not used: the controller counts LEN bytes
+  assign fl_tx.tuser = '0;
   py_stream_port_top #(
     .DATA_W(8),
     .TX_DEPTH(FLASH_TX_FIFO),
@@ -770,4 +883,9 @@ module py_soc #(
     .irq_o(irq_src[11])
     );
   `undef PY_AXIL_IF
+
+  // not used: core status, the boot loader's busy, the flash write stream's tlast (the controller counts
+  // LEN bytes), the address bits above the widest window (b_*addr[15:0] slaves, [25:16] DDR window)
+  wire unused_ok = &{1'b0, core_busy, core_in_irq, core_trap_op, boot_busy, fl_tx_l,
+                     b_awaddr[31:16], b_araddr[31:16], 1'b0};
 endmodule

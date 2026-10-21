@@ -10,11 +10,12 @@
 //   ip/scripts/regmap_gen.py from symbol_overlay_regs.json and the ports of
 //   symbol_overlay: regenerate after changing either. Clock - clk. Reset -
 //   synchronous active low rst_n.
-// Date: 2026-10-16
+// Date: 2026-10-20
 module symbol_overlay_top #(
   parameter int NOBJ = 4,
   parameter int NTXT = 4,
-  parameter int CW = 16
+  parameter int CW = 13,
+  parameter FONT_DIR = ""
 ) (
   input  logic clk,
   input  logic rst_n,
@@ -40,7 +41,8 @@ module symbol_overlay_top #(
   symbol_overlay #(
     .NOBJ(NOBJ),
     .NTXT(NTXT),
-    .CW(CW)
+    .CW(CW),
+    .FONT_DIR(FONT_DIR)
   ) u_core (
     .clk,
     .rst_n,

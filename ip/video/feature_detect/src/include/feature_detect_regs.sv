@@ -58,19 +58,29 @@
 //                       frame (cells)
 //                       [7:0] X: columns (signed)
 //                       [15:8] Y: lines (signed)
+//     0x44 SKY_CFG     RW   sky profile: column groups of 2**SHIFT pixels
+//                       (group g = x >> SHIFT, at most 32 groups); a sky
+//                       pixel has no edge and luma Y_MIN or more, reset 0x0
+//                       [3:0] SHIFT: log2 of the group width
+//                       [15:8] Y_MIN: least luma (R + 2G + B) / 4 of a sky
+//                         pixel (a dark smooth road or ceiling is not sky)
+//     0x80 + 4 i SKY [32]    RO   sky profile of the last frame: lines from
+//                       the top of column group i down to its first pixel
+//                       that is not sky (the frame height: all sky); a plane
+//                       in the sky is the first thing below it
 //   Access: RW read / write (byte strobes), RO read only (writes answer
 //   SLVERR), W1C hardware sets / software writes 1 to clear (a set wins), W1S
 //   software writes 1 to set / hardware clears, WO write only (reads 0), CMD
 //   reads the hardware value, a write gives a pulse with its data. Unmapped
 //   words read 0 and ignore writes; above the map: DECERR. Clock - clk. Reset
 //   - synchronous active low rst_n. Latency - 2 clocks per write and read.
-// Date: 2026-10-16
+// Date: 2026-10-21
 module feature_detect_regs (
-  input  logic          clk,             // clock
-  input  logic          rst_n,           // synchronous reset, active low
+  input  logic                 clk,             // clock
+  input  logic                 rst_n,           // synchronous reset, active low
   // s_axil: axil_if.slave (ip/shared/src/interfaces/axil_if.sv), ADDR_W = 8
   axil_if.slave s_axil,
-  // r: feature_detect_regs_if.regs (src/include/feature_detect_regs_if.sv) {ctrl_o=cfg_ctrl ctrl_wr_o=cfg_ctrl_wr frame_size_o=cfg_frame_size frame_size_wr_o=cfg_frame_size_wr edge_o=cfg_edge edge_wr_o=cfg_edge_wr motion_o=cfg_motion motion_wr_o=cfg_motion_wr shift_o=cfg_shift shift_wr_o=cfg_shift_wr shift_est_i=sts_shift_est status_i=sts_status frames_i=sts_frames edge_count_i=sts_edge_count motion_count_i=sts_motion_count shift_used_i=sts_shift_used}
+  // r: feature_detect_regs_if.regs (src/include/feature_detect_regs_if.sv) {ctrl_o=cfg_ctrl ctrl_wr_o=cfg_ctrl_wr frame_size_o=cfg_frame_size frame_size_wr_o=cfg_frame_size_wr edge_o=cfg_edge edge_wr_o=cfg_edge_wr motion_o=cfg_motion motion_wr_o=cfg_motion_wr shift_o=cfg_shift shift_wr_o=cfg_shift_wr shift_est_i=sts_shift_est status_i=sts_status frames_i=sts_frames edge_count_i=sts_edge_count motion_count_i=sts_motion_count shift_used_i=sts_shift_used sky_cfg_o=cfg_sky_cfg sky_cfg_wr_o=cfg_sky_cfg_wr sky_i=sts_sky}
   feature_detect_regs_if.regs r
 );
   // register signals, joined to the interface r
@@ -90,6 +100,9 @@ module feature_detect_regs (
   logic [32-1:0] edge_count_i;
   logic [32-1:0] motion_count_i;
   logic [32-1:0] shift_used_i;
+  logic [16-1:0] sky_cfg_o;
+  logic sky_cfg_wr_o;
+  logic [(32)*(16)-1:0] sky_i;
   assign r.cfg_ctrl = ctrl_o;
   assign r.cfg_ctrl_wr = ctrl_wr_o;
   assign r.cfg_frame_size = frame_size_o;
@@ -106,6 +119,9 @@ module feature_detect_regs (
   assign edge_count_i = r.sts_edge_count;
   assign motion_count_i = r.sts_motion_count;
   assign shift_used_i = r.sts_shift_used;
+  assign r.cfg_sky_cfg = sky_cfg_o;
+  assign r.cfg_sky_cfg_wr = sky_cfg_wr_o;
+  assign sky_i = r.sts_sky;
   // ---------------- register map
   localparam logic [31:0] IP_ID      = "FEAT";
   localparam logic [31:0] IP_VERSION = "1.00";
@@ -122,10 +138,13 @@ module feature_detect_regs (
   localparam logic [7:0] A_EDGE_COUNT = 8'h38;
   localparam logic [7:0] A_MOTION_COUNT = 8'h3C;
   localparam logic [7:0] A_SHIFT_USED = 8'h40;
-  localparam int MAP_WORDS = 17;
+  localparam logic [7:0] A_SKY_CFG = 8'h44;
+  localparam logic [7:0] A_SKY = 8'h80;   // + 4 i, i < 32
+  localparam int MAP_WORDS = 64;
 
   logic             wr_en, rd_en, wr_err_q;
   logic [7:0]       wr_addr, rd_addr, rd_addr_q;
+  wire unused_addr_lsbs = &{1'b0, wr_addr[1:0], rd_addr[1:0]};   // word access: the byte offset is not decoded
   logic [31:0]      wr_data, rd_data;
   logic [3:0]       wr_strb;
   regbus_if #(.ADDR_W(8)) bus ();               // register bus of the AXI4-Lite front end
@@ -160,6 +179,12 @@ module feature_detect_regs (
   logic [31:0] edge_q;
   logic [31:0] motion_q;
   logic [31:0] shift_q;
+  logic [31:0] sky_cfg_q;
+  logic ro_sky;   // a write to an element of SKY
+  always_comb begin
+    ro_sky = 1'b0;
+    for (int i = 0; i < 32; i++) if (wa == A_SKY + 8'(4 * i)) ro_sky = 1'b1;
+  end
   always_ff @(posedge clk) begin
     if (!rst_n) begin
       ctrl_q <= 32'h0;
@@ -172,9 +197,11 @@ module feature_detect_regs (
       motion_wr_o <= 1'b0;
       shift_q <= 32'h0;
       shift_wr_o <= 1'b0;
+      sky_cfg_q <= 32'h0;
+      sky_cfg_wr_o <= 1'b0;
       wr_err_q <= 1'b0;
     end else begin
-      wr_err_q <= wr_en && (wa == A_ID || wa == A_VERSION || wa == A_DATE || wa == A_SHIFT_EST || wa == A_STATUS || wa == A_FRAMES || wa == A_EDGE_COUNT || wa == A_MOTION_COUNT || wa == A_SHIFT_USED);   // writes to read-only words: SLVERR
+      wr_err_q <= wr_en && (wa == A_ID || wa == A_VERSION || wa == A_DATE || wa == A_SHIFT_EST || wa == A_STATUS || wa == A_FRAMES || wa == A_EDGE_COUNT || wa == A_MOTION_COUNT || wa == A_SHIFT_USED || ro_sky);   // writes to read-only words: SLVERR
       begin
         ctrl_wr_o <= wr_en && wa == A_CTRL;
         if (wr_en && wa == A_CTRL) ctrl_q <= (ctrl_q & ~wmask) | (wr_data & wmask);
@@ -195,6 +222,10 @@ module feature_detect_regs (
         shift_wr_o <= wr_en && wa == A_SHIFT;
         if (wr_en && wa == A_SHIFT) shift_q <= (shift_q & ~wmask) | (wr_data & wmask);
       end
+      begin
+        sky_cfg_wr_o <= wr_en && wa == A_SKY_CFG;
+        if (wr_en && wa == A_SKY_CFG) sky_cfg_q <= (sky_cfg_q & ~wmask) | (wr_data & wmask);
+      end
     end
   end
   assign ctrl_o = ctrl_q[32-1:0];
@@ -202,6 +233,7 @@ module feature_detect_regs (
   assign edge_o = edge_q[32-1:0];
   assign motion_o = motion_q[32-1:0];
   assign shift_o = shift_q[32-1:0];
+  assign sky_cfg_o = sky_cfg_q[16-1:0];
 
   // ---------------- reads: the word addressed in the clock before
   always_ff @(posedge clk) if (rd_en) rd_addr_q <= {rd_addr[7:2], 2'b00};
@@ -211,18 +243,21 @@ module feature_detect_regs (
       A_ID:      rd_data = IP_ID;
       A_VERSION: rd_data = IP_VERSION;
       A_DATE:    rd_data = IP_DATE;
-      A_CTRL: rd_data = ctrl_q;
-      A_FRAME_SIZE: rd_data = frame_size_q;
-      A_EDGE: rd_data = edge_q;
-      A_MOTION: rd_data = motion_q;
-      A_SHIFT: rd_data = shift_q;
+      A_CTRL: rd_data = 32'(ctrl_q[32-1:0]);
+      A_FRAME_SIZE: rd_data = 32'(frame_size_q[32-1:0]);
+      A_EDGE: rd_data = 32'(edge_q[32-1:0]);
+      A_MOTION: rd_data = 32'(motion_q[32-1:0]);
+      A_SHIFT: rd_data = 32'(shift_q[32-1:0]);
       A_SHIFT_EST: rd_data = 32'(shift_est_i);
       A_STATUS: rd_data = 32'(status_i);
       A_FRAMES: rd_data = 32'(frames_i);
       A_EDGE_COUNT: rd_data = 32'(edge_count_i);
       A_MOTION_COUNT: rd_data = 32'(motion_count_i);
       A_SHIFT_USED: rd_data = 32'(shift_used_i);
+      A_SKY_CFG: rd_data = 32'(sky_cfg_q[16-1:0]);
       default: begin
+        for (int i = 0; i < 32; i++)
+          if (rd_addr_q == A_SKY + 8'(4 * i)) rd_data = 32'(sky_i[i*(16) +: 16]);
       end
     endcase
   end

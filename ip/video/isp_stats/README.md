@@ -1,6 +1,6 @@
 # isp_stats
 
-Per-frame image statistics for auto exposure and auto white balance software. Version 1.0.0. Monitors an RGB AXI-Stream (it only observes the handshake, it never stalls the stream) and accumulates over each frame: the sum of each component, the number of pixels, and the number of pixels with any component >= sat_thr_i (clipping). At the start of the next frame (tuser) the totals are copied to the outputs and frame_done_o pulses, so the outputs always describe the last complete frame and stay stable for a whole frame time. A frame that is never followed by another is reported when flush_i pulses. Clock - clk only. Reset - synchronous rst_n (active low).
+Per-frame image statistics for auto exposure and auto white balance software. Version 1.0.0. Monitors an RGB AXI-Stream (it only observes the handshake, it never stalls the stream) and accumulates over each frame: the sum of each component, the number of pixels, and the number of pixels with any component >= sat_thr_i (clipping). At the start of the next frame (tuser) the totals are copied to the outputs and frame_done_o pulses, so the outputs always describe the last complete frame and stay stable for a whole frame time. A frame that is never followed by another is reported when flush_i pulses. Clock - clk only. Reset - synchronous rst_n (active low). Golden model: model/isp_stats_model.py (stats; tb/python).
 
 isp_stats is an IP of the FPGA Cores 4 U digital IP library.
 

@@ -3,13 +3,15 @@
 // Author: FPGA Cores 4 U
 // Description: 3 x 5 pixel font of symbol_overlay's text objects, generated
 //   by scripts/make_font.py (edit the glyphs there). glyph(c) returns the 15
-//   pixels of ASCII character c (32-126; lowercase letters drawn as
-//   capitals, anything else blank): bit r * 3 + col, row 0 at the top,
+//   pixels of ASCII character c (32-126, lowercase letters with glyphs of
+//   their own; anything else blank): bit r * 3 + col, row 0 at the top,
 //   column 0 at the left. Characters sit in 4 x 6 cells (one blank column
 //   and row of spacing).
 // Date: 2026-10-11
 package overlay_font_pkg;
+  /* verilator lint_off UNUSEDPARAM */             // the font's geometry (documentation for users)
   localparam int GLYPH_W = 3, GLYPH_H = 5, CELL_W = 4, CELL_H = 6;
+  /* verilator lint_on UNUSEDPARAM */
   function automatic logic [14:0] glyph(input logic [7:0] c);
     case (c)
       8'd32 : return 15'h0000;   // space
@@ -77,32 +79,32 @@ package overlay_font_pkg;
       8'd94 : return 15'h002A;   // ^
       8'd95 : return 15'h7000;   // _
       8'd96 : return 15'h0011;   // `
-      8'd97 : return 15'h5BEA;   // a
-      8'd98 : return 15'h3AEB;   // b
-      8'd99 : return 15'h624E;   // c
-      8'd100: return 15'h3B6B;   // d
-      8'd101: return 15'h72CF;   // e
-      8'd102: return 15'h12CF;   // f
-      8'd103: return 15'h6B4E;   // g
-      8'd104: return 15'h5BED;   // h
-      8'd105: return 15'h7497;   // i
-      8'd106: return 15'h2B24;   // j
-      8'd107: return 15'h5AED;   // k
-      8'd108: return 15'h7249;   // l
-      8'd109: return 15'h5BFD;   // m
-      8'd110: return 15'h5B6B;   // n
-      8'd111: return 15'h2B6A;   // o
-      8'd112: return 15'h12EB;   // p
-      8'd113: return 15'h6F6A;   // q
-      8'd114: return 15'h5AEB;   // r
-      8'd115: return 15'h388E;   // s
-      8'd116: return 15'h2497;   // t
-      8'd117: return 15'h7B6D;   // u
-      8'd118: return 15'h2B6D;   // v
-      8'd119: return 15'h5FED;   // w
-      8'd120: return 15'h5AAD;   // x
-      8'd121: return 15'h24AD;   // y
-      8'd122: return 15'h72A7;   // z
+      8'd97 : return 15'h7B98;   // a
+      8'd98 : return 15'h3B59;   // b
+      8'd99 : return 15'h6270;   // c
+      8'd100: return 15'h6B74;   // d
+      8'd101: return 15'h63D0;   // e
+      8'd102: return 15'h25D4;   // f
+      8'd103: return 15'h3D70;   // g
+      8'd104: return 15'h5B59;   // h
+      8'd105: return 15'h74C2;   // i
+      8'd106: return 15'h2B04;   // j
+      8'd107: return 15'h56E9;   // k
+      8'd108: return 15'h7493;   // l
+      8'd109: return 15'h5BF8;   // m
+      8'd110: return 15'h5B58;   // n
+      8'd111: return 15'h2B50;   // o
+      8'd112: return 15'h1758;   // p
+      8'd113: return 15'h4D70;   // q
+      8'd114: return 15'h1270;   // r
+      8'd115: return 15'h3870;   // s
+      8'd116: return 15'h44BA;   // t
+      8'd117: return 15'h6B68;   // u
+      8'd118: return 15'h2B68;   // v
+      8'd119: return 15'h7F68;   // w
+      8'd120: return 15'h54A8;   // x
+      8'd121: return 15'h1568;   // y
+      8'd122: return 15'h77B8;   // z
       8'd123: return 15'h64D6;   // {
       8'd124: return 15'h2492;   // |
       8'd125: return 15'h3593;   // }

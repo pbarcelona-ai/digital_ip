@@ -22,7 +22,7 @@
 //   the bank of a row does not change), coordinates stay logical and are
 //   still clamped against img_h; the caller guarantees that a row is not
 //   read after it has been overwritten.
-// Date: 2026-10-16
+// Date: 2026-10-21
 
 module banked_framebuf #(
   parameter int PIX_W = 24,     // bits per pixel
@@ -107,7 +107,7 @@ module banked_framebuf #(
     wen   <= wr.en;
     wbx   <= SELW'(wr.x % B);
     wby   <= SELW'(wr.y % B);
-    waddr <= AW'(boff(wr.buf_sel) + (prow(int'(wr.y)) / B) * BW + (wr.x / B));
+    waddr <= AW'(boff(wr.buf_sel) + (prow(int'(wr.y)) / B) * BW + (int'(wr.x) / B));
     wdat  <= wr.data;
   end
 
@@ -132,9 +132,9 @@ module banked_framebuf #(
     hi_y = clampc(rd_y0 + 18'(TAPS - 1), img_h);
     for (int b = 0; b < B; b++) begin
       logic [15:0] c;
-      c = lo_x + 16'((b - int'(lo_x % B)) & (B - 1));
+      c = lo_x + 16'((b - (int'(lo_x) % B)) & (B - 1));
       bcx[b] = (c > hi_x) ? hi_x : c;
-      c = lo_y + 16'((b - int'(lo_y % B)) & (B - 1));
+      c = lo_y + 16'((b - (int'(lo_y) % B)) & (B - 1));
       bcy[b] = (c > hi_y) ? hi_y : c;
     end
     for (int t = 0; t < TAPS; t++) begin

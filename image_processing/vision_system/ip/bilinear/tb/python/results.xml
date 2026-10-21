@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1792611443" />
+    <testcase name="test_bilinear_exact" classname="bilinear_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/image_processing/vision_system/ip/bilinear/tb/python/bilinear_tb.py" lineno="23" time="2.225457191467285" sim_time_ns="200056.0" ratio_time="89894.33756220643" />
+  </testsuite>
+</testsuites>

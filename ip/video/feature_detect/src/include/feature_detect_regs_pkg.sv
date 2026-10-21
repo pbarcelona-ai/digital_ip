@@ -5,7 +5,7 @@
 //   window) and bit fields (<REG>_<FIELD>_LSB / _MASK), for firmware ("from
 //   feature_detect_regs_pkg import *" in pyc.py) and testbenches. Generated
 //   by ip/scripts/regmap_gen.py from feature_detect_regs.json.
-// Date: 2026-10-16
+// Date: 2026-10-21
 package feature_detect_regs_pkg;
   localparam int FEATURE_DETECT_ID = 'h0;
   localparam int FEATURE_DETECT_VERSION = 'h4;
@@ -65,4 +65,11 @@ package feature_detect_regs_pkg;
   localparam int FEATURE_DETECT_SHIFT_USED_X_MASK = 'hFF;
   localparam int FEATURE_DETECT_SHIFT_USED_Y_LSB = 8;
   localparam int FEATURE_DETECT_SHIFT_USED_Y_MASK = 'hFF00;
+  localparam int FEATURE_DETECT_SKY_CFG = 'h44;
+  localparam int FEATURE_DETECT_SKY_CFG_SHIFT_LSB = 0;
+  localparam int FEATURE_DETECT_SKY_CFG_SHIFT_MASK = 'hF;
+  localparam int FEATURE_DETECT_SKY_CFG_Y_MIN_LSB = 8;
+  localparam int FEATURE_DETECT_SKY_CFG_Y_MIN_MASK = 'hFF00;
+  localparam int FEATURE_DETECT_SKY = 'h80;
+  localparam int FEATURE_DETECT_SKY_STRIDE = 4;
 endpackage

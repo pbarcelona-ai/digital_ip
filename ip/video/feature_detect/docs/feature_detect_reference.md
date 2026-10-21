@@ -27,9 +27,8 @@
 //   update, projection-profile shift search by minimum SAD. Differs: luma is (R + 2G + B) / 4 =
 //   0.25 R + 0.5 G + 0.25 B, not BT.601 (blue weighted 0.25 instead of 0.114), so blue objects
 //   look brighter to the edge and motion tests than in a standard luma image.
-// TODO(REF-FEATURE_DETECT-1) [LOW] Luma weights. Prompt: in
-//   ip/video/feature_detect/src/feature_detect.sv, either keep Y = (R + 2G + B) / 4 and state
-//   in the header that it is a cheap approximation of BT.601 luma (cite ITU-R BT.601-7), or
-//   compute Y = (77 R + 150 G + 29 B + 128) >> 8 (BT.601, two extra multipliers or shift-add),
-//   and update the testbench model.
+// RESOLVED(REF-FEATURE_DETECT-1) [LOW] Luma weights. Resolution: 2026-10-21: Y = (R + 2G + B) / 4
+//   is kept (shift-add, no multipliers); the feature_detect.sv header states that it approximates
+//   BT.601 luma (ITU-R BT.601-7) and that blue weighs 0.25 instead of 0.114; the golden model uses
+//   the same luma (pixel.luma) and tb/python checks every pixel.
 ```

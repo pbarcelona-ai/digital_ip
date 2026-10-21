@@ -9,30 +9,36 @@
 //   for deep block-RAM FIFOs. Clock - clk. Reset - synchronous active low,
 //   empty. Latency - 1 clock from a write into an empty FIFO to m_valid_o.
 //   Overflow - s_ready_o is low when full, so a compliant source never
-//   overflows. Errors - DEPTH must be a power of two >= 2 (rejected at
-//   elaboration).
-// Date: 2026-09-29
+//   overflows; a push into a full FIFO is refused even with a pop in the
+//   same clock. Errors - DEPTH must be a power of two >= 2 (rejected at
+//   elaboration). Golden model: model/fallthrough_fifo_model.py (clock
+//   exact; tb/python).
+// Date: 2026-10-21
 module fallthrough_fifo #(
-  parameter int WIDTH = 32,
-  parameter int DEPTH = 16
+  parameter int WIDTH = 32,                      // word width, >= 1
+  parameter int DEPTH = 16                       // words, a power of two >= 2 (intended <= 64)
 ) (
-  input  logic                   clk,
-  input  logic                   rst_n,
-  input  logic [WIDTH-1:0]       s_data_i,
-  input  logic                   s_valid_i,
-  output logic                   s_ready_o,
-  output logic [WIDTH-1:0]       m_data_o,
-  output logic                   m_valid_o,
-  input  logic                   m_ready_i,
-  output logic [$clog2(DEPTH):0] level_o
+  input  logic                   clk,            // clock
+  input  logic                   rst_n,          // synchronous, active low: empty
+  input  logic [WIDTH-1:0]       s_data_i,       // word to push
+  input  logic                   s_valid_i,      // push request
+  output logic                   s_ready_o,      // not full
+  output logic [WIDTH-1:0]       m_data_o,       // the oldest word (valid with m_valid_o)
+  output logic                   m_valid_o,      // not empty
+  input  logic                   m_ready_i,      // pop the oldest word
+  output logic [$clog2(DEPTH):0] level_o         // words held
 );
+  /* verilator lint_off UNUSEDPARAM */             // version identification (library convention), not logic
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
+  /* verilator lint_on UNUSEDPARAM */
   localparam int AW = $clog2(DEPTH);
-  if (DEPTH < 2 || (DEPTH & (DEPTH - 1)) != 0) begin : g_bad $error("fallthrough_fifo: DEPTH must be a power of two >= 2"); end
+  if (DEPTH < 2 || (DEPTH & (DEPTH - 1)) != 0) begin : g_bad
+    $error("fallthrough_fifo: DEPTH must be a power of two >= 2");
+  end
   logic [WIDTH-1:0] mem [0:DEPTH-1];
   logic [AW:0] wptr, rptr;
   assign level_o   = wptr - rptr;
-  assign s_ready_o = (level_o != DEPTH);
+  assign s_ready_o = (level_o != ($clog2(DEPTH)+1)'(DEPTH));
   assign m_valid_o = (wptr != rptr);
   assign m_data_o  = mem[rptr[AW-1:0]];
   always_ff @(posedge clk) begin

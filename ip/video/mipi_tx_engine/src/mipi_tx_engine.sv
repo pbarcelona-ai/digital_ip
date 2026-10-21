@@ -32,7 +32,7 @@
 //   a violation. Line buffer read - lb_addr_o (pixel pair index, pairs
 //   {odd, even} in 48 bits) with lb_data_i one clock later. Clock - D-PHY
 //   byte clock. Reset - synchronous rst_n (active low).
-// Date: 2026-10-16
+// Date: 2026-10-21
 module mipi_tx_engine #(
   parameter int NLANES = 2,                      // 1, 2 or 4
   parameter int MAX_W  = 2048
@@ -98,11 +98,11 @@ module mipi_tx_engine #(
   logic [7:0] fb [6]; // bytes appended this clock
   logic [2:0] fn;
   logic burst, all_enq;
-  wire  [2:0] wbytes = (cnt >= NLANES) ? 3'(NLANES) : 3'(cnt);
-  wire  pop   = burst && ppi.tx_ready && (cnt >= NLANES || all_enq) && cnt != 0;
+  wire  [2:0] wbytes = (cnt >= (QW+1)'(NLANES)) ? 3'(NLANES) : 3'(cnt);
+  wire  pop   = burst && ppi.tx_ready && (cnt >= (QW+1)'(NLANES) || all_enq) && cnt != 0;
   wire  [2:0] popn = pop ? wbytes : 3'd0;
-  wire  [QW:0] cnt_after = cnt - popn;
-  wire  space6 = (cnt_after + 6 <= QCAP);
+  wire  [QW:0] cnt_after = cnt - (QW+1)'(popn);
+  wire  space6 = (cnt_after + (QW+1)'(6) <= (QW+1)'(QCAP));
 
   // ---------------- fill sequencer
   typedef enum logic [3:0] {F_IDLE, F_HDR, F_LINE, F_BYTES, F_CRC, F_EOTP, F_DRAIN, F_GAP, F_SKIP} fst_e;
@@ -116,11 +116,13 @@ module mipi_tx_engine #(
   logic consume;                                 // a line-buffer word is used this clock
 
   wire [23:0] pe = lb_data_i[23:0], po = lb_data_i[47:24];
+  /* verilator lint_off UNUSEDSIGNAL */            // avg's s[0]: the rounding bit, shifted out
   function automatic logic [7:0] avg(input logic [7:0] a, input logic [7:0] b);
     logic [8:0] s;
-    s = a + b + 9'd1;
+    s = 9'(a) + 9'(b) + 9'd1;
     avg = s[8:1];
   endfunction
+  /* verilator lint_on UNUSEDSIGNAL */
 
   always_comb begin
     logic [23:0] h, p;                           // scratch: header word, current pixel
@@ -147,7 +149,7 @@ module mipi_tx_engine #(
           fn = 3'd4;
         end else begin
           for (int k = 0; k < 2; k++) begin
-            p = k ? po : pe;
+            p = (k != 0) ? po : pe;
             if (k_fmt == 2'd0) begin
               fb[3*k] = p[23:16];
               fb[3*k+1] = p[15:8];
@@ -254,7 +256,7 @@ module mipi_tx_engine #(
           c = crc;
           for (int i = 0; i < 6; i++) if (3'(i) < fn) c = crc_byte(c, fb[i]);
           crc <= c;
-          rem <= rem - fn;
+          rem <= rem - 16'(fn);
           if (consume) ra <= ra + 1'b1;
           if (rem == 16'(fn)) fst <= F_CRC;
         end
@@ -290,7 +292,7 @@ module mipi_tx_engine #(
           w = (w == QW'(QCAP - 1)) ? '0 : w + 1'b1;
         end
         wp <= w;
-        cnt <= cnt_after + fn;
+        cnt <= cnt_after + (QW+1)'(fn);
       end
 
       // ---- output: one word of up to NLANES bytes per accepted clock
@@ -306,13 +308,13 @@ module mipi_tx_engine #(
         rp <= r;
       end
       // hs_req_o is high from the burst start through the clock of its last word
-      if (!burst && cnt != 0 && (all_enq || (k_type == 2'd1 && cnt >= START_TH))) begin
+      if (!burst && cnt != 0 && (all_enq || (k_type == 2'd1 && cnt >= (QW+1)'(START_TH)))) begin
         burst <= 1'b1;
         ppi.hs_req <= 1'b1;
       end
       else if (burst && all_enq && cnt_after == 0 && pop) burst <= 1'b0;
       else if (!burst) ppi.hs_req <= 1'b0;
-      if (burst && ppi.tx_ready && !all_enq && cnt < NLANES) underflow_o <= 1'b1;
+      if (burst && ppi.tx_ready && !all_enq && cnt < (QW+1)'(NLANES)) underflow_o <= 1'b1;
     end
   end
 endmodule

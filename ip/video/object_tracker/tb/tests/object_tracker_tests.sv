@@ -57,7 +57,7 @@
 //                        CTRL.TERM_B with RUN_B (edges, own blob slots), RUN_B
 //                        read back, random features and settings with stalls
 //     test_random_colour 16 random colour scenes and settings with stalls
-// Date: 2026-10-15
+// Date: 2026-10-21
 // ***************
   int e_runb = 0;                                    // RUN_B expected
   int e_blob = 32'h0202;                             // BLOB_CFG expected (reset: GAP 2, GAP_Y 2, KEEP 0)
@@ -140,7 +140,7 @@
       bfm.read(9'(9'h130 + 4 * i), n);                // BLOB_N / BLOB_X / BLOB_Y[i] (base 0x10)
       bfm.read(9'(9'h0F0 + 4 * i), bx);
       bfm.read(9'(9'h110 + 4 * i), by);
-      if (mdl.bn[i] == 0) check(n == 0 && bx == 32'h0000_FFFF && by == 32'h0000_FFFF,
+      if (mdl.bn[i] == 0) check(n == 0 && bx == 32'h0 && by == 32'h0,
                                 $sformatf("%s: blob %0d: %0d pixels %h %h, model none", name, i, n, bx, by));
       else check(n == mdl.bn[i] && bx == {16'(mdl.bx1[i]), 16'(mdl.bx0[i])} && by == {16'(mdl.by1[i]), 16'(mdl.by0[i])},
                  $sformatf("%s: blob %0d: %0d pixels x %0d-%0d y %0d-%0d, model %0d x %0d-%0d y %0d-%0d", name, i, n,
@@ -200,7 +200,7 @@
     fork
       run_frame("window changed in the middle of this frame");
       begin
-        while (vid.sent < s0 + W * H / 2) @(posedge clk);
+        for (int t = 0; t < 200000 && vid.sent < s0 + W * H / 2; t++) @(posedge clk);
         bfm.write(8'h14, (44 << 16) | 2);
         bfm.write(8'h18, (34 << 16) | 2);
       end
@@ -252,7 +252,7 @@
     fork
       run_frame("STATUS, whole-frame window");
       begin
-        while (vid.sent < s0 + 10) @(posedge clk);
+        for (int t = 0; t < 200000 && vid.sent < s0 + 10; t++) @(posedge clk);
         bfm.read(8'h34, v);
         check(v[1:0] == 2'b11, $sformatf("STATUS %b during a whole-frame frame, expected 11", v[1:0]));
       end

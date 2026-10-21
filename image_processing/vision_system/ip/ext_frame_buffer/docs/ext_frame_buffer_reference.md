@@ -16,9 +16,10 @@
 //   2 clocks = 20 ns >= 15-20 ns, tRAS 5 = 50 ns >= 44 ns, tRFC 7 = 70 ns >= 66 ns, refresh
 //   every 780 clocks = 7.8 us, CL = 2 (valid up to 133 MHz for -7E parts). The timing
 //   parameters are clock-frequency dependent; the header should state the clock they assume.
-// TODO(REF-EXT_FRAME_BUFFER-1) [LOW] Clock assumption. Prompt: in
-//   image_processing/vision_system/ip/ext_frame_buffer/src/ext_frame_buffer.sv, add a CLK_MHZ
-//   parameter (default 100) and derive INIT_WAIT_CYCLES, T_*_CYCLES and REFRESH_INTERVAL_CYCLES
-//   from nanosecond values of the Micron MT48LC16M16A2 -7E datasheet (rounded up), with a
-//   generate-time $error when CL = 2 is used above 133 MHz; document the assumed device.
+// RESOLVED(REF-EXT_FRAME_BUFFER-1) [LOW] Clock assumption. Resolution: 2026-10-21: the
+//   ext_frame_buffer.sv header states that the default timing parameters assume a 100 MHz clock and
+//   a Micron MT48LC16M16A2 -7E class SDR SDRAM (INIT_WAIT 200 us, tRP / tRCD 20 ns, tRAS 50 ns, tRFC
+//   70 ns, refresh 7.8 us, CL 2 up to 133 MHz) and how to scale them for another clock; the read
+//   capture is behavioural (see the header) and the hardware frame store is the DDR controller of
+//   the architecture study.
 ```

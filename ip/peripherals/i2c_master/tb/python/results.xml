@@ -1,0 +1,8 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1792530128" />
+    <testcase name="test_core_clock_exact" classname="i2c_master_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/ip/peripherals/i2c_master/tb/python/i2c_master_tb.py" lineno="147" time="20.568366050720215" sim_time_ns="600036.0" ratio_time="29172.759689338054" />
+    <testcase name="test_register_map" classname="i2c_master_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/ip/peripherals/i2c_master/tb/python/i2c_master_tb.py" lineno="258" time="0.3098771572113037" sim_time_ns="44840.0" ratio_time="144702.50212545943" />
+    <testcase name="test_scl_timing" classname="i2c_master_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/ip/peripherals/i2c_master/tb/python/i2c_master_tb.py" lineno="307" time="4.2571120262146" sim_time_ns="803470.0000000001" ratio_time="188735.93061501865" />
+  </testsuite>
+</testsuites>

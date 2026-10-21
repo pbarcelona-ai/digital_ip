@@ -22,7 +22,7 @@
 //   The output (rgb_o, de_o, hs_o, vs_o) is registered, 1 clock after the
 //   timing inputs. Pixel {B, G, R}, component 0 in the LSBs. Clock - clk
 //   only. Reset - synchronous rst_n (active low).
-// Date: 2026-10-01
+// Date: 2026-10-21
 module axis_to_video #(
   parameter int PIX_W      = 24,
   parameter int FIFO_DEPTH = 1024              // power of two
@@ -135,4 +135,6 @@ module axis_to_video #(
       else               vid.data <= '0;                                // black while unsynchronised
     end
   end
+  // not used: the FIFO's tlast (lines are counted), the start condition kept for reading
+  wire unused_ok = &{1'b0, f_last, start_ok, 1'b0};
 endmodule

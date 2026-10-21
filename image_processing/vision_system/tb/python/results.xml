@@ -1,0 +1,8 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1792614566" />
+    <testcase name="test_frames_exact" classname="vision_system_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/image_processing/vision_system/tb/python/vision_system_tb.py" lineno="157" time="474.7480969429016" sim_time_ns="8991090.0" ratio_time="18938.654115513742" />
+    <testcase name="test_register_map" classname="vision_system_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/image_processing/vision_system/tb/python/vision_system_tb.py" lineno="223" time="1.0490989685058594" sim_time_ns="19890.0" ratio_time="18959.12644764831" />
+    <testcase name="test_soft_reset" classname="vision_system_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/image_processing/vision_system/tb/python/vision_system_tb.py" lineno="246" time="19.640037775039673" sim_time_ns="398736.0" ratio_time="20302.201277166056" />
+  </testsuite>
+</testsuites>

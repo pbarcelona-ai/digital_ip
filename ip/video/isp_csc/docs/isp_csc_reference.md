@@ -17,9 +17,6 @@
 //   and Cr match (47 157 16 / 112 -102 -10). Differs by one code: BT.709 Cb uses -86 for G
 //   where the nearest integer is -87 (-86.67); -86 keeps the row sum 0 so grey maps to exactly
 //   128, -87 is nearer the standard (both are within one LSB).
-// TODO(REF-ISP_CSC-1) [LOW] BT.709 Cb G coefficient. Prompt: in
-//   ip/video/isp_csc/src/isp_csc.sv, keep -86 and state in the header that it is chosen over
-//   the nearest integer -87 so the Cb row sums to 0 (grey -> 128), or change it to -87 and the
-//   Cb B coefficient to 113 (sum 0, nearest to 112.44 + the rounding), and update the testbench
-//   reference model to the same integers; cite ITU-R BT.709-6 in the header.
+// RESOLVED(REF-ISP_CSC-1) [LOW] BT. Resolution: 2026-10-21: -86 kept; the isp_csc.sv header states why (the Cb row sums to 0: grey -> 128) and cites
+//   ITU-R BT.709-6; the model uses the same integers.
 ```

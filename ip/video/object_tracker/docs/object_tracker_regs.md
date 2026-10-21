@@ -31,6 +31,7 @@ Object detector / measurement: bounding box, count and sums of the object pixels
 | 0x100 + 4 i (i < 8) | BLOB_X | RO | 0x00000000 | blob i columns at the end of the last frame (BLOB_N = 0: none) |
 | 0x120 + 4 i (i < 8) | BLOB_Y | RO | 0x00000000 | blob i lines |
 | 0x140 + 4 i (i < 8) | BLOB_N | RO | 0x00000000 | blob i pixels (0: no blob) |
+| 0x160 + 4 i (i < 32) | SKIN_LUT | RW | 0x00000000 | learned skin table (python-prototype/train_skin.py): word i = (Cr - 112) >> 1, bit j = (Cb - 96) >> 1 (Cb 96..159, Cr 112..175); 1 = skin |
 
 ### CTRL (0x18)
 
@@ -42,6 +43,7 @@ Object detector / measurement: bounding box, count and sums of the object pixels
 | 11:8 | MIN_RUN | shortest run counted when RUN.MIN_W = 0 (0 or 1: every pixel counts) |
 | 13:12 | FEAT_A | term A: 0 the luma / colour test, 1 it or the motion feature, 2 it and the motion feature, 3 the motion feature |
 | 14 | TERM_B | term B on: the edge feature, in runs of RUN_B (its own blob slots) |
+| 15 | SKIN_LUT | colour mode: the chroma test is the SKIN_LUT table instead of CB_RANGE / CR_RANGE / SAT_MIN (Y_RANGE still applies) |
 
 ### FRAME_SIZE (0x1C)
 

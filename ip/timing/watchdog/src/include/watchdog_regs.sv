@@ -45,7 +45,7 @@
 //   words read 0 and ignore writes; above the map: DECERR. Clock - aclk.
 //   Reset - synchronous active low aresetn. Latency - 2 clocks per write and
 //   read.
-// Date: 2026-10-16
+// Date: 2026-10-20
 module watchdog_regs (
   input  logic          aclk,             // clock
   input  logic          aresetn,          // synchronous reset, active low
@@ -106,6 +106,7 @@ module watchdog_regs (
 
   logic             wr_en, rd_en, wr_err_q;
   logic [7:0]       wr_addr, rd_addr, rd_addr_q;
+  wire unused_addr_lsbs = &{1'b0, wr_addr[1:0], rd_addr[1:0]};   // word access: the byte offset is not decoded
   logic [31:0]      wr_data, rd_data;
   logic [3:0]       wr_strb;
   regbus_if #(.ADDR_W(8)) bus ();               // register bus of the AXI4-Lite front end
@@ -208,10 +209,10 @@ module watchdog_regs (
       A_VERSION: rd_data = IP_VERSION;
       A_DATE:    rd_data = IP_DATE;
       A_CTRL: rd_data = 32'(ctrl_i);
-      A_TIMEOUT: rd_data = timeout_q;
-      A_PRESCALE: rd_data = prescale_q;
-      A_PRETIMEOUT: rd_data = pretimeout_q;
-      A_WINDOW_OPEN: rd_data = window_open_q;
+      A_TIMEOUT: rd_data = 32'(timeout_q[32-1:0]);
+      A_PRESCALE: rd_data = 32'(prescale_q[32-1:0]);
+      A_PRETIMEOUT: rd_data = 32'(pretimeout_q[32-1:0]);
+      A_WINDOW_OPEN: rd_data = 32'(window_open_q[32-1:0]);
       A_STATUS: rd_data = 32'(status_i);
       A_COUNT: rd_data = 32'(count_i);
       default: begin

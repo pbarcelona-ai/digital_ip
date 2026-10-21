@@ -16,7 +16,7 @@
 //   combinational path from the bus to the pins. Errors - out of range
 //   AXI-Lite accesses return SLVERR; illegal parameter values stop
 //   elaboration with an $error.
-// Date: 2026-10-16
+// Date: 2026-10-20
 module uart #(
   parameter int CLK_HZ     = 100_000_000,
   parameter int BAUD       = 115_200,    // default baud rate
@@ -30,9 +30,9 @@ module uart #(
   // AXI4-Stream master: received bytes
   // m_axis: axis_if.master (ip/shared/src/interfaces/axis_if.sv), DATA_W = 8
   axis_if.master m_axis,
-  // Serial pins
-  // uart: uart_if.dte (ip/shared/src/interfaces/uart_if.sv) {uart_txd_o=txd uart_rxd_i=rxd}
-  uart_if.dte uart,
+  // Serial pins (not named uart: sv2v would take uart.txd for this module's own txd)
+  // pins: uart_if.dte (ip/shared/src/interfaces/uart_if.sv) {uart_txd_o=txd uart_rxd_i=rxd}
+  uart_if.dte pins,
   // register ports
   // regs: uart_regs_if.core (src/include/uart_regs_if.sv)
   uart_regs_if.core regs
@@ -94,14 +94,14 @@ module uart #(
     .txd_o(txd),
     .busy_o(tx_busy)
   );
-  assign uart.txd = txd;
+  assign pins.txd = txd;
 
   // ---- Receive path: rx engine -> FIFO ----
   logic [7:0] rx_data;
   logic rx_valid, rx_ferr, rx_perr, rx_busy;
   logic rxf_ready, rxf_last, rxf_user;
   logic [LW-1:0] rxf_level;
-  wire  rxd_in = loopback ? txd : uart.rxd;
+  wire  rxd_in = loopback ? txd : pins.rxd;
   uart_rx u_rx (
     .clk(aclk),
     .rst_n(aresetn),
@@ -167,4 +167,9 @@ module uart #(
   assign regs.sts_status = {1'b0, 15'(rxf_level), 5'd0, overrun, parity_err,
                        frame_err, 5'd0, m_axis.tvalid, rx_busy, tx_busy};
   assign regs.sts_err_cnt = err_cnt;
+
+  // not used: write pulses of registers acting by value, CTRL bits above [7:0], STATUS bits that are not
+  // W1C flags, the TX FIFO's level, the RX FIFO's tuser (errors are flagged when the word arrives)
+  wire unused_ok = &{1'b0, regs.cfg_ctrl_wr, regs.cfg_fcw_wr, ctrl[31:8], status_wd[31:11], status_wd[7:0],
+                     txf_level, rxf_user};
 endmodule

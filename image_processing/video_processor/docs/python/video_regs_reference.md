@@ -25,4 +25,8 @@
 //   SV packages), delete the hand-written offsets, rename VS_CX / VS_CY to the map's CENTER_X /
 //   CENTER_Y and use H_FP / H_SYNC / ... instead of VP_HACT + 4 k; rebuild the firmware and
 //   rerun the video_processor simulation.
+//   DEFERRED (2026-10-19): generating the <ip>_regs_pkg.sv packages is SystemVerilog work, on hold
+//   while the design is baselined on the Python models (docs/pending_sv_changes.md); the offsets of
+//   the registers added in the Python baseline (sky profile, skin table, display filter) follow the
+//   JSON maps and were checked by hand. Resolve with the SV update.
 ```

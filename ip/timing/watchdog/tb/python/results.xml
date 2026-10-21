@@ -1,0 +1,7 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1792540750" />
+    <testcase name="test_core_clock_exact" classname="watchdog_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/ip/timing/watchdog/tb/python/watchdog_tb.py" lineno="57" time="10.284260034561157" sim_time_ns="658485.0" ratio_time="64028.42769310611" />
+    <testcase name="test_register_map" classname="watchdog_tb" file="/Users/paulbarcelona/Library/CloudStorage/OneDrive-Personal/GitHub/pbarcelona-ai.github.io/digital_ip/ip/timing/watchdog/tb/python/watchdog_tb.py" lineno="120" time="0.10517501831054688" sim_time_ns="29745.0" ratio_time="282814.30778716767" />
+  </testsuite>
+</testsuites>

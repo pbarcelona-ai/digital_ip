@@ -5,7 +5,9 @@ image_io.py
   exists).
 - A bit-exact Python model of the RTL fixed-point datapath (same Q16.16
   format, same qmul() truncation/saturation, same reciprocal divider,
-  same bilinear rounding) used to:
+  same bilinear rounding; vision_system 2.0.0's edge rule: every tap clamped into
+  the frame, sample_bilinear / sample_bicubic; sums exact, not saturated: equal to
+  the RTL while no Q16.16 sum leaves +/-32768) used to:
     1) synthesize warped.jpg/.ppm from the original test image, and
     2) act as the golden reference that the DUT's corrected.jpg/.ppm
        output is checked against.
@@ -154,42 +156,7 @@ def full_remap_ref(cfg: "RemapConfig", model_sel: int,
             sx, sy = coord_gen_ref(cfg.cx_pix, cfg.cy_pix, cfg.halfw_scaled, cfg.halfh_scaled,
                                     k1, k2, k3, p1, p2, model_sel, x, y,
                                     h11, h12, h13, h21, h22, h23, h31, h32)
-            if sx < 0:
-                x0 = 0
-                fx = 0
-            else:
-                x0s = sx >> FRAC_BITS
-                if x0s > (w - 2):
-                    x0 = w - 2
-                    fx = 255
-                else:
-                    x0 = x0s
-                    fx = bits(sx, 15, 8)
-            if sy < 0:
-                y0 = 0
-                fy = 0
-            else:
-                y0s = sy >> FRAC_BITS
-                if y0s > (h - 2):
-                    y0 = h - 2
-                    fy = 255
-                else:
-                    y0 = y0s
-                    fy = bits(sy, 15, 8)
-
-            tl = src_i[y0, x0]
-            tr = src_i[y0, x0 + 1]
-            bl = src_i[y0 + 1, x0]
-            br = src_i[y0 + 1, x0 + 1]
-
-            w00 = (256 - fx) * (256 - fy)
-            w10 = fx * (256 - fy)
-            w01 = (256 - fx) * fy
-            w11 = fx * fy
-
-            acc = tl * w00 + tr * w10 + bl * w01 + br * w11
-            acc = acc + 32768
-            out[y, x] = np.clip(acc >> 16, 0, 255)
+            out[y, x] = sample_bilinear(src_i, sx, sy, w, h)
 
     return out
 
@@ -395,13 +362,42 @@ class RemapConfig:
         self.recip_halfh = fixed_recip(self.halfh_scaled)
 
 
+def _clamp(v, n):
+    return 0 if v < 0 else n - 1 if v > n - 1 else v
+
+
+def sample_bilinear(src_i, sx, sy, w, h):
+    """bilinear.sv at source point (sx, sy) (signed Q16.16), as vision_system v2 feeds it: taps x0 / x0 + 1 and
+    y0 / y0 + 1 (x0 = floor(sx)) each clamped into the frame (edge replication), fractions sx[15:8] / sy[15:8]."""
+    x0, y0 = sx >> FRAC_BITS, sy >> FRAC_BITS
+    xa, xb, ya, yb = _clamp(x0, w), _clamp(x0 + 1, w), _clamp(y0, h), _clamp(y0 + 1, h)
+    fx, fy = bits(sx, 15, 8), bits(sy, 15, 8)
+    acc = (src_i[ya, xa] * ((256 - fx) * (256 - fy)) + src_i[ya, xb] * (fx * (256 - fy))
+           + src_i[yb, xa] * ((256 - fx) * fy) + src_i[yb, xb] * (fx * fy))
+    return np.clip((acc + 32768) >> 16, 0, 255)
+
+
+def sample_bicubic(src_i, sx, sy, w, h):
+    """bicubic.sv at source point (sx, sy), as vision_system v2 feeds it: taps x0 - 1 .. x0 + 2 and y0 - 1 .. y0 + 2
+    each clamped into the frame (edge replication), fractions sx[15:0] / sy[15:0]."""
+    x0, y0 = sx >> FRAC_BITS, sy >> FRAC_BITS
+    wx, wy = cubic_weights(sx & 0xFFFF), cubic_weights(sy & 0xFFFF)
+    final = np.zeros(3, dtype=np.int64)
+    for row in range(4):
+        yc = _clamp(y0 - 1 + row, h)
+        acc = np.zeros(3, dtype=np.int64)
+        for col in range(4):
+            acc = acc + src_i[yc, _clamp(x0 - 1 + col, w)] * wx[col]
+        final = final + np.array([qmul(int(v), wy[row]) for v in acc])
+    return np.clip((final + 32768) >> 16, 0, 255)
+
+
 def radial_remap_bicubic_fixed(src: np.ndarray, cfg: RemapConfig, k1_q16, k2_q16, k3_q16) -> np.ndarray:
     """Bicubic counterpart of radial_remap_fixed: same coord_gen math,
     but a 4x4-tap separable Catmull-Rom footprint instead of 2x2
     bilinear -- bit-exact reproduction of the RTL's bicubic gather FSM +
-    bicubic.sv. Anchor x0=floor(sx) clamped into [1,w-3] (y0 into
-    [1,h-3]) exactly as the RTL does, with t forced to 0 at either clamp
-    boundary. Requires w>=4, h>=4 (same minimum the RTL documents)."""
+    bicubic.sv, with the v2 edge rule (sample_bicubic: every tap clamped
+    into the frame)."""
     w, h = cfg.w, cfg.h
     out = np.zeros((h, w, 3), dtype=np.uint8)
     src_i = src.astype(np.int64)
@@ -426,46 +422,7 @@ def radial_remap_bicubic_fixed(src: np.ndarray, cfg: RemapConfig, k1_q16, k2_q16
             sx = cfg.cx_pix + qmul(sxn, cfg.halfw_scaled)
             sy = cfg.cy_pix + qmul(syn, cfg.halfh_scaled)
 
-            if sx < 0:
-                x0, tx = 1, 0
-            else:
-                x0s = sx >> FRAC_BITS
-                if x0s < 1:
-                    x0, tx = 1, 0
-                elif x0s > (w - 3):
-                    x0, tx = w - 3, 0
-                else:
-                    x0, tx = x0s, sx & 0xFFFF
-            if sy < 0:
-                y0, ty = 1, 0
-            else:
-                y0s = sy >> FRAC_BITS
-                if y0s < 1:
-                    y0, ty = 1, 0
-                elif y0s > (h - 3):
-                    y0, ty = h - 3, 0
-                else:
-                    y0, ty = y0s, sy & 0xFFFF
-
-            wx = cubic_weights(tx)
-            wy = cubic_weights(ty)
-
-            row_vals = []
-            for row in range(4):
-                yc = y0 - 1 + row
-                acc = np.zeros(3, dtype=np.int64)
-                for col in range(4):
-                    xc = x0 - 1 + col
-                    acc = acc + src_i[yc, xc] * wx[col]
-                row_vals.append(acc)
-
-            final = np.zeros(3, dtype=np.int64)
-            for row in range(4):
-                final = final + np.array([qmul(int(v), wy[row]) for v in row_vals[row]])
-
-            acc = final + 32768
-            pix = np.clip(acc >> 16, 0, 255)
-            out[y, x] = pix
+            out[y, x] = sample_bicubic(src_i, sx, sy, w, h)
 
     return out
 
@@ -501,43 +458,7 @@ def radial_remap_fixed(src: np.ndarray, cfg: RemapConfig, k1_q16, k2_q16, k3_q16
             sx = cfg.cx_pix + qmul(sxn, cfg.halfw_scaled)
             sy = cfg.cy_pix + qmul(syn, cfg.halfh_scaled)
 
-            if sx < 0:
-                x0 = 0
-                fx = 0
-            else:
-                x0s = sx >> FRAC_BITS
-                if x0s > (w - 2):
-                    x0 = w - 2
-                    fx = 255
-                else:
-                    x0 = x0s
-                    fx = bits(sx, 15, 8)
-            if sy < 0:
-                y0 = 0
-                fy = 0
-            else:
-                y0s = sy >> FRAC_BITS
-                if y0s > (h - 2):
-                    y0 = h - 2
-                    fy = 255
-                else:
-                    y0 = y0s
-                    fy = bits(sy, 15, 8)
-
-            tl = src_i[y0, x0]
-            tr = src_i[y0, x0 + 1]
-            bl = src_i[y0 + 1, x0]
-            br = src_i[y0 + 1, x0 + 1]
-
-            w00 = (256 - fx) * (256 - fy)
-            w10 = fx * (256 - fy)
-            w01 = (256 - fx) * fy
-            w11 = fx * fy
-
-            acc = tl * w00 + tr * w10 + bl * w01 + br * w11
-            acc = acc + 32768
-            pix = np.clip(acc >> 16, 0, 255)
-            out[y, x] = pix
+            out[y, x] = sample_bilinear(src_i, sx, sy, w, h)
 
     return out
 
@@ -586,42 +507,6 @@ def radial_remap_generalized_fixed(src: np.ndarray, cfg: RemapConfig, model_sel_
             sx = cfg.cx_pix + qmul(sxn, cfg.halfw_scaled)
             sy = cfg.cy_pix + qmul(syn, cfg.halfh_scaled)
 
-            if sx < 0:
-                x0 = 0
-                fx = 0
-            else:
-                x0s = sx >> FRAC_BITS
-                if x0s > (w - 2):
-                    x0 = w - 2
-                    fx = 255
-                else:
-                    x0 = x0s
-                    fx = bits(sx, 15, 8)
-            if sy < 0:
-                y0 = 0
-                fy = 0
-            else:
-                y0s = sy >> FRAC_BITS
-                if y0s > (h - 2):
-                    y0 = h - 2
-                    fy = 255
-                else:
-                    y0 = y0s
-                    fy = bits(sy, 15, 8)
-
-            tl = src_i[y0, x0]
-            tr = src_i[y0, x0 + 1]
-            bl = src_i[y0 + 1, x0]
-            br = src_i[y0 + 1, x0 + 1]
-
-            w00 = (256 - fx) * (256 - fy)
-            w10 = fx * (256 - fy)
-            w01 = (256 - fx) * fy
-            w11 = fx * fy
-
-            acc = tl * w00 + tr * w10 + bl * w01 + br * w11
-            acc = acc + 32768
-            pix = np.clip(acc >> 16, 0, 255)
-            out[y, x] = pix
+            out[y, x] = sample_bilinear(src_i, sx, sy, w, h)
 
     return out

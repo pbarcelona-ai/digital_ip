@@ -9,6 +9,8 @@
 # Targets:
 #   make help          this text
 #   make sim           video_processor system test (Icarus): boot, camera -> ISP -> vision_system -> blur_sharpen -> tracker / overlay -> HDMI / LVDS, image test, tracking GIF
+#   make pysim         the system test on the Python models (each IP's model/, from scripts/build.f; testbench pysim/): firmware on the py_core model, py_soc, video blocks, testbench;
+#                      every real-life input in tb/images (or GIF=...) -> python-prototype/<name>_pysim.gif / .mp4 / _transcript.txt / _log.txt
 #   make wave          the system test with a VCD dump, opened in the Surfer waveform viewer (pass or fail)
 #   make list-tests    name and description of every test the system test runs
 #   make lint          Verilator lint of the RTL (warnings only)
@@ -65,6 +67,11 @@
 #   make sim QUICK=1 IDEAL_PLL=1 DETECT=pedestrian,face BOX=pedestrian:solid-box,face:dashed-circle    a style per class
 #   make sim IDEAL_PLL=1 DIRECT_LOG=1 DETECT=all TARGETS=6 GIF=tb/images/street_scene.gif,tb/images/go-fast.gif    two GIFs, 6 targets, fast transcript
 #   make sim QUICK=1 IDEAL_PLL=1 DIRECT_LOG=1 DETECT=all GIF=tb/images/clip.mp4 VIDEO_START=2 GIF_FRAMES=20    2 s of a video from 2 s, 10 fps
+# pysim options: GIF, GIF_FRAMES, GIF_FIRST, GIF_BW, VIDEO_FPS, VIDEO_START, DETECT (+ aircraft; default all), BOX (+ corner-box,
+#   tick-box, triangle; default people corner-box, ground transport tick-box, aircraft triangle), TARGETS (1-15), DIRECT_LOG,
+#   QUICK=0 (whole start-up report), JOBS=<n> inputs in parallel (default 4), PYSIM_OUT=<dir> (default python-prototype)
+#   make pysim                                       every real-life video and GIF in tb/images (not the generated ones), 4 at a time
+#   make pysim GIF=tb/images/airbus-plane.gif GIF_FRAMES=10    one input, its first 10 frames
 # Without make: scripts/run_sim.sh [--quick] [--ideal-pll] [--vcd] [--wave] [--vcd-start=<us>] [--vcd-stop=<us>]
 #   [--gif=<file>[,<file>...]] [--gif-bw] [--gif-frames=<n>] [--detect=<classes>] [--box=<style>|<class>:<style>,...]
 #   [--targets=<n>] [--direct-log] [--video-fps=<f>] [--video-start=<s>] [--select=<what>] [--lint] [--list-tests]
@@ -78,8 +85,14 @@ GOPT   := $(if $(GIF_FRAMES),--gif-frames=$(GIF_FRAMES),) $(if $(GIF_FIRST),--gi
           $(if $(DETECT),--detect=$(DETECT),) $(if $(SELECT),--select=$(SELECT),) $(if $(BOX),--box=$(BOX),) $(if $(TARGETS),--targets=$(TARGETS),) \
           $(if $(filter 1,$(DIRECT_LOG)),--direct-log,) $(if $(VIDEO_FPS),--video-fps=$(VIDEO_FPS),) $(if $(VIDEO_START),--video-start=$(VIDEO_START),)
 SIMOPT := $(if $(filter 1,$(VCD)),--vcd $(WINOPT),) $(QOPT) $(GOPT)
+comma  := ,
+PYOPT  := $(if $(GIF_FRAMES),--frames $(GIF_FRAMES),) $(if $(GIF_FIRST),--gif-first $(GIF_FIRST),) $(if $(filter 1,$(GIF_BW)),--gif-bw,) \
+          $(if $(DETECT),--detect $(DETECT),) $(if $(BOX),--box $(BOX),) $(if $(TARGETS),--targets $(TARGETS),) \
+          $(if $(filter 1,$(DIRECT_LOG)),--direct-log,) $(if $(VIDEO_FPS),--video-fps $(VIDEO_FPS),) \
+          $(if $(VIDEO_START),--video-start $(VIDEO_START),) $(if $(filter 0,$(QUICK)),--full,) \
+          --jobs $(or $(JOBS),4) $(if $(PYSIM_OUT),--out $(PYSIM_OUT),) $(subst $(comma), ,$(GIF))
 
-.PHONY: all help sim wave lint ip-test synth diagram ci cov clean list-tests
+.PHONY: all help sim pysim wave lint ip-test synth diagram ci cov clean list-tests
 all: help
 help:
 	@sed -n '/^# Targets:/,/^# end of help/p' Makefile | sed -e '$$d' -e 's/^# \{0,1\}//'
@@ -89,6 +102,9 @@ list-tests:
 
 sim:
 	@$(CHECK) sim 'TEST PASSED' 'TEST FAILED|ERROR' -- scripts/run_sim.sh $(SIMOPT)
+
+pysim:
+	@python3 pysim/run_pysim.py $(PYOPT)
 
 wave:
 	@scripts/run_sim.sh --wave $(WINOPT) $(QOPT) $(GOPT)
