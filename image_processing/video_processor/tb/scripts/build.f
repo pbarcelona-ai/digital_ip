@@ -2,9 +2,10 @@
 # Filename: build.f
 # Author: FPGA Cores 4 U
 # Description: Testbench source list of video_processor (compiled after
-#   scripts/build.f), relative to the design directory. Board models come
-#   are the shared bus functional models (ip/shared/tb/lib).
-# Date: 2026-10-08
+#   scripts/build.f), relative to the design directory. Board models are
+#   the shared bus functional models (ip/shared/tb/lib); gif_io reads and
+#   writes the GIFs, ddr_mem is the DDR memory on the DFI-style pins.
+# Date: 2026-10-26
 # ***************
 ../../ip/shared/tb/lib/lvds_bfm.sv
 ../../ip/shared/tb/lib/tmds_bfm.sv
@@ -16,6 +17,5 @@
 ../../ip/shared/tb/lib/hdmi_bfm.sv
 ../../ip/video/video_tb_lib/conv2d_ref.sv
 ../../ip/video/video_tb_lib/gif_io.sv
-../../ip/video/video_tb_lib/track_ref.sv
-../../ip/video/video_tb_lib/feature_ref.sv
+../../ip/memory/ddr_mem/src/ddr_mem.sv
 tb/video_processor_tb.sv

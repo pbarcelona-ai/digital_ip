@@ -41,25 +41,25 @@ module tmds_serializer (
   // Serial domain
   (* async_reg = "true" *) logic t1, t2;
   logic t3;
-  logic [3:0] dly;
+  logic dly;                                       // an edge seen in the clock before
   logic [9:0] sh [4];
   always_ff @(posedge ser_clk) begin
     if (!ser_rst_n) begin
       t1 <= 1'b0;
       t2 <= 1'b0;
       t3 <= 1'b0;
-      dly <= '0;
+      dly <= 1'b0;
       for (int c = 0; c < 4; c++) sh[c] <= '0;
       serial_o <= '0;
     end else begin
       t1 <= tog;
       t2 <= t1;
       t3 <= t2;
-      dly <= {dly[2:0], t2 ^ t3};                      // edge seen; wait for the data to settle
+      dly <= t2 ^ t3;                                  // edge seen; wait for the data to settle
       for (int c = 0; c < 4; c++) begin
-        if (dly[0]) sh[c] <= sym_q[10*c +: 10];        // new symbol: bit 0 goes out next
+        if (dly) sh[c] <= sym_q[10*c +: 10];        // new symbol: bit 0 goes out next
         else        sh[c] <= {1'b0, sh[c][9:1]};
-        serial_o[c] <= dly[0] ? sym_q[10*c] : sh[c][1];
+        serial_o[c] <= dly ? sym_q[10*c] : sh[c][1];
       end
     end
   end

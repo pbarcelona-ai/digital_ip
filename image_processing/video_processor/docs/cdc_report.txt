@@ -1,0 +1,119 @@
+CDC check of video_processor (build/cdc/video_processor.json): 5001 sequential cells
+Clock roots (sequential cells):
+  pix_clk: 4001
+  cpu_clk: 1059
+  tx_byte_clk: 111
+  byte_clk: 46
+  lvds_ser_clk: 13
+  ref_clk: 7
+  tmds_ser_clk: 7
+VIOLATIONS (unsynchronised crossings): 0
+Waivers: 1
+  u_pipe\.u_regs\.csi_q .*-> u_pipe\.csi_cfg_s1\.D  - CSI-2 RX VC / data type (video_pipeline.sv): quasi-static, written only while the camera is stopped (documented there), then two flip-flops on byte_clk
+Warnings (logic before a synchroniser): 0
+Held data of CDC blocks (handshake / FIFO memory): 71
+  u_axil_cdc.req_addr [cpu_clk] -> g_trk[0].u_track.u_regs.u_axil.ar_q.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> g_trk[0].u_track.u_regs.u_axil.aw_q.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> g_trk[1].u_track.u_regs.u_axil.ar_q.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> g_trk[1].u_track.u_regs.u_axil.aw_q.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> g_trk[2].u_track.u_regs.u_axil.ar_q.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> g_trk[2].u_track.u_regs.u_axil.aw_q.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> g_trk[3].u_track.u_regs.u_axil.ar_q.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> g_trk[3].u_track.u_regs.u_axil.aw_q.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> g_trk[4].u_track.u_regs.u_axil.ar_q.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> g_trk[4].u_track.u_regs.u_axil.aw_q.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> u_feat.u_regs.u_axil.ar_q.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> u_feat.u_regs.u_axil.aw_q.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> u_filter.u_regs.u_axil.ar_q.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> u_filter.u_regs.u_axil.aw_q.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> u_filter_d.u_regs.u_axil.ar_q.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> u_filter_d.u_regs.u_axil.aw_q.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> u_frame_cnt.u_regs.u_axil.ar_q.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> u_frame_cnt.u_regs.u_axil.aw_q.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> u_npu.u_regs.u_axil.ar_q.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> u_npu.u_regs.u_axil.aw_q.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> u_overlay.u_regs.u_axil.ar_q.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> u_overlay.u_regs.u_axil.aw_q.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> u_pipe.u_split.araddr_q.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> u_pipe.u_split.awaddr_q.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> u_pipe.u_split.rsel.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> u_pipe.u_split.wsel.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> u_vbus.rsel.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> u_vbus.rst.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> u_vbus.wsel.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> u_vbus.wst.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> u_vision.u_regs.u_map.rd_addr.D [pix_clk]
+  u_axil_cdc.req_addr [cpu_clk] -> u_vision.u_regs.u_map.wr_addr.D [pix_clk]
+  u_axil_cdc.req_wdata [cpu_clk] -> g_trk[0].u_track.u_regs.u_axil.w_q.D [pix_clk]
+  u_axil_cdc.req_wdata [cpu_clk] -> g_trk[1].u_track.u_regs.u_axil.w_q.D [pix_clk]
+  u_axil_cdc.req_wdata [cpu_clk] -> g_trk[2].u_track.u_regs.u_axil.w_q.D [pix_clk]
+  u_axil_cdc.req_wdata [cpu_clk] -> g_trk[3].u_track.u_regs.u_axil.w_q.D [pix_clk]
+  u_axil_cdc.req_wdata [cpu_clk] -> g_trk[4].u_track.u_regs.u_axil.w_q.D [pix_clk]
+  u_axil_cdc.req_wdata [cpu_clk] -> u_feat.u_regs.u_axil.w_q.D [pix_clk]
+  u_axil_cdc.req_wdata [cpu_clk] -> u_filter.u_regs.u_axil.w_q.D [pix_clk]
+  u_axil_cdc.req_wdata [cpu_clk] -> u_filter_d.u_regs.u_axil.w_q.D [pix_clk]
+  ... 31 more
+Related clocks (same oscillator): 6
+  u_lvds_ser_a.w_q [pix_clk] -> $106821.WR_DATA [lvds_ser_clk]
+  u_lvds_ser_a.w_q [pix_clk] -> u_lvds_ser_a.serial_o.D [lvds_ser_clk]
+  u_lvds_ser_b.w_q [pix_clk] -> $106913.WR_DATA [lvds_ser_clk]
+  u_lvds_ser_b.w_q [pix_clk] -> u_lvds_ser_b.serial_o.D [lvds_ser_clk]
+  u_tmds_ser.sym_q [pix_clk] -> $106742.WR_DATA [tmds_ser_clk]
+  u_tmds_ser.sym_q [pix_clk] -> u_tmds_ser.serial_o.D [tmds_ser_clk]
+Synchronised crossings: 64
+  $14827 [byte_clk] -> u_pipe.u_cdc.u_fifo.mem_q.D [pix_clk]
+  $24052 [pix_clk] -> u_pipe.u_dsi.u_ev.mem_q.D [tx_byte_clk]
+  $24134 [pix_clk] -> u_pipe.u_dsi.u_cmd.mem_q.D [tx_byte_clk]
+  $24215 [pix_clk] -> u_pipe.u_dsi.u_pay.mem_q.D [tx_byte_clk]
+  $25276 [pix_clk] -> u_pipe.u_csitx.u_ev.mem_q.D [tx_byte_clk]
+  irq_frame_hi_pix [pix_clk] -> u_irq_frame_hi.sr.D [cpu_clk]
+  u_axil_cdc.ack_tog [pix_clk] -> u_axil_cdc.u_ack_sync.sr.D [cpu_clk]
+  u_axil_cdc.req_is_wr [cpu_clk] -> u_axil_cdc.ds.D [pix_clk]
+  u_axil_cdc.req_tog [cpu_clk] -> u_axil_cdc.u_req_sync.sr.D [pix_clk]
+  u_cpu.core_rst_n_o [cpu_clk] -> u_rst_byte.sr.ALOAD [byte_clk]
+  u_cpu.core_rst_n_o [cpu_clk] -> u_rst_lvds.sr.ALOAD [lvds_ser_clk]
+  u_cpu.core_rst_n_o [cpu_clk] -> u_rst_pix.sr.ALOAD [pix_clk]
+  u_cpu.core_rst_n_o [cpu_clk] -> u_rst_tmds.sr.ALOAD [tmds_ser_clk]
+  u_cpu.core_rst_n_o [cpu_clk] -> u_rst_tx_byte.sr.ALOAD [tx_byte_clk]
+  u_cpu.g_clkgen.u_clkgen.u_pll_cpu.u_ctrl.locked_o [ref_clk] -> u_cpu.g_clkgen.u_clkgen.u_lock_cpu.sr.ALOAD [cpu_clk]
+  u_ddr_cdc.ack_tog [pix_clk] -> u_ddr_cdc.u_ack_sync.sr.D [cpu_clk]
+  u_ddr_cdc.req_is_wr [cpu_clk] -> u_ddr_cdc.ds.D [pix_clk]
+  u_ddr_cdc.req_tog [cpu_clk] -> u_ddr_cdc.u_req_sync.sr.D [pix_clk]
+  u_frame_cnt.u_regs.status_q [pix_clk] -> u_irq_frame0.sr.D [cpu_clk]
+  u_frame_cnt.u_regs.status_q [pix_clk] -> u_irq_frame1.sr.D [cpu_clk]
+  u_irq_stats.ack_tog [cpu_clk] -> u_irq_stats.u_ack.sr.D [pix_clk]
+  u_irq_stats.req_tog [pix_clk] -> u_irq_stats.u_req.sr.D [cpu_clk]
+  u_lvds_ser_a.tog [pix_clk] -> u_lvds_ser_a.t1.D [lvds_ser_clk]
+  u_lvds_ser_b.tog [pix_clk] -> u_lvds_ser_b.t1.D [lvds_ser_clk]
+  u_pipe.u_cdc.u_fifo.rgray [pix_clk] -> u_pipe.u_cdc.u_fifo.rgray_s1.D [byte_clk]
+  u_pipe.u_cdc.u_fifo.wgray [byte_clk] -> u_pipe.u_cdc.u_fifo.wgray_s1.D [pix_clk]
+  u_pipe.u_csitx.u_ev.rgray [tx_byte_clk] -> u_pipe.u_csitx.u_ev.rgray_s1.D [pix_clk]
+  u_pipe.u_csitx.u_ev.wgray [pix_clk] -> u_pipe.u_csitx.u_ev.wgray_s1.D [tx_byte_clk]
+  u_pipe.u_csitx.u_lb.u_free0.ack_tog [pix_clk] -> u_pipe.u_csitx.u_lb.u_free0.u_ack.sr.D [tx_byte_clk]
+  u_pipe.u_csitx.u_lb.u_free0.req_tog [tx_byte_clk] -> u_pipe.u_csitx.u_lb.u_free0.u_req.sr.D [pix_clk]
+  u_pipe.u_csitx.u_lb.u_free1.ack_tog [pix_clk] -> u_pipe.u_csitx.u_lb.u_free1.u_ack.sr.D [tx_byte_clk]
+  u_pipe.u_csitx.u_lb.u_free1.req_tog [tx_byte_clk] -> u_pipe.u_csitx.u_lb.u_free1.u_req.sr.D [pix_clk]
+  u_pipe.u_ctx_uf.ack_tog [pix_clk] -> u_pipe.u_ctx_uf.u_ack.sr.D [tx_byte_clk]
+  u_pipe.u_ctx_uf.req_tog [tx_byte_clk] -> u_pipe.u_ctx_uf.u_req.sr.D [pix_clk]
+  u_pipe.u_dsi.u_cmd.o_vld [tx_byte_clk] -> u_pipe.u_dsi_busy.sr.D [pix_clk]
+  u_pipe.u_dsi.u_cmd.rgray [tx_byte_clk] -> u_pipe.u_dsi.u_cmd.rgray_s1.D [pix_clk]
+  u_pipe.u_dsi.u_cmd.wgray [pix_clk] -> u_pipe.u_dsi.u_cmd.wgray_s1.D [tx_byte_clk]
+  u_pipe.u_dsi.u_ev.rgray [tx_byte_clk] -> u_pipe.u_dsi.u_ev.rgray_s1.D [pix_clk]
+  u_pipe.u_dsi.u_ev.wgray [pix_clk] -> u_pipe.u_dsi.u_ev.wgray_s1.D [tx_byte_clk]
+  u_pipe.u_dsi.u_lb.u_free0.ack_tog [pix_clk] -> u_pipe.u_dsi.u_lb.u_free0.u_ack.sr.D [tx_byte_clk]
+  ... 24 more
+External inputs (board): 13
+  arst_n: 2 destinations
+  cam_lane_data_i: 1 destinations
+  cam_lane_valid_i: 6 destinations
+  csitx_tx_ready_i: 14 destinations
+  dfi_rddata_i: 3 destinations
+  dsi_tx_ready_i: 21 destinations
+  ext_irq_i: 1 destinations
+  flash_miso_i: 1 destinations
+  gpio_i: 3 destinations
+  i2c_scl_i: 2 destinations
+  i2c_sda_i: 2 destinations
+  spi_miso_i: 2 destinations
+  uart_rxd_i: 2 destinations
+CDC CHECK PASS

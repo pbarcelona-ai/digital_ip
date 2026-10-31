@@ -1,0 +1,6 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1793027814" />
+    <testcase name="test_ddr_frame_store_exact" classname="ddr_frame_store_tb" file="/Users/paulbarcelona/Downloads/GitHub/pbarcelona-ai.github.io/digital_ip/image_processing/vision_system/ip/ddr_frame_store/tb/python/ddr_frame_store_tb.py" lineno="77" time="11.211596012115479" sim_time_ns="400006.0" ratio_time="35677.882039965174" />
+  </testsuite>
+</testsuites>

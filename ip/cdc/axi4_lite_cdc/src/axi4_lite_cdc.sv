@@ -34,7 +34,9 @@ module axi4_lite_cdc #(
   // m_axil: axil_if.master (ip/shared/src/interfaces/axil_if.sv), ADDR_W = ADDR_W
   axil_if.master m_axil
 );
+  /* verilator lint_off UNUSEDPARAM */             // the version stamp (ip/scripts/stamp_version.py)
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
+  /* verilator lint_on UNUSEDPARAM */
   if (ADDR_W < 2 || ADDR_W > 32) begin : g_chk_aw $error("%m: ADDR_W must be 2..32"); end
 
   // ---------------- source domain ----------------

@@ -20,10 +20,15 @@ module cdc_sync_bit #(
   input  logic d_i,        // asynchronous input
   output logic q_o
 );
+  /* verilator lint_off UNUSEDPARAM */             // the version stamp (ip/scripts/stamp_version.py)
   localparam logic [31:0] IP_VERSION = 32'h0001_0000;
+  /* verilator lint_on UNUSEDPARAM */
   if (STAGES < 2) begin : g_chk_stg $error("%m: STAGES must be >= 2"); end
 
+  // no reset: the FPGA's power-up value 0 (a synchroniser stage; also keeps simulation free of X)
+  /* verilator lint_off PROCASSINIT */
   (* async_reg = "true", shreg_extract = "no" *) logic [STAGES-1:0] sr = '0;
+  /* verilator lint_on PROCASSINIT */
   always_ff @(posedge clk) sr <= {sr[STAGES-2:0], d_i};
   assign q_o = sr[STAGES-1];
 endmodule

@@ -7,13 +7,17 @@
 #   and run the video_processor system testbench with Icarus Verilog.
 #   Sources: scripts/build.f then tb/scripts/build.f. Output goes to
 #   build/sim. Fails unless the log contains TEST PASSED.
-# Date: 2026-10-14
+# Date: 2026-10-26
 # ***************
 # Usage: scripts/run_sim.sh [--vcd] [--wave] [--vcd-start=<us>] [--vcd-stop=<us>] [--lint] [--quick] [--ideal-pll]
 #                           [--list-tests] [--gif=<file>] [--gif-bw] [--gif-frames=<n>]
 #                           [--detect=<classes>] [--box=<style> | --box=<class>:<style>,...]
 #                           [--targets=<n>] [--direct-log] [--video-fps=<f>] [--video-start=<s>]
-#                           [--select=<1|2|3|pedestrians|faces|vehicles>]
+#                           [--select=<1|2|3|pedestrians|faces|vehicles>] [--full-size]
+#                           [--pysim-transcript=<file>] [--pysim-rgb=<file>] [--npu-hex=<file>]
+#                           [--pysim-dets=<file>]
+#   --lint  Verilator -Wall lint of the design (scripts/build.f), then exit
+#            (no simulation)
 #   --list-tests  print the name and description of each test the system
 #            testbench runs (ip/scripts/list_tests.py), then exit; every run
 #            also prints the test names at its start. The tests, in order:
@@ -38,6 +42,24 @@
 #   --gif-bw  convert a colour input GIF to black and white (BT.601 luma; the
 #            converted GIF is saved as gif-input/<name>_bw.gif); without
 #            it a colour GIF goes through the pipeline in colour
+#   --full-size  tracking frames at their native size up to 1920 x 1080
+#            (VP_TB_FULL: the DUT, the HDMI sink and the GIF store sized for
+#            it, and a video converted fitted to 1920 x 1080 instead of
+#            320 x 240; at most 2 frames - use with --gif-frames=1: a long run)
+#   --pysim-transcript=<file>  the system model's transcript for the same
+#            input and options (make pysim ... DIRECT_LOG=1 for --direct-log):
+#            the simulation's report must equal it line for line, up to the
+#            simulation's last tracker frame (time stamps aside)
+#   --pysim-rgb=<file>  the system model's output frames for the same input
+#            (make pysim GIF=<file> FIT=320x240 RAW=1:
+#            python-prototype/<name>_pysim_frames.rgb): the overlay output
+#            compared with them pixel for pixel
+#   --npu-hex=<file>  the NPU program and its header preloaded in the DDR
+#            (pysim --raw with an NPU program: <name>_npu_ddr.hex; the system
+#            test's network: ip/ai/npu/scripts/make_tiny_model.py); without
+#            it the DDR holds no program (the feature detectors)
+#   --pysim-dets=<file>  every NPU run's detection list compared with
+#            pysim's (<name>_pysim_dets.txt, same run)
 #   --gif-frames=<n>  send only the first n frames of the tracking GIF
 #            (shorter run; default all of them)
 #   --gif-first=<n>  start at frame n of the GIF (0 = the first; with
@@ -106,11 +128,12 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 filelist() { grep -Ev '^\s*(#|$)' "$ROOT/$1" | sed "s#^#$ROOT/#"; }
 VCD=0; WAVE=0; LINT=0; QUICK=0; VCDWIN=""; DEFS=""; GIFARGS=""; GIF_SUFFIX=""
-VFPS=10; VSTART=0; VFIRST=0; VFRAMES=0; VIDEOS=""
+VFPS=10; VSTART=0; VFIRST=0; VFRAMES=0; VIDEOS=""; PYTR=""; VFIT="320x240"
 for a in "$@"; do
   case "$a" in
     --vcd) VCD=1;; --wave) VCD=1; WAVE=1;; --lint) LINT=1;; --quick) QUICK=1;;
     --ideal-pll) DEFS="$DEFS -DDPLL_IDEAL";;
+    --full-size) DEFS="$DEFS -DVP_TB_FULL"; VFIT="1920x1080";;
     --list-tests) python3 "$ROOT/../../ip/scripts/list_tests.py" "$ROOT"; exit 0;;
     --gif-frames=*) GIFARGS="$GIFARGS +GIF_FRAMES=${a#--gif-frames=}"; VFRAMES="${a#--gif-frames=}";;
     --gif-first=*) GIFARGS="$GIFARGS +GIF_FIRST=${a#--gif-first=}"; GIF_SUFFIX="_from${a#--gif-first=}"; VFIRST="${a#--gif-first=}";;
@@ -123,6 +146,10 @@ for a in "$@"; do
     --box=*) GIFARGS="$GIFARGS +BOX=${a#--box=}";;
     --targets=*) GIFARGS="$GIFARGS +TARGETS=${a#--targets=}";;
     --direct-log) GIFARGS="$GIFARGS +direct";;
+    --pysim-transcript=*) PYTR="$(cd "$(dirname "${a#--pysim-transcript=}")" && pwd)/$(basename "${a#--pysim-transcript=}")";;
+    --pysim-rgb=*) GIFARGS="$GIFARGS +PYSIM_RGB=$(cd "$(dirname "${a#--pysim-rgb=}")" && pwd)/$(basename "${a#--pysim-rgb=}")";;
+    --npu-hex=*) GIFARGS="$GIFARGS +NPU_HEX=$(cd "$(dirname "${a#--npu-hex=}")" && pwd)/$(basename "${a#--npu-hex=}")";;
+    --pysim-dets=*) GIFARGS="$GIFARGS +PYSIM_DETS=$(cd "$(dirname "${a#--pysim-dets=}")" && pwd)/$(basename "${a#--pysim-dets=}")";;
     --vcd-start=*) VCDWIN="$VCDWIN +vcd_start_us=${a#--vcd-start=}";;
     --vcd-stop=*)  VCDWIN="$VCDWIN +vcd_stop_us=${a#--vcd-stop=}";;
     *) echo "unknown option $a"; exit 2;;
@@ -140,7 +167,7 @@ if [ -n "${GIF_IN:-}" ]; then                    # the simulation runs elsewhere
       mp4|m4v|mov|mkv|webm|avi)                 # a video: the frames asked for, as a GIF (this run's own)
         [ -n "$VTMP" ] || VTMP="$(mktemp -d "${TMPDIR:-/tmp}/video_processor_video.XXXXXX")"
         NF=0; [ "$VFRAMES" = 0 ] || NF=$((VFIRST + VFRAMES))
-        python3 "$ROOT/tb/scripts/mp4_io.py" to-gif "$g" "$VTMP/${n%.*}.gif" --fps "$VFPS" --start "$VSTART" --frames "$NF" || exit 2
+        python3 "$ROOT/tb/scripts/mp4_io.py" to-gif "$g" "$VTMP/${n%.*}.gif" --fps "$VFPS" --start "$VSTART" --frames "$NF" --fit "$VFIT" || exit 2
         ABS="$ABS${ABS:+,}$VTMP/${n%.*}.gif"; VIDEOS="$VIDEOS ${n%.*}";;
       *) ABS="$ABS${ABS:+,}$(cd "$(dirname "$g")" && pwd)/$n";;
     esac
@@ -154,10 +181,11 @@ SRCS="$(filelist scripts/build.f | tr '\n' ' ')"
 echo "[video_processor] tests: $(python3 "$ROOT/../../ip/scripts/list_tests.py" "$ROOT" --names | tr '\n' ' ')"
 TB_SRCS="$(filelist tb/scripts/build.f | tr '\n' ' ')"
 if [ "$LINT" = 1 ]; then
-  verilator --lint-only -Wall -Wno-fatal --top-module video_processor $SRCS
+  verilator --lint-only -Wall -Wno-fatal --timescale 1ns/1ps --top-module video_processor $SRCS
+  exit $?                                      # lint only: no simulation
 fi
 FW="$ROOT/build/fw"; mkdir -p "$FW"
-python3 "$ROOT/../../ip/cpu/py_core/tools/pyc.py" -I "$ROOT/src" -I "$ROOT/../../ip/cpu/py_soc/src" -I "$ROOT/../../ip/video/video_pipeline/src" --code-aw 14 --str-slots 1024 --split-consts "$ROOT/sw/video_proc.py" -o "$FW/video_proc"
+python3 "$ROOT/../../ip/cpu/py_core/tools/pyc.py" -I "$ROOT/src" -I "$ROOT/../../ip/cpu/py_soc/src" -I "$ROOT/../../ip/video/video_pipeline/src" --code-aw 15 --str-slots 1024 --split-consts --core 2 "$ROOT/sw/video_proc.py" -o "$FW/video_proc"
 OUT="$ROOT/build/sim"; mkdir -p "$OUT" "$OUT/input_images" "$OUT/output_images" "$OUT/gif-output" "$OUT/gif-input"
 WORK="${SIM_WORK_DIR:-$(mktemp -d "${TMPDIR:-/tmp}/video_processor_sim.XXXXXX")}"
 mkdir -p "$WORK/input_images" "$WORK/output_images" "$WORK/gif-output" "$WORK/gif-input"
@@ -198,9 +226,24 @@ echo "[video_processor] simulating in $WORK; transcript (live): $TRANSCRIPT; res
 cp -p "$FW"/video_proc.flash.hex "$WORK/"                # this run's own copy: parallel runs may rebuild build/fw
 cd "$WORK"
 iverilog -g2012 -Wall -Wno-timescale -s video_processor_tb -o video_processor_tb.vvp -I "$FW" -I "$ROOT/tb/tests" \
-  -DFW_HEX="\"$WORK/video_proc.flash.hex\"" $DEFS $SRCS $TB_SRCS
+  -DFW_HEX="\"$WORK/video_proc.flash.hex\"" -DVP_FONT_DIR="\"$ROOT/../../ip/video/symbol_overlay/src/include/\"" \
+  $DEFS $SRCS $TB_SRCS
 ARGS="+GIF_IN=${GIF_IN:-$ROOT/tb/images/pedestrian_walk.gif}$GIFARGS +TRANSCRIPT=$TRANSCRIPT"
 [ "$VCD" = 1 ] && ARGS="$ARGS +vcd$VCDWIN"; [ "$QUICK" = 1 ] && ARGS="$ARGS +quick"
 vvp -n video_processor_tb.vvp $ARGS | tee video_processor_tb.log
 grep -q "TEST PASSED" video_processor_tb.log || { echo "[video_processor] SIMULATION FAILED"; exit 1; }
+if [ -n "$PYTR" ]; then                         # the report against the system model's, up to its last tracker frame
+  python3 - "$TRANSCRIPT" "$PYTR" <<'PY' || { echo "[video_processor] SIMULATION FAILED (transcript differs from pysim)"; exit 1; }
+import re, sys
+norm = lambda ln: re.sub(r"\[\s*\d+ us\]", "[t]", ln.rstrip("\n"))   # the run's own time stamps
+sim = [norm(ln) for ln in open(sys.argv[1], encoding="latin-1")]
+ref = [norm(ln) for ln in open(sys.argv[2], encoding="latin-1")]
+last = max((i for i, ln in enumerate(sim) if "tracker frame" in ln), default=len(sim) - 1)
+bad = [i for i in range(last + 1) if i >= len(ref) or sim[i] != ref[i]]
+for i in bad[:5]:
+    print(f"  transcript line {i + 1}: sim  {sim[i][:150]}\n                     pysim {ref[i][:150] if i < len(ref) else '(none)'}")
+print(f"[video_processor] transcript vs pysim: {last + 1 - len(bad)} of {last + 1} lines equal (time stamps aside)")
+sys.exit(1 if bad else 0)
+PY
+fi
 echo "[video_processor] PASSED"

@@ -16,6 +16,7 @@
 #   make lint          Verilator lint of the RTL (warnings only)
 #   make ip-test       the library video_pipeline system testbench (bit-exact ISP model, every output)
 #   make synth         Yosys Xilinx 7-series synthesis -> build/yosys
+#   make cdc           structural clock-domain-crossing check (ip/scripts/cdc_check.py) -> build/cdc
 #   make cov           sim + ip-test with Verilator code coverage -> build/coverage/summary.txt
 #   make ci            sim + ip-test + synth
 #   make diagram       re-render docs/*.dot -> .svg / .png (Graphviz)
@@ -69,7 +70,10 @@
 #   make sim QUICK=1 IDEAL_PLL=1 DIRECT_LOG=1 DETECT=all GIF=tb/images/clip.mp4 VIDEO_START=2 GIF_FRAMES=20    2 s of a video from 2 s, 10 fps
 # pysim options: GIF, GIF_FRAMES, GIF_FIRST, GIF_BW, VIDEO_FPS, VIDEO_START, DETECT (+ aircraft; default all), BOX (+ corner-box,
 #   tick-box, triangle; default people corner-box, ground transport tick-box, aircraft triangle), TARGETS (1-15), DIRECT_LOG,
-#   QUICK=0 (whole start-up report), JOBS=<n> inputs in parallel (default 4), PYSIM_OUT=<dir> (default python-prototype)
+#   QUICK=0 (whole start-up report), JOBS=<n> inputs in parallel (default 4), PYSIM_OUT=<dir> (default python-prototype),
+#   FIT=<W>x<H> (frames fitted as the SV testbench's: 320x240), RAW=1 (<name>_pysim_frames.rgb: the SV testbench's
+#   +PYSIM_RGB reference)
+#   make pysim GIF=tb/images/pedestrian_walk.gif FIT=320x240 RAW=1 GIF_FRAMES=4    the SV testbench's reference
 #   make pysim                                       every real-life video and GIF in tb/images (not the generated ones), 4 at a time
 #   make pysim GIF=tb/images/airbus-plane.gif GIF_FRAMES=10    one input, its first 10 frames
 # Without make: scripts/run_sim.sh [--quick] [--ideal-pll] [--vcd] [--wave] [--vcd-start=<us>] [--vcd-stop=<us>]
@@ -90,9 +94,10 @@ PYOPT  := $(if $(GIF_FRAMES),--frames $(GIF_FRAMES),) $(if $(GIF_FIRST),--gif-fi
           $(if $(DETECT),--detect $(DETECT),) $(if $(BOX),--box $(BOX),) $(if $(TARGETS),--targets $(TARGETS),) \
           $(if $(filter 1,$(DIRECT_LOG)),--direct-log,) $(if $(VIDEO_FPS),--video-fps $(VIDEO_FPS),) \
           $(if $(VIDEO_START),--video-start $(VIDEO_START),) $(if $(filter 0,$(QUICK)),--full,) \
+          $(if $(FIT),--fit $(FIT),) $(if $(filter 1,$(RAW)),--raw,) \
           --jobs $(or $(JOBS),4) $(if $(PYSIM_OUT),--out $(PYSIM_OUT),) $(subst $(comma), ,$(GIF))
 
-.PHONY: all help sim pysim wave lint ip-test synth diagram ci cov clean list-tests
+.PHONY: all help sim pysim wave lint ip-test synth cdc diagram ci cov clean list-tests
 all: help
 help:
 	@sed -n '/^# Targets:/,/^# end of help/p' Makefile | sed -e '$$d' -e 's/^# \{0,1\}//'
@@ -117,6 +122,9 @@ ip-test:
 
 synth:
 	@$(CHECK) synth 'SYNTH PASS' 'SYNTH FAIL' -- synth/run_yosys.sh
+
+cdc:
+	@$(CHECK) cdc 'CDC CHECK PASS' 'CDC CHECK FAIL' -- synth/run_cdc.sh
 
 diagram:
 	dot -Tsvg docs/block_diagram.dot -o docs/block_diagram.svg

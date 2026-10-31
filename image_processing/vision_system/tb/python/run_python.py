@@ -13,8 +13,11 @@ sys.path.insert(0, str(TEST_DIR))
 from cocotb_lib import run_cases                                  # noqa: E402
 from vision_system_tb import CASES                                 # noqa: E402
 
+DDR = ("memory/ddr_ctrl/src/include/ddr_ctrl_regs_if.sv", "memory/ddr_ctrl/src/ddr_ctrl.sv",
+       "memory/ddr_mem/src/ddr_mem.sv")                          # the DDR case's controller and memory
 SOURCES = [(VS / "src" / ln.strip()).resolve() for ln in open(VS / "scripts" / "build.f", encoding="utf-8")
-           if ln.strip() and not ln.strip().startswith("#")] + [TEST_DIR / "vision_system_cocotb_top.sv"]
+           if ln.strip() and not ln.strip().startswith("#")] + [VS.parents[1] / "ip" / p for p in DDR] + \
+    [TEST_DIR / "vision_system_cocotb_top.sv"]
 
 if __name__ == "__main__":
     run_cases("vision_system", SOURCES, "vision_system_cocotb_top", "vision_system_tb", TEST_DIR,

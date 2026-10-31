@@ -1,0 +1,4 @@
+# npu synthesis parameters (scripts/run_yosys.sh): an 8 x 8 MAC array (the results and the structure do not
+# depend on it; the 64 x 64 array is 64 times the same PE and takes Yosys hours)
+PE_P=8
+PE_O=8

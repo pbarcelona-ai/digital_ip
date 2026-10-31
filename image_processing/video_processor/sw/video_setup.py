@@ -128,10 +128,10 @@ def video_setup():
     wreg(VP + VP_HACT + 8, 10, strings(
         "video_pipeline H_SYNC",
         "display horizontal sync pulse: 10 pixel clocks wide", ""))
-    wreg(VP + VP_HACT + 12, 70, strings(
-        "video_pipeline H_BP",
-        "display horizontal back porch: 70 pixel clocks from the end of",
-        "hsync to the first visible pixel (line time for the pipeline)"))
+    wreg(VP + VP_HACT + 12, 160, strings(               # a line of at least 176 + W clocks: symbol_overlay's row
+        "video_pipeline H_BP",                          # engine needs about 4 NOBJ + 3 CW + 7 = 174 per row
+        "display horizontal back porch: 160 pixel clocks after hsync",
+        "to the first visible pixel (line time for the pipeline)"))
     wreg(VP + VP_HACT + 20, 2, strings(
         "video_pipeline V_FP",
         "display vertical front porch: 2 blank lines after the last",
@@ -231,6 +231,9 @@ def video_start():
     dec(frames)
     say(" statistics interrupts (one per camera frame) received")
     result(mem32[VP + VP_CSI_FRAMES] >= FRAMES, "video_pipeline: CSI-2 frames counted by csi2_rx")
-    result(mem32[VS + VS_STATUS] & VS_FRAME_DONE, "vision_system: corrected frame produced")
+    if mem32[VS + VS_BYPASS] & 1:                      # BYPASS (no correction programmed): frames pass
+        result(mem32[FC + FC_COUNT3] > 0, "vision_system: frames out (BYPASS: passed unchanged)")
+    else:
+        result(mem32[VS + VS_STATUS] & VS_FRAME_DONE, "vision_system: corrected frame produced")
     st = mem32[FLT + FLT_STATUS]
     result(st & 7 == MODE_BLUR_SHARPEN and st >> 16 != 0, "blur_sharpen: frames filtered in MODE 3")

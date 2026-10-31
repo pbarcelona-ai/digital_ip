@@ -39,6 +39,11 @@ W_BAR = 0x7C20                     # " |"
 W_COMMA = 0x202C                   # ", "
 TRK_QUIET = 60000000               # 300 ms without an event after the tracking sequence: done (longer than the
                                    # NPU's run on the last frame: about 90 ms for YOLOv8s at 1920 x 1088)
+TRK_QUIET_QUICK = 12000000         # 60 ms with the GPIO0[31] quick-simulation strap (the testbench's and
+                                   # pysim's): longer than the last frame's way through the pipeline at
+                                   # 1920 x 1080 (about 25 ms) and the small test network's NPU run
+                                   # (10 ms on its 8 x 8 array); no 300 ms of simulated idle time
+TRK_QUICK = 1 << 31                # GPIO0[31] input: the quick-simulation strap (video_init QUICK_STRAP)
 LOAD_WAIT = 40000000               # 200 ms: wait for the camera to load the next sequence's settings
 LOAD_STEP = 20000                  # 100 us between two reads of its "loaded" register
 trk_base = 0                       # FRAMES of the first selected detector when the sequence started
@@ -410,7 +415,10 @@ def track_sequence(total):
     stage = 170                                        # set up: the camera may send the sequence
     result(wait_sequence(), "camera: tracking sequence started (GPIO0[29] rose)")
     if seq_seen:
-        events_run(1, TRK_QUIET)
+        quiet = TRK_QUIET
+        if mem32[GPIO0 + G_IN] & TRK_QUICK:
+            quiet = TRK_QUIET_QUICK
+        events_run(1, quiet)
     events_stop()
     stage = 180
     puts("  Sequence: ")

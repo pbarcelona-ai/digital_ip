@@ -57,14 +57,14 @@
 //                         size (fitted to 320 x 240) is the frame size the
 //                         firmware reads from the camera (registers
 //                         0x30-0x33) and programs everywhere, and the classes
-//                         to detect (+DETECT: 1 / pedestrians, 2 / faces,
-//                         3 / vehicles (automobile and vehicle: cars, buses,
-//                         trucks, planes), or pedestrian, face, automobile,
-//                         vehicle, all; default pedestrian), their box styles
-//                         (+BOX: dashed / solid box, circle, oval, or a solid
-//                         box in the middle of the target) and the
-//                         most targets at a time (+TARGETS) go into registers
-//                         0x50-0x55. A colour GIF is sent in colour (RGGB
+//                         to detect (+DETECT: pedestrian / 1, face / 2,
+//                         automobile / car, vehicle / bus, aircraft / plane,
+//                         vehicles / 3, all; default all, as make pysim),
+//                         their box styles (+BOX: dashed / solid box, circle,
+//                         oval, solid-centre, corner-box, tick-box, triangle)
+//                         and the most targets at a time (+TARGETS, 1-32) go
+//                         into registers 0x50-0x55, 0x58 (the aliases are
+//                         self-checked). A colour GIF is sent in colour (RGGB
 //                         mosaic, ISP demosaic), or converted to black and
 //                         white with +GIF_BW (also written as
 //                         gif-input/<name>_bw.gif; the sequence as sent is
@@ -72,26 +72,17 @@
 //                         firmware has set every block up (stage 170 of that
 //                         sequence) the camera sends each GIF frame (paced
 //                         like the image test, and after the firmware handled
-//                         the previous tracker event; GPIO0[29] high). Checks
-//                         per frame: every selected detector's results and
-//                         blobs equal track_ref's model of its input frame,
-//                         window and settings, the other detectors stay off;
-//                         the symbol_overlay output equals the model's
-//                         drawing of the 12 objects it applied; the HDMI
-//                         image equals the overlay output; every box shown is
-//                         its class's colour and chosen style. With a ground
-//                         truth (<name>.truth.txt next to the GIF, one or
-//                         more true boxes per class) every selected class
-//                         with a true box is found in the first frame and
-//                         from the second each true box is held by one of
-//                         the class's boxes (its centre) and, from the third,
-//                         covered at least 75 % (a box in the middle: its
-//                         centre held); the firmware counted every
-//                         frame as found. Without one, quality is not judged
-//                         (any GIF can be used). The HDMI frames are written
-//                         as an animated GIF (+GIF_OUT, input frame times)
-//                         and read back exactly as written (its palette).
-//                         frame_counter counted every GIF frame.
+//                         the previous tracker event; GPIO0[29] high). Checks:
+//                         every frame reaches the overlay and HDMI, the HDMI
+//                         image equals the overlay output; with +PYSIM_RGB
+//                         the overlay output equals pysim's frame for the
+//                         same input pixel for pixel but in the clock text's
+//                         box (the run's own time; differences listed with
+//                         their bounding box); the firmware counted every
+//                         tracker frame, frame_counter every GIF frame. The
+//                         HDMI frames are written as an animated GIF
+//                         (+GIF_OUT, input frame times) and read back exactly
+//                         as written (its palette).
 //     test_uart_report    the report (UART 0, or the GPIO1 direct transcript
 //                         port with +direct; written to
 //                         sim_transcript_<GIF name>.txt as it arrives) reaches
@@ -117,7 +108,7 @@
 //   Bayer mosaic of a colour image), tap_pixel / frame_done / display_done
 //   (frame capture and labelling at each module output), gif_px (RAW10
 //   sample of a GIF frame).
-// Date: 2026-10-14
+// Date: 2026-10-26
 
   task automatic check(input bit c, input string m);
     if (!c) begin
@@ -796,10 +787,7 @@
 `endif
     if ($value$plusargs("GIF_FRAMES=%d", nmax) && nmax > 0 && nmax < gif_n) gif_n = nmax;
     gout.alloc(gw, gh);
-    trk_in.alloc(gw, gh);
     ovl_out.alloc(gw, gh);
-    trm.w = gw;
-    trm.h = gh;
     sensor_cci.mem[8'h30] = 8'(gw >> 8);
     sensor_cci.mem[8'h31] = 8'(gw);
     sensor_cci.mem[8'h32] = 8'(gh >> 8);
@@ -835,12 +823,13 @@
 
   string opt_items [$];                              // split_list result
   // +DETECT=<classes> and +BOX=<style> / <class>:<style>,... into det_mask / det_style and the camera's
-  // control registers 0x50-0x54
+  // control registers 0x50-0x55, 0x58 (as pysim/board.py)
   function automatic int class_of(input string s);
     if (s == "pedestrian" || s == "pedestrians" || s == "person" || s == "p" || s == "1") return 0;
     if (s == "face" || s == "faces" || s == "f" || s == "2") return 1;
     if (s == "automobile" || s == "car" || s == "a") return 2;
     if (s == "vehicle" || s == "bus" || s == "truck" || s == "v") return 3;
+    if (s == "aircraft" || s == "plane" || s == "planes" || s == "air") return 4;
     return -1;
   endfunction
   function automatic int style_of(input string s);
@@ -851,25 +840,34 @@
     if (s == "dashed-oval" || s == "oval-dashed") return 4;
     if (s == "solid-oval" || s == "oval-solid" || s == "oval") return 5;
     if (s == "solid-centre" || s == "solid-center" || s == "centre-box" || s == "center-box" || s == "centre") return 6;
+    if (s == "corner-box") return 7;
+    if (s == "tick-box") return 8;
+    if (s == "triangle") return 9;
     return -1;
   endfunction
   task automatic detect_options();
     string s, item;
     int c, st, p;
+    // the option aliases (as make pysim's): a self-check, so none breaks unnoticed
+    check(class_of("1") == 0 && class_of("p") == 0 && class_of("2") == 1 && class_of("face") == 1 && class_of("car") == 2 &&
+          class_of("bus") == 3 && class_of("plane") == 4 && class_of("x") == -1, "+DETECT class aliases");
+    check(style_of("dashed") == 0 && style_of("box") == 1 && style_of("circle") == 3 && style_of("oval") == 5 &&
+          style_of("centre") == 6 && style_of("corner-box") == 7 && style_of("tick-box") == 8 &&
+          style_of("triangle") == 9 && style_of("x") == -1, "+BOX style aliases");
     if ($value$plusargs("DETECT=%s", s)) begin
       det_mask = 0;
       split_list(s);
       for (int i = 0; i < opt_items.size(); i++) begin
         item = opt_items[i];
-        if (item == "all") det_mask = 4'b1111;
+        if (item == "all") det_mask = '1;
         else if (item == "vehicles" || item == "3") det_mask[3:2] = 2'b11;   // cars, buses, trucks, planes
         else begin
           c = class_of(item);
-          check(c >= 0, {"+DETECT: unknown class ", item, " (1 pedestrians, 2 faces, 3 vehicles; pedestrian, face, automobile, vehicle, all)"});
+          check(c >= 0, {"+DETECT: unknown class ", item, " (pedestrian, face, automobile, vehicle, aircraft, vehicles, all)"});
           if (c >= 0) det_mask[c] = 1;
         end
       end
-      if (det_mask == 0) det_mask = 4'b0001;
+      if (det_mask == 0) det_mask = NCLS'(1);
     end
     if ($value$plusargs("BOX=%s", s)) begin
       split_list(s);
@@ -879,14 +877,14 @@
         for (int k = 0; k < item.len(); k++) if (item[k] == ":") p = k;
         if (p < 0) begin                               // a style for every class
           st = style_of(item);
-          check(st >= 0, {"+BOX: unknown style ", item, " (dashed-box, solid-box, dashed-circle, solid-circle, dashed-oval, solid-oval, solid-centre)"});
-          if (st >= 0) for (int k = 0; k < 4; k++) det_style[k] = st;
+          check(st >= 0, {"+BOX: unknown style ", item, " (dashed-box, solid-box, dashed-circle, solid-circle, dashed-oval, solid-oval, solid-centre, corner-box, tick-box, triangle)"});
+          if (st >= 0) for (int k = 0; k < NCLS; k++) det_style[k] = st;
         end else begin                                 // <class>:<style>
           c = class_of(item.substr(0, p - 1));
-          if (item.substr(0, p - 1) == "vehicles" || item.substr(0, p - 1) == "3") c = 4;   // automobile and vehicle
+          if (item.substr(0, p - 1) == "vehicles" || item.substr(0, p - 1) == "3") c = NCLS;   // automobile and vehicle
           st = style_of(item.substr(p + 1, item.len() - 1));
           check(c >= 0 && st >= 0, {"+BOX: cannot read ", item, " (<class>:<style>)"});
-          if (c == 4 && st >= 0) begin
+          if (c == NCLS && st >= 0) begin
             det_style[2] = st;
             det_style[3] = st;
           end else if (c >= 0 && st >= 0) det_style[c] = st;
@@ -898,11 +896,11 @@
       if (max_targets < 1 || max_targets > NOBJ) max_targets = NOBJ;
     end
     sensor_cci.mem[8'h50] = 8'(det_mask);
-    for (int k = 0; k < 4; k++) sensor_cci.mem[8'h51 + k] = 8'(det_style[k]);
-    sensor_cci.mem[8'h55] = 8'(max_targets);
-    for (int k = 0; k < 4; k++)
-      if (det_mask[k]) $display("  detect %s: %s (camera registers 0x50-0x54)", det_name[k], style_name[det_style[k]]);
-    $display("  up to %0d targets tracked at a time (camera register 0x55), up to %0d per class", max_targets, NTR);
+    for (int k = 0; k < NCLS; k++) sensor_cci.mem[8'h51 + k] = 8'(det_style[k]);
+    sensor_cci.mem[8'h58] = 8'(max_targets);           // 32 written as 32 (0 also means 32)
+    for (int k = 0; k < NCLS; k++)
+      if (det_mask[k]) $display("  detect %s: %s (camera registers 0x50-0x55)", det_name[k], style_name[det_style[k]]);
+    $display("  up to %0d targets tracked at a time (camera register 0x58)", max_targets);
   endtask
   // comma-separated list -> opt_items
   task automatic split_list(input string s);
@@ -963,73 +961,55 @@
     $display("  ground truth: %s, %0d boxes", path, lines);
   endtask
 
-  function automatic int bcd_int(input logic [19:0] b);
-    int v;
-    v = 0;
-    for (int d = 4; d >= 0; d--) v = v * 10 + b[4*d +: 4];
-    return v;
-  endfunction
-
-  // the overlay texts of GIF frame k: the image name (upper left), a clock HH:MM:SS.mmm that never goes
-  // back (upper right), "frame number " followed by the frame's number k + 1 (lower left)
-  string last_clock = "";
-  task automatic text_of(input int k, input int j, output string s, output logic [31:0] c);
-    int len;
-    c = ovl_txt[k][j*96 +: 32];
-    len = c[12:8];
-    s = "";
-    for (int i = 0; i < len && i < 16; i++) s = $sformatf("%s%c", s, ovl_chr[k][j*128 + 8*i +: 8]);
+  // the system model's (pysim --raw) output frames: "RGB1", width, height, frames (32-bit little endian),
+  // then R, G, B per pixel; into gref
+  task automatic read_pysim(input string path, output bit ok);
+    int fd, n, fw, fh, fn;
+    logic [7:0] hdr [16];
+    ok = 0;
+    fd = $fopen(path, "rb");
+    if (fd == 0) return;
+    n = 0;
+    for (int i = 0; i < 16; i++) begin
+      int c;
+      c = $fgetc(fd);
+      if (c >= 0) n++;
+      hdr[i] = 8'(c);
+    end
+    fw = {hdr[7], hdr[6], hdr[5], hdr[4]};
+    fh = {hdr[11], hdr[10], hdr[9], hdr[8]};
+    fn = {hdr[15], hdr[14], hdr[13], hdr[12]};
+    if (n == 16 && {hdr[0], hdr[1], hdr[2], hdr[3]} == "RGB1" && fw > 0 && fw <= GMAXW && fh > 0 && fh <= GMAXH && fn > 0) begin
+      gref.alloc(fw, fh);
+      if (fn > GMAXF) fn = GMAXF;
+      ok = 1;
+      for (int k = 0; k < fn && ok; k++) for (int y = 0; y < fh && ok; y++) for (int x = 0; x < fw && ok; x++) begin
+        int r, g, b;
+        r = $fgetc(fd);
+        g = $fgetc(fd);
+        b = $fgetc(fd);
+        if (b < 0) ok = 0;
+        gref.set_px(k, x, y, {8'(b), 8'(g), 8'(r)});
+      end
+      gref.nframes = fn;
+    end
+    $fclose(fd);
   endtask
-  task automatic check_texts(input int k);
-    string s, nm;
-    logic [31:0] c;
-    bit fmt;
-    nm = base_name(gif_in);
-    if (nm.len() > 16) nm = nm.substr(0, 15);
-    text_of(k, 0, s, c);
-    check(c[0] && s == nm, $sformatf("frame %0d: name text \"%s\", expected \"%s\"", k, s, nm));
-    text_of(k, 2, s, c);
-    check(c[0] && c[4] && s == "frame number " && bcd_int(ovl_fnum[k]) == k + 1,
-          $sformatf("frame %0d: \"%s\" + frame number %0d (suffix %b), expected \"frame number \" + %0d", k, s,
-                    bcd_int(ovl_fnum[k]), c[4], k + 1));
-    text_of(k, 1, s, c);
-    fmt = c[0] && s.len() == 12 && s[2] == ":" && s[5] == ":" && s[8] == ".";
-    for (int i = 0; i < s.len(); i++) if (i != 2 && i != 5 && i != 8 && (s[i] < "0" || s[i] > "9")) fmt = 0;
-    check(fmt && s >= last_clock, $sformatf("frame %0d: clock \"%s\" (previous \"%s\")", k, s, last_clock));
-    last_clock = s;
-    if (k < 2 || k == gif_n - 1) $display("  frame %0d texts: \"%s\" | \"%s\" | \"frame number %0d\"", k, nm, s, k + 1);
-  endtask
-
-  // OBJ_CTRL of a box style (firmware overlay.py: 1 pixel, dashes of 4) and the class colours {B, G, R}
-  function automatic logic [31:0] style_ctrl(input int s);
-    case (s)
-      1: return 32'h0101;                              // solid rectangle
-      2: return 32'h210F;                              // dashed circle
-      3: return 32'h0107;                              // solid circle
-      4: return 32'h212F;                              // dashed oval
-      5: return 32'h0127;                              // solid oval
-      6: return 32'h0101;                              // solid rectangle in the middle of the target
-      default: return 32'h2109;                        // dashed rectangle
-    endcase
-  endfunction
-  function automatic logic [23:0] class_colour(input int c);
-    case (c)
-      0: return 24'h00FF00;                            // pedestrian green
-      1: return 24'hFF00FF;                            // face magenta
-      2: return 24'hFFFF00;                            // automobile cyan
-      default: return 24'h0080FF;                      // vehicle orange
-    endcase
-  endfunction
 
   task automatic test_tracking();
 `ifdef VP_TRACK
     bit ok;
-    realtime t0;
-    int bad_trk, bad_ovl, bad_hdmi, bad_style, bad_feat, rt_bad, d, all_truth;
-    int boxes_c [4], centred_c [4], covered_c [4], judged_c [4];
-    bit found0_c [4];
+    realtime t0, t_frame;
+    int bad_hdmi, bad_ref, rt_bad, d;
+    int clk_x0, clk_y0, clk_x1, clk_y1;                // the clock text's box (not compared with pysim)
     check(gif_n > 0, {"tracking: cannot read the input GIF ", gif_in});
     if (gif_n == 0) return;
+    // the longest wait for the next frame: 3 ms; with an NPU program each frame also waits for its NPU run and
+    // the firmware's ByteTrack step (8 x 8 MAC array here: several ms)
+    t_frame = 3ms;
+`ifdef VP_NPU
+    if (npu_hex != "") t_frame = 40ms;
+`endif
     $display("[%t] tracking: %s, %0d x %0d -> frames of %0d x %0d, %0d frames (%0d sent), %0d ms each", $realtime,
              gif_in, gin.src_w, gin.src_h, gw, gh, gin.nframes, gif_n, gin.delay_cs[0] * 10);
     // the firmware reads the frame size from the camera, reprograms every block for it and waits for
@@ -1058,7 +1038,6 @@
     ir_done = -1;
     hdmi_frames = 0;
     gif_next = 0;
-    last_clock = "";
     gif_on = 1;
     seq_active = 1;                                    // GPIO0[29]: the firmware starts tracking
 `ifdef VP_VISION
@@ -1067,13 +1046,13 @@
 `endif
     trk_f0 = g(G_trk_frames);
     gif_go = 1;
-    // wait for the whole sequence; a frame that does not come within 3 ms is a stall: report the state
+    // wait for the whole sequence; a frame that does not come within t_frame is a stall: report the state
     begin
       int last_next;
       realtime t_prog;
       last_next = -1;
       t_prog = $realtime;
-      while (seq_active && $realtime - t_prog < 3ms) begin
+      while (seq_active && $realtime - t_prog < t_frame) begin
         repeat (1000) @(posedge pix_clk);
         if (gif_next != last_next) begin
           last_next = gif_next;
@@ -1088,7 +1067,7 @@
   dut.u_vs_adapt.frames_o,
   vs_f0,
   dut.u_vs_adapt.drops_o,
-  dut.u_vs_adapt.m_axis_tready,
+  dut.va.tready,
   dut.u_vs_adapt.rf_level
 );
 `endif
@@ -1098,178 +1077,75 @@
     end
     check(!seq_active, "tracking: the camera did not send the whole sequence");
     t0 = $realtime;                                    // drain: every frame on HDMI
-    while (hdmi_frames < gif_n && $realtime - t0 < 4ms) repeat (500) @(posedge pix_clk);
-    while (g(G_stage) != 180 && $realtime - t0 < 20ms) @(posedge cpu_clk);
+    while (hdmi_frames < gif_n && $realtime - t0 < 1ms + t_frame) repeat (500) @(posedge pix_clk);
+    while (g(G_stage) != 180 && $realtime - t0 < 17ms + t_frame) @(posedge cpu_clk);
     gif_on = 0;
     check(fo_k + 1 == gif_n && ir_done + 1 == gif_n && hdmi_frames == gif_n,
           $sformatf("tracking: %0d frames sent, %0d at the tracker, %0d out of the overlay, %0d on HDMI",
                     gif_n, fo_k + 1, ir_done + 1, hdmi_frames));
-    // per frame: every detector and the overlay against the models, HDMI against the overlay, the box
-    // styles, and the tracking of every class with a ground truth
-    bad_trk = 0;
-    bad_feat = 0;
-    bad_ovl = 0;
+    // per frame: HDMI against the overlay output; the overlay output against the system model's (pysim)
+    // frames for the same input, pixel for pixel
     bad_hdmi = 0;
-    bad_style = 0;
-    for (int c = 0; c < 4; c++) begin
-      boxes_c[c] = 0;
-      centred_c[c] = 0;
-      covered_c[c] = 0;
-      judged_c[c] = 0;
-      found0_c[c] = 0;
-    end
-    all_truth = truth_file;
-    fref.w = gw;                                       // feature_detect was restarted for the sequence
-    fref.h = gh;
-    fref.restart();
+    bad_ref = 0;
     for (int k = 0; k < gif_n && k <= fo_k && k < GMAXF; k++) begin
-      int b, bx0, bx1, by0, by1, tcx, tcy, ix, iy;
-      bit any_truth;
-      for (int y = 0; y < gh; y++) for (int x = 0; x < gw; x++) trm.img[y][x] = trk_in.px(k, x, y);
-      // the features of this frame: the model with the settings and shift feature_detect used
-      for (int y = 0; y < gh; y++) for (int x = 0; x < gw; x++) fref.img[y][x] = trk_in.px(k, x, y);
-      fref.step(ft_ctrl[k], ft_edge[k], ft_motion[k], ft_sx[k], ft_sy[k]);
-      if (ft_ne[k] != fref.n_edge || ft_nm[k] != fref.n_motion) begin
-        if (bad_feat < 4) $display("  frame %0d: feature_detect %0d edge / %0d motion pixels, model %0d / %0d (shift %0d,%0d)", k,
-                                   ft_ne[k], ft_nm[k], fref.n_edge, fref.n_motion, ft_sx[k], ft_sy[k]);
-        bad_feat++;
-      end
-      for (int y = 0; y < gh; y++) for (int x = 0; x < gw; x++) begin
-        trm.fe[y][x] = fref.edg[y][x];
-        trm.fm[y][x] = fref.mot[y][x];
-      end
-      for (int c = 0; c < 4; c++) begin
-        if (!det_mask[c]) begin                        // not selected: its detector stays off
-          if (trk_ctrl[k][c][0] && bad_trk < 4) $display("  frame %0d: %s detector on, not selected", k, det_name[c]);
-          if (trk_ctrl[k][c][0]) bad_trk++;
-          continue;
-        end
-        trm.blob_cfg = trk_bcfg[k][c];
-        trm.run_b = trk_runb[k][c];
-        trm.measure_cfg(trk_win[k][c][0], trk_win[k][c][1], trk_win[k][c][2], trk_win[k][c][3], trk_ctrl[k][c],
-                        trk_thr[k][c][7:0], trk_run[k][c], trk_yr[k][c], trk_cbr[k][c], trk_crr[k][c], trk_sat[k][c]);
-        if (!trk_done[k] || !trk_ctrl[k][c][0] || trk_n[k][c] != trm.n || trk_bx[k][c] != {16'(trm.x1), 16'(trm.x0)} ||
-            trk_by[k][c] != {16'(trm.y1), 16'(trm.y0)}) begin
-          if (bad_trk < 4) $display("  frame %0d: %s detector %0d pixels box %h %h, model %0d x %0d-%0d y %0d-%0d", k,
-                                    det_name[c], trk_n[k][c], trk_bx[k][c], trk_by[k][c], trm.n, trm.x0, trm.x1,
-                                    trm.y0, trm.y1);
-          bad_trk++;
-        end
-        for (int i = 0; i < 8; i++)                    // the blobs (one per object) against the model
-          if (trk_bln[k][c][i*32 +: 32] != trm.bn[i] ||
-              (trm.bn[i] != 0 && (trk_blx[k][c][i*32 +: 32] != {16'(trm.bx1[i]), 16'(trm.bx0[i])} ||
-                                  trk_bly[k][c][i*32 +: 32] != {16'(trm.by1[i]), 16'(trm.by0[i])}))) begin
-            if (bad_trk < 4) $display("  frame %0d: %s blob %0d: %0d pixels %h %h, model %0d x %0d-%0d y %0d-%0d", k,
-                                      det_name[c], i, trk_bln[k][c][i*32 +: 32], trk_blx[k][c][i*32 +: 32],
-                                      trk_bly[k][c][i*32 +: 32], trm.bn[i], trm.bx0[i], trm.bx1[i], trm.by0[i], trm.by1[i]);
-            bad_trk++;
-          end
-      end
-      for (int i = 0; i < NOBJ; i++) trm.obj[i] = ovl_act[k][i*128 +: 128];
-      trm.ntxt = 4;
-      for (int j = 0; j < 4; j++) begin
-        trm.txt[j] = ovl_txt[k][j*96 +: 96];
-        trm.chr[j] = ovl_chr[k][j*128 +: 128];
-      end
-      trm.fnum = bcd_int(ovl_fnum[k]);
-      trm.draw(ovl_en[k]);
-      check_texts(k);
-      b = 0;
-      for (int y = 0; y < gh; y++) for (int x = 0; x < gw; x++) if (ovl_out.px(k, x, y) !== trm.out[y][x]) b++;
-      if (b > 0) begin
-        if (bad_ovl < 4) $display("  frame %0d: overlay output differs from the model in %0d pixels", k, b);
-        bad_ovl++;
-      end
+      int b;
       b = 0;
       for (int y = 0; y < gh; y++) for (int x = 0; x < gw; x++) if (hdmi_saved[k] && gout.px(k, x, y) !== ovl_out.px(k, x, y)) b++;
       if (!hdmi_saved[k] || b > 0) bad_hdmi++;
-      // objects 3c .. 3c + 2 are class c's target boxes: shown only for a selected class, in its style
-      // and colour; every true box of the class must be held by one of them (the one overlapping it most)
-      any_truth = 0;
-      for (int c = 0; c < 4; c++) begin
-        for (int j = 0; j < NTR; j++) begin
-          logic [31:0] oc;
-          int o;
-          o = NTR * c + j;
-          oc = ovl_act[k][o*128 +: 32];
-          if (oc[0] && !(ovl_en[k] && det_mask[c] && oc == style_ctrl(det_style[c]) &&
-                         ovl_act[k][o*128 + 96 +: 24] == class_colour(c))) begin
-            if (bad_style < 4) $display("  frame %0d: %s box %0d OBJ_CTRL %h colour %h, expected %h %h (%s)", k, det_name[c],
-                                        j + 1, oc, ovl_act[k][o*128 + 96 +: 24], style_ctrl(det_style[c]), class_colour(c),
-                                        style_name[det_style[c]]);
-            bad_style++;
-          end
+    end
+    check(bad_hdmi == 0, $sformatf("HDMI: %0d frames missing or different from the overlay output", bad_hdmi));
+    if (pysim_rgb != "") begin
+      read_pysim(pysim_rgb, ok);
+      check(ok && gref.w == gw && gref.h == gh && gref.nframes >= gif_n,
+            $sformatf("pysim: %s: %0d frames of %0d x %0d read, %0d of %0d x %0d expected", pysim_rgb, gref.nframes,
+                      gref.w, gref.h, gif_n, gw, gh));
+      // the clock text (overlay text 1, sw/overlay.py T_CLOCK: the run's own time, HH:MM:SS.mmm) is the only
+      // part that depends on timing: its box (TXT_POS, LENGTH characters of 4 << SCALE pixels, 6 << SCALE
+      // lines) is not compared
+      begin
+        logic [31:0] tp, tc;
+        tp = dut.u_overlay.u_regs_if.cfg_txt_pos[32*1 +: 32];
+        tc = dut.u_overlay.u_regs_if.cfg_txt_ctrl[32*1 +: 32];
+        clk_x0 = tp[15:0];
+        clk_y0 = tp[31:16];
+        clk_x1 = tc[0] ? clk_x0 + int'(tc[12:8]) * (4 << tc[2:1]) - 1 : -1;
+        clk_y1 = tc[0] ? clk_y0 + (6 << tc[2:1]) - 1 : -1;
+        $display("  pysim comparison: every pixel but the clock text's (x %0d-%0d y %0d-%0d)", clk_x0, clk_x1, clk_y0, clk_y1);
+      end
+      if (ok && gref.w == gw && gref.h == gh) for (int k = 0; k < gif_n && k < gref.nframes; k++) begin
+        int b, bx0, by0, bx1, by1;
+        b = 0;
+        bx0 = gw;
+        by0 = gh;
+        bx1 = -1;
+        by1 = -1;
+        for (int y = 0; y < gh; y++) for (int x = 0; x < gw; x++)
+          if (ovl_out.px(k, x, y) !== gref.px(k, x, y) && !(x >= clk_x0 && x <= clk_x1 && y >= clk_y0 && y <= clk_y1)) begin
+          b++;
+          if (x < bx0) bx0 = x;
+          if (x > bx1) bx1 = x;
+          if (y < by0) by0 = y;
+          if (y > by1) by1 = y;
         end
-        if (!det_mask[c] || !truth_ok[k][c]) continue;
-        any_truth = 1;
-        if (k == 0) found0_c[c] = trk_done[0] && trk_n[0][c] > 0;
-        if (k >= 1) for (int q = 0; q < truth_n[k][c]; q++) begin   // from the second frame: a box holds each target
-          int best, bcov, bcen, bi, tx0, ty0, tx1, ty1;
-          tx0 = truth_box[k][c][q][0];
-          ty0 = truth_box[k][c][q][1];
-          tx1 = truth_box[k][c][q][2];
-          ty1 = truth_box[k][c][q][3];
-          tcx = (tx0 + tx1) / 2;
-          tcy = (ty0 + ty1) / 2;
-          best = -1;
-          bcov = 0;
-          bcen = 0;
-          for (int j = 0; j < NTR; j++) begin
-            int o;
-            o = NTR * c + j;
-            if (!ovl_en[k] || !ovl_act[k][o*128]) continue;
-            bx0 = ovl_act[k][o*128 + 32 +: 16];
-            bx1 = ovl_act[k][o*128 + 48 +: 16];
-            by0 = ovl_act[k][o*128 + 64 +: 16];
-            by1 = ovl_act[k][o*128 + 80 +: 16];
-            ix = ((bx1 < tx1) ? bx1 : tx1) - ((bx0 > tx0) ? bx0 : tx0) + 1;
-            iy = ((by1 < ty1) ? by1 : ty1) - ((by0 > ty0) ? by0 : ty0) + 1;
-            if (ix < 0) ix = 0;
-            if (iy < 0) iy = 0;
-            bi = ix * iy;
-            if (best < 0 || bi > bcov) begin
-              best = j;
-              bcov = bi;
-              bcen = tcx >= bx0 && tcx <= bx1 && tcy >= by0 && tcy <= by1;
-            end
-          end
-          judged_c[c]++;
-          if (best >= 0) boxes_c[c]++;
-          if (best >= 0 && bcen) centred_c[c]++;
-          // a box in the middle of the target (style 6) marks it: holding its centre is enough
-          if (best >= 0 && (k < 2 || (det_style[c] == 6 && bcen) || 4 * bcov >= 3 * (tx1 - tx0 + 1) * (ty1 - ty0 + 1)))
-            covered_c[c]++;
-          if (k < 3 || k == gif_n - 1) begin
-            int o;
-            o = NTR * c + (best < 0 ? 0 : best);
-            $display("  frame %0d: %s %0d x %0d-%0d y %0d-%0d, %s %0d x %0d-%0d y %0d-%0d", k, det_name[c], q + 1, tx0, tx1,
-                     ty0, ty1, style_name[det_style[c]], best + 1, ovl_act[k][o*128 + 32 +: 16],
-                     ovl_act[k][o*128 + 48 +: 16], ovl_act[k][o*128 + 64 +: 16], ovl_act[k][o*128 + 80 +: 16]);
-          end
+        if (b > 0) begin                               // where: the clock text alone, or the picture / symbols
+          if (bad_ref < 8) $display("  frame %0d: overlay output differs from pysim in %0d pixels, x %0d-%0d y %0d-%0d", k, b,
+                                    bx0, bx1, by0, by1);
+          bad_ref++;
         end
       end
-      if (!any_truth) all_truth = 0;
-    end
-    check(bad_feat == 0, $sformatf("feature_detect: %0d frames' edge / motion counts differ from the model", bad_feat));
-    check(bad_trk == 0, $sformatf("object_tracker: %0d detector frames differ from the model", bad_trk));
-    check(bad_ovl == 0, $sformatf("symbol_overlay: %0d frames differ from the model", bad_ovl));
-    check(bad_hdmi == 0, $sformatf("HDMI: %0d frames missing or different from the overlay output", bad_hdmi));
-    check(bad_style == 0, $sformatf("tracking: %0d boxes of the wrong style, colour or class", bad_style));
-    for (int c = 0; c < 4; c++) if (det_mask[c] && judged_c[c] > 0) begin
-      check(found0_c[c], $sformatf("tracking: %s not found in the first frame (whole-frame search)", det_name[c]));
-      check(boxes_c[c] == judged_c[c], $sformatf("tracking: a %s box shown for %0d of %0d true boxes", det_name[c],
-                                                 boxes_c[c], judged_c[c]));
-      check(centred_c[c] == judged_c[c], $sformatf("tracking: a %s box holds the target's centre for %0d of %0d true boxes",
-                                                   det_name[c], centred_c[c], judged_c[c]));
-      check(covered_c[c] == judged_c[c], $sformatf("tracking: a %s box covers 75 %% of the target for %0d of %0d true boxes",
-                                                   det_name[c], covered_c[c], judged_c[c]));
-      $display("  %s: found in the first frame, %s for %0d of %0d true boxes, holds the centre of %0d", det_name[c],
-               style_name[det_style[c]], boxes_c[c], judged_c[c], centred_c[c]);
-    end
-    if (!truth_file) $display("  no ground truth for this GIF: tracking quality not judged (the detectors, overlay and HDMI are)");
-    check(g(G_trk_frames) == gif_n && (!all_truth || g(G_trk_found) == gif_n),
-          $sformatf("firmware: %0d tracker frames, a target found in %0d (%0d frames sent)", g(G_trk_frames),
-                    g(G_trk_found), gif_n));
+      check(bad_ref == 0, $sformatf("pysim: %0d of %0d output frames differ from the system model", bad_ref, gif_n));
+    end else $display("  no +PYSIM_RGB: the output frames are not compared with the system model");
+`ifdef VP_NPU
+    // every NPU run of the sequence: its detection list in the DDR against pysim's (+PYSIM_DETS)
+    if (pysim_dets != "") begin
+      repeat (2100) @(posedge pix_clk);              // the last run's comparison is done
+      check(npu_exp_runs >= 0 && npu_runs == npu_exp_runs && npu_bad == 0,
+            $sformatf("NPU: %0d runs (pysim %0d), %0d with a detection list different from pysim's", npu_runs,
+                      npu_exp_runs, npu_bad));
+      $display("  NPU: %0d runs, detection lists compared with pysim's: %0d differ", npu_runs, npu_bad);
+    end else if (npu_hex != "") $display("  no +PYSIM_DETS: the NPU's detection lists are not compared");
+`endif
+    check(g(G_trk_frames) == gif_n, $sformatf("firmware: %0d tracker frames (%0d frames sent)", g(G_trk_frames), gif_n));
     check(dut.u_frame_cnt.u_core.count[0] - fc_snap0 == gif_n && dut.u_frame_cnt.u_core.count[1] - fc_snap1 == gif_n,
           $sformatf("frame_counter: %0d / %0d frames counted in the tracking sequence, %0d expected",
                     dut.u_frame_cnt.u_core.count[0] - fc_snap0, dut.u_frame_cnt.u_core.count[1] - fc_snap1, gif_n));

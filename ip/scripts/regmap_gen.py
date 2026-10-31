@@ -194,7 +194,6 @@ def ports(m):
         dw = f"({cnt})*({w})" if r["array"] else f"{w}"
         rng = f"[{dw}-1:0]" if (r["array"] or str(w) != "1") else ""
         prng = f"[{cnt}-1:0]" if r["array"] else ""
-        d = r.get("desc", "")
         if a in ("RO", "CMD", "RC"):
             p.append((f"input  logic {rng}", f"{n}_i", f"{r['name']} ({a}): value read"))
         if a == "RC":
@@ -743,6 +742,35 @@ def core_mode(core_path, m):
     return "if" if not m["top"] and m.get("interface") else "discrete"
 
 
+def core_comments(csrc, core):
+    """Comments of the core's header, for the wrapper: ({name: trailing comment} of parameters and ports,
+    {port: [comment-only lines just above it]}). Interface annotations (// p: if.modport ...) are left to ann()."""
+    m = re.search(rf"\bmodule\s+{re.escape(core)}\b", csrc)
+    if not m:
+        return {}, {}
+    end = re.compile(r"^\s*\);", re.M).search(csrc, m.end())      # the end of the port list
+    end = end.start() if end else len(csrc)
+    trail, group, pend = {}, {}, []
+    for ln in csrc[m.end():end].split("\n"):
+        st = ln.strip()
+        if st.startswith("//"):
+            pend.append(st)
+            continue
+        dm = re.match(r"\s*(?:parameter\s+[^=]*?\b(\w+)\s*=|(?:input|output|inout)\b.*?\b(\w+)\s*,?\s*(?://|$)"
+                      r"|\w+\.\w+\s+(\w+))", ln)
+        if not dm:
+            pend = []
+            continue
+        name = dm.group(1) or dm.group(2) or dm.group(3)
+        cm = re.search(r"//\s*(.*)$", ln)
+        if cm and cm.group(1):
+            trail[name] = cm.group(1).strip()
+        if pend and not dm.group(3) and not dm.group(1):
+            group[name] = pend
+        pend = []
+    return trail, group
+
+
 def gen_top_if(m, core_path):
     ip, core, top, n = m.get("ip", m["name"]), m["core"], m["top"], m["name"]
     params, cports = parse_module(core_path, core)
@@ -767,12 +795,23 @@ def gen_top_if(m, core_path):
     hdr.append(f"// Date: {datetime.date.today().isoformat()}")
     s = "\n".join(hdr) + "\n"
     allp = params + [(p.get("type", "int"), p["name"], str(p["default"])) for p in m.get("top_params", [])]
+    csrc = open(core_path).read()
+    trail, group = core_comments(csrc, core)
+
+    def join(items):
+        """items [(declaration, comment)] joined with commas, the comment after its comma."""
+        out = []
+        for k, (decl, c) in enumerate(items):
+            t = decl + ("," if k < len(items) - 1 else "")
+            head, _, last = t.rpartition("\n")                  # group comment lines above the declaration
+            last = f"{last:<52}// {c}" if c and len(last) < 52 else (f"{last}  // {c}" if c else last)
+            out.append((head + "\n" if head else "") + last)
+        return "\n".join(out)
     if allp:
-        s += f"module {top} #(\n" + ",\n".join(f"  parameter {ty + ' ' if ty else ''}{pn} = {dv}"
-                                               for ty, pn, dv in allp) + "\n) (\n"
+        s += f"module {top} #(\n" + join([(f"  parameter {ty + ' ' if ty else ''}{pn} = {dv}", trail.get(pn))
+                                          for ty, pn, dv in allp]) + "\n) (\n"
     else:
         s += f"module {top} (\n"
-    csrc = open(core_path).read()
     aw = m["addr_width"]
 
     def ann(p):
@@ -783,8 +822,11 @@ def gen_top_if(m, core_path):
         return "  " + am.group(1).strip() + "\n" if am else ""
 
     def pline(d, ty, p):
-        return f"{ann(p)}  {ty} {p}" if d == "interface" else f"  {d:<6} {ty} {p}"
-    s += ",\n".join(pline(*x) for x in tports) + "\n);\n"
+        if d == "interface":
+            return f"{ann(p)}  {ty} {p}"
+        return "".join("  " + g + "\n" for g in group.get(p, [])) + f"  {d:<6} {ty} {p}"
+    items = [(pline(*x), trail.get(x[2]) if x[0] != "interface" else None) for x in tports]
+    s += join(items) + "\n);\n"
     for lp in m.get("top_localparams", []):
         s += f"  {lp}\n"
     rp = []
@@ -797,7 +839,7 @@ def gen_top_if(m, core_path):
     ifp = {p["name"] for p in m["params"] if any(re.search(rf"\b{p['name']}\b", x[1]) for x in if_members(m))}
     ps = "#(" + ", ".join(f".{k}({v})" for k, v in rp if k in ifp) + ") " if any(k in ifp for k, _ in rp) else ""
     s += f"  // register interface between the register map and the logic\n  {n}_if {ps}u_regs_if ();\n\n"
-    s += f"  {n} " + (f"#(\n" + ",\n".join(f"    .{k}({v})" for k, v in rp) + "\n  ) " if rp else "") + "u_regs (\n"
+    s += f"  {n} " + ("#(\n" + ",\n".join(f"    .{k}({v})" for k, v in rp) + "\n  ) " if rp else "") + "u_regs (\n"
     s += f"    .{ck},\n    .{rs},\n    .s_axil(s_axil),\n    .r(u_regs_if)\n  );\n"
     s += f"  {core}" + (" #(\n" + ",\n".join(f"    .{pn}({pn})" for _, pn, _ in params) + "\n  )" if params else "") + " u_core (\n"
     s += ",\n".join(f"    .{p}(u_regs_if)" if p == rport else f"    .{p}" for _, _, p in cports) + "\n  );\nendmodule\n"

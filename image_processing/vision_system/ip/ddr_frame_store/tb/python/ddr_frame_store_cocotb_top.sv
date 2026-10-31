@@ -1,0 +1,256 @@
+// ***************
+// Filename: ddr_frame_store_cocotb_top.sv
+// Author: FPGA Cores 4 U
+// Description: cocotb wrapper of ddr_frame_store: the store on port 0 of a
+//   one-port ddr_ctrl (statistics clear tied off) with ddr_mem behind it, as
+//   in vision_system's DDR configuration. The store's AXI4 port and the DFI
+//   command lines are visible to the test, which compares them (and the
+//   store's ports) with the models every clock.
+// Date: 2026-10-25
+module ddr_frame_store_cocotb_top #(
+  parameter int PIX_W       = 24,
+  parameter int ADDR_W      = 10,
+  parameter int DATA_W      = 256,
+  parameter int LINE_PIX    = 32,
+  parameter int CACHE_LINES = 8,
+  parameter int WQ_DEPTH    = 4,
+  parameter int FLUSH_IDLE  = 4,
+  parameter int OUT_MAX     = 8,
+  parameter int BANK_W      = 2,
+  parameter int ROW_W       = 4,
+  parameter int COL_W       = 6,
+  parameter int MEM_WORDS   = 1 << 12,
+  parameter int T_RCD       = 3,
+  parameter int T_RP        = 3,
+  parameter int T_RAS       = 6,
+  parameter int T_CL        = 4,
+  parameter int T_WR        = 3,
+  parameter int T_RTP       = 2,
+  parameter int T_WTR       = 2,
+  parameter int T_RRD       = 2,
+  parameter int T_RFC       = 12,
+  parameter int T_REFI      = 300,
+  parameter int RQ_DEPTH    = 8,
+  parameter int BQ_DEPTH    = 2
+) (
+  input  logic                clk,
+  input  logic                rst_n,
+  input  logic                wr_en,
+  output logic                wr_ready,
+  input  logic [ADDR_W-1:0]   wr_addr,
+  input  logic [PIX_W-1:0]    wr_data,
+  input  logic                wr_buf,
+  output logic                wr_idle,
+  input  logic                rd_en,
+  output logic                rd_ready,
+  input  logic [ADDR_W-1:0]   rd_addr0,
+  input  logic [ADDR_W-1:0]   rd_addr1,
+  input  logic [ADDR_W-1:0]   rd_addr2,
+  input  logic [ADDR_W-1:0]   rd_addr3,
+  input  logic                rd_buf,
+  input  logic                rd_flush,
+  input  logic                clear,
+  output logic                rd_valid,
+  output logic [PIX_W-1:0]    rd_data0,
+  output logic [PIX_W-1:0]    rd_data1,
+  output logic [PIX_W-1:0]    rd_data2,
+  output logic [PIX_W-1:0]    rd_data3,
+  output logic [31:0]         awaddr,
+  output logic                awvalid,
+  output logic                awready,
+  output logic [DATA_W-1:0]   wdata,
+  output logic [DATA_W/8-1:0] wstrb,
+  output logic                wvalid,
+  output logic                wready,
+  output logic                bvalid,
+  output logic [31:0]         araddr,
+  output logic [7:0]          arlen,
+  output logic                arvalid,
+  output logic                arready,
+  output logic [DATA_W-1:0]   rdata,
+  output logic                rvalid,
+  output logic                rready,
+  output logic [2:0]          dfi_cmd,
+  output logic                mem_err
+);
+  localparam int IW = 4;
+  logic [IW-1:0]       awid, arid, bid, rid;
+  logic [7:0]          awlen;
+  logic [2:0]          awsize, arsize;
+  logic [1:0]          awburst, arburst, bresp, rresp;
+  logic                wlast, bready, rlast;
+  ddr_frame_store #(
+    .PIX_W(PIX_W),
+    .ADDR_W(ADDR_W),
+    .DATA_W(DATA_W),
+    .AXI_ADDR_W(32),
+    .ID_W(IW),
+    .LINE_PIX(LINE_PIX),
+    .CACHE_LINES(CACHE_LINES),
+    .WQ_DEPTH(WQ_DEPTH),
+    .FLUSH_IDLE(FLUSH_IDLE),
+    .OUT_MAX(OUT_MAX)
+  ) u_fs (
+    .clk,
+    .rst_n,
+    .wr_en,
+    .wr_ready,
+    .wr_addr,
+    .wr_data,
+    .wr_buf,
+    .wr_idle,
+    .rd_en,
+    .rd_ready,
+    .rd_addr0,
+    .rd_addr1,
+    .rd_addr2,
+    .rd_addr3,
+    .rd_buf,
+    .rd_flush,
+    .clear,
+    .rd_valid,
+    .rd_data0,
+    .rd_data1,
+    .rd_data2,
+    .rd_data3,
+    .m_axi_awid(awid),
+    .m_axi_awaddr(awaddr),
+    .m_axi_awlen(awlen),
+    .m_axi_awsize(awsize),
+    .m_axi_awburst(awburst),
+    .m_axi_awvalid(awvalid),
+    .m_axi_awready(awready),
+    .m_axi_wdata(wdata),
+    .m_axi_wstrb(wstrb),
+    .m_axi_wlast(wlast),
+    .m_axi_wvalid(wvalid),
+    .m_axi_wready(wready),
+    .m_axi_bid(bid),
+    .m_axi_bresp(bresp),
+    .m_axi_bvalid(bvalid),
+    .m_axi_bready(bready),
+    .m_axi_arid(arid),
+    .m_axi_araddr(araddr),
+    .m_axi_arlen(arlen),
+    .m_axi_arsize(arsize),
+    .m_axi_arburst(arburst),
+    .m_axi_arvalid(arvalid),
+    .m_axi_arready(arready),
+    .m_axi_rid(rid),
+    .m_axi_rdata(rdata),
+    .m_axi_rresp(rresp),
+    .m_axi_rlast(rlast),
+    .m_axi_rvalid(rvalid),
+    .m_axi_rready(rready)
+  );
+  ddr_ctrl_regs_if u_regs_if ();
+  assign u_regs_if.cfg_ctrl = 1'b0;
+  assign u_regs_if.cfg_ctrl_wr = 1'b0;
+  logic [DATA_W-1:0]   dfi_wrdata, dfi_rddata;
+  logic [DATA_W/8-1:0] dfi_wrstrb;
+  logic [BANK_W-1:0]   dfi_bank;
+  logic [ROW_W-1:0]    dfi_row;
+  logic [COL_W-1:0]    dfi_col;
+  logic                dfi_rv;
+  logic [3:0]          mem_err_code;
+  logic [15:0]         mem_err_cnt;
+  ddr_ctrl #(
+    .NPORTS(1),
+    .DATA_W(DATA_W),
+    .ADDR_W(32),
+    .ID_W(IW),
+    .BANK_W(BANK_W),
+    .ROW_W(ROW_W),
+    .COL_W(COL_W),
+    .T_RCD(T_RCD),
+    .T_RP(T_RP),
+    .T_RAS(T_RAS),
+    .T_CL(T_CL),
+    .T_WR(T_WR),
+    .T_RTP(T_RTP),
+    .T_WTR(T_WTR),
+    .T_RRD(T_RRD),
+    .T_RFC(T_RFC),
+    .T_REFI(T_REFI),
+    .PRIORITY(0),
+    .RQ_DEPTH(RQ_DEPTH),
+    .BQ_DEPTH(BQ_DEPTH)
+  ) u_ctrl (
+    .clk,
+    .rst_n,
+    .s_axi_awid(awid),
+    .s_axi_awaddr(awaddr),
+    .s_axi_awlen(awlen),
+    .s_axi_awsize(awsize),
+    .s_axi_awburst(awburst),
+    .s_axi_awvalid(awvalid),
+    .s_axi_awready(awready),
+    .s_axi_wdata(wdata),
+    .s_axi_wstrb(wstrb),
+    .s_axi_wlast(wlast),
+    .s_axi_wvalid(wvalid),
+    .s_axi_wready(wready),
+    .s_axi_bid(bid),
+    .s_axi_bresp(bresp),
+    .s_axi_bvalid(bvalid),
+    .s_axi_bready(bready),
+    .s_axi_arid(arid),
+    .s_axi_araddr(araddr),
+    .s_axi_arlen(arlen),
+    .s_axi_arsize(arsize),
+    .s_axi_arburst(arburst),
+    .s_axi_arvalid(arvalid),
+    .s_axi_arready(arready),
+    .s_axi_rid(rid),
+    .s_axi_rdata(rdata),
+    .s_axi_rresp(rresp),
+    .s_axi_rlast(rlast),
+    .s_axi_rvalid(rvalid),
+    .s_axi_rready(rready),
+    .dfi_cmd_o(dfi_cmd),
+    .dfi_bank_o(dfi_bank),
+    .dfi_row_o(dfi_row),
+    .dfi_col_o(dfi_col),
+    .dfi_wrdata_o(dfi_wrdata),
+    .dfi_wrstrb_o(dfi_wrstrb),
+    .dfi_rddata_valid_i(dfi_rv),
+    .dfi_rddata_i(dfi_rddata),
+    .regs(u_regs_if)
+  );
+  ddr_mem #(
+    .DATA_W(DATA_W),
+    .BANK_W(BANK_W),
+    .ROW_W(ROW_W),
+    .COL_W(COL_W),
+    .MEM_WORDS(MEM_WORDS),
+    .T_RCD(T_RCD),
+    .T_RP(T_RP),
+    .T_RAS(T_RAS),
+    .T_CL(T_CL),
+    .T_WR(T_WR),
+    .T_RTP(T_RTP),
+    .T_WTR(T_WTR),
+    .T_RRD(T_RRD),
+    .T_RFC(T_RFC),
+    .REF_MAX(9 * T_REFI)
+  ) u_mem (
+    .clk,
+    .rst_n,
+    .cmd_i(dfi_cmd),
+    .bank_i(dfi_bank),
+    .row_i(dfi_row),
+    .col_i(dfi_col),
+    .wrdata_i(dfi_wrdata),
+    .wrstrb_i(dfi_wrstrb),
+    .rddata_valid_o(dfi_rv),
+    .rddata_o(dfi_rddata),
+    .err_o(mem_err),
+    .err_code_o(mem_err_code),
+    .err_cnt_o(mem_err_cnt)
+  );
+  // not used by the test: the store's constant AXI fields (checked in the store's review), the memory's
+  // error details (mem_err is compared), the controller's statistics
+  wire unused_ok = &{1'b0, mem_err_code, mem_err_cnt, u_regs_if.sts_status, u_regs_if.sts_rd_beats,
+                     u_regs_if.sts_wr_beats, u_regs_if.sts_acts, u_regs_if.sts_hits, u_regs_if.sts_refs,
+                     u_regs_if.sts_errs, 1'b0};
+endmodule

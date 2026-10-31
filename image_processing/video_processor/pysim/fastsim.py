@@ -94,6 +94,7 @@ def run(path, a, source):
     soc = Soc(s, b"", board)
     vsys = sim.video_processor_model.VideoSystem(s, soc)
     soc.ext = vsys
+    vsys.core_up = True                               # no boot here: the core logic runs from the start
     soc.ddr = vsys.ddr
     if a.npu_prog:
         import npu_compiler

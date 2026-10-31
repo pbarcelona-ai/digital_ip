@@ -11,6 +11,9 @@ Outputs, per input <name>, in --out (default python-prototype/):
   <name>_pysim_transcript.txt      the firmware's report (UART 0 or the direct transcript port)
   <name>_pysim_log.txt             the run: options, stage timeline, and the overlay objects of every
                                    output frame (label, class colour, box)
+  <name>_pysim_frames.rgb          with --raw: the output frames exactly, for the SV testbench's
+                                   comparison (+PYSIM_RGB): "RGB1", width, height, frames (32-bit little
+                                   endian), then R, G, B bytes per pixel, line by line, frame by frame
 Options as run_sim.sh: --gif-frames (--frames), --gif-first, --video-fps, --video-start, --gif-bw,
 --detect, --box, --targets, --direct-log; --jobs runs inputs in parallel processes.
 """
@@ -159,6 +162,21 @@ def run_one(path, a):
                for f in frames]
         mp4_io.write_mp4(big, list(inp.delays[:len(frames)]), os.path.join(out, f"{name}_pysim.mp4"))
         detect_proto.sheet([np.asarray(f, np.uint8) for f in frames], os.path.join(out, f"{name}_pysim_sheet.png"))
+        if a.raw:
+            with open(os.path.join(out, f"{name}_pysim_frames.rgb"), "wb") as fh:
+                fh.write(b"RGB1" + np.asarray([inp.w, inp.h, len(frames)], "<u4").tobytes())
+                for f in frames:
+                    fh.write(np.ascontiguousarray(np.asarray(f, np.uint8)[:, :, :3]).tobytes())
+    if a.raw and prog is not None:
+        # for the SV testbench (+NPU_HEX, +PYSIM_DETS): the DDR image of the program, and each NPU run's
+        # detection list of the tracking sequence (a line with the count, then 4 hex words per detection)
+        npu_compiler.ddr_hex(prog, os.path.join(out, f"{name}_npu_ddr.hex"))
+        with open(os.path.join(out, f"{name}_pysim_dets.txt"), "w") as fh:
+            fh.write(f"{len(system.npu_runs)}\n")
+            for words in system.npu_runs:
+                fh.write(f"{len(words) // 4}\n")
+                for i in range(0, len(words), 4):
+                    fh.write(" ".join(f"{w:08X}" for w in words[i:i + 4]) + "\n")
     if len(frames) < len(inp.frames) and status == "ok":
         status = f"ERROR {len(frames)} of {len(inp.frames)} frames out"
         log(status)
@@ -188,6 +206,7 @@ def main():
                     "vehicles, all (comma separated)")
     ap.add_argument("--box", default="", help="<style> or <class>:<style>,... (default: see DEFAULT_STYLES)")
     ap.add_argument("--targets", type=int, default=32, help="most targets at a time (1-32: the overlay objects)")
+    ap.add_argument("--raw", action="store_true", help="also the output frames uncompressed (<name>_pysim_frames.rgb)")
     ap.add_argument("--direct-log", action="store_true", help="transcript on the GPIO1 direct port")
     ap.add_argument("--full", action="store_true", help="no quick-simulation strap (whole start-up report)")
     ap.add_argument("--max-seconds", type=float, default=7200, help="wall-clock limit per input")

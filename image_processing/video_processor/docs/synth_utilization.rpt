@@ -1,0 +1,105 @@
+19. Printing statistics.
+
+=== video_processor ===
+
+        +----------Local Count, excluding submodules.
+        | 
+   248021 wires
+  1446322 wire bits
+     7754 public wires
+   292610 public wire bits
+       62 ports
+     1068 port bits
+   640131 cells
+    23931   CARRY4
+      759   DSP48E1
+       19   FDCE
+   200525   FDRE
+     2338   FDSE
+    78741   INV
+    31366   LUT2
+    67074   LUT3
+    40274   LUT4
+    39727   LUT5
+   144099   LUT6
+      136   RAM256X1S
+      810   RAM32M
+     9822   RAM64M
+      132   RAMB18E1
+      325   RAMB36E1
+       51   SRL16E
+        2   dpll_dco_bb
+        1 submodules
+        1   vision_system$video_processor.u_vision
+
+   Estimated number of LCs:     301308
+
+=== vision_system$video_processor.u_vision ===
+
+        +----------Local Count, excluding submodules.
+        | 
+    10377 wires
+    88554 wire bits
+      912 public wires
+    29256 public wire bits
+       70 ports
+      921 port bits
+    34641 cells
+     2014   CARRY4
+      321   DSP48E1
+     9901   FDRE
+     1227   FDSE
+     3109   INV
+     5981   LUT2
+     2617   LUT3
+     1300   LUT4
+     1391   LUT5
+     4826   LUT6
+       53   RAM32M
+     1067   RAM64M
+      834   SRL16E
+
+   Estimated number of LCs:      11166
+
+=== design hierarchy ===
+
+        +----------Count including submodules.
+        | 
+   674772 video_processor
+    34641 vision_system$video_processor.u_vision
+
+        +----------Count including submodules.
+        | 
+   258398 wires
+  1534876 wire bits
+     8666 public wires
+   321866 public wire bits
+      132 ports
+     1989 port bits
+        - memories
+        - memory bits
+        - processes
+   674772 cells
+    25945   CARRY4
+     1080   DSP48E1
+       19   FDCE
+   210426   FDRE
+     3565   FDSE
+    81850   INV
+    37347   LUT2
+    69691   LUT3
+    41574   LUT4
+    41118   LUT5
+   148925   LUT6
+      136   RAM256X1S
+      863   RAM32M
+    10889   RAM64M
+      132   RAMB18E1
+      325   RAMB36E1
+      885   SRL16E
+        2   dpll_dco_bb
+        1 submodules
+        1   vision_system$video_processor.u_vision
+
+   Estimated number of LCs:     301308
+

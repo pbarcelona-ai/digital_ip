@@ -4,30 +4,31 @@
 // Description: Glue between the video_pipeline insert point (a live camera
 //   stream that must never stall for long) and vision_system (which captures
 //   one whole frame, then generates the corrected frame, and accepts nothing
-//   meanwhile). Version 1.0.0.
-//     - Frame admission: a frame is forwarded only when vision_system is
-//       ready (tready) and the return FIFO is empty (the previous corrected
-//       frame has gone on) at the moment its SOF pixel arrives; otherwise the
-//       whole frame is dropped (accepted and discarded) so the camera side
-//       keeps flowing. Pixels before the first SOF are dropped too, so
-//       vision_system always starts writing at a frame start.
+//   meanwhile). Version 1.1.0.
+//     - Frame admission: a frame is forwarded only when vision_system was
+//       ready (tready, registered: the clock before its SOF) and the return
+//       FIFO is empty (no word in it and no beat presented in the clock
+//       before: the previous corrected frame has gone on) when its SOF pixel
+//       arrives; otherwise the whole frame is dropped (accepted and
+//       discarded) so the camera side keeps flowing. An admitted SOF is held
+//       until taken: tvalid never depends on tready. Pixels before the first
+//       SOF are dropped too, so vision_system always starts writing at a
+//       frame start.
 //     - Line gaps: vision_system needs >= barrel_pkg::LINE_GAP_CYCLES idle
 //       clocks between lines; GAP clocks are inserted after every forwarded
 //       tlast (default 8 = LINE_GAP_CYCLES 5 + 3; a design using
 //       vision_system passes barrel_pkg::LINE_GAP_CYCLES + 3).
-//     - Return path: vision_system's output does not support back-pressure
-//       (its bilinear datapath never stalls and it counts only accepted
-//       beats, so one refused beat would hang it in T_OUTPUT). Its
-//       m_axis_tready is therefore held high and the corrected frame goes
-//       through a RET_FIFO-word FIFO towards the pipeline. Admission only
-//       into an empty FIFO means RET_FIFO >= one frame (width x height)
-//       never overflows; should it still fill, the beat is dropped and
-//       counted (ret_drops_o) instead of hanging vision_system. For
-//       full-size frames use an external frame buffer (axis_dma + DRAM)
-//       here instead of on-chip RAM.
+//     - Return path: vision_system's corrected frame goes through a
+//       RET_FIFO-word FIFO towards the pipeline with r_s_axis.tready held
+//       high (vision_system 2.x would accept back-pressure, but in its bypass
+//       route that would stall the camera input). Admission only into an
+//       empty FIFO means RET_FIFO >= one frame (width x height) never
+//       overflows; should it still fill, the beat is dropped and counted
+//       (ret_drops_o). For full-size frames vision_system's DDR store holds
+//       the frames; RET_FIFO then only smooths the output rate.
 //   frames_o / drops_o count forwarded and dropped frames. Clock - clk.
 //   Reset - synchronous rst_n (active low).
-// Date: 2026-10-11
+// Date: 2026-10-25
 module vs_stream_adapter #(
   parameter int PIX_W = 24,
   parameter int GAP   = 8,                      // idle clocks after every forwarded line (>= 1)
@@ -72,10 +73,19 @@ module vs_stream_adapter #(
     .m(r_m_axis),
     .level_o(rf_level)
   );
-  wire ret_empty = rf_level == 0 && !r_s_axis.tvalid;
+  // empty: nothing in the FIFO and no beat presented in the clock before - registers only, so the
+  // admission (and m_axis.tvalid) does not depend combinationally on vision_system's output (in its
+  // bypass route that is its input: a loop)
+  logic r_act;
+  wire  ret_empty = rf_level == 0 && !r_act;
   always_ff @(posedge clk) begin
-    if (!rst_n) ret_drops_o <= '0;
-    else if (r_s_axis.tvalid && !rf_ready) ret_drops_o <= ret_drops_o + 1'b1;
+    if (!rst_n) begin
+      ret_drops_o <= '0;
+      r_act <= 1'b0;
+    end else begin
+      if (r_s_axis.tvalid && !rf_ready) ret_drops_o <= ret_drops_o + 1'b1;
+      r_act <= r_s_axis.tvalid;
+    end
   end
 
   // ---------------- forward path ----------------
@@ -83,9 +93,21 @@ module vs_stream_adapter #(
   state_e st;
   logic [$clog2(GAP+1)-1:0] gap;
   wire sof  = s_axis.tvalid && s_axis.tuser;
-  // A SOF decides the frame: forward it if vision_system takes it now
-  wire take = sof ? (m_axis.tready && ret_empty) : (st == S_PASS);
+  // A SOF decides the frame from registers only (tvalid never depends on tready): forward it if
+  // vision_system was ready in the clock before (rdy_q) and the return path is empty; an admitted SOF
+  // stays presented (adm) until vision_system takes it
+  logic rdy_q, adm;
+  wire take = adm || (sof ? (rdy_q && ret_empty) : (st == S_PASS));
   wire fwd  = (st != S_GAP) && take;
+  always_ff @(posedge clk) begin
+    if (!rst_n) begin
+      rdy_q <= 1'b0;
+      adm <= 1'b0;
+    end else begin
+      rdy_q <= m_axis.tready;
+      adm <= m_axis.tvalid && !m_axis.tready && s_axis.tuser;   // a presented SOF not yet taken
+    end
+  end
 
   assign m_axis.tdata  = s_axis.tdata;
   assign m_axis.tlast  = s_axis.tlast;

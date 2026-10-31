@@ -40,6 +40,9 @@ src/video_processor_map_pkg.sv
 ../../ip/shared/src/interfaces/vid_if.sv
 ../../ip/video/video_pipeline/src/include/video_pipeline_regs_if.sv
 ../vision_system/src/include/vision_system_regs_if.sv
+../../ip/memory/ddr_ctrl/src/include/ddr_ctrl_regs_if.sv
+../../ip/ai/npu/src/include/npu_regs_if.sv
+../../ip/ai/npu/src/npu_dma_if.sv
 ../../ip/timing/watchdog/src/include/watchdog_regs_if.sv
 src/configuration.sv
 # ---- shared / CDC
@@ -94,7 +97,6 @@ src/configuration.sv
 ../../ip/cpu/py_soc/src/py_sysctl_top.sv
 ../../ip/cpu/py_soc/src/py_soc.sv
 # ---- video_pipeline
-../../ip/shared/src/common/ip_axil_regs.sv
 ../../ip/shared/src/fifo/ip_axis_fifo.sv
 ../../ip/fifo/async_fifo/src/async_fifo.sv
 ../../ip/cdc/axis_async_bridge/src/axis_async_bridge.sv
@@ -140,11 +142,31 @@ src/configuration.sv
 ../vision_system/ip/frame_buffer/src/frame_buffer.sv
 ../vision_system/ip/ext_frame_buffer/src/ext_frame_buffer.sv
 ../../ip/fifo/fallthrough_fifo/src/fallthrough_fifo.sv
+../vision_system/ip/ddr_frame_store/src/ddr_frame_store.sv
 ../vision_system/src/axis_in_ctrl.sv
 ../vision_system/src/axis_out_ctrl.sv
 ../vision_system/src/include/vision_system_regs.sv
 ../vision_system/src/axi_lite_regs.sv
 ../vision_system/src/vision_system.sv
+# ---- DDR controller (`VP_DDR)
+../../ip/memory/ddr_ctrl/src/include/ddr_ctrl_regs.sv
+../../ip/memory/ddr_ctrl/src/ddr_ctrl.sv
+../../ip/memory/ddr_ctrl/src/ddr_ctrl_top.sv
+src/ddr_cpu_bridge.sv
+# ---- NPU (`VP_NPU)
+../../ip/ai/npu/src/include/npu_regs.sv
+../../ip/ai/npu/src/npu_dma.sv
+../../ip/ai/npu/src/npu_lane_mem.sv
+../../ip/ai/npu/src/npu_ram_1w2r.sv
+../../ip/ai/npu/src/npu_elt.sv
+../../ip/ai/npu/src/npu_pool.sv
+../../ip/ai/npu/src/npu_input.sv
+../../ip/ai/npu/src/npu_conv.sv
+../../ip/ai/npu/src/npu_decode.sv
+../../ip/ai/npu/src/npu_nms.sv
+../../ip/ai/npu/src/npu_fw.sv
+../../ip/ai/npu/src/npu.sv
+../../ip/ai/npu/src/npu_top.sv
 # ---- blur_sharpen
 ../../ip/video/conv2d_core/src/conv2d_pkg.sv
 ../../ip/video/conv2d_core/src/conv2d_core.sv
@@ -163,9 +185,12 @@ src/configuration.sv
 ../../ip/video/object_tracker/src/object_tracker.sv
 ../../ip/video/object_tracker/src/object_tracker_top.sv
 ../../ip/video/symbol_overlay/src/overlay_font_pkg.sv
+../../ip/video/symbol_overlay/src/overlay_font_rom.sv
+../../ip/video/symbol_overlay/src/symbol_overlay_rows.sv
 ../../ip/video/symbol_overlay/src/include/symbol_overlay_regs.sv
 ../../ip/video/symbol_overlay/src/symbol_overlay.sv
 ../../ip/video/symbol_overlay/src/symbol_overlay_top.sv
+src/axil_core_gate.sv
 src/video_processor.sv
 # ---- models without RTL yet (the Python baseline is ahead: docs/pending_sv_changes.md)
 #model ../../ip/ai/npu

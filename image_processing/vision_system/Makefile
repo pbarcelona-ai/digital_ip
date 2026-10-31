@@ -29,7 +29,7 @@
 
 SHELL := /bin/bash
 CHECK := ci/run_checked.sh
-IPS   := fixed_recip frame_buffer ext_frame_buffer mulq bilinear bicubic coord_gen
+IPS   := fixed_recip frame_buffer ext_frame_buffer ddr_frame_store mulq bilinear bicubic coord_gen
 
 ifeq ($(FULL),1)
 SV_ENV :=

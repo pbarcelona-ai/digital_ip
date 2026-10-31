@@ -3,5 +3,8 @@
 /ip/**/sim_out/
 /og/
 /pagefind/
+/graphify-out/
 __pycache__/
 .DS_Store
+ip/image_processing/video_processor/status_*.txt
+sim_build/

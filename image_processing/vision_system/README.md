@@ -1317,6 +1317,7 @@ Data-flow diagrams are generated from the RTL by `ip/scripts/make_dataflow_diagr
 | `bicubic` | - | - | [data flow](ip/bicubic/docs/bicubic_dataflow.svg) |
 | `bilinear` | - | - | [data flow](ip/bilinear/docs/bilinear_dataflow.svg) |
 | `coord_gen` | - | - | [data flow](ip/coord_gen/docs/coord_gen_dataflow.svg) |
+| `ddr_frame_store` | - | - | - |
 | `ext_frame_buffer` | - | - | [data flow](ip/ext_frame_buffer/docs/ext_frame_buffer_dataflow.svg) |
 | `fixed_recip` | - | - | [data flow](ip/fixed_recip/docs/fixed_recip_dataflow.svg) |
 | `frame_buffer` | - | - | [data flow](ip/frame_buffer/docs/frame_buffer_dataflow.svg) |

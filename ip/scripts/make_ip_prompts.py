@@ -262,7 +262,7 @@ def table(header: list[str], rows: list[list[str]]) -> str:
 
 
 STREAM_RE = re.compile(r"^(?P<p>(?:\w+_)?(?:s|m)_?axis\w*?)_t(?P<sig>data|valid|ready|last|user|keep|strb|id|dest)$")
-AXIL_RE = re.compile(r"^(?P<p>(?:\w+_)?[sm]_axil?\w*?)_(aw|w|b|ar|r)(addr|data|strb|valid|ready|resp|prot)$")
+AXIL_RE = re.compile(r"^(?P<p>(?:\w+_)?[sm]_axil?\w*?)_(aw|w|b|ar|r)(addr|data|strb|valid|ready|resp|prot|id|len|size|burst|last|lock|cache|qos)$")
 
 
 IF_PORT_RE = re.compile(r"\w+_if(\.\w+)?$")         # Port.direction of an interface port: <if>[.<modport>]
@@ -307,6 +307,11 @@ def interfaces(decl: ModuleDecl) -> tuple[list[str], list[Port]]:
         addr = next((p.width for p in ps if p.name.endswith("awaddr")), "?")
         role = "slave" if any(p.name.endswith("awaddr") and p.direction == "input" for p in ps) else "master"
         cond = f" (when `{ps[0].define}`)" if ps[0].define else ""
+        if any(p.name.endswith(("awlen", "arlen", "awid", "arid")) for p in ps):   # full AXI4: bursts, IDs
+            data = next((p.width for p in ps if p.name.endswith(("wdata", "rdata"))), "?")
+            out.append(f"- **{prefix}_*** - AXI4 (full) {role}, address {addr}, data {data}{cond}: discrete "
+                       "ports (bursts and IDs; the library has no full-AXI4 interface).")
+            continue
         out.append(f"- **{prefix}_*** - AXI4-Lite {role}, address {addr}, 32-bit data{cond}: interface "
                    f"`axil_if.{role}` (`{AXIL_IF}`).")
     for prefix, ps in stream.items():

@@ -320,15 +320,21 @@ def signed32(v):
 
 
 def result(ok, h):
-    """One self-test line: [PASS] or [FAIL] and the description; counts the outcome."""
-    global errors, passes
+    """One self-test line: [PASS] or [FAIL] and the description; counts the outcome. A [FAIL] line is written
+    even while the text is muted for the direct transcript (sections 1-7), on its port."""
+    global errors, passes, con
     if ok:
         puts("  [PASS] ")
         passes += 1
+        say(h)
     else:
+        c = con
+        if con == 0 and direct():
+            con = 2
         puts("  [FAIL] ")
         errors += 1
-    say(h)
+        say(h)
+        con = c
 
 
 def heading(h):

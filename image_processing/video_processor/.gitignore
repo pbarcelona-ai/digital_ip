@@ -11,3 +11,7 @@ ci/logs/
 code_reviews/*.*.txt
 python-prototype
 tb/images/
+status_*.txt
+latest_*
+latest*.*
+graphify-out/

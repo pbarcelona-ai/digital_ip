@@ -6,7 +6,8 @@
 //   last written word, and a registered read-data path for timing closure.
 //   Read data is supplied by the parent so status and control registers
 //   can share one address map. Out of range accesses return SLVERR. Single
-//   clock, active-low synchronous reset. Version 1.0.0. Clock - single
+//   clock, active-low synchronous reset. Version 1.1.0 (the AXI4-Lite port
+//   is an axil_if.slave interface). Clock - single
 //   clock aclk, every input is synchronous to it unless a two-flop
 //   synchronizer is mentioned. Reset - synchronous active low aresetn,
 //   registers take the documented reset values. Latency - AXI-Lite write
@@ -15,7 +16,7 @@
 //   combinational path from the bus to the pins. Errors - out of range
 //   AXI-Lite accesses return SLVERR; illegal parameter values stop
 //   elaboration with an $error.
-// Date: 2026-09-29
+// Date: 2026-10-26
 module ip_axil_regs #(
   parameter int ADDR_W = 8,                       // AXI-Lite address bits
   parameter int NREG   = 8,                       // number of 32-bit regs
@@ -23,13 +24,8 @@ module ip_axil_regs #(
 ) (
   input  logic                 aclk,
   input  logic                 aresetn,
-  // Write address channel
   // s_axil: axil_if.slave (ip/shared/src/interfaces/axil_if.sv), ADDR_W = ADDR_W
   axil_if.slave s_axil,
-  // Write data channel
-  // Write response channel
-  // Read address channel
-  // Read data channel
   // Register interface to the IP core
   output logic [NREG*32-1:0]   reg_o,       // stored register values
   output logic [NREG-1:0]      wr_pulse_o,  // one-cycle pulse per write

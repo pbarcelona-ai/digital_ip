@@ -2,11 +2,12 @@
 // Filename: dpll_dco.sv
 // Author: FPGA Cores 4 U
 // Description: Digitally controlled oscillator with phase read-out (TDC)
-//   and NOUT divided outputs, the analogue part of dpll. Version 1.0.0.
+//   and NOUT divided outputs, the analogue part of dpll. Version 1.0.1.
 //   Behavioural simulation model: a ring / LC DCO and its time-to-digital
-//   converter are device specific, so for synthesis this module is an
-//   empty black box (`SYNTHESIS) to be replaced by the device PLL / MMCM or
-//   a hard DCO + TDC macro.
+//   converter are device specific, so for synthesis (`SYNTHESIS) this
+//   module only connects one fixed-width black box, dpll_dco_bb (8
+//   outputs, 64-bit code and phase; NOUT <= 8, CW, PW <= 64), to be
+//   replaced by the device PLL / MMCM or a hard DCO + TDC macro.
 //   Oscillator - frequency f = (F_MIN_KHZ + code_i * (F_MAX_KHZ -
 //   F_MIN_KHZ) / 2**CW) * (1 + MISMATCH_PPM / 1e6); the mismatch models a
 //   process / temperature offset that the loop has to correct. The
@@ -27,10 +28,12 @@
 //   Clocks - ref_clk samples the phase; clk_o are generated. Reset - none
 //   (the oscillator runs from time 0). Latency - phase_o valid one ref_clk
 //   edge after the sample.
-// Date: 2026-10-09
+// Date: 2026-10-27
 `timescale 1ns/1ps
 `ifdef SYNTHESIS
-(* blackbox *)
+// The oscillator as one fixed-width black box (dpll_dco_bb, up to 8 outputs, 64-bit code and phase): a
+// parametric black box is imported once, with the port widths of the first instance met, so a second
+// instance with more outputs would lose them (undriven clocks, their logic removed).
 module dpll_dco #(
   parameter int              NOUT         = 1,
   parameter int              CW           = 24,
@@ -46,6 +49,31 @@ module dpll_dco #(
   input  logic [NOUT-1:0] en_i,
   output logic [PW-1:0]   phase_o,
   output logic [NOUT-1:0] clk_o
+);
+  if (NOUT < 1 || NOUT > 8 || CW < 1 || CW > 64 || PW < 1 || PW > 64) begin : g_bad
+    $error("dpll_dco: the synthesis black box has at most 8 outputs and 64-bit code / phase");
+  end
+  logic [63:0] phase_w;
+  logic [7:0]  clk_w;
+  dpll_dco_bb u_bb (
+    .ref_clk,
+    .code_i(64'(code_i)),
+    .en_i(8'(en_i)),
+    .phase_o(phase_w),
+    .clk_o(clk_w)
+  );
+  assign phase_o = phase_w[PW-1:0];
+  assign clk_o = clk_w[NOUT-1:0];
+  wire unused_bb = &{1'b0, phase_w, clk_w, 1'b0};
+endmodule
+
+(* blackbox *)
+module dpll_dco_bb (
+  input  logic        ref_clk,
+  input  logic [63:0] code_i,
+  input  logic [7:0]  en_i,
+  output logic [63:0] phase_o,
+  output logic [7:0]  clk_o
 );
 endmodule
 `else

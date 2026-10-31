@@ -48,6 +48,7 @@ class VideoSystem:
         self.ovl = SymbolOverlay(NOBJ, NTXT)
         self.ddr = Ddr(DDR_BYTES)
         self.npu = NpuTop(self.ddr)
+        self.core_up = False                         # the core logic out of reset (SYSCTL CORE_RESET)
 
     def irq_lines(self):
         """External interrupt sources 12-15: isp_stats frame done (edge), frame_counter channels 0 / 1
@@ -82,12 +83,18 @@ class VideoSystem:
         return None, 0
 
     def read(self, off):
+        """A read of the window: while the core logic is in reset the gate answers SLVERR with data 0
+        (video_processor.sv u_ext_gate, axil_core_gate)."""
+        if not self.core_up:
+            return 0, 2
         t, o = self._decode(off)
         if t is None:
             return 0, 3
         return t.read(o)
 
     def write(self, off, d):
+        if not self.core_up:
+            return 2
         t, o = self._decode(off)
         if t is None:
             return 3

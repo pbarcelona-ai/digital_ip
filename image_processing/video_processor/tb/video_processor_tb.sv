@@ -67,11 +67,13 @@
 //       over I2C 0 to reprogram every block (stage 170), and its base name
 //       into registers 0x40-0x4F (the overlay's upper-left text). The camera then sends
 //       one RAW10 frame per GIF frame; GPIO0[29] is high while it lasts.
-//       The frames at the tracker input (after blur_sharpen), at the
-//       overlay output and on HDMI are captured, with each frame's overlay
-//       settings, tracker window and results; the HDMI frames are written
-//       as an animated GIF with the input's frame times (gif_io writer;
-//       gif-output/<input name>_tracked.gif) and read back. LVDS
+//       The frames out of the overlay and on HDMI are captured (HDMI must
+//       equal the overlay output) and, with +PYSIM_RGB, compared pixel for
+//       pixel with the system model's (pysim) output for the same input -
+//       the differences listed per frame with their bounding box (the
+//       overlay's clock text shows the run's own time); the HDMI frames are
+//       written as an animated GIF with the input's frame times (gif_io
+//       writer; gif-output/<input name>_tracked.gif) and read back. LVDS
 //       is checked before this and its serial clock is stopped for it.
 //       Several GIFs (+GIF_IN=<a.gif>,<b.gif>,...) are sent one after the
 //       other in one run: the camera's register 0x56 holds their count,
@@ -86,28 +88,49 @@
 //       (send only the first n frames, a shorter run), +GIF_FIRST=<n>
 //       (start at frame n: a long GIF run in parts),
 //       +DETECT=<classes> (pedestrian, face, automobile / car, vehicle /
-//       bus, comma separated, or all; default pedestrian), +BOX=<style> or
-//       +BOX=<class>:<style>,... (dashed-box, solid-box, dashed-circle,
-//       solid-circle, dashed-oval, solid-oval, solid-centre (a solid box in
-//       the middle of the target, a quarter of its size); default dashed
-//       box for pedestrians and faces, solid-centre for automobiles and
-//       vehicles),
-//       +TARGETS=<n> (most targets tracked at a time, 1-12, camera register
-//       0x55; default 12), +TRANSCRIPT=<file>, +direct.
-//     - object detection: each selected class has its own object_tracker
-//       detector and 3 overlay objects (up to 3 targets per class, colour
-//       per class); a ground truth
-//       file <GIF name>.truth.txt next to the GIF (frame x0 y0 x1 y1, or
-//       frame class x0 y0 x1 y1), when there is one, is what the tracking
-//       of each class is judged against (one of the class's boxes must hold
-//       each true box).
+//       bus, aircraft / plane, comma separated, or all; default all),
+//       +BOX=<style> or +BOX=<class>:<style>,... (dashed-box, solid-box,
+//       dashed-circle, solid-circle, dashed-oval, solid-oval, solid-centre,
+//       corner-box, tick-box, triangle; default corner-box for pedestrians
+//       and faces, tick-box for automobiles and vehicles, triangle for
+//       aircraft: make pysim's), +TARGETS=<n> (most targets tracked at a
+//       time, 1-32, camera register 0x58; default 32), +PYSIM_RGB=<file>
+//       (make pysim --raw output for the same input: the output frames
+//       compared pixel for pixel), +TRANSCRIPT=<file>, +direct.
+//     - object detection: without +NPU_HEX the firmware's feature detectors
+//       (sw/tracker.py: object_tracker x 5 on feature_detect's features, up
+//       to 32 overlay objects); the DDR holds no NPU program (ddr_mem reads
+//       0: no "NPU8" header), as make pysim --no-npu. With +NPU_HEX=<file>
+//       (pysim --raw with an NPU program: <name>_npu_ddr.hex; the system test
+//       uses the small network of ip/ai/npu/scripts/make_tiny_model.py at
+//       128 x 128) the program and its header are preloaded in the DDR and
+//       the firmware runs the NPU on every frame (AUTO) with its ByteTrack
+//       tracking; +PYSIM_DETS=<file> (<name>_pysim_dets.txt) compares every
+//       run's detection list in the DDR with pysim's, word for word. Each
+//       frame is sent only after the firmware committed the previous one's
+//       result (trk_frames), as pysim: no frame arrives during an NPU run.
+//       The NPU is built with an 8 x 8 MAC array here (NPU_PE: simulation
+//       speed; its results do not depend on it). A ground truth file <GIF name>.truth.txt next to the
+//       GIF is read and listed (the tracking itself is judged by the
+//       comparison with pysim).
 //   The test tasks are in tests/video_processor_tests.sv (`included).
-//   Prints TEST PASSED on success.
-// Date: 2026-10-14
+//   With `VP_DDR the board's DDR is ddr_mem on the DFI-style pins; the run
+//   fails if it reports a timing violation. Prints TEST PASSED on success.
+// Date: 2026-10-26
 `timescale 1ns/1ps
 module video_processor_tb;
   `include "video_proc_syms.svh"
+`ifndef VP_FONT_DIR
+  `define VP_FONT_DIR ""                             // symbol_overlay's smooth-font ROMs (run_sim.sh sets it)
+`endif
   localparam int W = 32, H = 24;
+  // the tracking frames' largest size (GMAXW x GMAXH: the DUT's MAX_W / FEAT_MAX_H / VS_RET_FIFO and the HDMI sink
+  // are sized for it) and the frames kept; `VP_TB_FULL (run_sim.sh --full-size): native 1920 x 1080, one frame
+`ifdef VP_TB_FULL
+  localparam int GMAXW = 1920, GMAXH = 1080, GMAXF = 2;
+`else
+  localparam int GMAXW = 320, GMAXH = 240, GMAXF = 128;
+`endif
   // Board: 33.333 MHz reference oscillator and the camera's D-PHY byte clock. Every other clock
   // is generated by the DUT (py_soc clock generator): CPU 200 MHz, core 100 MHz, TMDS 1 GHz,
   // LVDS 700 MHz, MIPI TX byte 125 MHz; the firmware turns the display serial clocks on at its
@@ -149,6 +172,18 @@ module video_processor_tb;
   wire [12:0] sd_a;
   wire [1:0] sd_ba;
   wire [7:0] sd_dqm;
+  // DDR memory behind the controller's DFI-style pins (`VP_DDR): 8 banks x 512 rows x 256 words of 256
+  // bits, 32 MB; vision_system's frame buffers moved into it (0x0180_0000, 0x01C0_0000: 4 MB each)
+  localparam int DDR_BANK_W = 3, DDR_ROW_W = 9, DDR_COL_W = 8, DDR_T_REFI = 780;
+  logic         dfi_clk, dfi_rst_n, dfi_rv, ddr_err;
+  logic [2:0]   dfi_cmd;
+  logic [DDR_BANK_W-1:0] dfi_bank;
+  logic [DDR_ROW_W-1:0]  dfi_row;
+  logic [DDR_COL_W-1:0]  dfi_col;
+  logic [255:0] dfi_wrdata, dfi_rddata;
+  logic [31:0]  dfi_wrstrb;
+  logic [3:0]   ddr_err_code;
+  logic [15:0]  ddr_err_cnt;
   tri1 sda0, scl0, sda1, scl1;
   wire quick_strap = $test$plusargs("quick");
   wire direct_strap = $test$plusargs("direct");      // direct transcript (GPIO0[28])
@@ -157,10 +192,11 @@ module video_processor_tb;
 
   video_processor #(
     .NLANES(2),
-    .MAX_W(320),                                     // tracking test frames up to 320 x 240
-    .FEAT_MAX_H(240),
+    .MAX_W(GMAXW > 320 ? 2048 : 320),                // tracking test frames up to GMAXW x GMAXH
+    .FEAT_MAX_H(GMAXH > 240 ? 1088 : 240),
     .FEAT_CELL_LOG2(2),                              // feature_detect: 4 x 4 background cells
-    .VS_RET_FIFO(131072),                            // a whole 320 x 240 frame
+    .VS_RET_FIFO(GMAXW > 320 ? 2097152 : 131072),    // a whole frame
+    .VS_ADDR_W(GMAXW > 320 ? 21 : barrel_pkg::ADDR_W),   // vision_system's store: a whole frame
     .CSI_FIFO(256),
     .OUT_FIFO(512),
     .UART0_BAUD(UART_BAUD),
@@ -170,7 +206,15 @@ module video_processor_tb;
     .SPI0_HZ(10_000_000),
     .SPI1_HZ(10_000_000), // fast rates: short simulation
     .FLASH_CLKDIV(3),
-    .PLL_MISMATCH_PPM(20_000)
+    .PLL_MISMATCH_PPM(20_000),
+    .NPU_PE(8),                                      // an 8 x 8 MAC array: simulation speed (results equal)
+    .VS_DDR_FB0(32'h0180_0000),
+    .VS_DDR_FB1(32'h01C0_0000),
+    .DDR_BANK_W(DDR_BANK_W),
+    .DDR_ROW_W(DDR_ROW_W),
+    .DDR_COL_W(DDR_COL_W),
+    .DDR_T_REFI(DDR_T_REFI),
+    .OVL_FONT_DIR(`VP_FONT_DIR)
   ) dut (
     .arst_n,
     .ref_clk,
@@ -235,7 +279,52 @@ module video_processor_tb;
     .sdram_dqm(sd_dqm),
     .sdram_dq(sdram_dq),
 `endif
+`ifdef VP_DDR
+    .dfi_clk_o(dfi_clk),
+    .dfi_rst_n_o(dfi_rst_n),
+    .dfi_cmd_o(dfi_cmd),
+    .dfi_bank_o(dfi_bank),
+    .dfi_row_o(dfi_row),
+    .dfi_col_o(dfi_col),
+    .dfi_wrdata_o(dfi_wrdata),
+    .dfi_wrstrb_o(dfi_wrstrb),
+    .dfi_rddata_valid_i(dfi_rv),
+    .dfi_rddata_i(dfi_rddata),
+`endif
     .stats_done_o(sdone));
+`ifdef VP_DDR
+  ddr_mem #(
+    .DATA_W(256),
+    .BANK_W(DDR_BANK_W),
+    .ROW_W(DDR_ROW_W),
+    .COL_W(DDR_COL_W),
+    .MEM_WORDS(1 << (DDR_BANK_W + DDR_ROW_W + DDR_COL_W)),
+    .T_RCD(4),
+    .T_RP(4),
+    .T_RAS(10),
+    .T_CL(5),
+    .T_WR(4),
+    .T_RTP(2),
+    .T_WTR(2),
+    .T_RRD(2),
+    .T_RFC(30),
+    .REF_MAX(9 * DDR_T_REFI)
+  ) ddr (
+    .clk(dfi_clk),
+    .rst_n(dfi_rst_n),
+    .cmd_i(dfi_cmd),
+    .bank_i(dfi_bank),
+    .row_i(dfi_row),
+    .col_i(dfi_col),
+    .wrdata_i(dfi_wrdata),
+    .wrstrb_i(dfi_wrstrb),
+    .rddata_valid_o(dfi_rv),
+    .rddata_o(dfi_rddata),
+    .err_o(ddr_err),
+    .err_code_o(ddr_err_code),
+    .err_cnt_o(ddr_err_cnt)
+  );
+`endif
 `ifndef VP_HDMI
   assign tmds_ser = '0;
 `endif
@@ -306,9 +395,8 @@ module video_processor_tb;
   // ---------------- tracking test: GIF in, captures, GIF out ----------------
   // Frame size: the GIF's own (width rounded down to a multiple of 4 for RAW10 packing, height to
   // an even number for the Bayer pattern), scaled down keeping the aspect ratio when larger than
-  // GMAXW x GMAXH (the DUT's MAX_W / VS_RET_FIFO and the HDMI sink are sized for it), at least 16 x 16.
-  localparam int GMAXW = 320, GMAXH = 240, GMAXF = 128;
-  localparam int NOBJ = 12, NTR = 3;                 // overlay objects: 3 targets per class (object 3c + k)
+  // GMAXW x GMAXH (declared above), at least 16 x 16.
+  localparam int NOBJ = 32, NTR = 3;                 // overlay objects (the firmware's NPU tracks); true boxes per class
   localparam int LAB_GIF = 1000;                     // camera label of GIF frame 0
   int   gw = 128, gh = 96;                           // tracking frame size (camera registers 0x30-0x33)
   gif_io #(
@@ -330,32 +418,30 @@ module video_processor_tb;
     .MAXW(GMAXW),
     .MAXH(GMAXH),
     .MAXF(GMAXF)
-  ) trk_in (); // frames at the tracker input (blur_sharpen out)
+  ) ovl_out ();// frames out of the overlay
   gif_io #(
     .MAXW(GMAXW),
     .MAXH(GMAXH),
     .MAXF(GMAXF)
-  ) ovl_out ();// frames out of the overlay
-  track_ref #(
-    .MAXW(GMAXW),
-    .MAXH(GMAXH),
-    .NOBJ(NOBJ)
-  ) trm ();     // object_tracker / symbol_overlay models
+  ) gref ();   // the system model's output frames (make pysim GIF=<in> FIT=320x240 RAW=1)
   string gif_in = "input_images/pedestrian_walk.gif", gif_dir = "gif-output", gif_in_dir = "gif-input", gif_out = "";
+  string pysim_rgb = "";                             // +PYSIM_RGB=<path>: the pysim output frames to compare with
   int   gif_n = 0, gif_next = 0;                     // frames to send, next one
   int   gif_first = 0;                               // +GIF_FIRST=<n>: the first GIF frame sent
   bit   gif_go = 0, gif_on = 0;                      // sending; capturing
   bit   gif_bw = 0, gif_colour = 0;                  // +GIF_BW: convert a colour GIF to black and white
-  // detection options (+DETECT, +BOX, +TARGETS): classes 0 pedestrian, 1 face, 2 automobile, 3 vehicle,
-  // loaded into the camera's control registers 0x50 (bit c), 0x51-0x54 (style of class c: 0 dashed box,
-  // 1 solid box, 2 dashed circle, 3 solid circle, 4 dashed oval, 5 solid oval, 6 solid box in the
-  // middle of the target) and 0x55 (most targets)
-  logic [3:0] det_mask = 4'b0001;
-  int   det_style [4] = '{0, 0, 6, 6};                 // cars and vehicles: a solid box in their middle
+  // detection options (+DETECT, +BOX, +TARGETS), as make pysim: classes 0 pedestrian, 1 face, 2 automobile,
+  // 3 vehicle, 4 aircraft, loaded into the camera's control registers 0x50 (bit c), 0x51-0x55 (style of
+  // class c: 0 dashed box, 1 solid box, 2 dashed circle, 3 solid circle, 4 dashed oval, 5 solid oval,
+  // 6 solid box in the middle, 7 dashed box with solid corners, 8 dashed box with ticks, 9 dashed
+  // triangle with solid vertices) and 0x58 (most targets)
+  localparam int NCLS = 5;
+  logic [NCLS-1:0] det_mask = '1;                    // all classes (pysim --detect all)
+  int   det_style [NCLS] = '{7, 7, 8, 8, 9};         // pysim DEFAULT_STYLES
   int   max_targets = NOBJ;
-  string det_name [4] = '{"pedestrian", "face", "automobile", "vehicle"};
-  string style_name [7] = '{"dashed box", "solid box", "dashed circle", "solid circle", "dashed oval", "solid oval",
-                            "solid box in the middle"};
+  string det_name [NCLS] = '{"pedestrian", "face", "automobile", "vehicle", "aircraft"};
+  string style_name [10] = '{"dashed box", "solid box", "dashed circle", "solid circle", "dashed oval", "solid oval",
+                             "solid box in the middle", "corner box", "tick box", "triangle"};
   string gif_list [$];                               // +GIF_IN=<a>,<b>,...: the GIFs, sent one after the other
   int   gif_idx = 0;                                 // the one being sent
   // ground truth (<GIF name>.truth.txt next to the GIF, when there is one): box of class c in frame k
@@ -363,30 +449,90 @@ module video_processor_tb;
   int   truth_n [GMAXF][4];
   bit   truth_ok [GMAXF][4];
   bit   truth_file = 0;
-  logic [NOBJ*128-1:0] ovl_act [GMAXF];              // overlay objects applied to each frame
-  logic [383:0] ovl_txt [GMAXF];                     // and its 4 texts {COLOR, POS, CTRL}
-  logic [511:0] ovl_chr [GMAXF];                     // their characters
-  logic [19:0] ovl_fnum [GMAXF];                     // its frame number (BCD)
-  bit   ovl_en [GMAXF];
-  // per frame and detector (object class c: 0 pedestrian, 1 face, 2 automobile, 3 other vehicle):
-  // window (x0, y0, x1, y1) taken at the frame start, settings, results at the frame end
-  localparam int NTRK = video_processor_map_pkg::NTRK;
-  int   trk_win [GMAXF][NTRK][4];
-  logic [31:0] trk_ctrl [GMAXF][NTRK], trk_thr [GMAXF][NTRK], trk_run [GMAXF][NTRK], trk_yr [GMAXF][NTRK],
-               trk_cbr [GMAXF][NTRK], trk_crr [GMAXF][NTRK], trk_sat [GMAXF][NTRK];
-  int   trk_n [GMAXF][NTRK], trk_bx [GMAXF][NTRK], trk_by [GMAXF][NTRK];
-  logic [31:0] trk_bcfg [GMAXF][NTRK], trk_runb [GMAXF][NTRK];   // BLOB_CFG, RUN_B; the blobs at the frame end
-  logic [255:0] trk_bln [GMAXF][NTRK], trk_blx [GMAXF][NTRK], trk_bly [GMAXF][NTRK];
-  // feature_detect per frame: CTRL, EDGE, MOTION and the shift taken at its start; the counts at its end
-  logic [31:0] ft_ctrl [GMAXF], ft_edge [GMAXF], ft_motion [GMAXF];
-  int ft_sx [GMAXF], ft_sy [GMAXF], ft_ne [GMAXF], ft_nm [GMAXF];
-  feature_ref #(
-    .MAXW(GMAXW),
-    .MAXH(GMAXH),
-    .CELL_LOG2(2),
-    .SHIFT_MAX(4)
-  ) fref ();   // feature_detect model
   bit   trk_done [GMAXF], hdmi_saved [GMAXF];
+`ifdef VP_NPU
+  // +NPU_HEX=<file> (make pysim RAW=1 with an NPU program: <name>_npu_ddr.hex): the NPU program and its header
+  // preloaded in the DDR, as a boot loader would (without it the DDR reads 0: no "NPU8" header, the feature
+  // detectors). +PYSIM_DETS=<file> (<name>_pysim_dets.txt): every NPU run of the tracking sequence compared
+  // with pysim's, its detection list in the DDR word for word (read 2000 pix_clk after the run's end: its
+  // writes are done, the next frame's run has not started).
+  localparam int NPU_MAXR = 256, NPU_MAXW = 64 * 4 * NPU_MAXR;
+  string npu_hex = "", pysim_dets = "";
+  int    npu_runs = 0, npu_bad = 0, npu_exp_runs = -1;
+  int    npu_exp_n [NPU_MAXR], npu_exp_off [NPU_MAXR];
+  logic [31:0] npu_exp_w [NPU_MAXW];
+  initial begin
+    if ($value$plusargs("NPU_HEX=%s", npu_hex)) begin
+      #1;                                              // after ddr_mem's own clearing at time 0
+      $readmemh(npu_hex, ddr.mem);
+      $display("  DDR: NPU program and header preloaded from %s", npu_hex);
+    end
+    if ($value$plusargs("PYSIM_DETS=%s", pysim_dets)) begin
+      int fd, n, off;
+      fd = $fopen(pysim_dets, "r");
+      if (fd == 0 || $fscanf(fd, "%d", npu_exp_runs) != 1) npu_exp_runs = -1;
+      off = 0;
+      for (int r = 0; r < npu_exp_runs && r < NPU_MAXR; r++) begin
+        if ($fscanf(fd, "%d", n) != 1) n = -1;
+        npu_exp_n[r] = n;
+        npu_exp_off[r] = off;
+        for (int i = 0; i < 4 * n && off < NPU_MAXW; i++) begin
+          if ($fscanf(fd, "%h", npu_exp_w[off]) != 1) npu_exp_n[r] = -1;
+          off++;
+        end
+      end
+      if (fd != 0) $fclose(fd);
+      $display("  NPU: %0d runs expected (%s)", npu_exp_runs, pysim_dets);
+    end
+  end
+  function automatic logic [31:0] ddr_word32(input logic [31:0] a);   // byte address a (4-aligned)
+    ddr_word32 = ddr.mem[a[31:5]][32*a[4:2] +: 32];
+  endfunction
+  task automatic npu_check_run();                     // the run's index taken at its start (forked per run)
+    int r, n, b;
+    logic [31:0] a;
+    r = npu_runs;
+    npu_runs++;
+    repeat (2000) @(posedge pix_clk);
+    n = int'(dut.u_npu.u_core.det_count);
+    a = dut.u_npu.u_core.det_addr;
+    b = 0;
+    if (r >= npu_exp_runs || r >= NPU_MAXR || npu_exp_n[r] != n) b = 1;
+    else for (int i = 0; i < 4 * n; i++) if (ddr_word32(a + 32'(4 * i)) !== npu_exp_w[npu_exp_off[r] + i]) b++;
+    if (b > 0) begin
+      if (npu_bad < 8)
+        $display("  NPU run %0d: %0d detections (pysim %0d), %0d words differ from pysim", r + 1, n,
+                 (r < npu_exp_runs && r < NPU_MAXR) ? npu_exp_n[r] : -1, b);
+      npu_bad++;
+    end
+  endtask
+  // the sequence's timing with the NPU (its runs end, the firmware commits each frame): where the time goes
+  // (trk_frames read every 256 cpu_clk, 1.28 us: a firmware global read on every clock slows the run)
+  longint npu_commits = 0;
+  bit     npu_mode = 0;                              // +NPU_HEX given (set once, cheaper than a string compare)
+  logic [7:0] npu_div = '0;
+  initial npu_mode = $test$plusargs("NPU_HEX=");
+  always @(posedge cpu_clk) if (npu_mode && gif_on) begin
+    npu_div <= npu_div + 8'd1;
+    if (npu_div == '0 && g(G_trk_frames) - trk_f0 != npu_commits) begin
+      npu_commits = g(G_trk_frames) - trk_f0;
+      $display("[%t] NPU sequence: firmware committed frame %0d (trk_frames)", $realtime, npu_commits);
+    end
+  end
+  always @(posedge pix_clk) if (npu_mode && dut.ev_vs_out && gif_on)
+    $display("[%t] NPU sequence: corrected frame starts out of vision_system (frame writer)", $realtime);
+  always @(posedge pix_clk) if (npu_mode && dut.u_npu.run_done_o && gif_on)
+    $display("[%t] NPU sequence: run done, %0d detections", $realtime, dut.u_npu.u_core.det_count);
+  always @(posedge pix_clk) if (dut.u_npu.run_done_o && gif_on) begin
+    if (npu_exp_runs >= 0) begin
+      fork
+        npu_check_run();
+      join_none
+    end else begin
+      npu_runs++;
+    end
+  end
+`endif
   int   fo_k = -1, fo_x = 0, fo_y = 0, ir_k = -1, ir_x = 0, ir_y = 0, ir_done = -1, hdmi_frames = 0;
   int   fc_snap0 = -1, fc_snap1 = -1;                // frame counts when the tracking section starts
   // SYSCTL CLK_EN overridden by the testbench (simulation speed only): clocks(en) from the first call on
@@ -447,7 +593,7 @@ module video_processor_tb;
         if (gif_next > 0) begin                        // paced like the image sequence
           wait (dut.u_vs_adapt.frames_o >= vs_f0 + gif_next);
           wait (vs_out_frames >= vso0 + gif_next);        // and its corrected frame is all out
-          wait (dut.u_vs_adapt.m_axis_tready && dut.u_vs_adapt.ret_empty);
+          wait (dut.va.tready && dut.u_vs_adapt.ret_empty);
           @(posedge byte_clk);
         end
 `endif
@@ -467,7 +613,7 @@ module video_processor_tb;
         if (img_next > 0) begin
           wait (dut.u_vs_adapt.frames_o >= vs_f0 + img_next);
           wait (vs_out_frames >= vso0 + img_next);        // and its corrected frame is all out
-          wait (dut.u_vs_adapt.m_axis_tready && dut.u_vs_adapt.ret_empty);
+          wait (dut.va.tready && dut.u_vs_adapt.ret_empty);
           @(posedge byte_clk);
         end
 `endif
@@ -544,8 +690,8 @@ module video_processor_tb;
   wire sink_en = 1'b0;
 `endif
   hdmi_bfm #(
-    .MAXW(320),
-    .MAXH(240)
+    .MAXW(GMAXW),
+    .MAXH(GMAXH)
   ) sink (
     .clk(trclk),
     .en(sink_en),
@@ -591,17 +737,17 @@ module video_processor_tb;
   int vs_x = 0, vs_y = 0, vs_frames = 0, vs_changes = 0;
   bit vs_diff = 0;
 `ifdef VP_VISION
-  always @(posedge pix_clk) if (dut.vr_v && dut.vr_r) begin
-    if (dut.vr_u) begin
+  always @(posedge pix_clk) if (dut.vr.tvalid && dut.vr.tready) begin
+    if (dut.vr.tuser) begin
       vs_x = 0;
       vs_y = 0;
       vs_diff = 0;
     end
     if (vs_y < H && vs_x < W) begin
-      if (vs_frames > 0 && vs_frame[vs_y][vs_x] !== dut.vr_d) vs_diff = 1;
-      vs_frame[vs_y][vs_x] = dut.vr_d;
+      if (vs_frames > 0 && vs_frame[vs_y][vs_x] !== dut.vr.tdata) vs_diff = 1;
+      vs_frame[vs_y][vs_x] = dut.vr.tdata;
     end
-    if (dut.vr_l) begin
+    if (dut.vr.tlast) begin
       vs_x = 0;
       vs_y++;
       if (vs_y == H) begin
@@ -622,26 +768,26 @@ module video_processor_tb;
   // Module output taps (image test). One block, upstream first, so a label is passed on before it is
   // needed downstream. 10-bit components are shown as 8 bits; a raw (Bayer) value as grey.
   always @(posedge pix_clk) begin
-    if (dut.u_pipe.u_v && dut.u_pipe.u_r) tap_pixel(T_UNPACK, raw8(dut.u_pipe.u_d), dut.u_pipe.u_l, dut.u_pipe.u_u);
-    if (dut.u_pipe.g_v && dut.u_pipe.g_r) tap_pixel(T_BLC, raw8(dut.u_pipe.g_d), dut.u_pipe.g_l, dut.u_pipe.g_u);
-    if (dut.u_pipe.p_v && dut.u_pipe.p_r) tap_pixel(T_DPC, raw8(dut.u_pipe.p_d), dut.u_pipe.p_l, dut.u_pipe.p_u);
-    if (dut.u_pipe.d_v && dut.u_pipe.d_r) tap_pixel(T_DEMOSAIC, rgb8(dut.u_pipe.d_d), dut.u_pipe.d_l, dut.u_pipe.d_u);
-    if (dut.u_pipe.m_v && dut.u_pipe.m_r) tap_pixel(T_CCM, rgb8(dut.u_pipe.m_d), dut.u_pipe.m_l, dut.u_pipe.m_u);
-    if (dut.u_pipe.gm_v && dut.u_pipe.gm_r) tap_pixel(T_GAMMA, dut.u_pipe.gm_d, dut.u_pipe.gm_l, dut.u_pipe.gm_u);
+    if (dut.u_pipe.u.tvalid && dut.u_pipe.u.tready) tap_pixel(T_UNPACK, raw8(dut.u_pipe.u.tdata), dut.u_pipe.u.tlast, dut.u_pipe.u.tuser);
+    if (dut.u_pipe.g.tvalid && dut.u_pipe.g.tready) tap_pixel(T_BLC, raw8(dut.u_pipe.g.tdata), dut.u_pipe.g.tlast, dut.u_pipe.g.tuser);
+    if (dut.u_pipe.p.tvalid && dut.u_pipe.p.tready) tap_pixel(T_DPC, raw8(dut.u_pipe.p.tdata), dut.u_pipe.p.tlast, dut.u_pipe.p.tuser);
+    if (dut.u_pipe.d.tvalid && dut.u_pipe.d.tready) tap_pixel(T_DEMOSAIC, rgb8(dut.u_pipe.d.tdata), dut.u_pipe.d.tlast, dut.u_pipe.d.tuser);
+    if (dut.u_pipe.m.tvalid && dut.u_pipe.m.tready) tap_pixel(T_CCM, rgb8(dut.u_pipe.m.tdata), dut.u_pipe.m.tlast, dut.u_pipe.m.tuser);
+    if (dut.u_pipe.gm.tvalid && dut.u_pipe.gm.tready) tap_pixel(T_GAMMA, dut.u_pipe.gm.tdata, dut.u_pipe.gm.tlast, dut.u_pipe.gm.tuser);
     if (dut.u_pipe.cq_v && dut.u_pipe.cq_r) tap_pixel(T_CSC, dut.u_pipe.cq_d, dut.u_pipe.cq_l, dut.u_pipe.cq_u);
 `ifdef VP_VISION
     // vs_stream_adapter forwards a frame to vision_system (or drops it): the forwarded frame is the one
     // that last started at the insert point (isp_csc output)
-    if (dut.va_v && dut.va_r && dut.va_u) lq_push(T_VISION, tap_lab[T_CSC]);
-    if (dut.vr_v && dut.vr_r) tap_pixel(T_VISION, dut.vr_d, dut.vr_l, dut.vr_u);
-    if (dut.vr_v && dut.vr_r && dut.vr_u) vs_out_lines = 0;
-    if (dut.vr_v && dut.vr_r && dut.vr_l) begin
+    if (dut.va.tvalid && dut.va.tready && dut.va.tuser) lq_push(T_VISION, tap_lab[T_CSC]);
+    if (dut.vr.tvalid && dut.vr.tready) tap_pixel(T_VISION, dut.vr.tdata, dut.vr.tlast, dut.vr.tuser);
+    if (dut.vr.tvalid && dut.vr.tready && dut.vr.tuser) vs_out_lines = 0;
+    if (dut.vr.tvalid && dut.vr.tready && dut.vr.tlast) begin
       vs_out_lines++;
       if (vs_out_lines == (gif_on ? gh : H)) vs_out_frames++;
     end
 `endif
 `ifdef VP_FILTER
-    if (dut.fo_v && dut.fo_r) tap_pixel(T_FILTER, dut.fo_d, dut.fo_l, dut.fo_u);
+    if (dut.fo.tvalid && dut.fo.tready) tap_pixel(T_FILTER, dut.fo.tdata, dut.fo.tlast, dut.fo.tuser);
 `endif
   end
   // HDMI: the sink counts a frame at the next frame's vsync edge
@@ -652,74 +798,29 @@ module video_processor_tb;
   // and tracker window taken at its start, the tracker results at its end (done_o); at the overlay
   // output: the frame with the symbols.
 `ifdef VP_TRACK
-  // detector c (g_trk[c]) at the start of tracker frame fo_k: window and settings; at its end: results
-`define TRK_START(c) \
-          trk_win[fo_k][c][0] = dut.g_trk[c].u_track.u_core.cwx0; \
-          trk_win[fo_k][c][1] = dut.g_trk[c].u_track.u_core.cwy0; \
-          trk_win[fo_k][c][2] = dut.g_trk[c].u_track.u_core.cwx1; \
-          trk_win[fo_k][c][3] = dut.g_trk[c].u_track.u_core.cwy1; \
-          trk_ctrl[fo_k][c] = dut.g_trk[c].u_track.u_core.ctrl; \
-          trk_thr[fo_k][c] = 32'(dut.g_trk[c].u_track.u_core.thresh_r); \
-          trk_run[fo_k][c] = dut.g_trk[c].u_track.u_core.cfg_run; \
-          trk_yr[fo_k][c] = 32'(dut.g_trk[c].u_track.u_core.cfg_y_range); \
-          trk_cbr[fo_k][c] = 32'(dut.g_trk[c].u_track.u_core.cfg_cb_range); \
-          trk_crr[fo_k][c] = 32'(dut.g_trk[c].u_track.u_core.cfg_cr_range); \
-          trk_sat[fo_k][c] = 32'(dut.g_trk[c].u_track.u_core.cfg_sat_min); \
-          trk_bcfg[fo_k][c] = dut.g_trk[c].u_track.u_core.cfg_blob_cfg; \
-          trk_runb[fo_k][c] = dut.g_trk[c].u_track.u_core.cfg_run_b;
-`define TRK_END(c) \
-      trk_n[fo_k][c] = dut.g_trk[c].u_track.u_core.res_n; \
-      trk_bx[fo_k][c] = {16'(dut.g_trk[c].u_track.u_core.res_x1), 16'(dut.g_trk[c].u_track.u_core.res_x0)}; \
-      trk_by[fo_k][c] = {16'(dut.g_trk[c].u_track.u_core.res_y1), 16'(dut.g_trk[c].u_track.u_core.res_y0)}; \
-      trk_bln[fo_k][c] = dut.g_trk[c].u_track.u_core.sts_blob_n; \
-      trk_blx[fo_k][c] = dut.g_trk[c].u_track.u_core.sts_blob_x; \
-      trk_bly[fo_k][c] = dut.g_trk[c].u_track.u_core.sts_blob_y;
   always @(posedge pix_clk) if (gif_on) begin
-    if (dut.fo_v && dut.fo_r) begin
-      if (dut.fo_u) begin
+    if (dut.fo.tvalid && dut.fo.tready) begin
+      if (dut.fo.tuser) begin
         fo_k++;
         fo_x = 0;
         fo_y = 0;
-        if (fo_k < GMAXF) begin
-          ovl_act[fo_k] = dut.u_overlay.u_core.cur;
-          ovl_en[fo_k] = dut.u_overlay.u_core.cur_en;
-          ovl_txt[fo_k] = dut.u_overlay.u_core.tcur;
-          ovl_chr[fo_k] = dut.u_overlay.u_core.ccur;
-          ovl_fnum[fo_k] = dut.u_overlay.u_core.fcur;
-          `TRK_START(0)
-          `TRK_START(1)
-          `TRK_START(2)
-          `TRK_START(3)
-          ft_ctrl[fo_k] = dut.u_feat.u_core.cfg_ctrl;
-          ft_edge[fo_k] = dut.u_feat.u_core.cfg_edge;
-          ft_motion[fo_k] = dut.u_feat.u_core.cfg_motion;
-          ft_sx[fo_k] = int'($signed(dut.u_feat.u_core.fsx));
-          ft_sy[fo_k] = int'($signed(dut.u_feat.u_core.fsy));
-        end
       end
-      if (fo_k >= 0 && fo_k < GMAXF && fo_y < gh && fo_x < gw) trk_in.set_px(fo_k, fo_x, fo_y, dut.fo_d);
-      if (dut.fo_l) begin
+      if (dut.fo.tlast) begin
         fo_x = 0;
         fo_y++;
       end else fo_x++;
     end
-    if (|dut.trk_done && fo_k >= 0 && fo_k < GMAXF) begin   // the enabled detectors finish together
-      `TRK_END(0)
-      `TRK_END(1)
-      `TRK_END(2)
-      `TRK_END(3)
-      ft_ne[fo_k] = dut.u_feat.u_core.sts_edge_count;
-      ft_nm[fo_k] = dut.u_feat.u_core.sts_motion_count;
+    if (dut.ev_trk && fo_k >= 0 && fo_k < GMAXF) begin      // the detectors (or the NPU run) of the frame done
       trk_done[fo_k] = 1;
     end
-    if (dut.ir_v && dut.ir_r) begin
-      if (dut.ir_u) begin
+    if (dut.ir.tvalid && dut.ir.tready) begin
+      if (dut.ir.tuser) begin
         ir_k++;
         ir_x = 0;
         ir_y = 0;
       end
-      if (ir_k >= 0 && ir_k < GMAXF && ir_y < gh && ir_x < gw) ovl_out.set_px(ir_k, ir_x, ir_y, dut.ir_d);
-      if (dut.ir_l) begin
+      if (ir_k >= 0 && ir_k < GMAXF && ir_y < gh && ir_x < gw) ovl_out.set_px(ir_k, ir_x, ir_y, dut.ir.tdata);
+      if (dut.ir.tlast) begin
         ir_x = 0;
         ir_y++;
         if (ir_y == gh) ir_done = ir_k;
@@ -874,6 +975,7 @@ module video_processor_tb;
     void'($value$plusargs("GIF_IN=%s", gif_in));
     void'($value$plusargs("GIF_DIR=%s", gif_dir));
     void'($value$plusargs("GIF_IN_DIR=%s", gif_in_dir));
+    void'($value$plusargs("PYSIM_RGB=%s", pysim_rgb));
     void'($value$plusargs("GIF_OUT=%s", gif_out));
     gif_bw = $test$plusargs("GIF_BW");
     split_list(gif_in);                                // +GIF_IN=<a.gif>,<b.gif>,...: sent one after the other
@@ -918,6 +1020,12 @@ module video_processor_tb;
     $display("[%t] video checks done; serial clocks and camera stopped, waiting for the report", $realtime);
     test_uart_report();
     $fclose(uart_fd);
+`ifdef VP_DDR
+    if (ddr_err_cnt != 0) begin                       // every DDR timing rule kept by the controller
+      $display("ERROR: the DDR memory reported %0d timing violations (code %0d)", ddr_err_cnt, ddr_err_code);
+      errors++;
+    end
+`endif
     if (errors == 0) $display("TEST PASSED");
     else $display("TEST FAILED (%0d errors)", errors);
     $finish;

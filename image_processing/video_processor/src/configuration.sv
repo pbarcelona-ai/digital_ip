@@ -22,8 +22,14 @@
 //     VP_TRACK    object_tracker (target search / measurement) and
 //                 symbol_overlay (boxes, crosshairs) at the end of the
 //                 insert loop, after blur_sharpen (implies VP_INSERT)
+//     VP_DDR      the DDR controller (ddr_ctrl, pix_clk) with its DFI-style
+//                 memory pins (its statistics registers not mapped);
+//                 vision_system's frames in DDR (VS_USE_DDR_FB)
+//     VP_NPU      the NPU (detector; registers 0x1_A000, DDR controller port
+//                 1, frame writer on vision_system's output; implies VP_DDR
+//                 and VP_INSERT)
 //     VP_INSERT   video_pipeline insert point only (looped back here)
-// Date: 2026-10-11
+// Date: 2026-10-26
 `ifndef VP_CONFIGURATION_SV
 `define VP_CONFIGURATION_SV
 
@@ -35,6 +41,8 @@
 `define VP_VISION
 `define VP_FILTER
 `define VP_TRACK
+`define VP_DDR
+`define VP_NPU
 
 // ---------------- derived (do not edit) ----------------
 `ifdef VP_VISION
@@ -48,6 +56,15 @@
   `endif
 `endif
 `ifdef VP_TRACK
+  `ifndef VP_INSERT
+    `define VP_INSERT
+  `endif
+`endif
+// the NPU stores its frames and runs its programs in the DDR, and taps the insert loop
+`ifdef VP_NPU
+  `ifndef VP_DDR
+    `define VP_DDR
+  `endif
   `ifndef VP_INSERT
     `define VP_INSERT
   `endif

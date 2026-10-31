@@ -12,7 +12,9 @@ writing 1.
 test_soft_reset: CTRL[0] in the middle of a frame (input part sent, output partly read), then beats outside a
 frame (consumed, nothing out), then frames equal to the model; the registers keep their values.
 test_register_map: the ID block and every register's reset value and read-back.
-Cases: a12 (on-chip store, FB_DEPTH 4096), ext (SDRAM store with a behavioural SDRAM responder).
+Cases: a12 (on-chip store, FB_DEPTH 4096), ext (SDRAM store with a behavioural SDRAM responder), ddr (DDR store,
+double-buffered, on ddr_ctrl with ddr_mem: the memory's timing checker must stay silent, and a frame must be
+taken in while the previous one is output).
 Environment: VS_CASE (the case the runner built), VS_GROUPS (default 16), VS_SEED, VS_TRACE (log the store's
 ports and the sequencing every clock)."""
 from __future__ import annotations
@@ -37,10 +39,13 @@ from cocotb_lib import AxilMaster, frame_beats, model_path, run_frames    # noqa
 model_path(VS / "model", *sorted((VS / "ip").glob("*/model")))
 import vision_system_model as vm                                          # noqa: E402
 
-CASES = {"a12": dict(ADDR_W=12, FB_DEPTH=4096, USE_EXT_FB=0), "ext": dict(ADDR_W=12, FB_DEPTH=4096, USE_EXT_FB=1)}
+CASES = {"a12": dict(ADDR_W=12, FB_DEPTH=4096, USE_EXT_FB=0, USE_DDR_FB=0),
+         "ext": dict(ADDR_W=12, FB_DEPTH=4096, USE_EXT_FB=1, USE_DDR_FB=0),
+         "ddr": dict(ADDR_W=12, FB_DEPTH=4096, USE_EXT_FB=0, USE_DDR_FB=1)}
 CASE = os.environ.get("VS_CASE", "a12")
 EXT = CASES[CASE]["USE_EXT_FB"]
-LIMIT = 3000 if EXT else 400                                    # clocks per beat before a stall is reported
+DDR = CASES[CASE]["USE_DDR_FB"]
+LIMIT = 3000 if EXT or DDR else 400                             # clocks per beat before a stall is reported
 GROUPS = int(os.environ.get("VS_GROUPS", "16"))
 SEED = int(os.environ.get("VS_SEED", "20261021"))
 Q = 1 << 16
@@ -123,11 +128,25 @@ async def sdram(dut):
             dut.tb_dq.value = mem.get((row, a & 0x3FF), 0)
 
 
+async def ddr_monitor(dut):
+    """USE_DDR_FB: the memory's timing checker never fires; counts the clocks in which a frame is written while
+    the previous one is output (double buffering)."""
+    seq = dut.u_dut.g_seq_dbuf
+    while True:
+        await FallingEdge(dut.clk)
+        if not int(dut.rst_n.value):
+            continue
+        assert not int(dut.mem_err.value), "DDR store: the memory reported a timing violation"
+        COV["ddr_overlap"] += int(int(seq.reading.value) and int(dut.u_dut.fb_wr_en.value))
+
+
 async def setup(dut):
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     dut.tb_dq.value = 0
     if EXT:
         cocotb.start_soon(sdram(dut))
+    if DDR:
+        cocotb.start_soon(ddr_monitor(dut))
     dut.rst_n.value = 0
     for s in ("s_tvalid", "s_tdata", "s_tlast", "s_tuser", "m_tready"):
         getattr(dut, s).value = 0
@@ -151,7 +170,8 @@ def trace(dut):
     if dut.m_tvalid.value and dut.m_tready.value:
         ev.append(f"out {int(dut.m_tdata.value):#x}")
     if ev:
-        dut._log.info("tstate %d: %s", int(u.tstate.value), "; ".join(ev))
+        st = f"istate {int(u.g_seq_dbuf.istate.value)}" if DDR else f"tstate {int(u.g_seq_single.tstate.value)}"
+        dut._log.info("%s: %s", st, "; ".join(ev))
 
 
 @cocotb.test()
@@ -216,7 +236,7 @@ async def test_frames_exact(dut):
             assert not d & 2, "STATUS frame done not cleared"
     dut._log.info("vision_system: %d frames compared, coverage %s", frames, dict(COV))
     for k in ("bypass", "bilinear", "bicubic", "model0", "model1", "model3", "model5", "size_clamped") \
-            if GROUPS >= 16 else ():
+            + (("ddr_overlap",) if DDR else ()) if GROUPS >= 16 else ():
         assert COV[k], f"not covered: {k}"
 
 

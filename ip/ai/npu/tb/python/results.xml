@@ -1,0 +1,9 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1793043618" />
+    <testcase name="test_register_map" classname="npu_ops_tb" file="/Users/paulbarcelona/Downloads/GitHub/pbarcelona-ai.github.io/digital_ip/ip/ai/npu/tb/python/npu_ops_tb.py" lineno="76" time="0.7917251586914062" sim_time_ns="13470.0" ratio_time="17013.479806886186" />
+    <testcase name="test_ops" classname="npu_ops_tb" file="/Users/paulbarcelona/Downloads/GitHub/pbarcelona-ai.github.io/digital_ip/ip/ai/npu/tb/python/npu_ops_tb.py" lineno="247" time="537.2949140071869" sim_time_ns="2623800.0" ratio_time="4883.351640966592" />
+    <testcase name="test_frame_writer" classname="npu_ops_tb" file="/Users/paulbarcelona/Downloads/GitHub/pbarcelona-ai.github.io/digital_ip/ip/ai/npu/tb/python/npu_ops_tb.py" lineno="317" time="3.2348759174346924" sim_time_ns="40740.0" ratio_time="12593.991559437452" />
+    <testcase name="test_conv_perf" classname="npu_ops_tb" file="/Users/paulbarcelona/Downloads/GitHub/pbarcelona-ai.github.io/digital_ip/ip/ai/npu/tb/python/npu_ops_tb.py" lineno="394" time="381.05855989456177" sim_time_ns="76320.0" ratio_time="200.28417684966217" />
+  </testsuite>
+</testsuites>

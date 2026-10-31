@@ -1,0 +1,3 @@
+# CDC waivers of video_processor (synth/run_cdc.sh, ip/scripts/cdc_check.py --waive-file): one regex on a
+# "source [clock] -> destination.pin [clock]" line each, its reason after the '#'. Date: 2026-10-26
+u_pipe\.u_regs\.csi_q .*-> u_pipe\.csi_cfg_s1\.D   # CSI-2 RX VC / data type (video_pipeline.sv): quasi-static, written only while the camera is stopped (documented there), then two flip-flops on byte_clk

@@ -1,0 +1,311 @@
+ERROR 5955000: bilinear: buffer 0 pixel 0: 13d4fd, expected 13d4fc
+ERROR 6115000: bicubic: buffer 0 pixel 40: 18fa55, expected 18fa54
+ERROR 6165000: bilinear: buffer 0 pixel 1: 13f1ec, expected 13f1ed
+ERROR 6215000: bicubic: buffer 0 pixel 40: 18fa55, expected 18fa54
+ERROR 6265000: bilinear: buffer 0 pixel 2: 1416db, expected 1416da
+ERROR 6315000: bicubic: buffer 0 pixel 41: 189b44, expected 189b45
+ERROR 6365000: bilinear: buffer 0 pixel 3: 1437ca, expected 1437cb
+ERROR 6415000: bicubic: buffer 0 pixel 42: 18bc33, expected 18bc32
+ERROR 6465000: bilinear: buffer 0 pixel 4: 1458b9, expected 1458b8
+ERROR 6515000: bicubic: buffer 0 pixel 43: 195122, expected 195123
+ERROR 6565000: bilinear: buffer 0 pixel 5: 1465a8, expected 1465a9
+ERROR 6615000: bicubic: buffer 0 pixel 44: 197e11, expected 197e10
+ERROR 6665000: bilinear: buffer 0 pixel 6: 148297, expected 148296
+ERROR 6715000: bicubic: buffer 0 pixel 45: 191f00, expected 191f01
+ERROR 6765000: bilinear: buffer 0 pixel 7: 14a386, expected 14a387
+ERROR 6815000: bicubic: buffer 0 pixel 46: 193fef, expected 193fee
+ERROR 6865000: bilinear: buffer 0 pixel 8: 14dc75, expected 14dc74
+ERROR 6915000: bicubic: buffer 0 pixel 47: 19dcde, expected 19dcdf
+ERROR 6965000: bilinear: buffer 0 pixel 9: 14f964, expected 14f965
+ERROR 7015000: bicubic: buffer 0 pixel 48: 19c1cd, expected 19c1cc
+ERROR 7065000: bilinear: buffer 0 pixel 10: 151e53, expected 151e52
+ERROR 7115000: bicubic: buffer 0 pixel 49: 19a2bc, expected 19a2bd
+ERROR 7165000: bilinear: buffer 0 pixel 11: 153f42, expected 153f43
+ERROR 7215000: bicubic: buffer 0 pixel 50: 19bbab, expected 19bbaa
+ERROR 7265000: bilinear: buffer 0 pixel 12: 155031, expected 155030
+ERROR 7315000: bicubic: buffer 0 pixel 51: 19989a, expected 19989b
+ERROR 7365000: bilinear: buffer 0 pixel 13: 157d20, expected 157d21
+ERROR 7415000: bicubic: buffer 0 pixel 52: 1a7589, expected 1a7588
+ERROR 7465000: bilinear: buffer 0 pixel 14: 159a0f, expected 159a0e
+ERROR 7515000: bicubic: buffer 0 pixel 53: 1a5678, expected 1a5679
+ERROR 7565000: bilinear: buffer 0 pixel 15: 15bafe, expected 15baff
+ERROR 7615000: bicubic: buffer 0 pixel 54: 1a3767, expected 1a3766
+ERROR 7665000: bilinear: buffer 0 pixel 16: 15e3ed, expected 15e3ec
+ERROR 7715000: bicubic: buffer 0 pixel 55: 1a1456, expected 1a1457
+ERROR 7765000: bilinear: buffer 0 pixel 17: 15c0dc, expected 15c0dd
+ERROR 7815000: bicubic: buffer 0 pixel 56: 1ae945, expected 1ae944
+ERROR 7865000: bilinear: buffer 0 pixel 18: 1625cb, expected 1625ca
+ERROR 7915000: bicubic: buffer 0 pixel 57: 1aca34, expected 1aca35
+ERROR 7965000: bilinear: buffer 0 pixel 19: 1606ba, expected 1606bb
+ERROR 8015000: bicubic: buffer 0 pixel 58: 1aa323, expected 1aa322
+ERROR 8215000: bilinear: buffer 0 pixel 60: 1b6d01, expected 1b6d00
+ERROR 8375000: bicubic: buffer 0 pixel 100: 1f2259, expected 1f2258
+ERROR 8425000: bilinear: buffer 0 pixel 61: 1b49f0, expected 1b49f1
+ERROR 8475000: bicubic: buffer 0 pixel 100: 1f2259, expected 1f2258
+ERROR 8525000: bilinear: buffer 0 pixel 62: 1b2edf, expected 1b2ede
+ERROR 8575000: bicubic: buffer 0 pixel 101: 20c348, expected 20c349
+ERROR 8625000: bilinear: buffer 0 pixel 63: 1b0fce, expected 1b0fcf
+ERROR 8675000: bicubic: buffer 0 pixel 102: 20e437, expected 20e436
+ERROR 8725000: bilinear: buffer 0 pixel 64: 1b10bd, expected 1b10bc
+ERROR 8775000: bicubic: buffer 0 pixel 103: 208926, expected 208927
+ERROR 8825000: bilinear: buffer 0 pixel 65: 1b2dac, expected 1b2dad
+ERROR 8875000: bicubic: buffer 0 pixel 104: 20b615, expected 20b614
+ERROR 8925000: bilinear: buffer 0 pixel 66: 1b4a9b, expected 1b4a9a
+ERROR 8975000: bicubic: buffer 0 pixel 105: 205704, expected 205705
+ERROR 9025000: bilinear: buffer 0 pixel 67: 1b6b8a, expected 1b6b8b
+ERROR 9075000: bicubic: buffer 0 pixel 106: 2077f3, expected 2077f2
+ERROR 9125000: bilinear: buffer 0 pixel 68: 1c8479, expected 1c8478
+ERROR 9175000: bicubic: buffer 0 pixel 107: 2014e2, expected 2014e3
+ERROR 9225000: bilinear: buffer 0 pixel 69: 1ca168, expected 1ca169
+ERROR 9275000: bicubic: buffer 0 pixel 108: 2039d1, expected 2039d0
+ERROR 9325000: bilinear: buffer 0 pixel 70: 1cc657, expected 1cc656
+ERROR 9375000: bicubic: buffer 0 pixel 109: 21dac0, expected 21dac1
+ERROR 9425000: bilinear: buffer 0 pixel 71: 1ce746, expected 1ce747
+ERROR 9475000: bicubic: buffer 0 pixel 110: 21c3af, expected 21c3ae
+ERROR 9525000: bilinear: buffer 0 pixel 72: 1c1835, expected 1c1834
+ERROR 9575000: bicubic: buffer 0 pixel 111: 21e09e, expected 21e09f
+ERROR 9625000: bilinear: buffer 0 pixel 73: 1c3524, expected 1c3525
+ERROR 9675000: bicubic: buffer 0 pixel 112: 21bd8d, expected 21bd8c
+ERROR 9725000: bilinear: buffer 0 pixel 74: 1c5213, expected 1c5212
+ERROR 9775000: bicubic: buffer 0 pixel 113: 219e7c, expected 219e7d
+ERROR 9825000: bilinear: buffer 0 pixel 75: 1c7302, expected 1c7303
+ERROR 9875000: bicubic: buffer 0 pixel 114: 217f6b, expected 217f6a
+ERROR 9925000: bilinear: buffer 0 pixel 76: 1d9bf1, expected 1d9bf0
+ERROR 9975000: bicubic: buffer 0 pixel 115: 215c5a, expected 215c5b
+ERROR 10025000: bilinear: buffer 0 pixel 77: 1db8e0, expected 1db8e1
+ERROR 10075000: bicubic: buffer 0 pixel 116: 213149, expected 213148
+ERROR 10125000: bilinear: buffer 0 pixel 78: 1dddcf, expected 1dddce
+ERROR 10175000: bicubic: buffer 0 pixel 117: 211238, expected 211239
+ERROR 10225000: bilinear: buffer 0 pixel 79: 1dfebe, expected 1dfebf
+ERROR 10275000: bicubic: buffer 0 pixel 118: 22fb27, expected 22fb26
+ERROR 10475000: bilinear: buffer 0 pixel 120: 22a505, expected 22a504
+ERROR 10635000: bicubic: buffer 0 pixel 160: 266a5d, expected 266a5c
+ERROR 10685000: bilinear: buffer 0 pixel 121: 2281f4, expected 2281f5
+ERROR 10735000: bicubic: buffer 0 pixel 160: 266a5d, expected 266a5c
+ERROR 10785000: bilinear: buffer 0 pixel 122: 2266e3, expected 2266e2
+ERROR 10835000: bicubic: buffer 0 pixel 161: 260b4c, expected 260b4d
+ERROR 10885000: bilinear: buffer 0 pixel 123: 2247d2, expected 2247d3
+ERROR 10935000: bicubic: buffer 0 pixel 162: 262c3b, expected 262c3a
+ERROR 10985000: bilinear: buffer 0 pixel 124: 2228c1, expected 2228c0
+ERROR 11035000: bicubic: buffer 0 pixel 163: 26c12a, expected 26c12b
+ERROR 11085000: bilinear: buffer 0 pixel 125: 2215b0, expected 2215b1
+ERROR 11135000: bicubic: buffer 0 pixel 164: 26ee19, expected 26ee18
+ERROR 11185000: bilinear: buffer 0 pixel 126: 23f29f, expected 23f29e
+ERROR 11235000: bicubic: buffer 0 pixel 165: 268f08, expected 268f09
+ERROR 11285000: bilinear: buffer 0 pixel 127: 23d38e, expected 23d38f
+ERROR 11335000: bicubic: buffer 0 pixel 166: 26aff7, expected 26aff6
+ERROR 11385000: bilinear: buffer 0 pixel 128: 224c7d, expected 224c7c
+ERROR 11435000: bicubic: buffer 0 pixel 167: 294ce6, expected 294ce7
+ERROR 11485000: bilinear: buffer 0 pixel 129: 22696c, expected 22696d
+ERROR 11535000: bicubic: buffer 0 pixel 168: 2971d5, expected 2971d4
+ERROR 11585000: bilinear: buffer 0 pixel 130: 228e5b, expected 228e5a
+ERROR 11635000: bicubic: buffer 0 pixel 169: 2912c4, expected 2912c5
+ERROR 11685000: bilinear: buffer 0 pixel 131: 22af4a, expected 22af4b
+ERROR 11735000: bicubic: buffer 0 pixel 170: 290bb3, expected 290bb2
+ERROR 11785000: bilinear: buffer 0 pixel 132: 22c039, expected 22c038
+ERROR 11835000: bicubic: buffer 0 pixel 171: 2928a2, expected 2928a3
+ERROR 11885000: bilinear: buffer 0 pixel 133: 22ed28, expected 22ed29
+ERROR 11935000: bicubic: buffer 0 pixel 172: 29c591, expected 29c590
+ERROR 11985000: bilinear: buffer 0 pixel 134: 250a17, expected 250a16
+ERROR 12035000: bicubic: buffer 0 pixel 173: 29e680, expected 29e681
+ERROR 12085000: bilinear: buffer 0 pixel 135: 252b06, expected 252b07
+ERROR 12135000: bicubic: buffer 0 pixel 174: 29876f, expected 29876e
+ERROR 12185000: bilinear: buffer 0 pixel 136: 2553f5, expected 2553f4
+ERROR 12235000: bicubic: buffer 0 pixel 175: 29a45e, expected 29a45f
+ERROR 12285000: bilinear: buffer 0 pixel 137: 2570e4, expected 2570e5
+ERROR 12335000: bicubic: buffer 0 pixel 176: 28794d, expected 28794c
+ERROR 12385000: bilinear: buffer 0 pixel 138: 2595d3, expected 2595d2
+ERROR 12435000: bicubic: buffer 0 pixel 177: 285a3c, expected 285a3d
+ERROR 12485000: bilinear: buffer 0 pixel 139: 25b6c2, expected 25b6c3
+ERROR 12535000: bicubic: buffer 0 pixel 178: 28332b, expected 28332a
+ERROR 12735000: bilinear: buffer 0 pixel 180: 28fd09, expected 28fd08
+ERROR 12785000: bicubic: buffer 0 pixel 220: 2fd261, expected 2fd260
+ERROR 12835000: bilinear: buffer 0 pixel 181: 28d9f8, expected 28d9f9
+ERROR 12885000: bicubic: buffer 0 pixel 220: 2fd261, expected 2fd260
+ERROR 12935000: bilinear: buffer 0 pixel 182: 28bee7, expected 28bee6
+ERROR 13095000: bicubic: buffer 0 pixel 221: 2f3350, expected 2f3351
+ERROR 13145000: bilinear: buffer 0 pixel 183: 289fd6, expected 289fd7
+ERROR 13195000: bicubic: buffer 0 pixel 222: 2f143f, expected 2f143e
+ERROR 13245000: bilinear: buffer 0 pixel 184: 2b60c5, expected 2b60c4
+ERROR 13295000: bicubic: buffer 0 pixel 223: 2f792e, expected 2f792f
+ERROR 13345000: bilinear: buffer 0 pixel 185: 2b5db4, expected 2b5db5
+ERROR 13395000: bicubic: buffer 0 pixel 224: 2f261d, expected 2f261c
+ERROR 13445000: bilinear: buffer 0 pixel 186: 2b3aa3, expected 2b3aa2
+ERROR 13495000: bicubic: buffer 0 pixel 225: 2ec70c, expected 2ec70d
+ERROR 13545000: bilinear: buffer 0 pixel 187: 2b1b92, expected 2b1b93
+ERROR 13595000: bicubic: buffer 0 pixel 226: 2ee7fb, expected 2ee7fa
+ERROR 13645000: bilinear: buffer 0 pixel 188: 2bf481, expected 2bf480
+ERROR 13695000: bicubic: buffer 0 pixel 227: 2e84ea, expected 2e84eb
+ERROR 13745000: bilinear: buffer 0 pixel 189: 2bd170, expected 2bd171
+ERROR 13795000: bicubic: buffer 0 pixel 228: 2ea9d9, expected 2ea9d8
+ERROR 13845000: bilinear: buffer 0 pixel 190: 2bb65f, expected 2bb65e
+ERROR 13895000: bicubic: buffer 0 pixel 229: 2e4ac8, expected 2e4ac9
+ERROR 13945000: bilinear: buffer 0 pixel 191: 2b974e, expected 2b974f
+ERROR 13995000: bicubic: buffer 0 pixel 230: 2e53b7, expected 2e53b6
+ERROR 14045000: bilinear: buffer 0 pixel 192: 2a883d, expected 2a883c
+ERROR 14095000: bicubic: buffer 0 pixel 231: 2e70a6, expected 2e70a7
+ERROR 14145000: bilinear: buffer 0 pixel 193: 2aa52c, expected 2aa52d
+ERROR 14195000: bicubic: buffer 0 pixel 232: 2e0d95, expected 2e0d94
+ERROR 14245000: bilinear: buffer 0 pixel 194: 2ac21b, expected 2ac21a
+ERROR 14295000: bicubic: buffer 0 pixel 233: 2e2e84, expected 2e2e85
+ERROR 14345000: bilinear: buffer 0 pixel 195: 2ae30a, expected 2ae30b
+ERROR 14395000: bicubic: buffer 0 pixel 234: 31cf73, expected 31cf72
+ERROR 14445000: bilinear: buffer 0 pixel 196: 2a0bf9, expected 2a0bf8
+ERROR 14495000: bicubic: buffer 0 pixel 235: 31ec62, expected 31ec63
+ERROR 14545000: bilinear: buffer 0 pixel 197: 2a28e8, expected 2a28e9
+ERROR 14595000: bicubic: buffer 0 pixel 236: 318151, expected 318150
+ERROR 14645000: bilinear: buffer 0 pixel 198: 2a4dd7, expected 2a4dd6
+ERROR 14695000: bicubic: buffer 0 pixel 237: 31a240, expected 31a241
+ERROR 14745000: bilinear: buffer 0 pixel 199: 2a6ec6, expected 2a6ec7
+ERROR 14795000: bicubic: buffer 0 pixel 238: 314b2f, expected 314b2e
+ERROR 14845000: read during write: buffer 0 pixel 221: 2f3350, expected 2f3351
+ERROR 14895000: read during write: buffer 0 pixel 200: 2a6fb5, expected 2a6fb4
+ERROR 14945000: read during write: buffer 0 pixel 117: 211238, expected 211239
+ERROR 14995000: read during write: buffer 0 pixel 15: 15bafe, expected 15baff
+ERROR 15045000: read during write: buffer 0 pixel 105: 205704, expected 205705
+ERROR 15095000: read during write: buffer 0 pixel 53: 1a5678, expected 1a5679
+ERROR 15145000: read during write: buffer 0 pixel 15: 15bafe, expected 15baff
+ERROR 15195000: read during write: buffer 0 pixel 82: 1d198b, expected 1d198a
+ERROR 15245000: read during write: buffer 0 pixel 212: 2cdae9, expected 2cdae8
+ERROR 15295000: read during write: buffer 0 pixel 173: 29e680, expected 29e681
+ERROR 15345000: read during write: buffer 0 pixel 22: 165187, expected 165186
+ERROR 15395000: read during write: buffer 0 pixel 187: 2b1b92, expected 2b1b93
+ERROR 15445000: read during write: buffer 0 pixel 105: 205704, expected 205705
+ERROR 15495000: read during write: buffer 0 pixel 237: 31a240, expected 31a241
+ERROR 15545000: read during write: buffer 0 pixel 98: 1f687b, expected 1f687a
+ERROR 15595000: read during write: buffer 0 pixel 14: 159a0f, expected 159a0e
+ERROR 15645000: read during write: buffer 0 pixel 229: 2e4ac8, expected 2e4ac9
+ERROR 15695000: read during write: buffer 0 pixel 223: 2f792e, expected 2f792f
+ERROR 15745000: read during write: buffer 0 pixel 29: 176c10, expected 176c11
+ERROR 15795000: read during write: buffer 0 pixel 14: 159a0f, expected 159a0e
+ERROR 15845000: read during write: buffer 0 pixel 212: 2cdae9, expected 2cdae8
+ERROR 15895000: read during write: buffer 0 pixel 174: 29876f, expected 29876e
+ERROR 15945000: read during write: buffer 0 pixel 78: 1dddcf, expected 1dddce
+ERROR 15995000: read during write: buffer 0 pixel 134: 250a17, expected 250a16
+ERROR 16045000: read during write: buffer 0 pixel 175: 29a45e, expected 29a45f
+ERROR 16095000: read during write: buffer 0 pixel 177: 285a3c, expected 285a3d
+ERROR 16145000: read during write: buffer 0 pixel 102: 20e437, expected 20e436
+ERROR 16195000: read during write: buffer 0 pixel 167: 294ce6, expected 294ce7
+ERROR 16245000: read during write: buffer 0 pixel 61: 1b49f0, expected 1b49f1
+ERROR 16295000: read during write: buffer 0 pixel 93: 1fabd0, expected 1fabd1
+ERROR 16345000: read during write: buffer 0 pixel 161: 260b4c, expected 260b4d
+ERROR 16395000: read during write: buffer 0 pixel 98: 1f687b, expected 1f687a
+ERROR 16445000: read during write: buffer 0 pixel 228: 2ea9d9, expected 2ea9d8
+ERROR 16495000: read during write: buffer 0 pixel 85: 1eb058, expected 1eb059
+ERROR 16545000: read during write: buffer 0 pixel 55: 1a1456, expected 1a1457
+ERROR 16595000: read during write: buffer 0 pixel 93: 1fabd0, expected 1fabd1
+ERROR 16645000: read during write: buffer 0 pixel 11: 153f42, expected 153f43
+ERROR 16695000: read during write: buffer 0 pixel 127: 23d38e, expected 23d38f
+ERROR 16745000: read during write: buffer 0 pixel 211: 2cf5fa, expected 2cf5fb
+ERROR 16795000: read during write: buffer 0 pixel 97: 1f4f8c, expected 1f4f8d
+ERROR 16845000: read during write: buffer 0 pixel 22: 165187, expected 165186
+ERROR 16895000: read during write: buffer 0 pixel 83: 1d7a7a, expected 1d7a7b
+ERROR 16945000: read during write: buffer 0 pixel 158: 27d07f, expected 27d07e
+ERROR 16995000: read during write: buffer 0 pixel 40: 18fa55, expected 18fa54
+ERROR 17045000: read during write: buffer 0 pixel 57: 1aca34, expected 1aca35
+ERROR 17095000: read during write: buffer 0 pixel 16: 15e3ed, expected 15e3ec
+ERROR 17145000: read during write: buffer 0 pixel 30: 1748ff, expected 1748fe
+ERROR 17195000: read during write: buffer 0 pixel 70: 1cc657, expected 1cc656
+ERROR 17245000: read during write: buffer 0 pixel 46: 193fef, expected 193fee
+ERROR 17295000: read during write: buffer 0 pixel 155: 27b9b2, expected 27b9b3
+ERROR 17345000: read during write: buffer 0 pixel 143: 24027e, expected 24027f
+ERROR 17395000: read during write: buffer 0 pixel 57: 1aca34, expected 1aca35
+ERROR 17445000: read during write: buffer 0 pixel 56: 1ae945, expected 1ae944
+ERROR 17495000: read during write: buffer 0 pixel 37: 180788, expected 180789
+ERROR 17545000: read during write: buffer 0 pixel 103: 208926, expected 208927
+ERROR 17595000: read during write: buffer 0 pixel 209: 2cb41c, expected 2cb41d
+ERROR 17645000: read during write: buffer 0 pixel 187: 2b1b92, expected 2b1b93
+ERROR 17695000: read during write: buffer 0 pixel 169: 2912c4, expected 2912c5
+ERROR 17745000: read during write: buffer 0 pixel 226: 2ee7fb, expected 2ee7fa
+ERROR 17795000: read during write: buffer 0 pixel 24: 168b65, expected 168b64
+ERROR 17845000: read during write: buffer 0 pixel 184: 2b60c5, expected 2b60c4
+ERROR 17895000: read during write: buffer 0 pixel 117: 211238, expected 211239
+ERROR 17945000: read during write: buffer 0 pixel 233: 2e2e84, expected 2e2e85
+ERROR 17995000: read during write: buffer 0 pixel 177: 285a3c, expected 285a3d
+ERROR 18045000: read during write: buffer 0 pixel 32: 17f2dd, expected 17f2dc
+ERROR 18095000: read during write: buffer 0 pixel 9: 14f964, expected 14f965
+ERROR 18145000: read during write: buffer 0 pixel 116: 213149, expected 213148
+ERROR 18195000: read during write: buffer 0 pixel 25: 16e854, expected 16e855
+ERROR 18245000: read during write: buffer 0 pixel 12: 155031, expected 155030
+ERROR 18295000: read during write: buffer 0 pixel 78: 1dddcf, expected 1dddce
+ERROR 18345000: read during write: buffer 0 pixel 145: 24785c, expected 24785d
+ERROR 18395000: read during write: buffer 0 pixel 132: 22c039, expected 22c038
+ERROR 18445000: read during write: buffer 0 pixel 179: 28101a, expected 28101b
+ERROR 18495000: read during write: buffer 0 pixel 225: 2ec70c, expected 2ec70d
+ERROR 18545000: read during write: buffer 0 pixel 28: 170f21, expected 170f20
+ERROR 18595000: read during write: buffer 0 pixel 175: 29a45e, expected 29a45f
+ERROR 18645000: read during write: buffer 0 pixel 90: 1e0103, expected 1e0102
+ERROR 18695000: read during write: buffer 0 pixel 78: 1dddcf, expected 1dddce
+ERROR 18745000: read during write: buffer 0 pixel 71: 1ce746, expected 1ce747
+ERROR 18795000: read during write: buffer 0 pixel 79: 1dfebe, expected 1dfebf
+ERROR 21435000: written during read: buffer 1 pixel 0: 294313, expected 294312
+ERROR 21485000: written during read: buffer 1 pixel 4: 29b6cf, expected 29b6ce
+ERROR 21535000: written during read: buffer 1 pixel 8: 2a2a8b, expected 2a2a8a
+ERROR 21585000: written during read: buffer 1 pixel 12: 2aae47, expected 2aae46
+ERROR 21635000: written during read: buffer 1 pixel 16: 2b1203, expected 2b1202
+ERROR 21685000: written during read: buffer 1 pixel 20: 2b85bf, expected 2b85be
+ERROR 21735000: written during read: buffer 1 pixel 24: 2c197b, expected 2c197a
+ERROR 21785000: written during read: buffer 1 pixel 28: 2c9d37, expected 2c9d36
+ERROR 21945000: written during read: buffer 1 pixel 32: 2d60f3, expected 2d60f2
+ERROR 21995000: written during read: buffer 1 pixel 36: 2dd4af, expected 2dd4ae
+ERROR 22045000: written during read: buffer 1 pixel 40: 2e486b, expected 2e486a
+ERROR 22095000: written during read: buffer 1 pixel 44: 2ecc27, expected 2ecc26
+ERROR 22145000: written during read: buffer 1 pixel 48: 2f6fe3, expected 2f6fe2
+ERROR 22195000: written during read: buffer 1 pixel 52: 2fe39f, expected 2fe39e
+ERROR 22245000: written during read: buffer 1 pixel 56: 30775b, expected 30775a
+ERROR 22295000: written during read: buffer 1 pixel 60: 30fb17, expected 30fb16
+ERROR 22455000: written during read: buffer 1 pixel 64: 307ed3, expected 307ed2
+ERROR 22505000: written during read: buffer 1 pixel 68: 31f28f, expected 31f28e
+ERROR 22555000: written during read: buffer 1 pixel 72: 31664b, expected 31664a
+ERROR 22605000: written during read: buffer 1 pixel 76: 32ea07, expected 32ea06
+ERROR 22655000: written during read: buffer 1 pixel 80: 324dc3, expected 324dc2
+ERROR 22705000: written during read: buffer 1 pixel 84: 33c17f, expected 33c17e
+ERROR 22755000: written during read: buffer 1 pixel 88: 33553b, expected 33553a
+ERROR 22805000: written during read: buffer 1 pixel 92: 34d8f7, expected 34d8f6
+ERROR 22965000: written during read: buffer 1 pixel 96: 341cb3, expected 341cb2
+ERROR 23015000: written during read: buffer 1 pixel 100: 35906f, expected 35906e
+ERROR 23065000: written during read: buffer 1 pixel 104: 35042b, expected 35042a
+ERROR 23115000: written during read: buffer 1 pixel 108: 3697e7, expected 3697e6
+ERROR 23165000: written during read: buffer 1 pixel 112: 362ba3, expected 362ba2
+ERROR 23215000: written during read: buffer 1 pixel 116: 37af5f, expected 37af5e
+ERROR 23265000: written during read: buffer 1 pixel 120: 37331b, expected 37331a
+ERROR 23315000: written during read: buffer 1 pixel 124: 38c6d7, expected 38c6d6
+ERROR 23475000: written during read: buffer 1 pixel 128: 39ba93, expected 39ba92
+ERROR 23525000: written during read: buffer 1 pixel 132: 383e4f, expected 383e4e
+ERROR 23575000: written during read: buffer 1 pixel 136: 38a20b, expected 38a20a
+ERROR 23625000: written during read: buffer 1 pixel 140: 3b35c7, expected 3b35c6
+ERROR 23675000: written during read: buffer 1 pixel 144: 3b8983, expected 3b8982
+ERROR 23725000: written during read: buffer 1 pixel 148: 3a0d3f, expected 3a0d3e
+ERROR 23775000: written during read: buffer 1 pixel 152: 3a90fb, expected 3a90fa
+ERROR 23825000: written during read: buffer 1 pixel 156: 3d24b7, expected 3d24b6
+ERROR 23985000: written during read: buffer 1 pixel 160: 3dd873, expected 3dd872
+ERROR 24035000: written during read: buffer 1 pixel 164: 3c5c2f, expected 3c5c2e
+ERROR 24085000: written during read: buffer 1 pixel 168: 3cdfeb, expected 3cdfea
+ERROR 24135000: written during read: buffer 1 pixel 172: 3f53a7, expected 3f53a6
+ERROR 24185000: written during read: buffer 1 pixel 176: 3fe763, expected 3fe762
+ERROR 24235000: written during read: buffer 1 pixel 180: 3e6b1f, expected 3e6b1e
+ERROR 24285000: written during read: buffer 1 pixel 184: 3e0edb, expected 3e0eda
+ERROR 24335000: written during read: buffer 1 pixel 188: 3e8297, expected 3e8296
+ERROR 24535000: written during read: buffer 1 pixel 192: 41f653, expected 41f652
+ERROR 24585000: written during read: buffer 1 pixel 196: 417a0f, expected 417a0e
+ERROR 24635000: written during read: buffer 1 pixel 200: 40fdcb, expected 40fdca
+ERROR 24685000: written during read: buffer 1 pixel 204: 407187, expected 407186
+ERROR 24735000: written during read: buffer 1 pixel 208: 43c543, expected 43c542
+ERROR 24785000: written during read: buffer 1 pixel 212: 4348ff, expected 4348fe
+ERROR 24835000: written during read: buffer 1 pixel 216: 42ecbb, expected 42ecba
+ERROR 24885000: written during read: buffer 1 pixel 220: 426077, expected 426076
+ERROR 25045000: written during read: buffer 1 pixel 224: 459433, expected 459432
+ERROR 25095000: written during read: buffer 1 pixel 228: 4507ef, expected 4507ee
+ERROR 25145000: written during read: buffer 1 pixel 232: 449bab, expected 449baa
+ERROR 25195000: written during read: buffer 1 pixel 236: 441f67, expected 441f66
+ERROR 25395000: before the rewrite: buffer 0 pixel 105: 205704, expected 205705
+ERROR 31625000: after rd_flush: buffer 0 pixel 105: 48fcfe, expected 48fcff
+ERROR 35355000: scattered: buffer 1 pixel 0: 0eefac, expected 0eefad
+ERROR 35515000: scattered: buffer 1 pixel 44: bfc851, expected bfc850
+ERROR 35675000: scattered: buffer 1 pixel 88: fbf4cd, expected fbf4cc
+ERROR 35945000: scattered: buffer 1 pixel 132: 57529a, expected 57529b
+ERROR 36105000: scattered: buffer 1 pixel 176: cf5a83, expected cf5a82
+ERROR 36455000: after wr_idle: buffer 0 pixel 7: a5a5a5, expected a5a5a4
+ERROR 36765000: after a clear: buffer 1 pixel 0: 0eefac, expected 0eefad
+TEST FAILED (309 errors)
+tb/tb_ddr_frame_store.sv:233: $finish called at 36765000 (1ps)

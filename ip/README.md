@@ -202,6 +202,8 @@ Data-flow diagrams are generated from the RTL by `ip/scripts/make_dataflow_diagr
 
 | IP | Block / state diagrams | RTL hierarchy | Data flow |
 |---|---|---|---|
+| [`ddr_ctrl`](memory/ddr_ctrl) | - | [hierarchy](memory/ddr_ctrl/docs/block_diagram.svg) | - |
+| [`ddr_mem`](memory/ddr_mem) | - | - | - |
 | [`memory_arbiter`](memory/memory_arbiter) | - | - | [data flow](memory/memory_arbiter/docs/memory_arbiter_dataflow.svg) |
 | [`register_file`](memory/register_file) | - | - | [data flow](memory/register_file/docs/register_file_dataflow.svg) |
 | [`rom`](memory/rom) | - | - | [data flow](memory/rom/docs/rom_dataflow.svg) |

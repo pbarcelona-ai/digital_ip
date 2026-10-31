@@ -1,0 +1,26 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1792969661" />
+    <testcase name="test_frame_store_ddr_basic" classname="frame_store_ddr_tb" file="/Users/paulbarcelona/Downloads/GitHub/pbarcelona-ai.github.io/digital_ip/image_processing/vision_system/ip/frame_store_ddr/tb/frame_store_ddr_tb.py" lineno="337" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="test_frame_store_ddr_full_frame" classname="frame_store_ddr_tb" file="/Users/paulbarcelona/Downloads/GitHub/pbarcelona-ai.github.io/digital_ip/image_processing/vision_system/ip/frame_store_ddr/tb/frame_store_ddr_tb.py" lineno="356" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="test_frame_store_ddr_cache" classname="frame_store_ddr_tb" file="/Users/paulbarcelona/Downloads/GitHub/pbarcelona-ai.github.io/digital_ip/image_processing/vision_system/ip/frame_store_ddr/tb/frame_store_ddr_tb.py" lineno="391" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="test_frame_store_ddr_four_address_read" classname="frame_store_ddr_tb" file="/Users/paulbarcelona/Downloads/GitHub/pbarcelona-ai.github.io/digital_ip/image_processing/vision_system/ip/frame_store_ddr/tb/frame_store_ddr_tb.py" lineno="424" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="test_frame_store_ddr_cache_flush" classname="frame_store_ddr_tb" file="/Users/paulbarcelona/Downloads/GitHub/pbarcelona-ai.github.io/digital_ip/image_processing/vision_system/ip/frame_store_ddr/tb/frame_store_ddr_tb.py" lineno="463" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="test_wr_ready_debug" classname="frame_store_ddr_tb" file="/Users/paulbarcelona/Downloads/GitHub/pbarcelona-ai.github.io/digital_ip/image_processing/vision_system/ip/frame_store_ddr/tb/frame_store_ddr_tb.py" lineno="507" time="0" sim_time_ns="0" ratio_time="0">
+      <skipped />
+    </testcase>
+    <testcase name="test_ddr_ctrl_debug_reads" classname="frame_store_ddr_tb" file="/Users/paulbarcelona/Downloads/GitHub/pbarcelona-ai.github.io/digital_ip/image_processing/vision_system/ip/frame_store_ddr/tb/frame_store_ddr_tb.py" lineno="547" time="0.019137144088745117" sim_time_ns="630.0" ratio_time="32920.27259023011">
+      <failure error_type="ValueError" error_msg="Can't convert LogicArray to int: it contains non-0/1 values" />
+    </testcase>
+  </testsuite>
+</testsuites>

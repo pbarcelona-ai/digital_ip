@@ -41,23 +41,23 @@ module lvds_serializer #(
 
   (* async_reg = "true" *) logic t1, t2;
   logic t3;
-  logic [1:0] dly;
+  logic dly;                                       // an edge seen in the clock before
   logic [6:0] sh [NL];
   always_ff @(posedge ser_clk) begin
     if (!ser_rst_n) begin
       t1 <= 1'b0;
       t2 <= 1'b0;
       t3 <= 1'b0;
-      dly <= '0;
+      dly <= 1'b0;
       serial_o <= '0;
       for (int c = 0; c < NL; c++) sh[c] <= '0;
     end else begin
       t1 <= tog;
       t2 <= t1;
       t3 <= t2;
-      dly <= {dly[0], t2 ^ t3};
+      dly <= t2 ^ t3;
       for (int c = 0; c < NL; c++) begin
-        if (dly[0]) begin // bit 6 first
+        if (dly) begin // bit 6 first
           sh[c] <= {w_q[7*c +: 6], 1'b0};
           serial_o[c] <= w_q[7*c + 6];
         end

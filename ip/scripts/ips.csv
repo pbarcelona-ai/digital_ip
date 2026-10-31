@@ -34,6 +34,8 @@ sync_fifo,fifo,sync_fifo
 fallthrough_fifo,fifo,fallthrough_fifo
 packet_fifo,fifo,packet_fifo
 memory_arbiter,memory,memory_arbiter
+ddr_mem,memory,ddr_mem
+ddr_ctrl,memory,ddr_ctrl_top
 nco,timing,nco
 baud_generator,timing,baud_generator
 pulse_generator,timing,pulse_generator
@@ -126,3 +128,4 @@ py_core,cpu,py_core
 py_soc,cpu,py_soc
 dpll,clock,dpll
 clk_gen,clock,clk_gen
+npu,ai,npu_top

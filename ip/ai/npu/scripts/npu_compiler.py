@@ -571,8 +571,28 @@ def program(weights, inputs, cache, n=320, conf=0.1, fit=(960, 720), pct=99.99):
 def load_into(ddr, prog):
     """The image at its base and the header at HDR_ADDR (what a boot loader would do)."""
     ddr.write(prog.base, np.frombuffer(prog.image, np.uint8))
-    for i, v in enumerate((HDR_MAGIC, prog.desc, prog.nw, len(prog.names), prog.nh, prog.nw2, prog.nh2)):
+    for i, v in enumerate(header_words(prog)):
         ddr.set_word(HDR_ADDR + 4 * i, v)
+
+
+def header_words(prog):
+    """The DDR header at HDR_ADDR the firmware reads (32-bit words)."""
+    return (HDR_MAGIC, prog.desc, prog.nw, len(prog.names), prog.nh, prog.nw2, prog.nh2)
+
+
+def ddr_hex(prog, path, word_bytes=32):
+    """The same DDR contents as load_into() as a $readmemh file for a word-wide memory model (word i =
+    bytes i * word_bytes ..; byte 0 in the low bits): '@<word index>' then one hex word per line, the
+    header and the image only (everything else is left as it is, 0 in ddr_mem)."""
+    hdr = b"".join(struct.pack("<I", v & 0xFFFFFFFF) for v in header_words(prog))
+    with open(path, "w") as fh:
+        for addr, data in ((HDR_ADDR, hdr), (prog.base, prog.image)):
+            if addr % word_bytes:
+                raise ValueError(f"npu_compiler: DDR address 0x{addr:X} is not word aligned")
+            data = data + bytes(-len(data) % word_bytes)
+            fh.write(f"@{addr // word_bytes:X}\n")
+            for k in range(0, len(data), word_bytes):
+                fh.write(data[k:k + word_bytes][::-1].hex() + "\n")
 
 
 # ======================================================================= check against Ultralytics

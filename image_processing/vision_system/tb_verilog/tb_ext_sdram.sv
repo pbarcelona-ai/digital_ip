@@ -32,6 +32,20 @@ module tb_ext_sdram;
   wire [1:0] sdram_ba;
   wire [7:0] sdram_dqm;
   tri [63:0] sdram_dq;
+  // the DDR store's AXI4 master port (idle with USE_EXT_FB): outputs observed, inputs held low
+  logic [3:0]   m_axi_awid, m_axi_arid;
+  logic [31:0]  m_axi_awaddr, m_axi_araddr;
+  logic [7:0]   m_axi_awlen, m_axi_arlen;
+  logic [2:0]   m_axi_awsize, m_axi_arsize;
+  logic [1:0]   m_axi_awburst, m_axi_arburst;
+  logic         m_axi_awvalid, m_axi_wlast, m_axi_wvalid, m_axi_bready, m_axi_arvalid, m_axi_rready;
+  logic [255:0] m_axi_wdata;
+  logic [31:0]  m_axi_wstrb;
+  logic         m_axi_awready = 1'b0, m_axi_wready = 1'b0, m_axi_bvalid = 1'b0, m_axi_arready = 1'b0;
+  logic         m_axi_rvalid = 1'b0, m_axi_rlast = 1'b0;
+  logic [3:0]   m_axi_bid = '0, m_axi_rid = '0;
+  logic [1:0]   m_axi_bresp = '0, m_axi_rresp = '0;
+  logic [255:0] m_axi_rdata = '0;
 
   logic [PIX_W-1:0] expected [0:FRAME_PIXELS-1];
   integer output_count = 0;

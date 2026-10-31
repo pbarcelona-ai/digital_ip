@@ -46,7 +46,7 @@
 //   Clock - clk (AXI and DFI). Reset - synchronous active low rst_n.
 //   Clock-domain crossings - none. Latency - a read beat T_CL + 1 clocks from
 //   RD to RVALID; a burst starts the clock after its grant.
-// Date: 2026-10-21
+// Date: 2026-10-25
 module ddr_ctrl #(
   parameter int NPORTS   = 2,
   parameter int DATA_W   = 256,
@@ -163,6 +163,18 @@ module ddr_ctrl #(
     pre_ok = a_act >= 8'(T_RAS) && a_wr >= 8'(T_WR) && a_rd >= 8'(T_RTP);
   endfunction
 
+  // the granted request's fields (computed in always_comb)
+  logic              g_wr_req;
+  logic [PW-1:0]     g_port;
+  logic [ADDR_W-1:0] g_addr;
+  logic [7:0]        g_len;
+  logic [2:0]        g_size;
+  logic [1:0]        g_burst;
+  logic [ID_W-1:0]   g_id;
+  logic [WAW-1:0]    g_word;
+  logic [WAW:0]      g_end;
+  logic [1:0]        g_resp;
+
   // ---------------- this clock's decision
   wire [BANK_W-1:0] cur_bank = word_q[COL_W +: BANK_W];
   wire [ROW_W-1:0]  cur_row  = word_q[COL_W + BANK_W +: ROW_W];
@@ -252,25 +264,26 @@ module ddr_ctrl #(
           grant = arb_idx;
         end
       end
-      if (grant_v) begin
-        if (grant[0]) s_axi_awready[g_port] = 1'b1;
-        else s_axi_arready[g_port] = 1'b1;
-      end
+    end
+    // the granted request's fields, on every path (grant is 0 when nothing is granted)
+    g_wr_req = grant[0];
+    g_port = PW'(grant >> 1);
+    g_addr = g_wr_req ? s_axi_awaddr[g_port*ADDR_W +: ADDR_W] : s_axi_araddr[g_port*ADDR_W +: ADDR_W];
+    g_len = g_wr_req ? s_axi_awlen[g_port*8 +: 8] : s_axi_arlen[g_port*8 +: 8];
+    g_size = g_wr_req ? s_axi_awsize[g_port*3 +: 3] : s_axi_arsize[g_port*3 +: 3];
+    g_burst = g_wr_req ? s_axi_awburst[g_port*2 +: 2] : s_axi_arburst[g_port*2 +: 2];
+    g_id = g_wr_req ? s_axi_awid[g_port*ID_W +: ID_W] : s_axi_arid[g_port*ID_W +: ID_W];
+    g_word = g_addr[ADDR_W-1:OFF];
+    g_end = {1'b0, g_word} + (WAW+1)'(g_len);
+    g_resp = (g_size != 3'(OFF) || g_burst != 2'b01) ? R_SLVERR :
+             (g_end >= (WAW+1)'(1) << MW) ? R_DECERR : R_OKAY;
+
+    if (grant_v) begin
+      if (grant[0]) s_axi_awready[g_port] = 1'b1;
+      else s_axi_arready[g_port] = 1'b1;
     end
   end
 
-  // the granted request's fields
-  wire              g_wr_req = grant[0];
-  wire [PW-1:0] g_port = PW'(grant >> 1);
-  wire [ADDR_W-1:0] g_addr  = g_wr_req ? s_axi_awaddr[g_port*ADDR_W +: ADDR_W] : s_axi_araddr[g_port*ADDR_W +: ADDR_W];
-  wire [7:0]        g_len   = g_wr_req ? s_axi_awlen[g_port*8 +: 8] : s_axi_arlen[g_port*8 +: 8];
-  wire [2:0]        g_size  = g_wr_req ? s_axi_awsize[g_port*3 +: 3] : s_axi_arsize[g_port*3 +: 3];
-  wire [1:0]        g_burst = g_wr_req ? s_axi_awburst[g_port*2 +: 2] : s_axi_arburst[g_port*2 +: 2];
-  wire [ID_W-1:0]   g_id    = g_wr_req ? s_axi_awid[g_port*ID_W +: ID_W] : s_axi_arid[g_port*ID_W +: ID_W];
-  wire [WAW-1:0]    g_word  = g_addr[ADDR_W-1:OFF];
-  wire [WAW:0]      g_end   = {1'b0, g_word} + (WAW+1)'(g_len);
-  wire [1:0]        g_resp  = (g_size != 3'(OFF) || g_burst != 2'b01) ? R_SLVERR :
-                              (g_end >= (WAW+1)'(1) << MW) ? R_DECERR : R_OKAY;
 
   // ---------------- read return pipe (alongside the memory's T_CL)
   logic                 pv [T_CL];

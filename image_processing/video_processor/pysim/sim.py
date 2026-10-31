@@ -124,6 +124,16 @@ class System:
         if npu_prog is not None:                      # the NPU program preloaded in DDR (as a boot loader would)
             import npu_compiler
             npu_compiler.load_into(self.vsys.ddr, npu_prog)
+        self.npu_runs = []                            # tracking sequence: each NPU run's detection list (words)
+        npu_run = self.vsys.npu.run
+
+        def run_and_keep():
+            n0 = self.vsys.npu.runs
+            npu_run()
+            if self.capturing and self.vsys.npu.runs != n0:
+                n, a = self.vsys.npu.core.ndet, self.vsys.npu.r.get("DET_ADDR")
+                self.npu_runs.append([self.vsys.ddr.word(a + 4 * i) for i in range(4 * n)])
+        self.vsys.npu.run = run_and_keep
         for i, f in enumerate(self.vsys.irq_lines()):
             self.soc.set_ext_irq(i, f)
         self.soc.core_reset_cb = self._core_reset
@@ -151,6 +161,7 @@ class System:
         return 0 if v is None else v
 
     def _core_reset(self, release):
+        self.vsys.core_up = bool(release)            # the window gate (SLVERR while the core logic is in reset)
         if release and not self.released:
             self.released = True
             self.sim.after(1000, self._camera)
@@ -234,7 +245,8 @@ class System:
         self.soc.update_irq()
 
     def _vs_out(self):
-        self.vsys.vision.done = True
+        if not self.vsys.vision.r.get("BYPASS") & 1:           # STATUS.FRAME_DONE: a corrected frame only (RTL)
+            self.vsys.vision.done = True
         self._ev(3)
 
     def _track_done(self, out, tin, feats):
